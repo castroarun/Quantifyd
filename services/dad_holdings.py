@@ -10,8 +10,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _owned_qty(h: dict) -> int:
+    """Total shares owned = settled demat + T1 (bought recently) + pledged collateral.
+    Matches what Kite's app/console shows; counting only `quantity` drops T1 buys
+    (e.g. a stock bought yesterday) and pledged holdings entirely."""
+    return (int(h.get("quantity") or 0)
+            + int(h.get("t1_quantity") or 0)
+            + int(h.get("collateral_quantity") or 0))
+
+
 def _row(h: dict) -> dict:
-    qty = h.get("quantity", 0) or 0
+    qty = _owned_qty(h)
     avg = h.get("average_price", 0) or 0
     ltp = h.get("last_price", 0) or 0
     prev = h.get("close_price", 0) or 0    # Kite field is close_price, not close
@@ -62,7 +71,7 @@ def get_dad_digest() -> dict:
     except Exception as e:  # noqa: BLE001
         logger.error(f"[DAD] holdings fetch failed: {e}")
         return _empty(True, f"Dad's session not ready (login pending?): {e}")
-    rows = [_row(h) for h in raw if (h.get("quantity") or 0) > 0]
+    rows = [_row(h) for h in raw if _owned_qty(h) > 0]
     if not rows:
         return _empty(True, "No holdings in Dad's account.")
 
