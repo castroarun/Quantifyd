@@ -92,7 +92,8 @@ function FundsPanel() {
   const [plans, setPlans] = useState<any[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => apiGet<FlowsStatus>('/api/sleeves/status').then(setSt).catch((e) => setMsg(String(e)));
+  const load = () => apiGet<FlowsStatus>('/api/sleeves/status').then(setSt)
+    .catch(() => setMsg('Open Alpha funds API arrives with the 15:40 IST service reload (deferred-restart armed) — True North legs work now.'));
   useEffect(() => { load(); }, []);
 
   const legs = (): { name: string; url: string; body: any }[] => {
@@ -193,77 +194,89 @@ function FundsPanel() {
 export default function Sleeves() {
   const [mom, setMom] = useState<MomState | null>(null);
   const [bs, setBs] = useState<BsFeed | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
-    apiGet<MomState>('/api/momentum-paper/state').then(setMom).catch((e) => setErr('momentum: ' + e));
-    fetch('/app/bluesky_paper.json').then((r) => r.json()).then(setBs).catch((e) => setErr('bluesky: ' + e));
+    apiGet<MomState>('/api/momentum-paper/state').then(setMom).catch(() => setMom(null));
+    fetch('/app/bluesky_paper.json').then((r) => r.json()).then(setBs).catch(() => setBs(null));
   }, []);
-  if (err) return <div className={styles.page}><div className={styles.empty}>{err}</div></div>;
-  if (!mom || !bs) return <div className={styles.page}><div className={styles.empty}>Loading both books…</div></div>;
 
-  const mMap = new Map(mom.navcurve.map((r) => [r.d, r]));
-  const rows = bs.nav_curve.filter((r) => mMap.has(r.date));
-  if (rows.length < 25)
-    return <div className={styles.page}>
-      <h1>Sleeves — True North × Open Alpha</h1>
-      <FundsPanel />
-      <div className={styles.empty}>
-        Only {rows.length} overlapping trading days so far — the combined view becomes meaningful as the
-        Open Alpha soak accumulates history alongside True North. Both books are shown on their own
-        pages meanwhile.
-      </div></div>;
+  const mMap = new Map((mom?.navcurve ?? []).map((r) => [r.d, r]));
+  const rows = (bs?.nav_curve ?? []).filter((r) => mMap.has(r.date));
+  const enough = rows.length >= 25;
 
-  const dates = rows.map((r) => r.date);
-  const bV = rows.map((r) => 100 * r.nav / rows[0].nav);
-  const mV = rows.map((r) => 100 * (mMap.get(r.date)!.nav) / (mMap.get(dates[0])!.nav));
-  const benchRaw = rows.map((r) => r.bench);
-  const b0 = benchRaw.find((x) => x != null) ?? 1;
-  const nV = benchRaw.map((v) => (v == null ? NaN : 100 * v / (b0 as number)));
-  const blend = blend5050(dates, mV, bV);
-  const sM = stats(mV, dates), sB = stats(bV, dates), sX = stats(blend, dates);
-  const corr = corrMonthly(dates, mV, bV);
+  let combined: React.ReactNode = null;
+  if (enough && mom && bs) {
+    const dates = rows.map((r) => r.date);
+    const bV = rows.map((r) => 100 * r.nav / rows[0].nav);
+    const mV = rows.map((r) => 100 * (mMap.get(r.date)!.nav) / (mMap.get(dates[0])!.nav));
+    const benchRaw = rows.map((r) => r.bench);
+    const b0 = benchRaw.find((v) => v != null) ?? 1;
+    const nV = benchRaw.map((v) => (v == null ? NaN : 100 * v / (b0 as number)));
+    const blend = blend5050(dates, mV, bV);
+    const sM = stats(mV, dates), sB = stats(bV, dates), sX = stats(blend, dates);
+    const corr = corrMonthly(dates, mV, bV);
+    combined = (
+      <>
+        <div className={styles.tiles}>
+          <div className={styles.tile}><div>True North</div>
+            <b className={sM.total >= 0 ? styles.pos : styles.neg}>{pct(sM.total)}</b></div>
+          <div className={styles.tile}><div>Open Alpha</div>
+            <b className={sB.total >= 0 ? styles.pos : styles.neg}>{pct(sB.total)}</b></div>
+          <div className={styles.tile}><div>50-50 blend</div>
+            <b className={sX.total >= 0 ? styles.pos : styles.neg}>{pct(sX.total)}</b></div>
+          <div className={styles.tile}><div>Blend CAGR</div><b>{pct(sX.cagr)}</b></div>
+          <div className={styles.tile}><div>Blend MaxDD</div><b className={styles.neg}>{pct(sX.dd)}</b></div>
+          <div className={styles.tile}><div>Monthly corr</div><b>{corr == null ? '—' : corr.toFixed(2)}</b></div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>
+            Growth of 100 (log) — gold = 50-50 blend · green = True North · blue = Open Alpha · dashed = NIFTYBEES
+          </div>
+          <MultiCurve dates={dates} lines={[
+            { name: 'NIFTYBEES', v: nV.map((v) => (isNaN(v) ? 100 : v)), color: 'var(--ink-muted)', dash: '4 3' },
+            { name: 'True North', v: mV, color: '#1f9d55' },
+            { name: 'Open Alpha', v: bV, color: '#3b82d6' },
+            { name: '50-50 blend', v: blend, color: '#d4a017' },
+          ]} />
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className={styles.page}>
       <div className={styles.head}>
         <div>
-          <h1>Sleeves — Momentum × BlueSky (50-50, monthly rebalanced)</h1>
+          <h1>Sleeves — True North × Open Alpha</h1>
           <div className={styles.sub}>
-            Read-only combined view over both books · common window {dates[0]} → {dates[dates.length - 1]} ·
-            monthly correlation {corr == null ? '—' : corr.toFixed(2)}
+            One portfolio, two sleeves, 50-50 monthly rebalanced · common live window: {rows.length} trading days
           </div>
         </div>
       </div>
-      <FundsPanel />
+
       <div className={styles.tiles}>
-        <div className={styles.tile}><div>Momentum</div>
-          <b className={sM.total >= 0 ? styles.pos : styles.neg}>{pct(sM.total)}</b></div>
-        <div className={styles.tile}><div>BlueSky</div>
-          <b className={sB.total >= 0 ? styles.pos : styles.neg}>{pct(sB.total)}</b></div>
-        <div className={styles.tile}><div>50-50 blend</div>
-          <b className={sX.total >= 0 ? styles.pos : styles.neg}>{pct(sX.total)}</b></div>
-        <div className={styles.tile}><div>Blend CAGR</div><b>{pct(sX.cagr)}</b></div>
-        <div className={styles.tile}><div>Blend MaxDD</div><b className={styles.neg}>{pct(sX.dd)}</b></div>
-        <div className={styles.tile}><div>DD: Mom / BlueSky</div>
-          <b>{pct(sM.dd)} / {pct(sB.dd)}</b></div>
+        <div className={styles.tile}><div>True North NAV</div>
+          <b>{mom ? '₹' + Math.round(mom.nav).toLocaleString('en-IN') : '…'}</b></div>
+        <div className={styles.tile}><div>True North return</div>
+          <b className={(mom?.total_return_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(mom?.total_return_pct ?? null)}</b></div>
+        <div className={styles.tile}><div>Open Alpha NAV</div>
+          <b>{bs ? '₹' + Math.round(bs.nav).toLocaleString('en-IN') : '…'}</b></div>
+        <div className={styles.tile}><div>Open Alpha (incl. backfill)</div>
+          <b className={(bs?.ret_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(bs ? bs.ret_pct : null)}</b></div>
       </div>
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>
-          Growth of 100 (log) — gold = 50-50 blend · green = Momentum · blue = BlueSky · dashed = NIFTYBEES
+
+      {combined ?? (
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Combined performance — building</div>
+          <p className={styles.note}>
+            The blended curve and stats appear once the two books share ≥25 overlapping live trading
+            days ({rows.length} so far — True North's live curve starts 24-Jul-2026). The backtested
+            blend (33.0% CAGR at −27.5% DD, 2006→2026) is on the{' '}
+            <a href="/app/backtest/bluesky-ath-breakout-research142">study page</a>.
+          </p>
         </div>
-        <MultiCurve dates={dates} lines={[
-          { name: 'NIFTYBEES', v: nV.map((v) => (isNaN(v) ? 100 : v)), color: 'var(--ink-muted)', dash: '4 3' },
-          { name: 'Momentum', v: mV, color: '#1f9d55' },
-          { name: 'BlueSky', v: bV, color: '#3b82d6' },
-          { name: '50-50 blend', v: blend, color: '#d4a017' },
-        ]} />
-        <p className={styles.note}>
-          The backtested version of this blend (2006 → Jul 2026): 33.0% CAGR at −27.5% max drawdown,
-          beating both legs — see the correlation matrix and capstone table on the
-          {' '}<a className={styles.studyLink} href="/app/backtest/bluesky-ath-breakout-research142">study page</a>.
-          This live view accumulates the forward evidence for the same construction.
-        </p>
-      </div>
+      )}
+
+      <FundsPanel />
     </div>
   );
 }
