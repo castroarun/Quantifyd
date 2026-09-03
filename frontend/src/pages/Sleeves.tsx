@@ -199,10 +199,62 @@ function rup(n: number | null | undefined) {
   return n == null ? '—' : `₹${Math.round(n).toLocaleString('en-IN')}`;
 }
 
+function HowItWorksModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60,
+               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 640, maxHeight: '85vh', overflowY: 'auto', borderRadius: 10,
+                 background: 'var(--surface, #16181d)', color: 'var(--ink, #e8e8e8)',
+                 border: '1px solid var(--hairline, #333)', padding: '22px 26px',
+                 fontSize: 13.5, lineHeight: 1.65 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Where the 25% carve-out comes in</div>
+          <button onClick={onClose}
+            style={{ border: 'none', background: 'transparent', color: 'inherit',
+                     fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
+        </div>
+        <p><b>It comes in nowhere in the trading loop — and that's deliberate.</b> Both
+        engines size positions as a % of current NAV: a closed trade's profit lands in
+        cash, sweeps into CASHIETF, and the next entry is sized off the bigger book. The
+        engines have no concept of "distributable."</p>
+        <ol style={{ paddingLeft: 20, margin: '10px 0' }}>
+          <li style={{ marginBottom: 8 }}><b>Between record dates (91 days at a time):
+          nothing changes.</b> The engine trades the full book and 100% of booked profit
+          reinvests, exactly as coded. No per-trade skimming — that would starve
+          compounding and add churn.</li>
+          <li style={{ marginBottom: 8 }}><b>On the quarter-end record date only</b>, the
+          dividend engine (a separate 19:15 cron) does the accounting: NAV vs the
+          high-water mark — flow-adjusted, so your own deposits never count as "profit" —
+          then entitlement = 25% of the excess, then the smoothed cap (last dividend
+          +7.5%/qtr; surplus banks into the equalization reserve).</li>
+          <li style={{ marginBottom: 8 }}><b>The money physically leaves the way a
+          withdrawal does</b>: from cash + CASHIETF redemption only. Positions are never
+          force-sold. The paid amount goes to the distribution pool (the notice carries
+          the Zerodha Console amount for the bank leg); the reserve sits in its own
+          liquid pocket outside book NAV.</li>
+          <li style={{ marginBottom: 8 }}><b>From the next cycle the engine simply sizes
+          off the smaller NAV.</b> To the trading loop a dividend is indistinguishable
+          from a withdrawal you made yourself — which is why no engine code was touched.</li>
+          <li><b>Edge rule:</b> if the book is fully deployed and liquid cash is less
+          than the entitlement, the outflow is clipped to what's liquid — capital is
+          never invaded and nothing is ever force-sold to pay a dividend.</li>
+        </ol>
+        <p style={{ opacity: 0.75, marginBottom: 0 }}>Policy evidence: research/142
+        <code> dividend_sim_v2.py</code> variant E — 10-yr sim on ₹10L: ₹21.7L paid,
+        ending NAV ₹1.14Cr + ₹15.6L reserve, 24 consecutive rising quarterly payouts
+        2020-Q4 → 2026 through two drawdowns.</p>
+      </div>
+    </div>
+  );
+}
+
 function DividendsCard() {
   const [dv, setDv] = useState<DivStatus | null>(null);
   const [prev, setPrev] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showHow, setShowHow] = useState(false);
   useEffect(() => { apiGet<DivStatus>('/api/sleeves/dividends').then(setDv).catch(() => setDv(null)); }, []);
   if (!dv) return null;
   const preview = () => {
@@ -234,7 +286,14 @@ function DividendsCard() {
   );
   return (
     <div className={styles.card}>
-      <div className={styles.cardTitle}>Dividends — quarterly high-water-mark policy</div>
+      <div className={styles.cardTitle} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+        Dividends — quarterly high-water-mark policy
+        <a onClick={(e) => { e.preventDefault(); setShowHow(true); }} href="#"
+          style={{ fontSize: 12, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>
+          how the carve-out works
+        </a>
+      </div>
+      {showHow && <HowItWorksModal onClose={() => setShowHow(false)} />}
       <p className={styles.note}>
         25% of new profit above the flow-adjusted HWM leaves the book each quarter; the payout is
         capped at last dividend +7.5%/qtr (a smooth, stepping income line); boom surplus banks into
