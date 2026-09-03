@@ -143,3 +143,7 @@
          color: var(--ink-muted); background: #FCFCFB; }
 
 .groupRow:hover td { background: #EDF2ED; }
+
+/* last completed session shown in place of an empty Today cell */
+.stale { color: var(--ink-faint); font-weight: 500; }
+.stale sup { font-size: 9px; }

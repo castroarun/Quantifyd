@@ -29,6 +29,7 @@ type Sys = {
   size_lots: number | null; size_qty: number | null; window: string;
   state: { label: string; tone: string };
   today_pnl: number | null; running_pnl: number | null;
+  last_pnl?: number | null; last_day?: string | null;
   risk_open: number | null; to_stop: { pct: number; of: number } | null;
   lifetime: { net: number; n: number; win: number | null; maxdd: number; t: number | null };
   legs: Leg[]; curve: [string, number][]; closed: Closed[];
@@ -203,7 +204,8 @@ export default function StraddleSystems() {
       <p className={s.sub}>
         Every short-premium system, what it is doing today, and the evidence behind it.
         Click a row for its position, history and backtest · <b>R</b> for its rules.
-        Built {feed.generated_at.replace('T', ' ')}.
+        Built {feed.generated_at.replace('T', ' ')}. <b>*</b> = last completed session,
+        not today.
       </p>
 
       {kpi && (
@@ -276,9 +278,17 @@ export default function StraddleSystems() {
                           <td>{x.window}</td>
                           <td><span className={`${s.chip} ${x.state.tone === 'neg' ? s.chipReal
                             : x.state.tone === 'pos' ? s.chipPos : ''}`}>{x.state.label}</span></td>
-                          <td className={`${cls(x.today_pnl)} ${x.today_pnl === null ? ''
-                            : x.today_pnl > 0 ? s.washPos : s.washNeg}`}>{inr(x.today_pnl)}</td>
-                          <td className={cls(x.running_pnl)}>{inr(x.running_pnl)}</td>
+                          <td className={`${x.today_pnl === null ? '' : cls(x.today_pnl)} ${
+                            x.today_pnl === null ? '' : x.today_pnl > 0 ? s.washPos : s.washNeg}`}>
+                            {x.today_pnl !== null ? inr(x.today_pnl)
+                              : x.last_pnl != null
+                                ? <span className={s.stale} title={`Last completed session: ${x.last_day}`}>
+                                    {inr(x.last_pnl)}<sup>*</sup>
+                                  </span>
+                                : '—'}
+                          </td>
+                          <td className={`${cls(x.running_pnl)} ${x.running_pnl === null ? ''
+                            : x.running_pnl > 0 ? s.washPos : s.washNeg}`}>{inr(x.running_pnl)}</td>
                           <td className={cls(x.lifetime.net)}>{inr(x.lifetime.net)}
                             <div className={s.sub2}>
                               {x.lifetime.n} trades{x.lifetime.win !== null ? ` · ${x.lifetime.win}% win` : ''}

@@ -283,6 +283,11 @@ systems = []
 
 # ---------------------------------------------------------------- CSL / COMB family
 state = json.loads((ROOT / 'backtest_data' / 'csl_paper_state.json').read_text())
+# csl_paper_state holds only CLOSED trades; the open position and its live mark
+# live here. Without it a holding book looks flat.
+_lf = ROOT / 'static' / 'app' / 'csl_paper_live.json'
+LIVE = json.loads(_lf.read_text()) if _lf.exists() else {}
+LIVE_BOOKS = (LIVE.get('books') or {}) if LIVE.get('day') == TODAY else {}
 cfg = json.loads((ROOT / 'backtest_data' / 'csl_paper_config.json').read_text())['books']
 recs = [r for r in state['records'] if r.get('pnl') is not None]
 by_book = defaultdict(list)
@@ -314,8 +319,20 @@ for book, rows in sorted(by_book.items()):
         if days:
             window += '  · ' + '/'.join(days)
 
-    # STATE: a time exit and a stop-out are different events; do not flatten them.
-    if today_row:
+    # STATE: the live feed wins — a book that is holding right now must say so.
+    lv = LIVE_BOOKS.get(book) or {}
+    lstate = (lv.get('state') or '').upper()
+    running, curve = None, []
+    if lstate == 'OPEN':
+        ser = lv.get('series') or []
+        if ser:
+            running = round(float(ser[-1][1]))
+            curve = [[t, v] for t, v in ser][-120:]
+        stlabel = f"Holding since {lv.get('entry') or '09:16'}"
+        tone = 'pos' if (running or 0) >= 0 else 'neg'
+    elif lstate == 'WAIT_ENTRY':
+        stlabel, tone = f"Waiting · enters {lv.get('entry') or '—'}", 'neutral'
+    elif today_row:
         why = (today_row.get('reason') or '').upper()
         # exit_ts is a BARE clock time ('11:28:49'), not an ISO timestamp
         hhmm = str(today_row.get('exit_ts') or '')[:5]
@@ -338,11 +355,14 @@ for book, rows in sorted(by_book.items()):
         window=window,
         state=dict(label=stlabel, tone=tone),
         today_pnl=(round(float(today_row['pnl'])) if today_row else None),
-        running_pnl=None, risk_open=None, to_stop=None,
+        # a quiet row still has a last result; a dash throws that away
+        last_pnl=(round(float(rows[-1]['pnl'])) if rows else None),
+        last_day=(rows[-1]['day'][:10] if rows else None),
+        running_pnl=running, risk_open=None, to_stop=None,
         lifetime=dict(net=round(sum(v)), n=len(v),
                       win=round(100 * sum(1 for x in v if x > 0) / len(v)) if v else None,
                       maxdd=dd(v), t=tstat(v)),
-        legs=[], curve=[],
+        legs=[], curve=curve,
         closed=[dict(day=r['day'][:10], dte=r.get('dte'), strike=r.get('strike'),
                      credit=r.get('credit'), exit=r.get('exit_comb'),
                      reason=r.get('reason'), pnl=round(float(r['pnl'])))
@@ -422,6 +442,8 @@ if db.exists():
         state=dict(label=('Holding' if open_ else ('Armed' if armed else 'Flat · unarmed')),
                    tone=('pos' if open_ else 'muted')),
         today_pnl=None, running_pnl=running,
+        last_pnl=(round(float(closed[-1]['pnl'])) if closed and closed[-1].get('pnl') is not None else None),
+        last_day=(closed[-1]['day'] if closed else None),
         risk_open=None, to_stop=None,
         lifetime=dict(net=round(sum(v)) if v else 0, n=len(v),
                       win=round(100 * sum(1 for x in v if x > 0) / len(v)) if v else None,
@@ -446,7 +468,10 @@ if cp.exists():
         money='refuted', subtitle='±0.8% shorts, wings 1% beyond each short',
         size_lots=d.get('lots'), size_qty=d.get('qty'), window='Wed close → Fri close',
         state=dict(label='Stopped', tone='muted'),
-        today_pnl=None, running_pnl=None, risk_open=None, to_stop=None,
+        today_pnl=None, running_pnl=None,
+        last_pnl=(round(float(hist[0]['pnl'])) if hist and hist[0].get('pnl') is not None else None),
+        last_day=(hist[0].get('exit_day') if hist else None),
+        risk_open=None, to_stop=None,
         lifetime=dict(net=round(sum(v)) if v else 0, n=len(v),
                       win=round(100 * sum(1 for x in v if x > 0) / len(v)) if v else None,
                       maxdd=dd(v), t=tstat(v)),
@@ -491,7 +516,10 @@ def _add(key, name, subtitle, group, kind, money, lots, qty, window, vals, close
         key=key, name=name, subtitle=subtitle, group=group, kind=kind, venue='NIFTY',
         money=money, size_lots=lots, size_qty=qty, window=window,
         state=dict(label=state[0], tone=state[1]),
-        today_pnl=today, running_pnl=None, risk_open=None, to_stop=None,
+        today_pnl=today,
+        last_pnl=(round(vals[-1]) if vals else None),
+        last_day=(closed[0]['day'] if closed else None),
+        running_pnl=None, risk_open=None, to_stop=None,
         lifetime=dict(net=round(sum(vals)) if vals else 0, n=len(vals),
                       win=round(100 * sum(1 for x in vals if x > 0) / len(vals)) if vals else None,
                       maxdd=dd(vals), t=tstat(vals)),
@@ -632,7 +660,8 @@ def _study(key, name, sub, net, n, win, maxdd, calmar, method, period, how, cave
         key=key, name=name, subtitle=sub, group='study', kind='positional', venue='NIFTY',
         money='study', size_lots=10, size_qty=650,
         window='09:20 · 4 TD → 1 TD', state=dict(label='Backtest only', tone='muted'),
-        today_pnl=None, running_pnl=None, risk_open=None, to_stop=None,
+        today_pnl=None, running_pnl=None, last_pnl=None, last_day=None,
+        risk_open=None, to_stop=None,
         lifetime=dict(net=net, n=n, win=win, maxdd=maxdd, t=None),
         legs=[], curve=[], closed=[],
         evidence=dict(method=method, period=period,
