@@ -641,6 +641,71 @@ if v2l and v2l.get('trades'):
          state=('Replay · post-close', 'muted'))
 
 
+# ------------------------------------------------- forward fly paper books
+# Reconstructed from the recorded chain by scripts/fly_paper.py — only the cycle
+# that is open right now, priced from its real entry timestamp.
+_ff = ROOT / 'backtest_data' / 'fly_paper_state.json'
+if _ff.exists():
+    FP = json.loads(_ff.read_text())
+    _RULES = {
+        'stop': ('Manage', '<b>2% underlying move-stop</b> · <b>+40% of credit</b> target · '
+                           'roll 1 TD before expiry.'),
+        'nostop': ('Manage', '<b>No stop</b> — held to 1 TD before expiry unless the 40% target '
+                             'fires. This is the CONTROL arm.'),
+        'gated': ('Gate', 'India VIX <b>&ge; 13</b> at entry, plus the CPR skip. Faithful to the '
+                          'tested spec — and it sits out low-vol regimes by design.'),
+        'ungated': ('Gate', 'CPR skip only — <b>no VIX floor</b>. The twin that keeps trading, so '
+                            'the gate\'s value can be measured rather than assumed.'),
+    }
+    for _k, _b in (FP.get('books') or {}).items():
+        _open = str(_b.get('state', '')).startswith('OPEN')
+        _legs = [dict(side=l['side'], type=l['type'], strike=l['strike'], qty=l['qty'],
+                      entry=l['entry'], ltp=l['ltp'], pnl=l['pnl'])
+                 for l in (_b.get('legs') or [])]
+        _tone = ('pos' if (_b.get('pnl') or 0) >= 0 else 'neg') if _open else 'muted'
+        _st = (f"Holding since {_b.get('entry_day', '')}" if _open
+               else ('Gated out' if _b.get('state') == 'GATED' else str(_b.get('state', 'Flat'))))
+        systems.append(dict(
+            key=_k, name=_b['name'], group='positional', kind='positional', venue='NIFTY',
+            money='paper',
+            subtitle=('Front weekly · ±2% wings · reconstructed from our recorded chain'),
+            size_lots=10, size_qty=650, window='09:20 · 4 TD → 1 TD',
+            state=dict(label=_st, tone=_tone),
+            today_pnl=None, running_pnl=(_b.get('pnl') if _open else None),
+            last_pnl=None, last_day=None,
+            risk_open=None, to_stop=None,
+            lifetime=dict(net=(_b.get('pnl') or 0) if _open else 0, n=(1 if _open else 0),
+                          win=None, maxdd=0, t=None),
+            legs=_legs, curve=[], closed=[],
+            evidence=dict(
+                method=['Our recorded chain'], period='forward from 2026-09-03',
+                nums=({'Credit': str(_b.get('credit')), 'Mark': str(_b.get('mark')),
+                       'Move': f"{_b.get('move_pct')}%"} if _open else {}),
+                how='Only the cycle open right now is reconstructed, from its real 09:20 entry '
+                    'on the recorded chain and marked to the latest quote. No synthetic history.',
+                caveat=(_b.get('reason') or '') + (
+                    '  <b>The backtest behind this construction claims 7.3 years; this forward '
+                    'record starts today.</b> They are not the same evidence.'),
+                links=[('research/141', 'https://github.com/castroarun/Quantifyd/tree/main/'
+                                       'research/141_v2_bhav_pertrade')]),
+            rules=dict(
+                does=[('Structure', 'Short iron fly — SELL ATM CE + PE, BUY wings at '
+                                    '<b>±2.0% of ATM</b>, snapped to strikes that traded.'),
+                      ('Expiry', '<b>FRONT weekly</b> — the nearest.'),
+                      ('Entry', '<b>09:20</b>, 4 trading days before expiry.'),
+                      _RULES['gated' if _b.get('vix_gate') else 'ungated'],
+                      _RULES['stop' if _b.get('stop') else 'nostop'],
+                      ('Size', '10 lots = qty 650 · ₹20/leg + 0.25% slippage.')],
+                doesnt=(['<b>Paper only.</b> Nothing places these orders.'] +
+                        ([] if _b.get('stop') else
+                         ['<b>No stop by design — this is a measurement control</b>, not a '
+                          'proposal to trade without one.']) +
+                        ([] if _b.get('vix_gate') else
+                         ['Runs without the VIX floor the tested spec used — deliberately, as '
+                          'the twin of the gated book.'])),
+                doc='scripts/fly_paper.py')))
+
+
 # ------------------------------------------------- tested, not trading (studies)
 # Study RESULTS, not live feeds. They change when the study is re-run, never
 # automatically. All three trade the FRONT weekly; the live engine trades the 2nd.

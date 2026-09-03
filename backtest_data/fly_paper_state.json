@@ -1,0 +1,152 @@
+{
+ "generated_at": "2026-09-03T12:06:01",
+ "day": "2026-09-03",
+ "expiry": "2026-09-08",
+ "entry_day": "2026-09-02",
+ "exit_day": "2026-09-07",
+ "spot_now": 23937.75,
+ "spot_at": "2026-09-03T12:05:00",
+ "vix": 11.07,
+ "vix_asof": "2026-08-27",
+ "cpr_pct": 0.235,
+ "books": {
+  "FLY_D_GATED": {
+   "name": "Fly D \u00b7 CPR + stop (VIX-gated)",
+   "cpr": true,
+   "stop": 0.02,
+   "vix_gate": true,
+   "state": "GATED",
+   "reason": "VIX 11.07 < 13.0 floor at entry"
+  },
+  "FLY_C_GATED": {
+   "name": "Fly C \u00b7 CPR, no stop (VIX-gated)",
+   "cpr": true,
+   "stop": null,
+   "vix_gate": true,
+   "state": "GATED",
+   "reason": "VIX 11.07 < 13.0 floor at entry"
+  },
+  "FLY_D_OPEN": {
+   "name": "Fly D \u00b7 CPR + stop (ungated)",
+   "cpr": true,
+   "stop": 0.02,
+   "vix_gate": false,
+   "state": "OPEN",
+   "reason": "held since 2026-09-02 09:20",
+   "entry_day": "2026-09-02",
+   "entry_spot": 23827.85,
+   "atm": 23850.0,
+   "wings": [
+    23350.0,
+    24350.0
+   ],
+   "credit": 249.75,
+   "mark": 230.2,
+   "pnl": 11848,
+   "move_pct": 0.46,
+   "legs": [
+    {
+     "side": "SELL",
+     "type": "CE",
+     "strike": 23850.0,
+     "qty": 650,
+     "entry": 158.2,
+     "ltp": 182.5,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -15795
+    },
+    {
+     "side": "SELL",
+     "type": "PE",
+     "strike": 23850.0,
+     "qty": 650,
+     "entry": 123.65,
+     "ltp": 65.4,
+     "at": "2026-09-03T12:06:00",
+     "pnl": 37862
+    },
+    {
+     "side": "BUY",
+     "type": "CE",
+     "strike": 24350.0,
+     "qty": 650,
+     "entry": 15.9,
+     "ltp": 11.45,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -2893
+    },
+    {
+     "side": "BUY",
+     "type": "PE",
+     "strike": 23350.0,
+     "qty": 650,
+     "entry": 16.2,
+     "ltp": 6.25,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -6467
+    }
+   ]
+  },
+  "FLY_C_OPEN": {
+   "name": "Fly C \u00b7 CPR, no stop (ungated)",
+   "cpr": true,
+   "stop": null,
+   "vix_gate": false,
+   "state": "OPEN",
+   "reason": "held since 2026-09-02 09:20",
+   "entry_day": "2026-09-02",
+   "entry_spot": 23827.85,
+   "atm": 23850.0,
+   "wings": [
+    23350.0,
+    24350.0
+   ],
+   "credit": 249.75,
+   "mark": 230.2,
+   "pnl": 11848,
+   "move_pct": 0.46,
+   "legs": [
+    {
+     "side": "SELL",
+     "type": "CE",
+     "strike": 23850.0,
+     "qty": 650,
+     "entry": 158.2,
+     "ltp": 182.5,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -15795
+    },
+    {
+     "side": "SELL",
+     "type": "PE",
+     "strike": 23850.0,
+     "qty": 650,
+     "entry": 123.65,
+     "ltp": 65.4,
+     "at": "2026-09-03T12:06:00",
+     "pnl": 37862
+    },
+    {
+     "side": "BUY",
+     "type": "CE",
+     "strike": 24350.0,
+     "qty": 650,
+     "entry": 15.9,
+     "ltp": 11.45,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -2893
+    },
+    {
+     "side": "BUY",
+     "type": "PE",
+     "strike": 23350.0,
+     "qty": 650,
+     "entry": 16.2,
+     "ltp": 6.25,
+     "at": "2026-09-03T12:06:00",
+     "pnl": -6467
+    }
+   ]
+  }
+ }
+}

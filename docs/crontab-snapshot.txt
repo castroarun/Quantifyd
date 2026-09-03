@@ -64,9 +64,9 @@
 */20 9-15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/build_book_daily.py >> logs/book_daily.log 2>&1
 45 15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/build_book_daily.py >> logs/book_daily.log 2>&1
 35 15 * * 1-5 cd /home/arun/quantifyd && set -a && . ./.env && set +a && flock -n /tmp/opt_1min_ohlc.lock ./venv/bin/python3 scripts/record_option_1min_ohlc.py >> /home/arun/quantifyd/logs/option_1min_ohlc.log 2>&1
-52 15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
+52 15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/fly_paper.py >/dev/null 2>&1; venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
 # --- BlueSky ATH-breakout PAPER book (research/142, G5 soak) ---
 40 18 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 -u services/bluesky_paper.py >> /tmp/bluesky_paper.log 2>&1
 # --- Nightly full-universe daily-bars refresh (keeps broad NSE universe current) ---
 45 17 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 -u scripts/refresh_daily_universe.py >> /tmp/universe_refresh.log 2>&1
-*/5 9-15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
+*/5 9-15 * * 1-5 cd /home/arun/quantifyd && venv/bin/python3 scripts/fly_paper.py >/dev/null 2>&1; venv/bin/python3 scripts/straddles_registry.py >> /tmp/straddles_registry.log 2>&1
