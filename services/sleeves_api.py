@@ -1,16 +1,19 @@
 """
-Sleeves money-management API (paper-mode) — Flask blueprint.
+Sleeves money-management API — Flask blueprint, momentum-framework contract.
 
-Manages FUND FLOWS for the Open Alpha PAPER book only (deposit / withdraw against
-its cash + CASHIETF sweep; never force-sells positions). True North is read-only
-here — its real-money funding moves through its own existing flows. This blueprint
-touches no trading logic: it edits the paper book's cash ledger under the same
-lockfile the nightly engine uses, and logs every flow.
+Open Alpha (paper) endpoints follow True North's battle-tested deposit/withdraw
+shape: POST {"amount": N, "dry_run": true} returns a PLAN (no mutation);
+dry_run false executes. Withdrawals draw from cash + CASHIETF sweep only —
+positions are never force-sold. Every executed flow is ledgered in the state.
 
-Endpoints:
-  GET  /api/sleeves/status              -> both sleeves' NAV + split + flows tail
-  POST /api/sleeves/openalpha/deposit   {"amount": 100000}
-  POST /api/sleeves/openalpha/withdraw  {"amount": 50000}
+The unified portal on /app/sleeves dispatches: its True North leg calls the
+existing /api/momentum-paper/deposit|withdraw (live, hardened, confirms real
+orders itself); its Open Alpha leg calls these endpoints. This module touches
+no trading logic and edits the paper ledger under the engine's own lockfile.
+
+  GET  /api/sleeves/status
+  POST /api/sleeves/openalpha/deposit   {"amount": N, "dry_run": bool}
+  POST /api/sleeves/openalpha/withdraw  {"amount": N, "dry_run": bool}
 """
 import json
 import os
@@ -31,7 +34,6 @@ MAX_FLOW = 10_000_000  # sanity cap per operation (Rs 1 Cr)
 
 
 def _locked():
-    """Acquire the paper book's lockfile (short wait); returns True on success."""
     for _ in range(10):
         try:
             fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -48,38 +50,75 @@ def _unlock():
         LOCK.unlink()
 
 
+def _load():
+    return json.load(open(STATE)) if STATE.exists() else None
+
+
 def _liquid(st):
-    """Withdrawable liquidity = free cash + sweep at cost (conservative)."""
     sw = st.get('sweep') or {}
     return float(st.get('cash', 0.0)) + float(sw.get('cost', 0.0))
 
 
-def _apply_flow(kind, amount):
+def _params():
+    body = request.get_json(silent=True) or {}
+    try:
+        amt = round(float(body.get('amount', 0)), 0)
+    except (TypeError, ValueError):
+        return None, None
+    if not (0 < amt <= MAX_FLOW):
+        return None, None
+    return amt, bool(body.get('dry_run', False))
+
+
+def _dep_plan(st, amt):
+    return dict(book='open-alpha', kind='deposit', amount=amt,
+                cash_now=round(st['cash'], 0), liquid_now=round(_liquid(st), 0),
+                plan=[f'Rs {amt:,.0f} lands in cash immediately',
+                      'sweeps into CASHIETF at tonight\'s run',
+                      'funds new pivot buy-stops from the next signal (gate permitting)'],
+                capital_after=round(st.get('capital', 0) + amt, 0))
+
+
+def _wd_plan(st, amt):
+    liq = _liquid(st)
+    ok = amt <= liq + 1
+    take_cash = min(st['cash'], amt)
+    from_sweep = max(0.0, amt - take_cash)
+    return dict(book='open-alpha', kind='withdraw', amount=amt, feasible=ok,
+                liquid_now=round(liq, 0),
+                plan=([f'Rs {take_cash:,.0f} from free cash',
+                       f'Rs {from_sweep:,.0f} by redeeming CASHIETF units',
+                       'open positions untouched'] if ok else
+                      [f'only Rs {liq:,.0f} is liquid (cash + sweep)',
+                       'positions are never force-sold — withdraw less or wait for exits']),
+                capital_after=round(st.get('capital', 0) - amt, 0) if ok else None)
+
+
+def _execute(kind, amt):
     if not _locked():
         return None, 'book is busy (nightly run in progress) — try again in a minute'
     try:
-        st = json.load(open(STATE))
-        liq = _liquid(st)
-        if kind == 'withdraw' and amount > liq + 1:
-            return None, (f'only Rs {liq:,.0f} is liquid (cash + sweep); positions are never '
-                          f'force-sold — withdraw less or wait for exits')
-        sign = 1 if kind == 'deposit' else -1
-        # draw from cash first, then break sweep units proportionally
+        st = _load()
+        if st is None:
+            return None, 'paper book state not found'
         if kind == 'withdraw':
-            take_cash = min(st['cash'], amount)
+            if amt > _liquid(st) + 1:
+                return None, _wd_plan(st, amt)['plan'][0]
+            take_cash = min(st['cash'], amt)
             st['cash'] -= take_cash
-            rem = amount - take_cash
+            rem = amt - take_cash
             if rem > 0:
                 sw = st['sweep']
                 frac = rem / sw['cost'] if sw['cost'] else 0
                 sw['units'] = round(sw['units'] * (1 - frac), 3)
                 sw['cost'] = round(sw['cost'] - rem, 2)
+            st['capital'] = round(st.get('capital', 0) - amt, 0)
         else:
-            st['cash'] += amount
-        st['capital'] = round(st.get('capital', 0.0) + sign * amount, 0)
+            st['cash'] += amt
+            st['capital'] = round(st.get('capital', 0) + amt, 0)
         st.setdefault('fund_flows', []).append(dict(
-            ts=str(datetime.now()), kind=kind, amount=round(amount, 0),
-            nav_note='applied to cash/sweep; positions untouched'))
+            ts=str(datetime.now()), kind=kind, amount=amt,
+            via='sleeves portal', positions_touched=False))
         tmp = STATE.with_suffix('.json.tmp')
         json.dump(st, open(tmp, 'w'), indent=1, default=str)
         os.replace(tmp, STATE)
@@ -88,51 +127,45 @@ def _apply_flow(kind, amount):
         _unlock()
 
 
-def _amount():
-    try:
-        amt = float((request.get_json(silent=True) or {}).get('amount', 0))
-    except (TypeError, ValueError):
-        return None
-    if not (0 < amt <= MAX_FLOW):
-        return None
-    return round(amt, 0)
-
-
 @sleeves_bp.route('/api/sleeves/status')
 def sleeves_status():
     try:
         ui = json.load(open(UI_JSON))
     except Exception:
         ui = {}
-    st = json.load(open(STATE)) if STATE.exists() else {}
+    st = _load() or {}
     return jsonify(dict(
-        open_alpha=dict(nav=ui.get('nav'), cash=st.get('cash'),
-                        sweep=st.get('sweep'), liquid=_liquid(st) if st else 0,
+        open_alpha=dict(nav=ui.get('nav'), cash=st.get('cash'), sweep=st.get('sweep'),
+                        liquid=round(_liquid(st), 0) if st else 0,
                         capital=st.get('capital'),
                         flows=(st.get('fund_flows') or [])[-10:]),
-        note='True North funding is real money and moves through its own page/flows; '
-             'this panel manages the Open Alpha paper sleeve only.'))
+        note='True North legs dispatch to /api/momentum-paper/deposit|withdraw '
+             '(its own live, hardened flow with real-order confirms).'))
+
+
+def _flow_route(kind):
+    amt, dry = _params()
+    if amt is None:
+        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
+    st = _load()
+    if st is None:
+        return jsonify(error='paper book state not found'), 500
+    plan = _dep_plan(st, amt) if kind == 'deposit' else _wd_plan(st, amt)
+    if dry:
+        return jsonify(plan)
+    if kind == 'withdraw' and not plan['feasible']:
+        return jsonify(error=plan['plan'][0]), 409
+    st2, err = _execute(kind, amt)
+    if err:
+        return jsonify(error=err), 409
+    return jsonify(dict(ok=True, executed=plan, cash=st2['cash'], capital=st2['capital']))
 
 
 @sleeves_bp.route('/api/sleeves/openalpha/deposit', methods=['POST'])
 def sleeves_deposit():
-    amt = _amount()
-    if amt is None:
-        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
-    st, err = _apply_flow('deposit', amt)
-    if err:
-        return jsonify(error=err), 409
-    return jsonify(ok=True, cash=st['cash'], capital=st['capital'],
-                   note='cash added; it sweeps to CASHIETF and funds new signals from the next nightly run')
+    return _flow_route('deposit')
 
 
 @sleeves_bp.route('/api/sleeves/openalpha/withdraw', methods=['POST'])
 def sleeves_withdraw():
-    amt = _amount()
-    if amt is None:
-        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
-    st, err = _apply_flow('withdraw', amt)
-    if err:
-        return jsonify(error=err), 409
-    return jsonify(ok=True, cash=st['cash'], capital=st['capital'],
-                   note='withdrawn from cash + sweep; open positions untouched')
+    return _flow_route('withdraw')

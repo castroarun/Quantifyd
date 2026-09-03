@@ -87,49 +87,104 @@ type FlowsStatus = {
 function FundsPanel() {
   const [st, setSt] = useState<FlowsStatus | null>(null);
   const [amt, setAmt] = useState('');
+  const [kind, setKind] = useState<'deposit' | 'withdraw'>('deposit');
+  const [target, setTarget] = useState<'both' | 'truenorth' | 'openalpha'>('both');
+  const [plans, setPlans] = useState<any[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const load = () => apiGet<FlowsStatus>('/api/sleeves/status').then(setSt).catch((e) => setMsg(String(e)));
   useEffect(() => { load(); }, []);
-  const act = (kind: 'deposit' | 'withdraw') => {
+
+  const legs = (): { name: string; url: string; body: any }[] => {
+    const n = Number(amt);
+    const half = Math.round(n / 2);
+    const tn = (a: number) => ({
+      name: 'True North', url: `/api/momentum-paper/${kind}`,
+      body: kind === 'deposit' ? { amount: a, mode: 'immediate' } : { amount: a },
+    });
+    const oa = (a: number) => ({
+      name: 'Open Alpha', url: `/api/sleeves/openalpha/${kind}`, body: { amount: a },
+    });
+    if (target === 'both') return [tn(half), oa(n - half)];
+    return target === 'truenorth' ? [tn(n)] : [oa(n)];
+  };
+
+  const call = (url: string, body: any) =>
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(body), credentials: 'include' })
+      .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+
+  const preview = async () => {
     const n = Number(amt);
     if (!n || n <= 0) { setMsg('enter a positive amount'); return; }
-    fetch(`/api/sleeves/openalpha/${kind}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: n }), credentials: 'include',
-    }).then(async (r) => {
-      const d = await r.json();
-      setMsg(r.ok ? `${kind} of ₹${n.toLocaleString('en-IN')} done — ${d.note}` : d.error);
-      setAmt(''); load();
-    }).catch((e) => setMsg(String(e)));
+    setBusy(true); setMsg(null);
+    const out = [];
+    for (const l of legs()) {
+      const r = await call(l.url, { ...l.body, dry_run: true }).catch((e) => ({ ok: false, data: { error: String(e) } }));
+      out.push({ leg: l.name, amount: l.body.amount, ...r });
+    }
+    setPlans(out); setBusy(false);
   };
+
+  const execute = async () => {
+    const n = Number(amt);
+    const warn = target !== 'openalpha'
+      ? 'True North is a LIVE book — its leg follows its own flow and may place REAL orders. '
+      : '';
+    if (!window.confirm(`${warn}${kind} ₹${n.toLocaleString('en-IN')} to ${target === 'both' ? 'both sleeves 50-50' : target}?`)) return;
+    setBusy(true);
+    const out = [];
+    for (const l of legs()) {
+      const r = await call(l.url, { ...l.body, dry_run: false }).catch((e) => ({ ok: false, data: { error: String(e) } }));
+      out.push(`${l.name}: ${r.ok ? 'done' : (r.data.error || 'failed')}`);
+    }
+    setMsg(out.join(' · ')); setPlans(null); setAmt(''); setBusy(false); load();
+  };
+
   const oa = st?.open_alpha;
+  const sel: React.CSSProperties = { padding: '7px 10px', borderRadius: 6,
+    border: '1px solid var(--hairline, #ccc)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 13 };
   return (
     <div className={styles.card}>
-      <div className={styles.cardTitle}>Funds — Open Alpha sleeve (paper) · True North funds move via its own page</div>
+      <div className={styles.cardTitle}>Funds — unified deployment (default: both sleeves 50-50)</div>
       {oa && (
         <div className={styles.sub} style={{ marginBottom: 10 }}>
-          Liquid (cash + CASHIETF sweep): <b>₹{Math.round(oa.liquid).toLocaleString('en-IN')}</b> ·
-          capital contributed: ₹{Math.round(oa.capital ?? 0).toLocaleString('en-IN')} ·
-          withdrawals never force-sell positions
+          Open Alpha liquid (cash + CASHIETF): <b>₹{Math.round(oa.liquid).toLocaleString('en-IN')}</b> ·
+          capital contributed ₹{Math.round(oa.capital ?? 0).toLocaleString('en-IN')} ·
+          Open Alpha withdrawals never force-sell · True North legs run through its own hardened flow
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="amount ₹"
-               style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--hairline, #ccc)',
-                        background: 'var(--surface)', color: 'var(--ink)', width: 140 }} />
-        <button className={styles.tile} style={{ cursor: 'pointer' }} onClick={() => act('deposit')}>Deposit</button>
-        <button className={styles.tile} style={{ cursor: 'pointer' }} onClick={() => act('withdraw')}>Withdraw</button>
+        <select value={kind} onChange={(e) => setKind(e.target.value as any)} style={sel}>
+          <option value="deposit">Deposit</option>
+          <option value="withdraw">Withdraw</option>
+        </select>
+        <select value={target} onChange={(e) => setTarget(e.target.value as any)} style={sel}>
+          <option value="both">Both sleeves 50-50</option>
+          <option value="truenorth">True North only</option>
+          <option value="openalpha">Open Alpha only</option>
+        </select>
+        <input value={amt} onChange={(e) => setAmt(e.target.value)} placeholder="amount ₹" style={{ ...sel, width: 130 }} />
+        <button style={{ ...sel, cursor: 'pointer', fontWeight: 600 }} disabled={busy} onClick={preview}>Preview</button>
+        {plans && <button style={{ ...sel, cursor: 'pointer', fontWeight: 700 }} disabled={busy} onClick={execute}>Confirm &amp; execute</button>}
       </div>
+      {plans && plans.map((pl, i) => (
+        <p key={i} className={styles.note}>
+          <b>{pl.leg} — ₹{Number(pl.amount).toLocaleString('en-IN')}:</b>{' '}
+          {pl.ok
+            ? (Array.isArray(pl.data.plan) ? pl.data.plan.join(' → ') : JSON.stringify(pl.data).slice(0, 220))
+            : (pl.data.error || 'preview failed')}
+        </p>
+      ))}
       {msg && <p className={styles.note}>{msg}</p>}
       {oa && oa.flows.length > 0 && (
         <p className={styles.note}>
-          Recent flows: {oa.flows.slice(-5).map((f) => `${f.kind} ₹${Math.round(f.amount).toLocaleString('en-IN')} (${f.ts.slice(0, 10)})`).join(' · ')}
+          Open Alpha flows: {oa.flows.slice(-5).map((f) => `${f.kind} ₹${Math.round(f.amount).toLocaleString('en-IN')} (${f.ts.slice(0, 10)})`).join(' · ')}
         </p>
       )}
       <p className={styles.note}>
-        Deposits land in cash, sweep to CASHIETF, and fund new signals from the next nightly run.
-        Book-page figures refresh with the nightly cycle. Real-money flows arrive with the go-live
-        allocator after the Dec-5 soak review.
+        Same preview → confirm → execute contract as True North's own cash panel. Open Alpha deposits
+        sweep to CASHIETF and fund the next signals; real-money Open Alpha arrives after the Dec-5 soak review.
       </p>
     </div>
   );
