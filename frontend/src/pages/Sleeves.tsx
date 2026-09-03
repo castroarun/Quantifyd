@@ -7,9 +7,19 @@ import styles from './BlueskyPaper.module.css';
    projection over the two books' own feeds — touches no trading logic. */
 
 type MomNav = { d: string; nav: number; bench: number | null };
-type MomState = { navcurve: MomNav[]; nav: number; capital: number; total_return_pct: number; gate: string };
+type MomState = { navcurve: MomNav[]; nav: number; capital: number; total_return_pct: number;
+  gate: string; mode?: string; inception?: string };
 type BsNav = { date: string; nav: number; bench: number | null };
-type BsFeed = { nav_curve: BsNav[]; nav: number; capital: number; ret_pct: number; gate_weak: boolean };
+type BsFeed = {
+  nav_curve: BsNav[]; nav: number; capital: number; ret_pct: number; gate_weak: boolean;
+  cagr_pct: number; max_dd_pct: number; n_trades: number; win_pct: number;
+  n_live_trades: number; provenance: string; study: string;
+};
+/* The TIME-WEIGHTED curve. True North was funded from Rs2.98L to Rs9.07L inside this
+   window, so raw NAV is not a return series -- book_curve() backs each day's flow out
+   before chaining, which is the only reason the two sleeves can share an axis. */
+type TnBook = { d: string; nav: number; r: number };
+type TnBench = { book: TnBook[]; inception: string; series: Record<string, unknown> };
 
 const pct = (n: number | null | undefined) =>
   n == null ? '—' : (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
@@ -342,20 +352,50 @@ function DividendsCard() {
 export default function Sleeves() {
   const [mom, setMom] = useState<MomState | null>(null);
   const [bs, setBs] = useState<BsFeed | null>(null);
+  const [tn, setTn] = useState<TnBench | null>(null);
   useEffect(() => {
     apiGet<MomState>('/api/momentum-paper/state').then(setMom).catch(() => setMom(null));
     fetch('/app/bluesky_paper.json').then((r) => r.json()).then(setBs).catch(() => setBs(null));
+    apiGet<TnBench>('/api/momentum-paper/benchmarks').then(setTn).catch(() => setTn(null));
   }, []);
 
-  const mMap = new Map((mom?.navcurve ?? []).map((r) => [r.d, r]));
-  const rows = (bs?.nav_curve ?? []).filter((r) => mMap.has(r.date));
+  /* Drive True North off the TIME-WEIGHTED curve, never off NAV: deposits are not
+     returns. Falls back to nothing rather than to NAV, because a wrong line is worse
+     than a missing one. */
+  const tMap = new Map((tn?.book ?? []).map((r) => [r.d, r]));
+  const rows = (bs?.nav_curve ?? []).filter((r) => tMap.has(r.date));
   const enough = rows.length >= 25;
 
+  const win = rows.length;
+  const tnFirst = rows.length ? tMap.get(rows[0].date)! : null;
+  const tnLast = rows.length ? tMap.get(rows[rows.length - 1].date)! : null;
+  /* r is cumulative-since-inception in %, so the window return chains the two ends. */
+  const tnWin = tnFirst && tnLast
+    ? ((1 + tnLast.r / 100) / (1 + tnFirst.r / 100) - 1) * 100 : null;
+  const oaWin = rows.length ? (rows[rows.length - 1].nav / rows[0].nav - 1) * 100 : null;
+  const nbFirst = rows.find((r) => r.bench != null)?.bench ?? null;
+  const nbLast = [...rows].reverse().find((r) => r.bench != null)?.bench ?? null;
+  const nbWin = nbFirst && nbLast ? (nbLast / nbFirst - 1) * 100 : null;
+
+  function ddOf(v: number[]) {
+    let peak = v[0] ?? 1, d = 0;
+    for (const x of v) { peak = Math.max(peak, x); d = Math.min(d, x / peak - 1); }
+    return d * 100;
+  }
+  const tnDD = rows.length ? ddOf(rows.map((r) => 1 + tMap.get(r.date)!.r / 100)) : null;
+  const oaDD = rows.length ? ddOf(rows.map((r) => r.nav)) : null;
+
+  const cell = (v: number | null) =>
+    v == null ? <span className={styles.muted}>—</span>
+      : <b className={v >= 0 ? styles.pos : styles.neg}>{pct(v)}</b>;
+
   let combined: React.ReactNode = null;
-  if (enough && mom && bs) {
+  if (enough && mom && bs && tn) {
     const dates = rows.map((r) => r.date);
     const bV = rows.map((r) => 100 * r.nav / rows[0].nav);
-    const mV = rows.map((r) => 100 * (mMap.get(r.date)!.nav) / (mMap.get(dates[0])!.nav));
+    /* time-weighted, so the funding that took this book from Rs2.98L to Rs9.07L
+       inside the window does not masquerade as +205% of performance */
+    const mV = rows.map((r) => 100 * (1 + tMap.get(r.date)!.r / 100) / (1 + tnFirst!.r / 100));
     const benchRaw = rows.map((r) => r.bench);
     const b0 = benchRaw.find((v) => v != null) ?? 1;
     const nV = benchRaw.map((v) => (v == null ? NaN : 100 * v / (b0 as number)));
@@ -396,30 +436,107 @@ export default function Sleeves() {
         <div>
           <h1>Sleeves — True North × Open Alpha</h1>
           <div className={styles.sub}>
-            One portfolio, two sleeves, 50-50 monthly rebalanced · common live window: {rows.length} trading days
+            One portfolio, two sleeves, 50-50 monthly rebalanced · {win} overlapping trading days
+            {bs && bs.n_live_trades === 0
+              ? ' — True North LIVE against Open Alpha BACKFILL (Open Alpha has no live trades yet)'
+              : ' of common live history'}
           </div>
         </div>
       </div>
 
       <div className={styles.tiles}>
+        <div className={styles.tile}><div>Portfolio NAV</div>
+          <b>{mom && bs ? '₹' + Math.round(mom.nav + bs.nav).toLocaleString('en-IN') : '…'}</b></div>
         <div className={styles.tile}><div>True North NAV</div>
           <b>{mom ? '₹' + Math.round(mom.nav).toLocaleString('en-IN') : '…'}</b></div>
-        <div className={styles.tile}><div>True North return</div>
-          <b className={(mom?.total_return_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(mom?.total_return_pct ?? null)}</b></div>
         <div className={styles.tile}><div>Open Alpha NAV</div>
           <b>{bs ? '₹' + Math.round(bs.nav).toLocaleString('en-IN') : '…'}</b></div>
-        <div className={styles.tile}><div>Open Alpha (incl. backfill)</div>
-          <b className={(bs?.ret_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{pct(bs ? bs.ret_pct : null)}</b></div>
+        <div className={styles.tile}><div>Overlapping days</div><b>{win || '…'}</b></div>
+      </div>
+
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>
+          Each sleeve over the SAME {win} days — measured the same way
+        </div>
+        <table className={styles.tbl}>
+          <thead>
+            <tr><th className={styles.txt}>&nbsp;</th><th>True North</th><th>Open Alpha</th>
+              <th>NIFTYBEES</th></tr>
+          </thead>
+          <tbody>
+            <tr><td className={styles.txt}>Money at risk</td>
+              <td>{mom?.mode === 'LIVE' ? 'LIVE · real' : 'paper'}</td>
+              <td>paper</td><td className={styles.muted}>index</td></tr>
+            <tr><td className={styles.txt}>Record over this window</td>
+              <td>live</td>
+              <td className={styles.neg}>{bs && bs.n_live_trades === 0 ? 'BACKFILL' : 'live'}</td>
+              <td className={styles.muted}>actual</td></tr>
+            <tr><td className={styles.txt}>Return</td>
+              <td>{cell(tnWin)}</td><td>{cell(oaWin)}</td><td>{cell(nbWin)}</td></tr>
+            <tr><td className={styles.txt}>Max drawdown</td>
+              <td>{cell(tnDD)}</td><td>{cell(oaDD)}</td><td className={styles.muted}>—</td></tr>
+            <tr><td className={styles.txt}>vs NIFTYBEES</td>
+              <td>{cell(tnWin != null && nbWin != null ? tnWin - nbWin : null)}</td>
+              <td>{cell(oaWin != null && nbWin != null ? oaWin - nbWin : null)}</td>
+              <td className={styles.muted}>—</td></tr>
+          </tbody>
+        </table>
+        <p className={styles.note}>
+          True North's return is <b>time-weighted</b> — the book was funded from ₹2.98L to
+          ₹9.07L inside this window, and raw NAV would show that ₹6L of deposits as +205% of
+          performance. <b>No figure here is annualised.</b> {win} days is not a year, and
+          scaling it up is how a −3% becomes a headline in either direction.
+        </p>
+      </div>
+
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>Backtest evidence — simulated, and not a live record</div>
+        <table className={styles.tbl}>
+          <thead>
+            <tr><th className={styles.txt}>&nbsp;</th><th>True North</th><th>Open Alpha</th>
+              <th>50-50 blend</th></tr>
+          </thead>
+          <tbody>
+            <tr><td className={styles.txt}>Period</td>
+              <td>2005→2026</td><td>2020→2026</td><td>2006→2026</td></tr>
+            <tr><td className={styles.txt}>CAGR</td>
+              <td>31.8%</td><td>{pct(bs?.cagr_pct ?? null)}</td><td>33.0%</td></tr>
+            <tr><td className={styles.txt}>Max drawdown</td>
+              <td className={styles.neg}>−31.6%</td>
+              <td className={styles.neg}>{pct(bs?.max_dd_pct ?? null)}</td>
+              <td className={styles.neg}>−27.5%</td></tr>
+            <tr><td className={styles.txt}>Trades · win rate</td>
+              <td className={styles.muted}>—</td>
+              <td>{bs ? `${bs.n_trades} · ${bs.win_pct}%` : '—'}</td>
+              <td className={styles.muted}>—</td></tr>
+            <tr><td className={styles.txt}>Total return</td>
+              <td className={styles.muted}>—</td>
+              <td>{pct(bs?.ret_pct ?? null)}</td>
+              <td className={styles.muted}>—</td></tr>
+            <tr><td className={styles.txt}>Study</td>
+              <td><a className={styles.studyLink} href="/app/backtest/nifty250-momentum-video">research/75</a></td>
+              <td><a className={styles.studyLink} href="/app/backtest/bluesky-ath-breakout-research142">research/142</a></td>
+              <td className={styles.muted}>—</td></tr>
+          </tbody>
+        </table>
+        <p className={styles.note}>
+          <b>Open Alpha's {pct(bs?.ret_pct ?? null)} is a {bs ? '6.7' : ''}-year simulation, not
+          money made.</b> It used to sit in the header beside True North's live nineteen days,
+          where the eye read one row and saw one comparison. A total return only means something
+          next to the years it took, so it lives here with its period attached and never in a
+          tile of its own.
+        </p>
       </div>
 
       {combined ?? (
         <div className={styles.card}>
           <div className={styles.cardTitle}>Combined performance — building</div>
           <p className={styles.note}>
-            The blended curve and stats appear once the two books share ≥25 overlapping live trading
-            days ({rows.length} so far — True North's live curve starts 24-Jul-2026). The backtested
-            blend (33.0% CAGR at −27.5% DD, 2006→2026) is on the{' '}
-            <a href="/app/backtest/bluesky-ath-breakout-research142">study page</a>.
+            The blended curve appears once the two books share ≥25 overlapping trading days
+            ({win} so far — True North's own curve starts {tn?.inception ?? '10-Aug-2026'}).
+            The backtested blend (33.0% CAGR at −27.5% DD, 2006→2026) is on the{' '}
+            <a href="/app/backtest/bluesky-ath-breakout-research142">study page</a>, and the
+            live scoreboard above is what actually exists so far.
           </p>
         </div>
       )}
