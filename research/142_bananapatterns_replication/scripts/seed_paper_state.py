@@ -40,8 +40,9 @@ rs = (score.where(elig).rank(axis=1, pct=True)*100).shift(1)
 setup = (prev_close < athcp) & (prev_close >= 0.8*athcp) & elig & (rs >= 70.0)
 trig_df = (setup & (close > athcp) & athcp.notna()).fillna(False)
 trig = trig_df.values
-nb = close['NIFTYBEES']
-weak = (nb < nb.rolling(200).mean()).shift(1).fillna(False).values
+nb = close['NIFTYBEES'].dropna()   # NaN-robust: phantom holiday rows in the union
+weak_s = (nb < nb.rolling(200).mean()).shift(1)   # index must not poison the SMA
+weak = weak_s.reindex(close.index).ffill().fillna(False).astype(bool).values
 dates = close.index
 last_day = dates[-1]
 days = np.array([i for i, d in enumerate(dates) if str(d.date()) >= START])

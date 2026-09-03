@@ -228,7 +228,14 @@ def main():
     if a.skip_weak:
         if nb is None:
             sys.exit('NIFTYBEES missing for --skip-weak')
-        weak = (nb < nb.rolling(a.gate_sma).mean()).shift(1).fillna(False)
+        # NaN-robust: compute on the traded series only, then re-align. A single
+        # phantom/missing row in the union index otherwise NaN-poisons every
+        # rolling window after it and silently disables the gate (found
+        # 2026-09-03: Kite holiday placeholder rows on 2026-01-15 killed the
+        # gate from late-Apr-2026 in every prior run).
+        nbs = nb.dropna()
+        weak = (nbs < nbs.rolling(a.gate_sma).mean()).shift(1)
+        weak = weak.reindex(close.index).ffill().fillna(False).astype(bool)
         weak_arr = weak.values
     else:
         weak_arr = np.zeros(len(close.index), dtype=bool)
