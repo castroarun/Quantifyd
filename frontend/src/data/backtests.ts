@@ -14800,6 +14800,178 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\142_bananapatterns_replication\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'truenorth-reassessment-research144',
+    title: 'True North re-assessment — gate bake-off, action variants, slots/exits, OA blend (incumbent stands)',
+    verdict:
+      'The Open Alpha optimization program (research/142) applied to the deployed True North momentum book — and the incumbent survived all of it. The inherited NIFTYBEES-100SMA weekly liquidate-all gate WON its own 71-cell bake-off (5 gate series x 14 constructions + no-gate): best net-of-tax Calmar of every cell tested, and the OA-style drawdown-from-high gates that suit ATH-breakout are outright wrong for momentum (-34..-47% DDs). The softer gate actions Arun asked about were measured, not assumed: block-new-entries-only is a WASH with liquidate-all across the 12 rebalance-day-offset ensemble (median 20.4% vs 20.7% after-tax) — its tax-churn saving is real but only ~0.22pp/yr once fiscal-year loss netting is modelled, and its worst-offset drawdown is 3.6pp WORSE (-31.9% vs -28.3%; the incumbent has the best worst-case of all six finalists). Two challengers cleared the pre-registered +1pp after-tax CAGR margin — n5/Donch15 (+2.0pp) and n8/Donch20 (+1.9pp) — but both fail the second adoption condition (W2 Calmar 1.29/1.28 vs 1.31) and carry -32..-34% worst-offset tails, so neither is adopted. Donchian-15 re-confirmed as the best-DD exit at every book width under every gate; ATR and SMA trails are strictly worse; n>=10 dilutes CAGR AND worsens drawdown. Bonus finding: the 50-50 monthly-rebalanced blend with the adopted Open Alpha spec (both legs after-tax, 30 OA seeds) runs 27.4% CAGR at -16.4% MaxDD (Calmar 1.68) — better drawdown than either leg alone — and the incumbent hard-cash gate is the (slightly) BETTER blend partner than block (corr 0.40 vs 0.43 daily): the risk-off cash is exactly what diversifies the always-in OA leg. No change to the deployed spec.',
+    status: 'COMPLETE',
+    date: '2026-09-03',
+    cardBlurb:
+      'Adversarial re-assessment of the live momentum book: 71-cell gate bake-off, gate-action and check-frequency variants, slots 5-16 x 8 exits, 12-rebalance-offset robustness bands, everything ranked AFTER 20% STCG / 12.5% LTCG with fiscal-year loss netting. The incumbent won; two CAGR-tilted challengers documented but not adopted; the TN+OA 50-50 blend measured at 27.4% after-tax CAGR / -16.4% DD.',
+    cardStats: [
+      { label: 'Verdict', value: 'CONCLUDED — incumbent stands' },
+      { label: 'Incumbent (net-tax, 12-offset median)', value: '20.7% / -25.1% DD' },
+      { label: '50-50 blend w/ Open Alpha (after-tax)', value: '27.4% / -16.4% DD' },
+    ],
+    system: {
+      intro:
+        'The system under test is the DEPLOYED True North spec (services/momentum_paper.py), re-implemented deployed-faithfully (no-trim top-up rebalance, exact per-side costs) rather than reusing the research/62 re-equalizing engine:',
+      rows: [
+        { k: 'Universe', v: 'Nifty-200 proxy: point-in-time top-200 by trailing-6-month median traded value, ETFs and index series excluded (the live book uses the official constituent list — not reconstructable historically; divergence stated).' },
+        { k: 'Score', v: 'Blended 6m (126d) + 12m (252d) relative strength vs NIFTYBEES, 50/50.' },
+        { k: 'Book', v: 'Top-8 equal-weight, 100% invested when risk-on; keep-buffer rank 22 (= round(2.75 x n)); monthly rebalance at the last trading day, winners never trimmed (top-up only).' },
+        { k: 'Gate', v: 'Weekly (last trading day of week): NIFTYBEES < 100-day SMA -> liquidate ALL to cash; redeploy at the next month-end once back above.' },
+        { k: 'Stop', v: 'Daily: close below own prior-15-day low (Donchian-15) -> exit that stock.' },
+        { k: 'Costs / cash / tax', v: '0.3% round-trip; idle cash 6.5% p.a. (5% stressed); tax on realization — 20% STCG <365d, 12.5% LTCG, netted per Indian fiscal year (STCL offsets STCG then LTCG), settled each Apr 1.' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered BEFORE any run (STATUS doc, sections 1-4): ranking metric = net-of-cost net-of-TAX CAGR on 2012->now, DD constraint within 3pp of incumbent; adoption needs >1pp median CAGR across all 12 rebalance-day offsets AND W1+W2 Calmar >= incumbent AND a plateau.',
+      rows: [
+        { k: 'Windows', v: 'WA 2012-01->2026-09 primary (all gate series defined) - W1 2016-06->2019-12 (momentum dead zone) - W2 2020->now - W0 2006-04->now (includes 2008, NIFTYBEES-gate cells only).' },
+        { k: 'Offset ensemble', v: 'Rebalance anchored 0..11 trading days before month-end — the deterministic analogue of OA seed variance for a rank-based system. Medians [min..max] reported.' },
+        { k: 'Data hygiene', v: '2026-01-15 phantom-row purge confirmed (0 rows); residual phantom-signature rows 2025-03-18 / 2024-01-15 are genuinely-untraded small-caps (benign for Nifty-200); NIFTYBEES gate series current to 2026-09-03; engine indicators verified NaN-robust.' },
+        { k: 'Host / data', v: 'VPS market_data.db snapshot 2026-09-03; research/144 scripts; ~660 engine runs, ~25 min compute.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Gate bake-off — 71 cells, net-of-tax 2012->now (N8/Donch15/weekly/liquidate-all held fixed)',
+        caption: 'The inherited gate won its own bake-off. Only the NIFTY50-SMA100 near-twin and the slower NIFTYBEES 20/100 crossover also keep drawdown within 3pp of the incumbent; every other series and construction — including the DD-from-252d-high family that works for Open Alpha — fails on drawdown. Only NIFTYBEES-based gates protect 2008 (the four index series only start in 2011).',
+        columns: ['Gate', 'CAGR (net-tax)', 'MaxDD', 'Calmar', 'W1', 'W2', '2006+ DD'],
+        rows: [
+          ['NIFTYBEES SMA100 - INCUMBENT', '20.9%', '-23.7%', '0.88', '15.3%', '27.3%', '-23.7%'],
+          ['NIFTY50 SMA100 (near-twin)', '20.6%', '-23.7%', '0.87', '15.5%', '28.2%', '-52.0% (series starts 2011)'],
+          ['NIFTYBEES EMA100', '21.1%', '-27.6%', '0.77', '13.8%', '27.6%', '-27.6%'],
+          ['NIFTYBEES XO 20/100', '18.2%', '-26.0%', '0.70', '13.3%', '27.4%', '-26.0%'],
+          ['NIFTYBEES DD15 (OA-style drawdown gate)', '22.3%', '-39.6%', '0.56', '15.3%', '35.5%', '-39.6%'],
+          ['NO GATE', '23.9%', '-46.5%', '0.51', '15.1%', '39.7%', '-52.0%'],
+          ['NIFTYBEES buy-and-hold benchmark', '12.7%', '-36.3%', '0.35', '13.2%', '11.8%', '-59.7%'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'Finalists across the 12 rebalance-day offsets — net-of-tax, 2012->now, median [min..max]',
+        caption: 'The offset ensemble REVERSED the single-path rankings: block-new-only and cash-with-monthly-check looked better at offset 0 but are a wash across offsets, and the incumbent has the best worst-offset drawdown of all six. The two CAGR winners pay for it in the tail.',
+        columns: ['Config', 'CAGR med [min..max]', 'DD med / worst offset', 'Calmar med', 'W1 med', 'W2 med'],
+        rows: [
+          ['INCUMBENT: liquidate-all, n8, Donch15', '20.7% [14.9..25.1]', '-25.1% / -28.3%', '0.88', '13.6%', '27.3%'],
+          ['Block-new-entries-only, n8, Donch15', '20.4% [14.2..24.9]', '-23.6% / -31.9%', '0.90', '13.7%', '27.8%'],
+          ['Liquidate-all, monthly check, n8, Donch15', '20.7% [14.4..25.5]', '-23.9% / -30.1%', '0.90', '13.2%', '28.5%'],
+          ['Liquidate-all, n5, Donch15', '22.7% [14.9..28.9]', '-27.5% / -34.3%', '0.91', '17.9%', '31.6%'],
+          ['Liquidate-all, n8, Donch20', '22.6% [16.0..26.1]', '-27.5% / -32.2%', '0.88', '18.2%', '31.2%'],
+          ['Block-new-only, n5, Donch15', '21.8% [13.8..28.3]', '-28.9% / -36.8%', '0.82', '16.8%', '30.8%'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'Pre-registered adoption test (>1pp median net-tax CAGR AND W1+W2 Calmar >= incumbent AND plateau)',
+        columns: ['Challenger', 'dCAGR vs incumbent (12-offset median)', 'W1 Calmar (inc 0.54)', 'W2 Calmar (inc 1.31)', 'Adopt?'],
+        rows: [
+          ['n5 / Donch15', '+2.01pp (passes margin)', '0.70 (passes)', '1.29 (FAILS by 0.02)', 'NO — also -34.3% worst-offset DD'],
+          ['n8 / Donch20', '+1.92pp (passes margin)', '0.62 (passes)', '1.28 (FAILS by 0.03)', 'NO — also -32.2% worst-offset DD'],
+          ['Block-new-only n8', '-0.34pp (fails margin)', '—', '—', 'NO'],
+          ['Monthly-check n8', '-0.01pp (fails margin)', '—', '—', 'NO'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: '50-50 monthly-rebalanced blend with the ADOPTED Open Alpha spec — both legs AFTER-TAX, 30 OA seeds, 2006-04->2026-09',
+        caption: 'OA leg = trail-15 SMA, -8% stop, 16 slots @6.25%, no gate, 25bps, cash 5%, calendar-year-netted tax. The blend beats both legs on drawdown by a wide margin and is stable across all 30 seeds (blend DD range just -15.9..-16.7%). The incumbent liquidate-all TN leg is the slightly BETTER diversifier: block stays invested through corrections, so its correlation to the always-in OA leg RISES.',
+        columns: ['TN leg', 'Blend CAGR med [min..max]', 'Blend DD med', 'Calmar', 'Corr daily / monthly', 'TN solo', 'OA solo med'],
+        rows: [
+          ['Liquidate-all (incumbent)', '27.4% [26.7..28.5]', '-16.4%', '1.68', '0.40 / 0.54', '19.5% / -23.7%', '34.9% / -26.4%'],
+          ['Block-new-only', '27.2% [26.5..28.3]', '-16.4%', '1.67', '0.43 / 0.57', '19.1% / -22.1%', '34.9% / -26.4%'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Incumbent (net-tax, offset median)', value: '20.7% / -25.1%', hint: '2012->now; gross-of-tax 24.8%; tax drag 4.1pp/yr' },
+        { label: 'Best worst-offset DD', value: '-28.3%', tone: 'pos', hint: 'the incumbent — best tail of all six finalists' },
+        { label: 'Gate bake-off', value: 'incumbent #1 of 71', tone: 'pos', hint: 'best net-tax Calmar of every gate cell tested' },
+        { label: 'Block-new-only tax saving', value: '~0.22pp/yr', hint: 'FY loss netting absorbs most of the mass-realization hit' },
+        { label: 'TN+OA 50-50 blend (after-tax)', value: '27.4% @ -16.4%', tone: 'pos', hint: 'Calmar 1.68; better DD than either leg alone' },
+        { label: 'Challengers adopted', value: '0', hint: 'n5/D15 and n8/D20 clear the CAGR margin, fail W2 Calmar + tail DD' },
+      ],
+      tables: [
+        {
+          title: 'Gate ACTION x check frequency (n8/Donch15, net-tax, offset 0) + tax-churn quantification',
+          caption: 'Daily liquidation is WORSE than weekly (whipsaw); block is check-frequency-invariant by construction; halve-exposure buys CAGR with an unacceptable drawdown. Tax drag = 12-offset median gross-of-tax minus net-of-tax CAGR.',
+          columns: ['Action / freq', 'CAGR', 'MaxDD', 'Calmar', 'Tax drag (median)'],
+          rows: [
+            ['Liquidate-all / weekly (INCUMBENT)', '20.9%', '-23.7%', '0.88', '4.13pp/yr'],
+            ['Liquidate-all / daily', '19.9%', '-28.0%', '0.71', '—'],
+            ['Liquidate-all / monthly', '21.2%', '-21.6%', '0.98', '4.15pp/yr'],
+            ['Block-new-only (any freq)', '21.1%', '-22.1%', '0.96', '3.91pp/yr'],
+            ['Halve-exposure / weekly', '22.1%', '-32.6%', '0.68', '—'],
+          ],
+          highlightRows: [0],
+        },
+        {
+          title: 'Per-year (net-of-cost, offset 0): incumbent vs the two documented challengers',
+          caption: '2016-19 is the momentum dead zone (W1); n5 concentrates both the up years (2020: +89.6%) and the pain (2015/2018). 2026 is YTD.',
+          columns: ['Year', 'Incumbent n8/D15 %', 'n5/D15 %', 'n8/D20 %'],
+          rows: [
+            ['2008', '-12.8', '-13.6', '-19.2'],
+            ['2011', '-4.1', '-5.3', '-7.2'],
+            ['2014', '+47.3', '+48.5', '+61.0'],
+            ['2015', '-6.1', '-5.6', '-11.0'],
+            ['2017', '+56.1', '+61.8', '+70.2'],
+            ['2018', '-4.4', '-8.2', '-10.7'],
+            ['2019', '-4.9', '+1.0', '-6.0'],
+            ['2020', '+64.0', '+89.6', '+59.3'],
+            ['2021', '+62.9', '+68.9', '+84.2'],
+            ['2022', '+7.4', '+8.3', '+6.9'],
+            ['2023', '+34.7', '+43.3', '+36.0'],
+            ['2024', '+9.9', '+4.8', '+11.7'],
+            ['2025', '+10.7', '+9.1', '+7.4'],
+            ['2026*', '+7.4', '+10.1', '+6.2'],
+          ],
+          heatmap: true,
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'THE INCUMBENT — NIFTYBEES-100SMA weekly liquidate-all gate, top-8, buffer-22, Donchian-15, monthly no-trim rebalance',
+        summary: 'Survived a 71-cell gate bake-off, 27 action/frequency cells, 240 slots-x-exits runs and the 12-offset ensemble under a pre-registered after-tax adoption rule. Its worst-offset drawdown (-28.3%) is the best of all finalists, and its hard risk-off cash makes it the better Open Alpha blend partner. No change deployed.',
+        metrics: [
+          { k: 'Net-of-tax (12-offset median)', v: '20.7% CAGR / -25.1% DD / Calmar 0.88' },
+          { k: 'Gross-of-tax (median)', v: '24.8% CAGR; tax drag 4.1pp/yr (FY-netted STCG/LTCG)' },
+          { k: '50-50 blend w/ OA (after-tax)', v: '27.4% / -16.4% / Calmar 1.68, corr 0.40 daily' },
+          { k: 'Sensitivities', v: '0.5% RT cost: -1.3pp; 5% cash yield: -1.0pp; no ranking flips' },
+        ],
+        rejected: [
+          'All alternative gate series (NIFTY50/500/MIDCAP150/SMLCAP250) and constructions (EMA, crossovers, DD8-15-from-high, momentum-negative) — none beats SMA100 under the DD constraint',
+          'Block-new-only and halve-exposure gate actions; daily gate checks (whipsaw)',
+          'ATR(20)x3 and per-stock SMA50/100 trailing exits (DD -31..-41%); removing the stop entirely (DD -36%+)',
+          'Books of n >= 10 (dilute CAGR AND worsen DD; W1 collapses to 9-12%)',
+          'n5/Donch15 and n8/Donch20 for live money (documented for discretion: +2pp after-tax but -32..-34% worst-offset tails and a W2-Calmar fail)',
+        ],
+      },
+    ],
+    caveats: [
+      'Multiple testing: ~330 cells were tried; guarded by pre-registering the metric and adoption margin BEFORE any run, ranking on offset-ensemble medians rather than single paths, and requiring both validation windows — but treat all point estimates as optimistic-end.',
+      'The backtest universe is the survivorship-free traded-value proxy for the Nifty 200, not the official constituent history (not reconstructable); the live book trades the official list.',
+      'Tax model: Indian FY netting (STCL offsets STCG then LTCG), no loss carry-forward, LTCG exemption ignored — net conservative. Terminal unrealized gains untaxed.',
+      'Engine convention differs from research/62 (no-trim top-up rebalance = the deployed behavior, vs r/62 monthly re-equalization), so incumbent numbers here re-baseline r/62; all comparisons are within-engine.',
+      'Window stats are slices of one full-period NAV (positions carry across window boundaries).',
+      'The blend result is a portfolio FACT, not a deployment: a combined TN+OA book needs its own study, sizing decision and STATUS doc. Correlations converge in crashes — both legs are long Indian equity momentum.',
+      'Live note (2026-09-03): NIFTYBEES sits a hair below its 100-SMA; a Friday gate liquidation would be correct behavior, not a defect.',
+    ],
+    githubLinks: [{ label: 'research/144 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/144_truenorth_reassessment' }],
+    projectPaths: [
+      'research\\144_truenorth_reassessment\\TRUENORTH_MOMENTUM_DAILY_SWEEP_STATUS.md',
+      'research\\144_truenorth_reassessment\\scripts\\ (tn_sweep, tn_blend).py',
+      'research\\144_truenorth_reassessment\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {

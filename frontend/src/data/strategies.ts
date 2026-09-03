@@ -223,8 +223,10 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'momentum-universe-bakeoff', title: 'Universe bake-off — Nifty 200 vs 250 vs 51-250 vs Midcap 150 vs 500' },
       { slug: 'momentum-250-leverage-frontier', title: 'Leverage frontier — how far can this book be pushed?' },
       { slug: 'momentum-put-hedge-overlay', title: 'Put-hedge overlay vs the cash-exit gate', verdict: 'SIGNAL' },
+      { slug: 'truenorth-reassessment-research144', title: 'True North reassessment - gate bake-off, action variants, OA blend (incumbent stands)' },
     ],
     changeLog: [
+      { date: '3 Sep 2026', text: 'Re-assessed end-to-end (research/144): 71-cell gate bake-off, gate-action variants, slots/exits, 12-offset robustness, all after-tax - the incumbent spec WON everything; no change deployed. Block-new-only gate is a wash (tax saving only ~0.22pp/yr) and a worse Open Alpha blend partner; n5/Donch15 and n8/Donch20 add ~2pp CAGR but fail the tail-DD/Calmar gates. 50-50 blend with Open Alpha measured at 27.4% after-tax CAGR / -16.4% DD (Calmar 1.68).' },
       { date: '28 Aug 2026', text: 'DECIDED: no MTF for now. research/114 found 2.5x survivable (67.3% CAGR vs 32.9%, 0 margin calls in 20y) but at a -52% drawdown and a WORSE Calmar (1.30 vs 1.50) — leverage, not new edge. Arun declined. The book stays on CNC, unlevered. Do not read the study as a mandate.' },
       { date: '26 Aug 2026', text: 'Month-end order fixed: the Donchian exit check now runs BEFORE the rebalance refills, and the rebalance refuses to buy any name already below its stop. Month-end is now read off the trading calendar, not just weekends.' },
       { date: '26 Aug 2026', text: 'Live P&L chart now compares against Nifty 50 / 500 / Midcap 150 / Smallcap 250, with deposits removed (time-weighted) — the old card counted deposits as performance and read +155.85%.' },
