@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-02T15:45:01",
+ "generated_at": "2026-09-03T11:40:01",
  "books": {
   "orb": {
    "days": [
@@ -1966,6 +1966,36 @@
   "n500m": {
    "days": [
     {
+     "date": "2026-09-03",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 3203.9,
+     "deployed": 158981.1,
+     "cum": 18150.9,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "RBLBANK",
+       "pnl": 3203.9,
+       "deployed": 158981.1,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "long",
+       "signal_type": "volbo",
+       "timeframe": "10min",
+       "qty": 398,
+       "entry_price": 399.45,
+       "exit_price": 407.5,
+       "entry_time": "2026-09-03T09:20:00",
+       "exit_time": "2026-09-03T10:41:00.042324",
+       "exit_reason": "TARGET",
+       "exit_policy": "T_R_TARGET_1.0R"
+      }
+     ]
+    },
+    {
      "date": "2026-09-02",
      "trades": 1,
      "wins": 0,
@@ -2914,22 +2944,22 @@
     "basis": "risk-sized \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent",
     "max_position": 204576.0,
     "busiest_day": 305348.4,
-    "avg_trade": 132887.5,
-    "days": 28,
-    "trades": 34,
-    "wins": 19,
-    "win_rate": 55.9,
-    "net": 14947.0,
+    "avg_trade": 133633.03,
+    "days": 29,
+    "trades": 35,
+    "wins": 20,
+    "win_rate": 57.1,
+    "net": 18150.9,
     "best_day": 8551.8,
     "worst_day": -4004.0,
-    "green_days": 14,
+    "green_days": 15,
     "costs_modelled": false,
-    "t_stat": 1.21,
-    "top3_share": 89.6,
+    "t_stat": 1.43,
+    "top3_share": 73.8,
     "broker_trades": 0,
-    "sim_trades": 34,
+    "sim_trades": 35,
     "first": "2026-05-08",
-    "last": "2026-09-02"
+    "last": "2026-09-03"
    }
   },
   "i75wr": {
@@ -10036,6 +10066,63 @@
   "ha-paper": {
    "days": [
     {
+     "date": "2026-09-03",
+     "trades": 4,
+     "wins": 1,
+     "losses": 3,
+     "pnl": -1078.93,
+     "deployed": 96880.89,
+     "cum": -14313.47,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "INFY",
+       "pnl": 36.51,
+       "deployed": 25332.43,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1126.96181,
+       "qty": 22.478513768404984,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "FEDERALBNK",
+       "pnl": -80.41,
+       "deployed": 24031.4,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 346.09614,
+       "qty": 69.43562562001378,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "NESTLEIND",
+       "pnl": -664.01,
+       "deployed": 23941.18,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1415.5752,
+       "qty": 16.912685355398484,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "TCS",
+       "pnl": -371.02,
+       "deployed": 23575.88,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 2326.1019600000004,
+       "qty": 10.13535946783969,
+       "reason": "PATTERN"
+      }
+     ]
+    },
+    {
      "date": "2026-09-02",
      "trades": 11,
      "wins": 2,
@@ -12973,26 +13060,63 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24678.17,
-    "days": 30,
-    "trades": 231,
-    "wins": 82,
-    "win_rate": 35.5,
-    "net": -13234.52,
+    "avg_trade": 24670.38,
+    "days": 31,
+    "trades": 235,
+    "wins": 83,
+    "win_rate": 35.3,
+    "net": -14313.45,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.14,
+    "t_stat": -1.23,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 231,
+    "sim_trades": 235,
     "first": "2026-07-23",
-    "last": "2026-09-02"
+    "last": "2026-09-03"
    }
   },
   "ohol-paper": {
    "days": [
+    {
+     "date": "2026-09-03",
+     "trades": 2,
+     "wins": 0,
+     "losses": 2,
+     "pnl": -3923.44,
+     "deployed": 591270.07,
+     "cum": -5303.54,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "TRENT",
+       "pnl": -3782.78,
+       "deployed": 498582.88,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 2849.04503,
+       "lots": 1,
+       "lot_size": 175,
+       "reason": "ST_FLIP"
+      },
+      {
+       "symbol": "TATASTEEL",
+       "pnl": -140.65,
+       "deployed": 92687.19,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 185.37437100000002,
+       "lots": 1,
+       "lot_size": 500,
+       "reason": "ST_FLIP"
+      }
+     ]
+    },
     {
      "date": "2026-09-02",
      "trades": 1,
@@ -13675,22 +13799,22 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1466809.82,
     "busiest_day": 4383202.38,
-    "avg_trade": 760901.87,
-    "days": 15,
-    "trades": 40,
+    "avg_trade": 738746.31,
+    "days": 16,
+    "trades": 42,
     "wins": 13,
-    "win_rate": 32.5,
-    "net": -1380.12,
+    "win_rate": 31.0,
+    "net": -5303.56,
     "best_day": 21357.88,
     "worst_day": -6724.26,
     "green_days": 3,
     "costs_modelled": null,
-    "t_stat": -0.05,
+    "t_stat": -0.18,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 40,
+    "sim_trades": 42,
     "first": "2026-08-07",
-    "last": "2026-09-02"
+    "last": "2026-09-03"
    }
   },
   "orb-paper": {

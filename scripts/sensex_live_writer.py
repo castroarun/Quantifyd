@@ -51,7 +51,7 @@ def _arm(sys_cfg, leg, spot):
         d = min(abs(hi - spot), abs(spot - lo)) if spot else 0
         return "move-stop %d–%d (%.0f away)" % (lo, hi, d)
     if sl >= 900000:
-        return "NAKED — UNARMED"
+        return "no leg SL · book guard"  # DTE0 by design (research/114); the book stop is the arm
     tag = " · BE-protect" if "PROTECTIVE" in notes else ""
     return "SL %.0f%s" % (sl, tag)
 
@@ -187,11 +187,41 @@ def build():
             "legs": legs,
         })
 
+    # book guard: mirror services/nas_portfolio_stop thresholds so the page shows
+    # exactly what the 10s monitor enforces (same per-lot values, same DTE0 widening).
+    guard = None
+    try:
+        from services.nas_portfolio_stop import STOP_PER_LOT, VENUES
+        from services.nas_day_matrix import trading_dte, EXPIRY_WEEKDAY
+        _dte0 = trading_dte(None, EXPIRY_WEEKDAY["sensex"]) == 0
+        _stop_pl = 3000.0 if _dte0 else STOP_PER_LOT
+        _tp_pl = VENUES["sensex"].get("tp_per_lot") or 0
+        if not _dte0 and _tp_pl:
+            _tp_pl = 1667.0
+        _lq = 0
+        for _sy in systems:
+            for _lg in _sy["legs"]:
+                if _lg.get("mode") == "live":
+                    _lq += _lg.get("qty") or 0
+        _lots = int(round(_lq / 2.0 / 20.0))  # 2 legs per straddle, SENSEX lot 20
+        if _lots > 0:
+            guard = {
+                "lots": _lots, "dte0": _dte0,
+                "stop": -round(_stop_pl * _lots),
+                "tp": round(_tp_pl * _lots) if _tp_pl else None,
+                "stop_per_lot": -round(_stop_pl),
+                "tp_per_lot": round(_tp_pl) if _tp_pl else None,
+                "monitor": "10s",
+            }
+    except Exception as _e:
+        guard = {"error": str(_e)[:80]}
+
     return {
         "generated_at": datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST"),
         "spot": round(spot, 1) if spot else None,
         "expiry": (datetime.now(IST).date() + timedelta(days=(3 - datetime.now(IST).date().weekday()) % 7)).strftime("%d %b current-week (Thu)"),
         "day_pnl": round(day_pnl),
+        "book_guard": guard,
         "systems": systems,
     }
 

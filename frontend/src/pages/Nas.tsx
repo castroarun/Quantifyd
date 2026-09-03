@@ -574,6 +574,21 @@ function SensexLiveCard() {
         9:16 systems on SENSEX (Wed/Thu 0/1-DTE) · {d ? `updated ${d.generated_at}` : 'after-hours — showing recorded sessions'}
       </div>
 
+      {d && d.book_guard && d.book_guard.lots > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+          fontSize: 11, padding: '6px 10px', marginBottom: 8, borderRadius: 8,
+          border: '1px dashed var(--line)', color: 'var(--ink-muted)' }}>
+          <b style={{ color: 'var(--ink)', letterSpacing: 0.3 }}>BOOK GUARD</b>
+          <span>stop <b style={{ color: 'var(--neg, #d1242f)' }}>{rs(d.book_guard.stop)}</b>
+            {' '}({rs(d.book_guard.stop_per_lot)}/lot{d.book_guard.dte0 ? ' · widened for expiry' : ''})</span>
+          {d.book_guard.tp != null && (
+            <span>take-profit <b style={{ color: 'var(--pos, #1a7f37)' }}>{rs(d.book_guard.tp)}</b>
+              {' '}({rs(d.book_guard.tp_per_lot)}/lot)</span>
+          )}
+          <span>covers all {d.book_guard.lots} live SENSEX lots · checked every {d.book_guard.monitor}</span>
+        </div>
+      )}
+
       {mtm && mtm.points && mtm.points.length >= 2 ? (() => {
         const pts = mtm.points as [string, number][];
         const W = 900, H = 120, PL = 6, PR = 6, PT = 8, PB = 16;
