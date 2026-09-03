@@ -78,9 +78,10 @@ def run(baseline=0.30, g=0.10, label=''):
 dfA = run(0.30, 0.10, 'B: smoothed g=10%')
 dfB = run(0.30, 0.05, 'C: smoothed g=5%')
 dfC = run(0.30, 0.075, 'D: smoothed g=7.5%')
+dfD = run(0.25, 0.075, 'E: baseline 25%, g=7.5%  (ADOPTION CANDIDATE)')
 
-for tag, df in [('g10', dfA), ('g5', dfB), ('g75', dfC)]:
+for tag, df in [('g10', dfA), ('g5', dfB), ('g75', dfC), ('b25_g75', dfD)]:
     df.to_csv(STUDY / 'results' / f'dividend_sim_v2_{tag}.csv', index=False)
 
-print('\nQuarter-by-quarter, g=7.5%:')
-print(dfC.to_string(index=False))
+print('\nQuarter-by-quarter, baseline 25% g=7.5%:')
+print(dfD.to_string(index=False))
