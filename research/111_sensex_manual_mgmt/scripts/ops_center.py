@@ -121,7 +121,16 @@ REVIEWS = [
      "- plus the 16-slot @6.25% sizing found to cut seed spread 6.7x->2.5x. Run AFTER the "
      "Dec-5 paper-soak review so live-fill evidence informs the entry modeling. Guard "
      "multiple testing: joint grid is large - pre-register the ranking metric and use the "
-     "two-window + plateau + worst-seed discipline from the gate bake-off."),
+     "two-window + plateau + worst-seed + PAIRED-BY-SEED discipline (the 30-seed paired test "
+     "overturned the 10-seed DD10 median verdict: gate costs -1.6pp/yr on 20/30 seeds, its "
+     "value is purely 2008 insurance 30/30; 16-slot no-gate was the free win: +0.1pp median, "
+     "worst seed +1.7pp, 2026 dispersion [+4.9..+37.7] with 0/30 negative). ALSO IN SCOPE "
+     "(Arun 2026-09-03): (a) model idle-cash CASHIETF yield ~6% in the sim - current engine "
+     "holds cash at ZERO, understating all configs and flattering no-gate vs gated; (b) "
+     "SELECTION-ALPHA mining: the signal flow far exceeds the book - study which qualifying "
+     "breakouts became the big runners, find common causal features (RS, volume surge, base "
+     "tightness, sector...), build a ranked-selection rule, validate walk-forward both "
+     "directions; lookahead/overfit risk is highest here - causal features only, OOS gates."),
     ("First live dividend declaration (True North + Open Alpha) - verify the 2026-Q3 run",
      "2026-10-01", "SCHEDULED",
      "The 19:15 dividend_declare cron should fire its first real declarations on 30-Sep/01-Oct. "
