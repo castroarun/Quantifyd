@@ -67,7 +67,7 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'nas-nifty',
     name: 'NAS Suite · NIFTY',
     subtitle: 'NFO weeklies · short ATM straddle · ATM / ATM2 / ATM4 + 09:16 one-shot',
-    status: 'live',
+    status: 'paper',
     size: '2 lots · qty 130 per arm',
     since: '07 Jul 2026',
     rule:
@@ -92,6 +92,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'fardte-rescue', title: 'Rescuing the far-from-expiry days — five ideas, four dead, one that works', verdict: 'SIGNAL' },
     ],
     changeLog: [
+      { date: '03 Sep 2026', text: 'Stood down to PAPER with the entire NAS book (Arun): master mode paper + matrix live flags off + BOOKS mode dropped. Ex-live cohort badge + Trade Book filter on /app/nas keep its paper record separately trackable as the re-arm candidate set.' },
       { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to max(price_x, roll premium) × 1.3 (research/113 MAXV: old 1.3×roll-premium rule was the churniest variant, 32% restop; max() keeps the survivor anchor without going tight on overshoot rolls).' },
       { date: '17 Aug 2026', text: 'ST-trail confirm-counter bug fixed (counter lived in a throwaway local, never reached 3/3).' },
       { date: '14 Aug 2026', text: 'Kite MARKET-order rejection handled; sleeves fall back to paper safely.' },
@@ -102,7 +103,7 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'nas-sensex',
     name: 'NAS Suite · SENSEX',
     subtitle: 'BFO weeklies · short ATM straddle · ATM / ATM2 / ATM4',
-    status: 'live',
+    status: 'paper',
     size: '2 lots · qty 40 per arm',
     since: '05 Aug 2026',
     rule:
@@ -124,6 +125,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'nifty-straddle-lookahead-audit', title: 'Straddle & iron-fly look-ahead audit — honest comparison' },
     ],
     changeLog: [
+      { date: '03 Sep 2026', text: 'Stood down to PAPER with the entire NAS book (Arun): master mode paper + matrix live flags off + BOOKS mode dropped. Ex-live cohort badge + Trade Book filter on /app/nas keep its paper record separately trackable as the re-arm candidate set.' },
       { date: '18 Aug 2026', text: 'Wednesday flipped to PAPER (matrix dte1 off): the per-leg mechanic ≈ −₹137/lot on Wed with a −₹17k/lot p05 tail — TB-SENSEX\'s real 10:30-12:00 window carries Wednesday instead. Thursday (DTE0) stays real.' },
       { date: '18 Aug 2026', text: 'Suite resized 3 → 2 lots/system — notional parity with the NIFTY book (₹31L vs ₹31.5L per leg; 3 lots was 148%). Restores the portfolio-stop study sizing.' },
       { date: '18 Aug 2026', text: 'ATM4 rolled-leg SL re-anchored to max(price_x, roll premium) × 1.3 (shared executor with the NIFTY suite — research/113).' },
@@ -136,7 +138,7 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'csl-timeb-nifty',
     name: 'NIFTY TimeB (TB-CSL)',
     subtitle: 'NFO · time-boxed short straddle · CSL_TIMEB_NIFTY',
-    status: 'live',
+    status: 'paper',
     size: '8 lots · qty 520 (10 lots from 24-Aug)',
     since: '14 Aug 2026',
     rule:
@@ -156,6 +158,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '28 Aug 2026', text: 'Pulled from LIVE after the -8,152 TimeB window (Arun); recording continued on paper. 03 Sep: whole NAS book stood down, so this row stays paper.' },
       { date: '25 Aug 2026', text: 'Monday returns live in a NEW book, CSL_TIMEB_NIFTY_MON_AM: 09:16-11:16, 8 lots, Rs1,000/lot rupee stop. The r/124 re-run on measured costs made this the best Monday cell (median +Rs6,920/day @8L, win 88.9%, R:R@p95 1:1.0, stop-invariant across every arm) and the rupee stop caps its worst day best (-15,752 vs -20,464 unstopped, -28,496 at SL20). USER OVERRIDE: the cell still fails the label-shuffle null at p=0.376 on 18 Mondays, so it is not statistically distinguishable from mined noise - Arun chose live after seeing that. The old 13:00-14:00 Monday cell continues on paper. Engine change: the CSL daemon gained rupee-per-lot stop support (rsN), additive - percent and none arms unchanged.' },
       { date: '23 Aug 2026', text: 'Monday dropped from live trading — the window atlas (r/122) condemned it by a third independent route (R:R@p95 1:11.8, modelled P(loss) 52%; r/120 and r/121 agree). Friday was briefly dropped in the same decision, then KEPT on its atlas KEEP verdict (93% win, 1:6.9). The Monday cell continues on paper (CSL_TIMEB_NIFTY_MON, 8L) so the November re-run has live-shaped evidence. Same day: Thursday TIMEB SENSEX 10-lot bump declined — stays 8 lots.' },
       { date: '19 Aug 2026', text: 'Thursday split out into CSL_TIMEB_NIFTY_THU at 3 lots (entry 09:25, exit 15:20, SL20): DTE3 is the grid\'s 2nd-best NIFTY cell (mean ₹16,956, 91%) but full size collides with SENSEX\'s best day at current capital. Main book dark on Thu. 8→10 lots scheduled 24-Aug.' },
@@ -167,7 +170,7 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'nas-comb20',
     name: 'NIFTY COMB (NAS_COMB20)',
     subtitle: 'NFO · combined-20% stop sleeve',
-    status: 'live',
+    status: 'paper',
     size: '2 lots · qty 130 · Tuesdays only',
     since: '14 Aug 2026',
     rule:
@@ -186,6 +189,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'sensex-nifty-stop-by-dte', title: 'Stop calibration by DTE — where combined-SL beats per-leg' },
     ],
     changeLog: [
+      { date: '03 Sep 2026', text: 'Stood down to PAPER with the entire NAS book (Arun): master mode paper + matrix live flags off + BOOKS mode dropped. Ex-live cohort badge + Trade Book filter on /app/nas keep its paper record separately trackable as the re-arm candidate set.' },
       { date: '31 Aug 2026', text: 'MONDAY MOVED OFF REAL MONEY to paper as NAS_COMB20_MON (2 lots, 09:16-15:20 SL30 — size and stop carried over unchanged so the paper record continues the live one). This book was the only LIVE sleeve losing money: −₹10,089 at t −1.00 over 10 sessions, with all three live Mondays negative (−₹56,630 at 10-lot equivalent). research/138 shows the cause is WHICH DAYS it trades, not its parameters — no stop level rescues DTE1 (positive at all six levels tested but t only 1.0–1.6, roughly 4× DTE3\'s drawdown, and its replay edge is almost entirely in the first half of the sample: ₹1,31,845 → ₹12,960 across halves). The deeper reason: the 9:16 suite and this held-straddle/combined-stop mechanic have near-opposite weekday edges (suite t Mon 2.89 / Tue −0.24 / Thu −0.37; combined-stop t Mon 1.23 / Tue 1.85 / Thu 3.85), and the live config ran both on Mon+Tue — so COMB was piling correlated size onto the suite\'s single best day while sitting out the days it earns on. Thursday deliberately NOT promoted (Arun): DTE3 is the steadiest cell in the grid and is stop-invariant from SL20 upward (0/18 stops fired), but NIFTY came off Thursdays on 27-Aug for SENSEX-expiry margin and that stands — it keeps accumulating paper Thursdays for the 2026-10-30 ops review. No service restart needed: the CSL executor is cron-launched standalone at 09:12. Study: research/138_comb20_dte_allocation/results/RESULTS.md.' },
       { date: '27 Aug 2026', text: 'NIFTY OFF on Thursdays live - paper only. Reverses the 19-20 Aug Option-B merge (commit e9aa381) that folded NIFTY-Thu into this book as a 5-lot DTE3 cell after the separate 3-lot Thursday book was retired. Arun call: Thursday is SENSEX expiry and its best day of the week, and NIFTY at DTE3 was competing for the same margin. NIFTY live lots on Thursday go 5 to 0. The cell continues as NAS_COMB20_THU (paper, 5L, 09:16-15:20 SL20) so the DTE3 evidence that motivated Option B (grid mean ~Rs16,956 at 91%) keeps accumulating and this is revisited on data rather than on one bad session. Ops review 2026-10-30.' },
       { date: '17 Aug 2026', text: 'Account-level book stop bought back COMB\'s CE without COMB knowing — unified per-system ledger pending (TODO 2026-08-24).' },
@@ -239,7 +243,7 @@ export const SYSTEMS: StrategySystem[] = [
     id: 'csl-timeb-sensex',
     name: 'TIMEB SENSEX',
     subtitle: 'BFO · time-boxed short straddle · CSL_TIMEB_SENSEX',
-    status: 'live',
+    status: 'paper',
     size: '8 lots · qty 160',
     since: '19 Aug 2026',
     rule: 'Time-boxed SENSEX straddle windows, REAL from 19-Aug at 8 lots (notional parity with NIFTY TB@8L). The Wed 10:30-12:00 window (+₹1,612/day at study size) is the venue\'s only earning construction — it replaces the suite\'s real Wednesday.',
@@ -257,6 +261,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'csl-best-config-straddles', title: 'CSL best-config straddles — entry × exit × combined-SL per DTE' },
     ],
     changeLog: [
+      { date: '28 Aug 2026', text: 'Pulled from LIVE after the -8,152 TimeB window (Arun); recording continued on paper. 03 Sep: whole NAS book stood down, so this row stays paper.' },
       { date: '20 Aug 2026', text: 'Wednesday (DTE1) switched to LIVE on the user\'s instruction. research/118 supports it: Wednesday is the calmest weekday over 1,354 days (1 catastrophic day in 125, the fewest of any) and the −₹16,502 day that had scared us off sits inside a 46-day bucket earning +105.7 pts/day at 80% win. Per-leg 30% retained as status quo pending its own study.' },
       { date: '20 Aug 2026', text: 'Thursday rules rebuilt on research/114: per-leg 30% stop OFF on expiry day (it turned +2,630/lot/day at 92% win into −227 at 25%), take-profit widened ₹1,667→₹4,000/lot (the old one kept only 57% of the edge), book stop widened −₹1,300→−₹3,000/lot on DTE0. The 50% disaster backstop stays — 12 benign Thursdays cannot price the tail.' },
       { date: '19 Aug 2026', text: 'Live days restricted to Wed+Thu (weak Mon/Tue/Fri cells removed — data-driven venue split). 8→10 lots scheduled 24-Aug.' },

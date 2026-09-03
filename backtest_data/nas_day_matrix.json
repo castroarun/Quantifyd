@@ -75,8 +75,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   },
   "nas_916_atm2": {
    "dte": {
@@ -88,8 +89,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   },
   "nas_916_atm4": {
    "dte": {
@@ -101,8 +103,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   },
   "sensex_atm": {
    "dte": {
@@ -114,8 +117,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   },
   "sensex_atm2": {
    "dte": {
@@ -127,8 +131,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   },
   "sensex_atm4": {
    "dte": {
@@ -140,8 +145,9 @@
    },
    "gap_up": false,
    "gap_down": false,
-   "live": true,
-   "paper_shadow": true
+   "live": false,
+   "paper_shadow": true,
+   "ex_live": "2026-09-03"
   }
  }
 }

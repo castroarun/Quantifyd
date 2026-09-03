@@ -33,7 +33,7 @@ BOOKS = {
     "CSL_TIMEB2_LIVE": {**NIFTY_MKT, "lots": 6, "qty": 390, "cfg_from": "fixed",
                         "fixed_cfg": {"entry": "13:15", "exit": "14:30", "sl": 30}},
     # A/B twin of the live nas_916_atm mechanic question: same venue/entry, COMBINED-20% stop
-    "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed", "mode": "live",
+    "NAS_COMB20": {**NIFTY_MKT, "lots": 2, "qty": 130, "cfg_from": "fixed",
                    "fixed_cfg": {"entry": "09:16", "exit": "15:20", "sl": 20}},
     # FIXED-CSL30 books (the flat rule, un-windowed) — the variable-vs-fixed live A/B
     "CSL_TIMEB_NIFTY_THU": {**NIFTY_MKT, "lots": 3, "qty": 195, "cfg_from": "fixed",

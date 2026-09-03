@@ -150,12 +150,12 @@ const NAS_OPT_DEF: SystemDef = {
 
 // COMB + TimeB sleeves in the Trade Book (after the 9:16 systems, before NAS-OPT).
 const SLEEVE_TB_DEFS: SystemDef[] = [
-  { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'live · 2L (Thu 5L) · ex-Wed', group: '916' },
+  { id: 'csl-comb', key: 'csl-comb', label: 'NIFTY COMB', subtitle: 'full-day combined-SL', rules: '', configNote: 'PAPER (ex-live 03-Sep) · 2L', group: '916' },
   { id: 'csl-timeb2', key: 'csl-timeb2', label: 'NIFTY TimeB2', subtitle: 'expiry-Tue afternoon window', rules: '', configNote: 'live 8L · 13:15→14:30 CSL30', group: '916' },
   { id: 'csl-timeb', key: 'csl-timeb', label: 'NIFTY TimeB', subtitle: 'windowed combined-SL', rules: '', configNote: 'live · Tue + Fri (Mon runs as its own AM book)', group: '916' },
-  { id: 'sx-atm', key: 'sx-atm', label: 'SENSEX ATM', subtitle: 'per-leg 30% · ST-trail', rules: '', configNote: 'live 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
-  { id: 'sx-atm2', key: 'sx-atm2', label: 'SENSEX ATM2', subtitle: '0.4% move-stop + per-leg 30%', rules: '', configNote: 'live 2L · Wed/Thu', group: '916' },
-  { id: 'sx-atm4', key: 'sx-atm4', label: 'SENSEX ATM4', subtitle: 'per-leg 30% · roll-to-match', rules: '', configNote: 'live 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
+  { id: 'sx-atm', key: 'sx-atm', label: 'SENSEX ATM', subtitle: 'per-leg 30% · ST-trail', rules: '', configNote: 'PAPER (ex-live 03-Sep) 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
+  { id: 'sx-atm2', key: 'sx-atm2', label: 'SENSEX ATM2', subtitle: '0.4% move-stop + per-leg 30%', rules: '', configNote: 'PAPER (ex-live 03-Sep) 2L · Wed/Thu', group: '916' },
+  { id: 'sx-atm4', key: 'sx-atm4', label: 'SENSEX ATM4', subtitle: 'per-leg 30% · roll-to-match', rules: '', configNote: 'PAPER (ex-live 03-Sep) 2L · Wed/Thu · no per-leg stop on DTE0', group: '916' },
   { id: 'csl-comb-sx-wed', key: 'csl-comb-sx-wed', label: 'SENSEX COMB30 · Wed', subtitle: 'full-day combined-SL 30%', rules: '', configNote: 'live 3L Wed · user override vs study', group: '916' },
   { id: 'csl-timeb-mon-am', key: 'csl-timeb-mon-am', label: 'NIFTY TimeB Mon-AM', subtitle: '09:16-11:16 · Rs1,000/lot stop', rules: '', configNote: 'live 8L Monday · override vs r/124 null', group: '916' },
   { id: 'csl-timeb-mon', key: 'csl-timeb-mon', label: 'NIFTY TimeB Mon · paper', subtitle: '13:00-14:00 control', rules: '', configNote: 'paper 8L · r/124 evidence', group: '916' },
@@ -2208,6 +2208,15 @@ const MTM_STOP_PER_LOT: Record<string, number> = {
   'nas-atm2': 2500, 'nas-916-atm2': 2500, 'nas-opt': 2500,
 };
 
+// The seven systems trading real money when Arun stood the whole NAS book down to
+// paper on 2026-09-03. Fixed historical cohort (mirrors static/app/ex_live_cohort.json)
+// — these carry the "ex-live" badge and their own Trade Book filter, since they are
+// the candidates for any future re-arm and their paper record must stay separable.
+const EX_LIVE_COHORT = new Set<string>([
+  'nas-916-atm', 'nas-916-atm2', 'nas-916-atm4',
+  'sx-atm', 'sx-atm2', 'sx-atm4', 'csl-comb',
+]);
+
 // Compact status tags so the column stays narrow and the P&L stays next to it.
 const REASON_SHORT: Record<string, string> = {
   adj_boundary_exit_no_strike: 'BOUNDARY',
@@ -2298,7 +2307,11 @@ function TradeBook({ systems, states, liveLegs, basis }: {
   basis: 'per2' | 'raw';
 }) {
   const [mode, setMode] = useState<TBGroupMode>('system');
-  const [liveOnly, setLiveOnly] = useState(true);   // default ON (user 2026-08-25): real-money view first
+  // 2026-09-03: Arun stood the whole NAS book down to paper. The systems that were
+  // trading real money that day form a fixed cohort, selectable like LIVE-only so
+  // their paper record stays separately trackable (they are the re-arm candidates).
+  const [liveOnly, setLiveOnly] = useState(false);  // default OFF since the stand-down — nothing is live
+  const [exLiveOnly, setExLiveOnly] = useState(true); // default ON: the ex-live cohort is the real-money-view successor
   // ARMED FOR TODAY -- the day's plan straight from the rules matrix, visible
   // before anything enters (executors arm at 09:00/09:12; this needs neither).
   const [rulesRm, setRulesRm] = useState<any | null>(null);
@@ -2344,7 +2357,9 @@ function TradeBook({ systems, states, liveLegs, basis }: {
     const id = setInterval(load, 5000);
     return () => { on = false; clearInterval(id); };
   }, []);
-  const rows = buildTradeBook(systems, states, liveLegs, basis).filter((r) => !liveOnly || r.mode === 'live');
+  const rows = buildTradeBook(systems, states, liveLegs, basis)
+    .filter((r) => !liveOnly || r.mode === 'live')
+    .filter((r) => !exLiveOnly || EX_LIVE_COHORT.has(r.sysId));
 
   const dayPnl = rows.reduce((a, r) => a + r.pnl, 0);
   const realized = rows.filter((r) => !r.open).reduce((a, r) => a + r.pnl, 0);
@@ -2410,6 +2425,13 @@ function TradeBook({ systems, states, liveLegs, basis }: {
             <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#ef4444' }} />
             LIVE only
           </label>
+          <label
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 'var(--text-xs)', color: exLiveOnly ? '#d29922' : 'var(--ink-muted)', cursor: 'pointer', marginLeft: 8, fontWeight: exLiveOnly ? 700 : 400 }}
+            title="Show only the seven systems that were trading real money when the book was stood down to paper on 2026-09-03 — the re-arm candidates"
+          >
+            <input type="checkbox" checked={exLiveOnly} onChange={(e) => setExLiveOnly(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#d29922' }} />
+            EX-LIVE cohort
+          </label>
         </div>
       </div>
 
@@ -2462,7 +2484,13 @@ function TradeBook({ systems, states, liveLegs, basis }: {
                   }}
                 >
                   {mode !== 'system' && (
-                    <span style={{ color: 'var(--ink-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sysLabel}</span>
+                    <span style={{ color: 'var(--ink-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.sysLabel}
+                      {EX_LIVE_COHORT.has(r.sysId) && (
+                        <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: '#d29922',
+                          border: '1px solid rgba(210,153,34,0.45)', borderRadius: 4, padding: '0 3px' }}>ex-live</span>
+                      )}
+                    </span>
                   )}
                   <span style={{ fontWeight: 700, color: r.side === 'CE' ? '#d29922' : r.side === 'PE' ? '#a371f7' : 'var(--ink-muted)' }}>{r.side}</span>
                   <span>{r.strike ?? '—'}</span>

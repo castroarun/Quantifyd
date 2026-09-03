@@ -1,0 +1,24 @@
+{
+ "as_of": "2026-09-03",
+ "note": "Systems trading real money when Arun stood the whole NAS book down to paper.",
+ "matrix_systems": [
+  "nas_916_atm",
+  "nas_916_atm2",
+  "nas_916_atm4",
+  "sensex_atm",
+  "sensex_atm2",
+  "sensex_atm4"
+ ],
+ "tradebook_ids": [
+  "nas-916-atm",
+  "nas-916-atm2",
+  "nas-916-atm4",
+  "sx-atm",
+  "sx-atm2",
+  "sx-atm4",
+  "csl-comb"
+ ],
+ "books": [
+  "NAS_COMB20"
+ ]
+}

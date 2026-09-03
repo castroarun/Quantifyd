@@ -1,67 +1,75 @@
 {
- "generated_at": "2026-09-03T11:00:01",
+ "generated_at": "2026-09-03T14:00:02",
  "broker_legs": {
   "SENSEX2690376900CE": {
-   "qty": -120,
-   "avg": 124.05,
-   "ltp": 85.05,
-   "pnl": 4680.0,
-   "product": "MIS",
+   "qty": -240,
+   "avg": 36.45,
+   "ltp": 39.5,
+   "pnl": -732.0,
+   "product": "NRML",
    "exchange": "BFO"
   },
   "SENSEX2690376900PE": {
    "qty": -120,
    "avg": 169.13333333333333,
-   "ltp": 228.85,
-   "pnl": -7166.0,
+   "ltp": 286.1,
+   "pnl": -14036.0,
    "product": "MIS",
    "exchange": "BFO"
   },
   "ANTHEM": {
    "qty": 13,
    "avg": 947.45,
-   "ltp": 936.25,
-   "pnl": -145.6,
+   "ltp": 943.5,
+   "pnl": -51.4,
    "product": "CNC",
    "exchange": "NSE"
   },
   "DYCL": {
    "qty": 19,
    "avg": 528.5,
-   "ltp": 542.0,
-   "pnl": 256.5,
+   "ltp": 543.8,
+   "pnl": 290.7,
    "product": "CNC",
    "exchange": "NSE"
   },
   "GAUDIUMIVF-BE": {
    "qty": -420,
    "avg": 120.1,
-   "ltp": 119.97,
-   "pnl": 54.6,
+   "ltp": 117.23,
+   "pnl": 1205.4,
    "product": "CNC",
    "exchange": "NSE"
   },
   "INOXINDIA": {
    "qty": 5,
    "avg": 2102.4,
-   "ltp": 2136.5,
-   "pnl": 170.5,
+   "ltp": 2163.4,
+   "pnl": 305.0,
    "product": "CNC",
    "exchange": "NSE"
   },
   "LUMAXIND": {
    "qty": 2,
    "avg": 6341.75,
-   "ltp": 6452.0,
-   "pnl": 220.5,
+   "ltp": 6427.0,
+   "pnl": 170.5,
    "product": "CNC",
    "exchange": "NSE"
   },
   "MANORAMA": {
    "qty": 15,
    "avg": 1884.4,
-   "ltp": 1923.5,
-   "pnl": 586.5,
+   "ltp": 1952.9,
+   "pnl": 1027.5,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "PAISALO": {
+   "qty": 285,
+   "avg": 69.78996491228071,
+   "ltp": 70.32,
+   "pnl": 151.1,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -85,6 +93,14 @@
   }
  },
  "findings": [
+  {
+   "level": "ALERT",
+   "kind": "SIZE",
+   "symbol": "SENSEX2690376900CE",
+   "broker_qty": -240,
+   "app_qty": -120,
+   "detail": "broker -240 vs app -120 (sensex_atm/sensex_atm2/sensex_atm4) \u00b7 order tags: untagged -360"
+  },
   {
    "level": "INFO",
    "kind": "MANUAL",
@@ -134,10 +150,18 @@
    "detail": "manual holding, 15 \u2014 no book tracks it"
   },
   {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "PAISALO",
+   "broker_qty": 285,
+   "app_qty": 0,
+   "detail": "manual holding, 285 \u2014 no book tracks it"
+  },
+  {
    "level": "WARN",
    "kind": "NAKED",
    "symbol": "SENSEX2690376900CE",
-   "broker_qty": -120,
+   "broker_qty": -240,
    "app_qty": -120,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
@@ -151,9 +175,9 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 714
+  "untagged": 1239
  },
- "alerts": 0,
+ "alerts": 1,
  "warns": 2,
- "infos": 6
+ "infos": 7
 }

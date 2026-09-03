@@ -111,6 +111,14 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("NAS stand-down 2026-09-03: review the EX-LIVE cohort's paper month before any re-arm",
+     "2026-10-06", "SCHEDULED",
+     "Arun stood ALL NAS real-money books down to paper on 03-Sep (master mode paper + matrix "
+     "live flags off + NAS_COMB20 BOOKS mode dropped; commit carries the register flips). The "
+     "seven ex-live systems (NIFTY 916 ATM/ATM2/ATM4, SENSEX ATM/ATM2/ATM4, NAS_COMB20) carry "
+     "an ex-live badge and their own Trade Book filter on /app/nas. Review a full month of "
+     "their paper record - per-system net, worst day, stop behaviour - before proposing any "
+     "re-arm. A re-arm is a fresh live decision with its own sign-off, not a toggle."),
     ("First live dividend declaration (True North + Open Alpha) - verify the 2026-Q3 run",
      "2026-10-01", "SCHEDULED",
      "The 19:15 dividend_declare cron should fire its first real declarations on 30-Sep/01-Oct. "
