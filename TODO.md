@@ -40,6 +40,19 @@ pre-registered in `research/142_.../BLUESKY_PAPER_DAILY_RUN_STATUS.md`). Study p
 gained the banana-style full trade book embed (1,082 trades, median seed). Remaining:
 watch first runs this week; momentum-leg tax model for the blend.
 
+**OPEN ALPHA FULL RESTUDY — REGISTERED for ~2026-12-12 (Arun 2026-09-03: "a complete
+restudy and reassessment of the system"):** joint gate × entry × exit/SL combo
+optimization + 16-slot sizing, AFTER the Dec-5 soak review (live fills inform entry
+modeling). Context: the 2026-09-03 gate bake-off (research/142
+GATE_BAKEOFF_DAILY_SWEEP_STATUS.md) found the old backtest gate NaN-disabled since
+Apr-2026 (phantom 2026-01-15 holiday rows), refuted SMA200, and identified DD10
+(block only >10% below 252d high) + 16 slots @6.25% (seed spread 6.7×→2.5×, worst
+seed 30.4→32.5% CAGR) + 50-50 momentum blend (35.7% CAGR, −22.2% DD) as the candidate
+package. Interim decisions PENDING from Arun: adopt DD10? 16 slots? phantom-row purge
+(classifier-blocked, needs explicit go)? Then: re-seed OA book (current 5 positions
+are spec-invalid gate-WEAK entries), restore ₹2.5L deposits + re-anchor dividend HWM,
+update live engine + study page. Ops-registry REVIEWS entry dated 2026-12-12.
+
 **DIVIDEND ENGINE LIVE (2026-09-03, Arun: "yes this is good, build for both"):**
 Quarterly HWM dividend policy on BOTH sleeves — adopted spec = research/142
 `dividend_sim_v2.py` variant E: **25% of new profit above the flow-adjusted HWM;

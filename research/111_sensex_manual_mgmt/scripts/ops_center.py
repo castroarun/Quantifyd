@@ -111,14 +111,17 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("NAS stand-down 2026-09-03: review the EX-LIVE cohort's paper month before any re-arm",
-     "2026-10-06", "SCHEDULED",
-     "Arun stood ALL NAS real-money books down to paper on 03-Sep (master mode paper + matrix "
-     "live flags off + NAS_COMB20 BOOKS mode dropped; commit carries the register flips). The "
-     "seven ex-live systems (NIFTY 916 ATM/ATM2/ATM4, SENSEX ATM/ATM2/ATM4, NAS_COMB20) carry "
-     "an ex-live badge and their own Trade Book filter on /app/nas. Review a full month of "
-     "their paper record - per-system net, worst day, stop behaviour - before proposing any "
-     "re-arm. A re-arm is a fresh live decision with its own sign-off, not a toggle."),
+    ("Open Alpha FULL RESTUDY: joint gate x entry x exit/SL optimization (Arun 2026-09-03)",
+     "2026-12-12", "SCHEDULED",
+     "The 2026-09-03 gate bake-off (research/142 GATE_BAKEOFF_DAILY_SWEEP_STATUS.md) varied "
+     "the gate ALONE with entry/exit frozen; but the -8% stop and trail-20 were originally "
+     "tuned under the old SMA200 gate, so gate x exit interactions are untested. Arun: do a "
+     "complete restudy and reassessment - best COMBO of gate (DD10 family + finalists), "
+     "entry (pivot buy-stop variants), and exit/SL (stop levels, trail lengths, ATR trails) "
+     "- plus the 16-slot @6.25% sizing found to cut seed spread 6.7x->2.5x. Run AFTER the "
+     "Dec-5 paper-soak review so live-fill evidence informs the entry modeling. Guard "
+     "multiple testing: joint grid is large - pre-register the ranking metric and use the "
+     "two-window + plateau + worst-seed discipline from the gate bake-off."),
     ("First live dividend declaration (True North + Open Alpha) - verify the 2026-Q3 run",
      "2026-10-01", "SCHEDULED",
      "The 19:15 dividend_declare cron should fire its first real declarations on 30-Sep/01-Oct. "
