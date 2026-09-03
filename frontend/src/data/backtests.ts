@@ -14972,6 +14972,147 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\144_truenorth_reassessment\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'truenorth-full-universe-research145',
+    title: 'True North on the Open Alpha universe — adversarial revalidation of the r/62 wider-universe rejection',
+    verdict:
+      'Arun asked: take True North exactly as deployed and extend it to the Open Alpha universe (every NSE name with 20-day-median traded value >= Rs 5cr, no market-cap floor). The prior to confront: research/62 conclusively rejected wider/lower-cap momentum (top-500 gross Calmar 1.44 vs top-200 2.21, collapse to 11.7%/-66% at even Rs 1cr AUM with participation up to 1081% of daily volume). H0 CONFIRMED — r/62 was right. On 12-rebalance-offset medians after tax, the full universe adds +2.2pp CAGR (22.9% vs 20.7%) but takes the drawdown from -25.1% to -35.6% (worst offset -41.7%), drops Calmar 0.88 -> 0.66, and collapses the 2016-19 momentum dead zone to 7.9%; top-500 is strictly dominated (19.3%/-34.9%). Single offset-0 paths overstate the wider universes by 4-8pp — they are far more rebalance-day-dependent than the deployed book. Capacity: executable at the current Rs 20L (~0.5% participation) but the ceiling is ~Rs 7.5cr of book vs Rs 17cr for top-200, and the nominal Rs 5cr floor means the "20-year" backtest mixes two different universes (112 eligible names in 2006, 954 in 2026). The decisive portfolio test: swapping the TN leg of the 50-50 Open Alpha pair to full-universe TN lifts blend CAGR 27.2% -> 30.4% but degrades blend Calmar 1.65 -> 1.47 and deepens blend DD -16.4% -> -20.6% — it re-imports the small-cap beta OA already harvests (holding-name overlap 20% median / 50% p90). REJECTED; the deployed Nifty-200 universe stands — third consecutive confirmation (r/62 -> r/144 -> r/145). Want more return from the pair? Weight OA up; do not blur TN into a slower OA.',
+    status: 'COMPLETE',
+    date: '2026-09-03',
+    cardBlurb:
+      'TN mechanics frozen as deployed; only the universe swapped (top-200 control, top-500, and the OA Rs 5cr traded-value floor with no mcap floor). 12-offset bands, cost tiers to 0.75%, after-tax, capacity table, OA blends and holdings overlap. The wider universes fail every pre-registered gate.',
+    cardStats: [
+      { label: 'Verdict', value: 'CONCLUDED — REJECTED, r/62 revalidated' },
+      { label: 'Full universe (net-tax, offset median)', value: '22.9% / -35.6% DD' },
+      { label: 'Deployed top-200', value: '20.7% / -25.1% DD' },
+    ],
+    system: {
+      intro: 'Identical to the deployed True North (see the r/144 study) — rsblend 6m+12m RS vs NIFTYBEES, top-8 equal-weight, buffer 22, monthly no-trim rebalance, NIFTYBEES-100SMA weekly liquidate-all gate, Donchian-15 daily stop, FY-netted 20% STCG / 12.5% LTCG. The ONLY axis varied:',
+      rows: [
+        { k: 'U-200 (control)', v: 'Point-in-time top-200 by 6-month median traded value — the deployed proxy.' },
+        { k: 'U-500', v: 'Point-in-time top-500 by traded value.' },
+        { k: 'U-OA (the ask)', v: 'All NSE dailies with 20d-median traded value >= Rs 5cr as of t-1 (bluesky_replay TV_FLOOR), ETFs excluded, NO mcap floor — the Open Alpha eligibility set.' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered as an ADVERSARIAL revalidation: the null hypothesis is that research/62 was right and the wider universe is worse. Metric: net-of-cost net-of-tax CAGR (2012->now) under a DD constraint vs the top-200 control, surviving 0.5% round-trip; capacity gate mandatory; blend-value test — U-OA TN earns a slot only if the 50-50 OA pair improves after-tax Calmar.',
+      rows: [
+        { k: 'Windows', v: 'WA 2012->2026-09 primary; W1 2016-06->2019-12; W2 2020->now; W0 2006->now (survivorship-flattered early small-cap tail, stated).' },
+        { k: 'Robustness', v: '12 rebalance-day offsets per universe; cost tiers 0.3/0.5/0.75% RT; cash 5/6.5%; per-year table.' },
+        { k: 'Host / data', v: 'VPS market_data.db snapshot 2026-09-03; research/145 scripts (reuses the r/144 engine and r/142 bluesky_replay).' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'The size gradient — 12-offset bands, net-of-tax, 2012->now',
+        caption: 'The extra CAGR of the full universe is regime-concentrated (W2 38.3% vs 27.3, driven by 2020 +121% / 2021 +141% when eligible breadth exploded) while the 2016-19 momentum dead zone collapses. The deployed universe has the best Calmar, the best W1, and the best worst-offset drawdown.',
+        columns: ['Universe', 'CAGR med [min..max]', 'DD med / worst offset', 'Calmar', 'W1 med', 'W2 med'],
+        rows: [
+          ['U-200 (DEPLOYED)', '20.7% [14.9..25.1]', '-25.1% / -28.3%', '0.88', '13.6%', '27.3%'],
+          ['U-500', '19.3% [13.2..28.0]', '-34.9% / -43.7%', '0.61', '14.2%', '23.2%'],
+          ['U-OA (full)', '22.9% [12.8..28.5]', '-35.6% / -41.7%', '0.66', '7.9%', '38.3%'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'Cost tiers (offset 0, net-of-tax) + the path-dependence warning',
+        caption: 'Flat cost is graceful for all three (~1.1pp per +25bps) — flat cost is NOT where wider universes die; r/62 killed them with participation-scaled impact at size. Note the offset-0 rows for U-500/U-OA run 4-8pp hotter than their own 12-offset medians (U-OA 27.5 vs 22.9) while U-200 sits on its median: single-path backtests flatter wide universes.',
+        columns: ['RT cost', 'U-200 CAGR/DD', 'U-500', 'U-OA'],
+        rows: [
+          ['0.3%', '20.9% / -23.7%', '26.9% / -28.8%', '27.5% / -31.8%'],
+          ['0.5%', '19.6% / -25.5%', '25.6% / -30.4%', '26.1% / -33.4%'],
+          ['0.75%', '18.1% / -27.8%', '23.9% / -32.4%', '24.4% / -35.2%'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'Capacity — held-name 20d-median traded value (slot = NAV/8; max book at 10% participation of the p10 name)',
+        columns: ['Universe', 'Held TV p50', 'p10 typical', 'p10 worst-5%', 'Max book (typ / worst)'],
+        rows: [
+          ['U-200', 'Rs 49.2cr', 'Rs 21.4cr', 'Rs 2.3cr', 'Rs 17.1cr / Rs 1.9cr'],
+          ['U-500', 'Rs 12.5cr', 'Rs 4.5cr', 'Rs 0.2cr', 'Rs 3.6cr / Rs 0.2cr'],
+          ['U-OA', 'Rs 21.7cr', 'Rs 9.4cr', 'Rs 4.9cr', 'Rs 7.5cr / Rs 3.9cr'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'The decisive test: 50-50 blend with the adopted Open Alpha spec (both legs after-tax, 10 OA seeds)',
+        caption: 'Pre-registered blend-value rule: the U-OA TN leg earns the slot only if the pair Calmar improves. It does not — the full-universe leg re-imports the small-cap beta OA already carries (TN U-200 vs U-OA correlation 0.75 daily / 0.68 monthly; holding-name overlap with concurrent OA positions 20% median, 50% p90).',
+        columns: ['Pair', 'Blend CAGR med [range]', 'Blend DD med / worst', 'Calmar', 'Corr to OA (d/m)'],
+        rows: [
+          ['OA + TN U-200 (current)', '27.2% [26.7..28.1]', '-16.4% / -16.7%', '1.65', '0.41 / 0.55'],
+          ['OA + TN U-OA', '30.4% [29.9..31.3]', '-20.6% / -21.9%', '1.47', '0.41 / 0.51'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'H0 (r/62 was right)', value: 'CONFIRMED', tone: 'pos', hint: 'third consecutive confirmation of the Nifty-200 universe' },
+        { label: 'Full universe vs deployed', value: '+2.2pp CAGR, +10.5pp DD', tone: 'neg', hint: 'net-tax offset medians; Calmar 0.66 vs 0.88' },
+        { label: 'W1 2016-19 (full universe)', value: '7.9%', tone: 'neg', hint: 'vs 13.6% deployed — regime fragility' },
+        { label: 'Blend-value test', value: 'FAIL (1.47 vs 1.65)', tone: 'neg', hint: 'OA pair Calmar degrades with the U-OA leg' },
+        { label: 'Capacity ceiling (U-OA)', value: '~Rs 7.5cr', hint: 'vs Rs 17cr deployed; fine at today Rs 20L (~0.5% participation)' },
+        { label: 'Universe breadth drift', value: '112 -> 954 names', hint: 'nominal Rs 5cr floor: the 20y run mixes two universes' },
+      ],
+      tables: [
+        {
+          title: 'Per-year (net-of-cost, offset 0)',
+          caption: 'The full universe is a high-beta small-cap momentum book: monster melt-up years (2020/2021) against deeper losses in every momentum winter, and a 2016 (+9.3 vs +27.0) that shows it is NOT a superset of the deployed edge. 2026 is YTD. Early years survivor-flattered.',
+          columns: ['Year', 'U-200 %', 'U-500 %', 'U-OA %'],
+          rows: [
+            ['2008', '-12.8', '-19.2', '-13.4'],
+            ['2014', '+47.3', '+65.4', '+57.5'],
+            ['2015', '-6.1', '+1.5', '-7.7'],
+            ['2016', '+27.0', '+45.5', '+9.3'],
+            ['2017', '+56.1', '+55.7', '+79.5'],
+            ['2018', '-4.4', '-8.2', '-11.6'],
+            ['2019', '-4.9', '+1.2', '+3.1'],
+            ['2020', '+64.0', '+134.3', '+120.6'],
+            ['2021', '+62.9', '+32.3', '+141.3'],
+            ['2022', '+7.4', '+10.3', '-6.9'],
+            ['2023', '+34.7', '+26.7', '+42.3'],
+            ['2024', '+9.9', '-3.3', '+7.8'],
+            ['2025', '+10.7', '+15.4', '+0.5'],
+            ['2026*', '+7.4', '+8.3', '+20.5'],
+          ],
+          heatmap: true,
+        },
+      ],
+    },
+    winners: [
+      {
+        config: 'THE DEPLOYED NIFTY-200 UNIVERSE — unchanged',
+        summary: 'The universe extension fails the DD constraint, the Calmar comparison, the W1 regime test, the blend-value test and the capacity gate at ambition size. r/62 verdict revalidated with the deployed-faithful engine, after tax, across 12 offsets.',
+        metrics: [
+          { k: 'Deployed (net-tax, median)', v: '20.7% / -25.1% / Calmar 0.88' },
+          { k: 'Full universe', v: '22.9% / -35.6% / Calmar 0.66; W1 7.9%' },
+          { k: 'Pair with OA', v: 'keep the U-200 leg: Calmar 1.65 vs 1.47' },
+        ],
+        rejected: [
+          'U-OA (full TV-floor universe) — every pre-registered gate failed',
+          'U-500 — strictly dominated (less CAGR than U-200 at 10pp more drawdown) and capacity-broken',
+          'Using full-universe TN as small-cap exposure — OA already IS that exposure, harvested better (daily triggers, stops, seed diversification)',
+        ],
+      },
+    ],
+    caveats: [
+      'Survivorship is MATERIAL in the small-cap tail: Kite lists current instruments (~528 syms in 2006 vs 2,321 now); U-OA early years and its 2007/2021 spikes are survivor-flattered — the true full-universe numbers are WORSE than shown, which strengthens the rejection.',
+      'The Rs 5cr traded-value floor is nominal across 20 years: eligible breadth grew 112 -> 954 names, so the long backtest mixes a narrow large-cap universe (pre-2013) with the modern small-cap-inclusive one. An inflation-adjusted floor is the right construction if ever revisited.',
+      'Flat cost tiers replace r/62 participation-scaled impact model; both are reported — r/62 remains the authority on what happens at Rs 1cr+ AUM (collapse).',
+      'No per-universe re-tuning of TN knobs was done (the ask was "TN as is"); a tuned small-cap momentum book would be a new study with a multiple-testing bill.',
+      'Blend uses 10 OA seeds (r/144 used 30 for the headline pair); the U-200 pair numbers reproduce within 0.3pp.',
+    ],
+    githubLinks: [{ label: 'research/145 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/145_truenorth_full_universe' }],
+    projectPaths: [
+      'research\\145_truenorth_full_universe\\TRUENORTH_FULL_UNIVERSE_DAILY_SWEEP_STATUS.md',
+      'research\\145_truenorth_full_universe\\scripts\\tn_universe.py',
+      'research\\145_truenorth_full_universe\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
