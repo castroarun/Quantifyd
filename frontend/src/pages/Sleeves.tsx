@@ -100,8 +100,7 @@ function FundsPanel() {
     const n = Number(amt);
     const half = Math.round(n / 2);
     const tn = (a: number) => ({
-      name: 'True North', url: `/api/momentum-paper/${kind}`,
-      body: kind === 'deposit' ? { amount: a, mode: 'immediate' } : { amount: a },
+      name: 'True North', url: `/api/sleeves/truenorth/${kind}`, body: { amount: a },
     });
     const oa = (a: number) => ({
       name: 'Open Alpha', url: `/api/sleeves/openalpha/${kind}`, body: { amount: a },
@@ -187,6 +186,87 @@ function FundsPanel() {
         Same preview → confirm → execute contract as True North's own cash panel. Open Alpha deposits
         sweep to CASHIETF and fund the next signals; real-money Open Alpha arrives after the Dec-5 soak review.
       </p>
+    </div>
+  );
+}
+
+type DivBook = { book: string; initialized: boolean; note?: string; hwm?: number;
+  cap?: number | null; reserve?: number; ledger?: any[] };
+type DivStatus = { policy: { baseline: number; cap_growth_q: number; reserve_rate_pa: number };
+  truenorth: DivBook; openalpha: DivBook };
+
+function rup(n: number | null | undefined) {
+  return n == null ? '—' : `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
+function DividendsCard() {
+  const [dv, setDv] = useState<DivStatus | null>(null);
+  const [prev, setPrev] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { apiGet<DivStatus>('/api/sleeves/dividends').then(setDv).catch(() => setDv(null)); }, []);
+  if (!dv) return null;
+  const preview = () => {
+    setBusy(true);
+    fetch('/api/sleeves/dividends/preview', { method: 'POST', credentials: 'include' })
+      .then((r) => r.json()).then(setPrev).finally(() => setBusy(false));
+  };
+  const row = (b: DivBook, label: string) => (
+    <div style={{ flex: '1 1 260px' }}>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>
+      {b.initialized ? (
+        <div className={styles.sub}>
+          High-water mark {rup(b.hwm)} · dividend line {b.cap ? `${rup(b.cap)}/qtr` : 'not yet seeded'} ·
+          reserve {rup(b.reserve)}
+          {b.ledger && b.ledger.length > 0 && (
+            <div style={{ marginTop: 4 }}>
+              {b.ledger.slice(-4).map((r: any, i: number) => (
+                <div key={i}>{r.quarter}: paid {rup(r.paid)} ({r.source}
+                  {r.liquidity_clipped ? ', liquidity-clipped' : ''})</div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className={styles.sub}>Not yet initialized — HWM seeds at contributed capital on the
+          first declaration run.</div>
+      )}
+    </div>
+  );
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>Dividends — quarterly high-water-mark policy</div>
+      <p className={styles.note}>
+        25% of new profit above the flow-adjusted HWM leaves the book each quarter; the payout is
+        capped at last dividend +7.5%/qtr (a smooth, stepping income line); boom surplus banks into
+        a liquid equalization reserve (~6% p.a.) that keeps the line paying through profitless
+        quarters. Capital is never invaded and positions are never force-sold. Declarations run
+        automatically after each quarter end and fire the intimation email / desktop alert with the
+        Console withdrawal amount.
+      </p>
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+        {row(dv.truenorth, 'True North')}
+        {row(dv.openalpha, 'Open Alpha')}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <button disabled={busy} onClick={preview}
+          style={{ padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13,
+                   border: '1px solid var(--hairline, #ccc)', background: 'var(--surface)', color: 'var(--ink)' }}>
+          Preview next declaration (dry run)
+        </button>
+      </div>
+      {prev && ['truenorth', 'openalpha'].map((k) => {
+        const p = prev[k];
+        return (
+          <p key={k} className={styles.note}>
+            <b>{k === 'truenorth' ? 'True North' : 'Open Alpha'}:</b>{' '}
+            {p?.skipped ? p.skipped :
+              p?.declaration ? `NAV ${rup(p.declaration.nav)} vs HWM ${rup(p.declaration.flow_adjusted_hwm_before)} → ` +
+                `new profit ${rup(p.declaration.new_profit)} → would pay ${rup(p.declaration.paid)} ` +
+                `(${p.declaration.source}), reserve after ${rup(p.declaration.reserve_after)}`
+              : 'no data'}
+          </p>
+        );
+      })}
     </div>
   );
 }
@@ -277,6 +357,7 @@ export default function Sleeves() {
       )}
 
       <FundsPanel />
+      <DividendsCard />
     </div>
   );
 }

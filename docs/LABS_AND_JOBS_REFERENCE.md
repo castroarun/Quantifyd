@@ -76,46 +76,52 @@ All in `research/111_sensex_manual_mgmt/scripts/`, run with `venv/bin/python3` f
 | `backtest_data/nas_master_mode.json` → `{"mode":"paper"}` | whole stack (suite + live sleeves) to paper |
 | Remove a book's `"mode": "live"` in `csl_paper_exec.py` BOOKS | that sleeve to paper from next morning |
 
-## Expiry-Afternoon Lab (research/125) - added 2026-08-25
+## Option 1-minute OHLC recorder (added 2026-09-01)
 
-| Item | Detail |
+| | |
 |---|---|
-| What | DTE0 afternoon straddle slots (NIFTY Tue / SENSEX Thu); winner TimeB2 = Tue 13:15->14:30 CSL30 8L LIVE |
-| Page | /app/straddles#expiry-lab (winners, AlgoTest reference, live-vs-model, run history) |
-| Job | cron Tue+Thu 16:05 IST: expiry_lab_assessment.py (re-sweep + DRIFT/WEAK flags + history) |
-| Manual | venv/bin/python3 research/125_expiry_afternoon_straddle/scripts/expiry_lab_assessment.py |
-| Live runner | timeb2_oneshot.py (one-shot, arm pre-13:15 on expiry Tuesday) |
-| Review | 2026-09-22: TimeB2 live-vs-model after 4 Tuesdays + SENSEX Thu slot decision |
+| Job | `scripts/record_option_1min_ohlc.py` |
+| Schedule | **15:35 IST, Mon-Fri** (cron, flock `/tmp/opt_1min_ohlc.lock`) |
+| Log | `/home/arun/quantifyd/logs/option_1min_ohlc.log` |
+| Writes | `backtest_data/options_data.db` -> `option_ohlc` (timeframe `minute`) |
+| Scope | NIFTY / BANKNIFTY / SENSEX, nearest 2 expiries, mirrors what the chain recorder tracked that day (~540 contracts, ~140k candles/day, ~5 GB/yr) |
+| Deploy doc | `OPTIONS_OHLC_RECORDER_1MIN_DEPLOY_STATUS.md` |
 
+**Why it cannot be skipped:** Kite serves historical candles only for currently-listed
+contracts - an expired token returns `InputException: invalid token` (verified 2026-09-01).
+**There is no backfill; a day not captured is lost permanently.**
 
-## Stock winged strangle PAPER book (research/127) — added 2026-08-25
+**Why it exists:** `option_chain` is a once-a-minute LTP *poll* and cannot see the
+intra-minute high/low that a stop-loss triggers on. That makes stop-based options
+backtests unverifiable and maximum-adverse-excursion unmeasurable (proved in
+`research/136`). OHLC fixes both.
 
-| Job | Schedule | What | Manual command |
-|---|---|---|---|
-| bhav stock daily download | 16:20 Mon–Fri (flock) | extends `nse_options_bhav` with the day's F&O STOCK bhavcopy (idempotent) | `./venv/bin/python3 research/89_short_monthly_straddle/scripts/download_nse_bhav_stocks.py` |
-| stock_wings_paper seed+mark | 16:50 + 20:30 Mon–Fri (flock) | 45→21 DTE ±2.5% strangle + 7% wings on F&O stocks, ₹20L/10 slots PAPER; publishes `/app/stock_wings_paper.json` for `/app/stock-wings` | `./venv/bin/python3 services/stock_wings_paper.py seed` |
+**Health check:** `SELECT date(date), COUNT(*) FROM option_ohlc GROUP BY 1 ORDER BY 1 DESC LIMIT 5;`
+An `invalid token` failure in the log means the job ran too late in the day - move it earlier.
 
-Reviews (in Ops Center): real basket-margin check due 2026-09-05; paper-vs-study tracking review due 2026-11-25.
-Study: `/app/backtest/stock-45dte-neutral-wings` · Status doc: `research/127_stock_neutral_wings/STOCK_NEUTRAL_WINGED_STRADDLE_DAILY_SWEEP_STATUS.md`
+## Sleeves dividend engine — True North + Open Alpha (added 2026-09-03)
 
+| | |
+|---|---|
+| Job | `scripts/dividend_declare.py` → `services/dividend_engine.py` |
+| Schedule | **19:15 IST, Mon-Fri** (idempotent — acts only within 12 days after a calendar quarter end, never re-declares a quarter) |
+| Log | `/tmp/dividend_declare.log` |
+| State | `dividend` block in `backtest_data/bluesky_paper_state.json` (Open Alpha) and `mp_state` key `dividend` in `momentum_paper.db` (True North) |
+| Notices | `services/dividend_notify.py` — registrar-style intimation email + WhatsApp (both dormant until .env keys) + desktop alert feed `/tmp/quantifyd_dividend_alerts.log` |
+| UI | `/app/sleeves` Dividends card · `GET /api/sleeves/dividends` · `POST /api/sleeves/dividends/preview` |
+| Study | `research/142_bananapatterns_replication/scripts/dividend_sim_v2.py` (adopted variant E) |
 
-## Straddle Intraday Study lab (research/136) — added 2026-09-01
+**Adopted policy (Arun 2026-09-03):** 25% of new profit above the *flow-adjusted*
+high-water mark leaves the book each quarter; the payout is capped at last
+dividend +7.5%/qtr (a smooth stepping income line, never a spike); surplus above
+the cap banks into a liquid equalization reserve (~6% p.a.) that keeps the line
+paying through profitless quarters; if the reserve empties the payout falls and
+the line re-bases (an honest cut). Capital is never invaded, positions are never
+force-sold (outflow is clipped at cash+CASHIETF), and deposits/withdrawals adjust
+the HWM so they never count as profit. Bank payout is manual: the notice carries
+the Zerodha Console withdrawal amount (broker APIs cannot push funds to bank).
 
-| Job | Schedule | What | Manual command |
-|---|---|---|---|
-| AlgoTest archive DB + `/app/straddle-study` | on-demand (no cron) | 16 AlgoTest CSL runs / 21,172 trades (NIFTY SL 10–300%, SENSEX 30/60%) in `backtest_data/algotest_studies.db`; page filters index/SL/DTE/year-range/events and ranks by net/WR/Calmar/Net-DD/PF/t/median/streak | `python3 scripts/load_algotest_studies.py backtest_data/algotest_csv` |
-
-New exports: scp CSVs to `backtest_data/algotest_csv/` and re-run the loader (idempotent, replaces per run).
-Study doctrine + verdicts: `research/136_nifty_csl_portfolio/NIFTY_CSL_ATM_STRADDLE_INTRADAY_SWEEP_STATUS.md` §0c–§0e.
-
-## Open Alpha (formerly BlueSky) ATH-Breakout Paper Book (research/142, G5 soak — since 2026-09-02)
-
-- **What:** Rs 10L EOD paper book on the adopted taxable spec from the BananaPatterns
-  replication study: close > prior ATH-close, IBD-RS>=70, Rs 5cr/day TV floor (no mcap
-  floor), buy-stop at pivot next day, -8% stop + SMA20 trail, 8 slots, NIFTYBEES 200-DMA
-  gate, 25bps modelled. Intended live use: 50-50 monthly blend with the momentum book.
-- **Job:** cron 18:40 IST Mon-Fri -> `services/bluesky_paper.py` (log /tmp/bluesky_paper.log)
-- **State:** `backtest_data/bluesky_paper_state.json` (lock + atomic writes)
-- **UI:** `/app/bluesky-paper` (reads static/app/bluesky_paper.json — no backend restart)
-- **Review:** ops-center dated review 2026-12-05 (soak pass criterion pre-registered)
-- **Study:** /app/backtest/bluesky-ath-breakout-research142
+**Why the trading engines needed no changes:** between record dates both engines
+reinvest 100% of booked profits exactly as before; the declaration removes the
+entitlement from book cash like a user withdrawal, and each engine sizes off the
+smaller NAV at its own next step.

@@ -2,905 +2,171 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ⏳ OPEN — AlgoTest re-run for the V2 iron fly (spec written, awaiting Arun's run)
-
-**Spec:** `research/141_v2_bhav_pertrade/ALGOTEST_RERUN_SPEC.md` — field-by-field inputs.
-
-Two runs, differing only in expiry: **RUN 1 front weekly / 4 TD** (priority) and **RUN 2 2nd
-weekly** (what runs live). Everything else identical: NIFTY, Underlying-from **Cash**, Positional
-on Weekly Expiry, entry **09:20** exit **15:15**, exit 1 TD before expiry, SELL ATM CE+PE + BUY
-±2.0%-of-ATM wings, per-leg SL/target OFF, re-entry ON, **Overall SL = underlying move 2.0%**,
-Overall Target **40% of premium**, ₹20/order, 0.25% slippage, 2019-02 → today.
-
-**Do NOT set a VIX filter in AlgoTest** — it has no such gate; research/60 applied VIX≥13
-post-hoc from the export's entry-VIX column. Export unfiltered **with the entry-VIX column**.
-
-**Why it matters:**
-- research/60 documented its AlgoTest results but **did not retain the trade CSV**, so streaks
-  and per-year detail cannot be recomputed for that side.
-- research/141 found the live engine trades the **2nd-nearest weekly** while everything AlgoTest
-  tested was the **front weekly** — a lever the original sweep listed (#5) and never ran, because
-  AlgoTest caps entry at 4 TD before expiry. Our engine says that choice is worth ₹14.8L on the
-  study's own arm.
-- Our live-arm figure leans on **225 approximated stop exits out of 286 trades (79%)** — our EOD
-  engine exits at the breach day's close, not the trigger. AlgoTest prices those at 1-minute
-  resolution, which is the only way to know how wrong the approximation is.
-
-**Blocked on:** Arun running it and returning the trade CSV + PDF.
-
-## ⏳ OPEN — Straddles page redesign (mock under review)
-
-Arun's brief: classify every system as **intraday** or **positional**, and on each show four
-things — (1) how it is doing **today**, (2) **running positions** with live P&L and a P&L curve,
-(3) **closed trades / history** collapsed into an expandable section, (4) **lifetime paper
-numbers**, plus (5) a link to its **backtest** with the headline numbers, the method used
-(bhavcopy / our recorded options chain / AlgoTest) and the period covered.
-
-**Mock APPROVED 2026-09-01** — `docs/mockups/straddles-systems-table.html`.
-One Holdings-style table on the app's own design tokens, grouped Intraday / Positional.
-Columns: System · Size · Window · State · Today · Running · Risk open · To stop · Lifetime ·
-Evidence. Row expands to two panels — left: live legs, P&L-since-entry curve, closed trades in a
-fixed-height scroll; right: track record above the backtest box (provenance chip, period, headline
-numbers, plain-words "How:", caveats, report links). An **R** badge on each master row opens a
-rules modal (what it does / what it deliberately does not do + rules-doc path).
-
-**Still to build.** The blocker is not the UI: there is no per-system registry carrying
-`kind` (intraday/positional), window, size, money-at-risk state, risk-open, and the backtest
-provenance block (method / period / numbers / links). Each system's live data exists in a
-different feed today. First step is that registry; the table then renders from it.
-
-Note: the app loads Inter at 400–500 only; the mock's 600 weight needs adding to index.html.
-
-
-## ⏳ 2026-08-31 — research/138 phase 2: the live book, and COMB20's day allocation
-
-**Two decisions are owed from Arun. Nothing was deployed.**
-
-**Correction first:** every portfolio number I gave earlier in that session pooled the
-live systems with 13 paper shadows. The real-money book is **7 sleeves over 43 days:
-+₹2,38,557, maxDD −₹36,082, return/DD 6.61, t 2.32** — healthier than the pooled
-−₹5.99L / 2.05 I reported. Live roster comes from `nas_day_matrix.json` (`live:true`
-+ enabled DTEs) and `csl_paper_exec.py` `BOOKS` (`"mode":"live"`): the three NIFTY 9:16
-systems (Mon+Tue), the three SENSEX systems (Wed+Thu), and `NAS_COMB20` (2 lots, Mon+Tue).
-
-**Also retracted:** an intermediate claim that Friday was the best untraded day
-(+₹2.86L, t 2.18) was a **lot-sizing artefact** — raw sums over a shadow running 1 to
-10 lots. At a constant 10 lots those Fridays are +₹83,407 at **t 0.41**, with three days
-carrying more than the whole total. Noise, not an opportunity. (Consistent with the
-already-overdue ops review "Suite FRIDAY (DTE2) — keep live or revert".)
-
-**The finding.** `NAS_COMB20` is the only live sleeve losing money (−₹10,089, t −1.00),
-and the cause is **which days it trades**, not its parameters. The 9:16 suite and the
-held-straddle/combined-stop mechanic have near-opposite weekday edges:
-
-| | Mon | Tue | Wed | Thu | Fri |
-|---|---:|---:|---:|---:|---:|
-| 9:16 suite (t) | **2.89** | −0.24 | 0.50 | −0.37 | 0.41 |
-| held straddle + CSL (t) | 1.23 | 1.85 | 0.35 | **3.85** | 0.94 |
-
-The live config runs **both on Mon+Tue**. COMB20 therefore stacks correlated size onto
-Monday — the suite's strongest day, which needs no help — and sits out Thursday, its own
-strongest cell *and* a day the suite loses on. Live Monday record: 3 sessions, all
-losing, −₹56,630 at 10-lot equivalent.
-
-**Thursday is settled as a day, not a stop.** Re-priced from the full recorded premium
-path, DTE3 is *identical* from SL20 through no stop at all (₹1,55,265, t 3.85, DD
-−₹15,790, **0/18 stops fired**). The paper twin `NAS_COMB20_THU` already runs SL20 =
-the same thing. Only **size** and **margin** separate it from the headline.
-
-**DECISION 1 — COMB20's Monday cell: keep, shrink or stop?** It has lost all three live
-Mondays and duplicates the suite's best day. The replay says Monday is mildly positive at
-every stop (t 1.0–1.6) but with ~4× Thursday's drawdown, and its edge is almost entirely
-in the first half of the sample (₹1,31,845 → ₹12,960 across halves). No parameter fixes it.
-
-**DECISION 2 — Thursday: wait, or move now?** Recommendation is **wait**. NIFTY was pulled
-off Thursdays on 2026-08-27 for SENSEX-expiry margin and that constraint stands; the live
-Thursday record is 2 sessions and negative. Let `NAS_COMB20_THU` reach ~8 paper Thursdays
-(already registered: ops review due 2026-10-30, now carrying this evidence).
-
-Either change is a **strategy change** — its own STATUS-MD, its own evidence, an
-after-15:40 deploy. Study: `research/138_comb20_dte_allocation/results/RESULTS.md`.
-
-## ⏳ 2026-08-31 — Confirm which CSL/COMB books are really live (flag vs comments)
-
-`is_live_book()` requires `"mode": "live"`; **only `NAS_COMB20` has it**. Comments assert
-`CSL_TIMEB_SENSEX` and `CSL_TIMEB2_LIVE` are REAL money. By that function both evaluate as
-paper and `/app/straddles` renders them as paper. Either they execute via another path, or
-two books believed live are not trading real money. **Not edited** — live-trading code.
-Check the broker tradebook for a fill tagged to either. Ops review due **2026-09-05**.
-
-
-## ✅ 2026-08-30 — research/135 Turtle system: tested + optimized → CONCLUDED, NO DEPLOY
-
-Arun sent the classic Dennis/Covel Turtle rules (5-rule breakout system) and asked to test them on
-our stocks data, then optimize for CAGR/Calmar, then fold in the momentum book's gate + put buying
-and compare everything. Done end-to-end on the VPS. **No action owed — logged for the record.**
-
-**What we found**
-
-- The attached spec **taken literally is the worst book in this engagement**: 1.67% CAGR,
-  −67.9% MaxDD, Calmar 0.02 (2005–2026 net). Loses to NIFTYBEES by ~11 points of CAGR at
-  more drawdown, and spends 4,226 days (11+ yrs) below its prior peak.
-- **The optimization is entirely subtractive.** Drop Rule 3 (2N stop — the single most damaging
-  rule; mean Calmar none 0.65 > 3N 0.51 > 2N 0.46 > 1.5N 0.45, monotone, and removing it improves
-  drawdown too), drop Rule 4 (pyramiding: with the ratcheting stop, Calmar 0.47→0.08 as units
-  1→4), drop Rule 2 (N-sizing loses to equal-notional — **4th** independent time). Keep
-  Rule 1/5 at the original 20/10. Result: Calmar 0.02 → 0.53, CAGR 1.7% → 15.9%.
-- **OOS 2024–2026 (held out, consumed once) is NEGATIVE for every Turtle arm** — optimized
-  −8.3% CAGR vs benchmark +5.3%. Era means decay monotonically: +27.4% → +14.8% → −5.4%.
-- **CORRECTED after Arun challenged the chart:** the momentum book beats every Turtle variant
-  in **every** era — 31.78% CAGR vs 15.97% at identical drawdown, 299x vs 21x, and **+21.0%/yr
-  in the held-out window** where every Turtle arm loses. The first momentum arm (12.58%) was a
-  broken hand-rolled reconstruction (wrong universe, live-book stop bolted on, idle-cash bug);
-  Stage G drives research/75's own runner and reproduces its published 31.9% to 0.1pt.
-- **The two systems want OPPOSITE universes:** momentum gains +11.6 pts of CAGR moving from the
-  78 F&O large caps to the PIT top-250; the Turtle gets *worse* there (Calmar 0.50 -> 0.24).
-- Momentum **gate is era-unstable** (200DMA best IS, 100SMA best VAL — no stable winner).
-  **Put overlay does not rescue the book**; matches the live momentum book's own
-  `hedge_enabled=False` note. One stable sub-finding: **5%-OTM beats ATM in every pairing.**
-
-**Reusable lessons banked** — hard stops on multi-week equity trend books cost return AND add
-drawdown; pyramiding tied to a ratcheting stop is actively destructive; equal-notional is settled
-(stop re-testing vol-sizing); 5%-OTM index puts dominate ATM for hedging.
-
-**Process note:** a put-overlay bug (premium expensed AND its decay marked from the same level —
-double-counting ~1.8% of NAV per roll, producing absurd −99.9% results) was caught by a hand-check
-and fixed mid-study; invalid output retained as `_INVALID_stage_E_premium_doublecount.csv`.
-
-Docs: `research/135_turtle_optimization/results/RESULTS.md` · STATUS doc in same folder ·
-`research/INDEX.md` row 135 · report artifact published.
-
----
-
-## 🔴 2026-08-28 — Stored 5-min FIRST BAR of the day is wrong on ~half of sessions (NOT FIXED)
-Found while validating the N500M CCRB fix. The first 5-minute bar of each session, as stored in
-`market_data.db`, disagrees with Kite's final value on roughly half of sessions:
-
-| check | DLF | HDFCBANK | ITC |
-|---|---|---|---|
-| API daily open == API first-5min open | 30/30 | 30/30 | 30/30 |
-| DB daily open == API daily open | 29/30 | 29/30 | 29/30 |
-| **DB first-5min == API first-5min** | **14/30** | **17/30** | **19/30** |
-
-So the daily bars are fine and the underlying relationship is exact — it is the stored 5-minute
-series that is off, by 0.1–0.6%, systematically on the first bar.
-
-**Likely mechanism:** `refresh_5min` runs every 5 minutes and captures the 09:15 candle while it
-is still forming; `data_manager._store_data` then inserts only timestamps it does not already
-hold (`df_new = df_insert[~df_insert['date'].isin(existing_dates)]`) and never replaces one, so
-the partial values are frozen permanently. The module docstring claimed "Idempotent — uses
-INSERT OR REPLACE", which is not what the code does (docstring corrected 08-28, no behaviour
-change).
-
-**Who reads this:** vol-BO (the half of N500M that actually trades), ORB, and every intraday
-backtest run off `market_data.db`. Any signal keyed on the opening candle is affected.
-
-**Fix (own change, own testing, after-15:40 deploy):** make the writer correct a row when the
-newly fetched candle differs, or refuse to store the current (incomplete) candle at all and only
-persist bars whose window has closed. Prefer the latter — simpler, and never writes a value it
-will have to take back. Then backfill/repair the historical first bars from the API.
-
-Evidence: `research/N500M_CCRB_DEAD_RULES_FORENSIC_STATUS.md` §6.
-
-
-## 🔴 2026-08-28 — N500M: half the book (15 CCRB rules) has NEVER fired, since May
-Investigated "why has N500M not traded since 20 Aug". Infrastructure is healthy — all four
-jobs run on time, data refresh 27/27 — but **every one of the 15 CCRB rules is skipped every
-day, and always has been**: 1,230 daily-state rows, 100% `setup_reason='skip:no_setup_row'`,
-and all 32 trades the book has ever taken are `volbo`.
-
-**Root cause:** CCRB's setup gate needs a row keyed on *today* in `daily_setup_table`, which
-needs today's **daily** bar. `services/market_data_refresh.py` refreshes `timeframe="5minute"`
-only, so `market_data.db` has no `day` bar for today at any point in the session (verified
-mid-session: DLF/HDFCBANK/ITC latest `day` = 2026-08-27, latest `5minute` = today 12:40).
-`today_setup` is therefore always `None` → `skip:no_setup_row` → CCRB can never fire.
-vol-BO is unaffected: its gate runs intraday off 5-minute bars.
-(First hypothesis — "precompute at 09:10 is before the 09:15 open" — was REFUTED: the bar is
-missing mid-session too.)
-
-**Fix (NOT applied; needs after-15:40 deploy):** `daily_setup_table` needs exactly one field
-from today's bar — `today["open"]` — and that is already available as the open of today's
-first 5-minute bar. Preferred: synthesise today's daily row from the first 5-min bar and move
-the CCRB precompute to ~09:20. Alternatives: add `day` to the intraday refresher; or recompute
-lazily inside the scan.
-
-**Treat as a strategy change, not just a bug fix** — it switches on 15 rules with no live or
-paper record. Before deploying: (a) verify the synthesised open matches the true daily open
-over ~30 sessions, (b) replay the CCRB gate over 3 months to see the would-have-qualified rate
-against the bake-off's expectation, (c) deploy after 15:40 and watch the first signals.
-
-Full evidence: `research/N500M_CCRB_DEAD_RULES_FORENSIC_STATUS.md`.
-
-## ⚠️ 2026-08-28 12:22:45 IST — quantifyd restarted DURING market hours (not this session)
-`systemd: Stopping quantifyd.service … Started` at 12:22:45, `NRestarts=0` (deliberate, not a
-crash). Not from this session — it was doing frontend builds, a static-feed write and a git
-push; there is **no auto-deploy/pull cron** on the box, so a push cannot cause a restart. The
-reflog shows other sessions committing at 12:06, 12:25 and 12:45 (holdings/Dad-account work),
-so the restart came from one of those or by hand.
-**Consequence checked:** the live NAS-ATM2 leg (NIFTY2690124250PE) was under active SL
-monitoring at 12:15; after the restart the monitor picked it back up and was still ticking at
-12:46, so nothing was left unwatched. Flagging it because it breaks the no-restart-before-15:40
-rule, and concurrent sessions each need to honour it.
-
-
-## ✅ 2026-08-26 — 'silent' paper books audited: three were fine, the projection was wrong
-Checked every book that read as idle or never-traded on /app/strategies and /app/overview.
-- **Pairs — WORKING.** Daily 16:00 scan runs in paper mode, 6 pairs evaluated. Two OPEN cohorts:
-  COFORGE-HCLTECH (short, entry z 2.10, 08-20) and BAJFINANCE-KOTAKBANK (long, z −2.31, 08-21).
-  NAV ₹9.81L, unrealised −₹18,552. Zero closed trades yet — hence the false 'never traded'.
-- **Breakout ₹10L — WORKING, gate-blocked.** One entry ever: NAVINFLUOR ₹1.25L on 08-06, still held,
-  unrealised −₹1,402, NAV ₹10.06L. Latest NAV rows show `gate: OFF`, i.e. NIFTY below the 200-DMA
-  gate, so no new entries — correct behaviour, not a fault. Weekly cadence: mid-week runs only
-  update cash/NAV.
-- **MST — enabled + paper, flat, no signal.** Boots `enabled=True paper_mode=True state=NO_POSITION`;
-  all 10 legacy legs closed by STALE_CLEARED_20260817. No flip since. ⚠️ Its 30-min seed buffer
-  ends **2026-07-16** (`[MST] Seeded 250 historical 30-min bars (last=2026-07-16 15:15:00)`) — worth
-  confirming that a 5-week-old seed plus live 5-min-derived bars gives a sane indicator window.
-  Review already due 2026-09-01.
-- **NWV — idle 23 days**, weekly jobs registered (Sun 22:00 state, Mon 09:46 view). Not yet explained;
-  next item to look at.
-- **ORB Cash — RECOVERED.** 85 closed trades, 39 in 30d, traded today, flat at close. Net −₹27,773.
-
-**FIXED (commit `288a924`):** `services/book_liveness.py` counted closed trades only, so any book
-holding a position read as dead and was dropped from the Overview table. It now also counts open
-positions per book; `days_idle` keeps its meaning (days since last exit), new `days_since_activity`
-counts an entry too, and the pages show `holds N`. Read-only projection — no engine touched.
-Frontend built and live; **the API field arrives with the 09:00 pre-open restart** (no manual
-restart taken: the book was flat on options, 4 manual CNC holdings only).
-
-**Still open from this pass:** (a) why NWV has not traded in 23 days; (b) the MST stale-seed question above.
-
-## ⏳ 2026-08-25 — research/127 STRATEGY-candidate: stock 45→21 DTE winged strangle — next: margin check, then paper book
-One universal ruleset across ~80 F&O stocks (real NSE bhav EOD): sell ±2.5% strangle at
-45 DTE, buy 7% wings, NO stop, TP 50%, exit 21 DTE, ATM vol≥100 + wings traded. Net
-+0.264%S0/trade (t=5.06, n=628); portfolio 39% CAGR dense-era at modeled margin, 21%/−10%DD
-at 2× margin; corr to NIFTY −0.09 (+EV in NIFTY crash months). G3 PASSED (super-winner, OOS,
-liquidity-monotone, DTE placebo 35/55≈0, lag). Full verdict research/127_stock_neutral_wings/
-results/RESULTS.md (commit 964753e). **PAPER BOOK LIVE 2026-08-25 evening** at /app/stock-wings (services/stock_wings_paper.py,
-cron 16:20 bhav-stocks + 16:50/20:30 seed-mark; seeded from 01-Jun: 18 replayed closes,
-10 open Sep-29 positions, NAV Rs20.41L). Strategies index + Ops Center + LABS ref updated.
-**Open items:** (1) real margin check via Kite basket
-margin API (G4 full pass gate); (2) paper book on top-liquidity tier (5-10 slots); (3) earnings
--date source → test earnings-skip; (4) tearsheet + publish to /app/backtest registry.
-
-## 2026-08-25 - 45-DTE straddle paper book: VIX-rank filter ADOPTED + LIQUID1 idle sweep
-
-**Filter is now the plan: India VIX PERCENTILE RANK > 25** vs the previous 252 sessions - NOT a VIX
-level of 25 (that would be 7 of 89 entries; the rank keeps 61 of 89). Study basis: Calmar 1.09 vs
-0.66 unfiltered, zero losing years vs one, worst trade halved (-Rs 1.58L -> -Rs 88k at 3 lots), for
-Rs 1.1L less profit over 7.5 years.
-
-Arun's call: sub-threshold campaigns are **still paper-traded but tagged OFF-PLAN**, so the filter's
-value is measured live rather than assumed. The open Sep-29 position entered at rank 22.6 and is
-retained with that tag. Book now reports NAV "as traded" AND "on plan" side by side.
-All 3 closed trades were ON-PLAN, so realised P&L is unchanged at Rs 1,31,704.
-
-**Idle cash -> LIQUID1** (Kotak Nifty 1D Rate Liquid ETF). Chosen over 17 other NSE liquid ETFs:
-highest measured yield (5.11%) and 3x the depth of any other GROWTH-structure liquid ETF not already
-in use (LIQUIDCASE is pledged, CASHIETF is Momentum's). The Rs 1000.00-pinned ones (LIQUIDBEES etc)
-are the daily-dividend model the project already avoids. Accrual uses the ETF's REAL close-to-close
-prices over each flat span - Rs 3,544 earned over 3 spans so far.
-
-**Also fixed a latent bug:** the monthly-expiry picker would have chosen the 31-Dec-26 legacy Thursday
-contract (listed 2024) over the real 29-Dec-26 Tuesday monthly, and would have fired mid-Nov. Now
-guarded by the prevailing monthly weekday, derived from data rather than hardcoded.
-
-**STILL OPEN:** (1) stress-margin test - the blocking item for live (Ops review 2026-09-30);
-(2) the live mark does NOT evaluate target/stop intraday - exits are only tested on EOD closes, which
-contradicts the hourly-monitoring recommendation. Small fix, not yet done.
-
-
-## 2026-08-24 - Monday dropped from live TimeB, and the Best-Config Lab now reports NET
-
-**Monday is dark live; Friday stays.** r/122's atlas condemned the Monday cell (R:R@p95 1:11.8,
-modelled P(loss) 52%) as the third independent study to do so. Arun dropped Mon, briefly dropped
-Fri too, then kept Friday on its KEEP verdict (93% win, 1:6.9). Live TB-NIFTY = **Tue DTE0 +
-Fri DTE2**. The Monday cell keeps trading on PAPER as `CSL_TIMEB_NIFTY_MON` (8L) so the Nov
-re-run has evidence. Thursday SENSEX 10-lot bump **DECLINED** - stays 8 lots (the p95 tail
-~Rs38k at 8L was the deciding number). Commit 00d62a3.
-
-**research/124 - can Monday be rehabilitated? NO EDGE, CONCLUDED.** Swept 3,014 cells (137
-windows <=120min x 11 stop arms incl. rupee stops) on 17 Mondays + the 2015-> calm-zone study.
-137 cells passed the raw screen; **zero survived Westfall-Young + label-shuffle**. The best cell
-(+5,880@8L) sits at p=0.33 against best-of-2,000-random-draws (null-95 = +7,280) - i.e. it is
-what mining noise produces. Monday is the WIDEST morning of the week, not the calmest; the only
-calm zone (lunch) earns nothing. Kill-sheet: revisit 09:16-11:16 + Rs1,000 rupee stop at >=40
-recorded Mondays. Commits f17a6e9, a9498a2.
-
-**The Best-Config Lab was near-GROSS - fixed.** It charged a flat COST=160 per straddle round
-trip (Rs16/lot on 10 NIFTY lots): brokerage scale only, ZERO slippage, fills at observed chain
-prices. Monday DTE1 read +3,703/day 94% win; net of real costs it is **+1,363/day 75%**, which
-reconciles with r/122 (+1,200 median @8L) and r/124 (+992). Cost is now venue/size-aware
-(0.5pt/leg-side x4 + Rs30/leg-side/lot = Rs2,500 NIFTY, Rs800 SENSEX), the panel STATES the
-basis, and every DTE carries a 0.25/0.50/1.00pt sensitivity band. **Re-costed live rows:
-Tue +10,164 · Fri +3,122 · Thu +13,270 · Wed +367 (was +2,708 - effectively dead).**
-Commit 15edff9; full sweep regen ran after 15:40 via scripts/deferred_lab_regen.sh.
-
-**NAS watchdog was mailing ~12x/day about PAPER books - fixed.** (1) No check looked at leg mode,
-so the paper squeeze books raised naked-leg FAILs on positions with no broker order, and day-P&L
-vs max-loss summed paper + live. Every check is now live-only. (2) The de-dupe hashed the full
-detail text, which carries live ST/SL values - each 5-min poll looked like a NEW fail. Signature
-is now the failure identity with numbers stripped. Verified 13 OK / 0 fail. Commit 3e1288d.
-
-**Live NAS today: flat, -Rs3,601** (916-ATM +2,132 · ATM2 -5,252 · ATM4 -481) - well inside the
--Rs7,800 venue floor, portfolio stop never armed. Both naked survivors exited ST_EXIT @15.70,
-which also CONFIRMS the a792136 trail-counter fix fires live.
-
-**PENDING - needs Arun's call:** the 1.0x lot bump, reshaped by the Monday drop. Atlas says Tue
-8->10L is earned (R:R@p95 1:1.5); TB-SENSEX Wed 8L / Thu 5L unchanged unless he says otherwise.
-Also still open: unified per-system position ledger (was due today).
-
-
-## 2026-08-24 - 45-DTE straddle now runs as a 3-lot PAPER book (/app/straddle45)
-
-`services/straddle45_paper.py` + `backtest_data/straddle45_paper.db`. Seeds completed campaigns
-from REAL NSE bhavcopy closes and marks the open position from the broker. Publishes a static
-JSON (`/app/straddle45_paper.json`) so the page needs NO API route and NO backend restart.
-
-State at open: **3 closed, realised +Rs 1,31,704** (2026-05-15/06-09 +453.8 pts, 2026-06-12/07-07
-+31.0, 2026-07-10/08-04 +190.6 - all TIME_21DTE) and **1 LIVE: Sep-29 monthly, entered 14-Aug @
-24350, credit 749.7 pts, marked ~597 from Kite LTP, MTM ~+Rs 29,900, exit due 08-Sep**.
-
-**Found and fixed: bhav had NO download cron** - it sat stale from 2026-07-21 to 2026-08-24, so
-every EOD-priced book was silently ageing. Backfilled the gap and added a 16:10 daily cron.
-Also fixed a real bug in the paper engine: `prev_session()` collapsed FUTURE dates onto the last
-known session, which closed the open trade 18 days early and invented entries for long-dated
-contracts. Future dates now stay unknown.
-
-Crons: mark */5 during market hours; bhav 16:10; seed+mark 16:20. All registered in ops_center
-(new group) with two dated REVIEWS. Strategies register flipped parked -> paper.
-
-**Data limit worth remembering:** the 1-min recorder only picks a contract up at ~27 DTE, so it
-can NEVER price a 45-DTE entry. Entries come from the EOD close; the live mark uses Kite LTP
-until the contract enters the recorder window, then the 1-min feed takes over.
-
-**PENDING before this can go live:** (1) STRESS-MARGIN test - reconstruct per-lot SPAN 2019-26 and
-re-run with a margin-call rule (Ops review due 2026-09-30); (2) paper-vs-study tracking review
-after ~3 completed campaigns (due 2026-11-30); (3) correlation vs THE STACK / NAS / straddle books.
-
-
-## 2026-08-24 - 45-DTE straddle: control-room page LIVE at /app/straddle45 (NOT ARMED)
-
-Arun asked for an app page under Live, in line with NAS/Momentum. Built:
-`frontend/src/pages/Straddle45.tsx` + module.css, route + sidebar entry, and a row in the
-Strategies register (status PARKED - nothing is armed, there is no executor). The page carries
-a **lot selector defaulted to 3** and everything on it re-prices from that: capital to block,
-margin headroom, KPI strip, the year-by-year table, and the payoff graph. Study is stored in
-POINTS so rupees derive as pts x 65 x lots.
-
-Margin measured LIVE from Kite `basket_order_margins` on 24-Aug-2026 (read-only, no orders):
-**Rs 2.13-2.42L/lot, NRML = MIS to the rupee** (no intraday benefit on short index options).
-Margin does NOT rise into expiry - it is flat 1-22 DTE and rises with tenor. What does move it
-is **moneyness**: +26% once spot is 3% away, +41% at 5%, and down-moves cost more than up-moves.
-Since a >=3% move happens in 66% of campaigns, the page sizes capital on the **3%-adverse
-margin (Rs 2.69L/lot) + 2x MaxDD** - at 3 lots that is Rs 12.0L.
-
-**PENDING before this can ever be armed:** (1) the STRESS-MARGIN test (reconstruct per-lot SPAN
-across 2019-26 and re-run with a margin-call rule) - still the one blocking item; (2) an executor
-+ positions feed, none exists today; (3) correlation vs THE STACK / NAS / straddle paper books.
-
-
-## 2026-08-20 - research/119 45-DTE short straddle: STRATEGY-CANDIDATE - stress-margin test OWED
-
-Arun asked us to verify Sandeep Rao's "The Long & The Short Ep. 48" 45-DTE NIFTY short-straddle
-backtest, test 1h vs 30m monitoring, and his VIX percentile filter. **His table replicates on real
-NSE bhavcopy** (89 trades vs 83, win 70.8 vs 69.9%): net **+78.0 pts/trade, t 3.12**.
-**On Arun's margin basis (Rs 3L/lot x 10 lots, Rs 36L blocked; NIFTY lot is 65 not 75, so 1 pt =
-Rs 650): CAGR 11.47% vs NIFTY 11.60%, MaxDD -13.8% vs the index's -38.4%, Calmar 0.83 vs 0.30.**
-Six positive years, worst -3.2% (2019), 2020 POSITIVE. Monitoring settled on REAL 1-minute data:
-0 of 60 sessions in the DTE>=21 band travelled >=50% from their close, and the 3 real 45-DTE trades
-our recorder overlaps stayed within 0.55x-1.08x of credit - neither trigger ever approached.
-Hourly beats daily on the tail only (worst trade -29%, MaxDD -23%); 30m/15m/5m identical.
-VIX >25 is the best risk-adjusted cell (Calmar 1.05); >75 is the WORST on capital (6.95% CAGR) and
-his 85.7% win rate does not reproduce.
-
-**2026-08-23 - Phase E (delta management) REFUTED.** Arun asked: keep the straddle until an x%
-underlying move, then exit and redeploy at the new ATM. Swept 7 thresholds x 3 arms x 3 re-entry
-caps x close/intraday triggers on real bhavcopy prices: **every variant loses to holding.** A cycle
-cut by the move rule realises **-28.6 pts (38% win)**; a cycle left to run to 21 DTE earns **+83.0
-pts (81% win)**. Best managed cell keeps 36% of the return. Cost is only ~12 of the 67-pt shortfall
-- the rest is forfeited theta. Cutting on UP moves costs ~3x cutting on down moves. **Actionable:
-to reduce drawdown, size down rather than manage - hold @ 5 lots (6.73% CAGR / 9.0% DD / Calmar
-0.75) dominates the best managed arm @ 10 lots (5.16% / 9.6% / 0.54).** No further management
-variants worth testing on this structure.
-
-**PENDING - the one thing blocking a live decision: STRESS-MARGIN TEST.** Rs 3L/lot is today's
-margin at India VIX 10.83. VIX peaked 83.61 on 2020-03-24 and SPAN scales with vol, so Rs 36L would
-very likely have been breached in Mar-2020 - forcing a top-up or liquidation exactly when the book
-was losing. Reconstruct per-lot SPAN+exposure across 2019-26 and re-run the equity curve with a
-margin-call rule. **Until then 11.47% CAGR is an UPPER BOUND.** Also owed before any sizing:
-correlation vs THE STACK / NAS / straddle paper books (all short-vol, all lose the same week).
-NO deploy, NO paper book opened yet.
-Report: /app/backtest/nifty-45dte-short-straddle - Full: research/119_45dte_short_straddle/results/RESULTS.md
-
-
-
-## 2026-08-20 — research/114 SENSEX Thursday exits: SIGNAL — deploy decision PENDING
-
-Arun questioned the venue TP after it closed the SENSEX book at 12:13 (+10,194). Two
-independent tests agree it hurts: tp_validation (34 mixed sessions, -4,241 per TP day) and
-research/114 (12 clean Thursdays). The bake-off found the bigger problem: the suite's
-per-leg 30% stop turns +2,630/lot/day at 92% win into -227 at 25% win on expiry day.
-Recommendation, needs sign-off: (1) drop per-leg 30% on SENSEX Thursday, (2) raise TP to
-~4,000/lot or retire it, (3) keep the 50% disaster backstop, (4) add no book stop.
-CAVEAT: 12 benign Thursdays cannot price the tail - this is "remove destructive stops",
-NOT "run naked". Full: research/114_sensex_thursday_exits/results/RESULTS.md
-
-## 2026-08-19 — 1.0x scale plan LOCKED (Option B) + Thursday restructure DEPLOYED
-
-Data-driven split (lab per-DTE cells): Thursday is BOTH venues' best day (NIFTY DTE3 mean
-16,956/91% · SENSEX DTE0 14,322/94%) — so NIFTY Thursday is NOT dark: it runs via a new
-dedicated **CSL_TIMEB_NIFTY_THU book at 3 lots (entry 09:25)** — the max that clears every
-1.3x margin gate at Rs44.7L capital. TB-SENSEX restricted to **Wed+Thu only** (its Mon/Tue/Fri
-cells are the grid's weakest and collide with NIFTY). Main TB-N dark Thu. Config json is FROZEN
-so the trims persist. **PENDING Mon 24-Aug: bump TB-N and TB-SX 8 -> 10 lots** (registered in
-Ops). Weekly targets & progress page: /app/scaleup (append actuals every Friday).
-
-## ✅ 2026-08-18 — research/113: ATM4 roll-leg stop — SIGNAL — DEPLOY STAGED (restart 15:40)
-
-Arun watched the live ATM4 roll (24150 PE @12.1, SL 15.7) die in 6 minutes and asked for a
-data assessment. 81 days real 1-min NIFTY chain, 63 roll events: live rule (1.3x roll_prem)
-is the churniest variant (32% restop, 6% <=15min). Rolling itself is strongly validated
-(never-roll = -49k vs +143k). **DEPLOYED: rolled-leg SL = max(price_x, roll_prem) x 1.3 (MAXV — Arun refinement over SURV; best tail p05 -1,067, 19% restop, +8.5k over old rule)** — beats
-live rule on every metric incl. DTE0. One line in services/nas_atm4_executor.py (~L395),
-SIGNED OFF by Arun 2026-08-18 midday; code patched + committed, deferred restart scheduled 15:40. Verify review in Ops Center (due 2026-08-28). Full verdict: research/113_atm4_roll_stop/results/RESULTS.md.
-Re-check when the data window doubles (~late Sep 2026).
-
-## ✅ 2026-08-20 — Live-vs-app reconciliation job LIVE (11:00 + 14:00, email + WhatsApp)
-
-Arun spotted NIFTY COMB showing **2 lots on the app while the account held 5**. Diagnosis: the
-trade was RIGHT and the page was wrong. `csl_paper_config.json` records the 19-Aug decision —
-*"NIFTY Thursday CONSOLIDATED into NAS_COMB20 DTE3 5L/qty325 09:16-15:20 SL20 ... Total NIFTY-Thu
-size unchanged at 5L"* — and the broker order confirms it: one SELL, qty 325, tag `CSL_NAS_COMB20`,
-avg 133.95/73.80. The page renders the book's static 2L/130 because `csl_paper_live.json` carries no
-lots/qty, so displayed size AND P&L were 2.5x light (+Rs 448 shown vs +Rs 1,218 real).
-
-**Built: `scripts/live_vs_app_recon.py`** — read-only, cron **11:00 + 14:00 Mon-Fri**, emails and
-WhatsApps the report every run (`get_notification_service()`), writes `static/app/live_recon.json`
-and appends to `docs/LIVE_RECON_LOG.md`.
-
-Four checks: **ORPHAN** (broker leg no book claims) · **SIZE** (broker qty != app qty) ·
-**GHOST** (app records a leg the broker lacks) · **NAKED** (short option with no SL resting at the
-exchange). Manual equity holdings are INFO, not alerts.
-
-Getting it honest took four passes, each a lesson about where truth lives:
-1. `*_positions WHERE exit_time IS NULL` → 16 false GHOSTs (May/June expiries never marked closed).
-2. App state endpoints → SENSEX legs invisible (sensex_live.json has no leg detail) = false ORPHAN.
-3. `config.paper_trading_mode` → reads False on the 916 arms while they trade paper-shadow.
-4. **The day/gap matrix ALSO lies** (`nas_916_atm: live=true`) — a per-DTE gate forced paper anyway.
-**Truth = each position row's own `mode` column.** Only `mode='live'` legs are expected at the broker.
-
-First clean run 11:57 IST: 7 broker legs, **0 alerts**, 4 NAKED warnings, 3 manual holdings.
-It resolves COMB20 correctly at 325 = 325.
-
-**The 4 NAKED warnings are real and worth a decision:** SENSEX 77500 CE/PE and NIFTY 24200 CE/PE are
-short with software-side stops only — the same exposure as the 2026-08-17 incident.
-
-**STILL OPEN (display bug):** make the Straddles page show each CSL sleeve's EFFECTIVE per-DTE
-lots/qty instead of the static book default. The data is already in `csl_paper_config.json`; the
-page just needs to read it (or the feed writer should emit it, which touches the executor).
-
-## 2026-08-20 — P0 ORB Cash: paper stops fire instantly (my entry fix exposed a 2nd defect)
-
-The 05-May entry fix works — ORB booked 8 positions today, the first since May. But **all 8 closed
-at exactly their stop 13-42 seconds after entry** (`SL_HIT_EXCHANGE`), and today's -Rs 21,029 is
-**fictitious**. Arun caught it: AXISBANK entered 1,247.00 at 09:40:05 and "stopped" at 1,236.20 at
-09:40:47, a price it never traded after entry (it rallied to 1,250.10, +1.22%).
-
-**No real money at any point** — every order today is `PAPER-xxxx`; no broker exposure.
-
-**Root cause:** `_kite_order_history()` (orb_live_engine.py) returns a SYNTHETIC
-`status: "COMPLETE"` in paper mode, by design, "so SL-poll loops terminate cleanly". The
-exchange-SL reconciliation at ~line 1560 (`Step 1b`) reads any COMPLETE as "the stop filled" and
-closes the position at `average_price or pos['sl_price']` — `average_price` is None for the
-synthetic row, so it books the exit at exactly the stop. Before my fix no positions existed, so
-this path never ran; fixing entries exposed it.
-
-**Fix (engine code — needs approval + after-15:40 deploy):**
-1. Skip Step 1b entirely in paper mode: `if self._is_paper() or str(sl_order_id).startswith('PAPER-'): continue`
-   — let the existing price-based SL monitor decide stops from the LTP, as it does for live.
-2. Record `paper_mode=1` on positions created in paper mode. Today's 8 rows are written with
-   `paper_mode=0`, so paper trades masquerade as live in orb_positions (pollutes the journal and
-   the liveness reader).
-3. Delete or tag today's 8 phantom rows so the book's record is not poisoned.
-
-**Meanwhile:** ORB Cash should go to Off (mode toggle, reversible, no code) or it keeps writing
-false trades every few minutes. Awaiting Arun's word.
-
-## 2026-08-19 — KC6 audit: paper all along, but mislabelled in two places
-
-Chased the "KC6 shows 5 trades in 30 days while the register says parked" flag from the liveness
-projection. Verdict: **never real money, but the records are wrong in two ways.**
-
-- Every KC6 order ever placed is `status='PAPER'` / `'PAPER_TARGET'` with `kite_order_id NULL`.
-  No broker exposure at any point.
-- It was NOT dormant: 6 closed trades total, **5 between 23 Jul and 17 Aug** (BANDHANBNK −4,999,
-  ADANIGREEN +935, PHOENIXLTD +1,582, ADANIPORTS +2,756, NH −4,979), net **−₹4,202**, 67% win.
-- `config.enabled` is **False** now with 0 open positions, so "parked" is accurate today — the
-  register's old note ("scheduler runs, unfunded") just undersold a month of paper activity.
-  Register corrected 19 Aug.
-
-**STILL OPEN — journal mislabel:** `services/journal/sources/kc6_source.py:66` hardcodes
-`'mode': 'LIVE'`, so ₹5,528 of PAPER P&L sits in a ledger that is supposed to be live-only. Same
-class of problem as the ORB-Index and ORB-Cash sources. Fix it with the journal live-only work
-(item 4 of the app-review follow-ups) — one filter fixes all three.
-
-**Also noted:** the service was restarted at **14:08 IST on 19 Aug, during market hours** (not by
-this session). Side effect: the ORB entry fix and the liveness endpoint went live early, and the
-15:40 deferred restart was therefore cancelled as redundant. Worth knowing who/what triggered it —
-the standing rule is no restart before 15:40.
-
-## 2026-08-19 — Per-book activity audit: 5 of 6 are fine, ORB was the only break
-
-Arun: "i see no paper trades in orb cash ... nwv, n500, mst, 175wr, pairs ... breakout 10L as well".
-Audited each one against its own store rather than its page.
-
-| Book | Trades | Last | Status |
-|---|---|---|---|
-| **NWV** | **2 cycles, both winners** | 03 Aug | WORKING. 27 Jul bullish -> PT **+Rs 14,586**; 03 Aug neutral -> TIME **+Rs 12,187**. 10 + 17 Aug the weekly view said `ignore`, so it correctly skipped (`SKIP_IGNORE` rows in history). Next decision Mon 09:50. |
-| **N500M** | 31 since 08 May | 17 Aug | WORKING. +Rs 13,852, 58% wins. Sparse by design — the per-stock volbo trigger fires ~2x/week across 27 names. |
-| **I75WR** | 1 | 18 Aug | WORKING. First paper trade booked the day after enabling: AARTIIND SHORT 570 @525.85 -> EOD 530.10, -Rs 2,422. 35 other signals correctly BLOCKED. |
-| **Pairs** | 0 | — | WORKING, no trigger yet. The 16:00 scan logs all 6 cohort pairs with their z-scores; none has breached the entry band since it was enabled on 17 Aug. |
-| **MST** | 0 since re-enable | 07 May | WORKING, no trigger yet. Booted FLAT, 30-min bars aggregating; needs a stochastic cross with >=6 DTE. |
-| **Breakout Rs10L** | 1 open | 06 Aug | WORKING. Gate ON only 1 of 33 sessions since 01 Jul; that window bought NAVINFLUOR (-4.6%). Gate settled by research/109 — do not re-litigate. |
-| **ORB Cash** | 0 since 05 May | 05 May | **WAS BROKEN** — undefined-name in the entry path, fix deploys at 15:40 today, first paper trades expected Thu 20 Aug. |
-
-**Conclusion: only ORB was broken.** The other five are running correctly and are simply
-low-frequency; two of them (NWV, N500M) have real P&L that the pages never show.
-
-**ROOT CAUSE OF THE PERCEPTION GAP (and the fix worth building):** every one of these pages shows
-*today* and hides the book's own history. NWV has +Rs 26,773 of closed cycles sitting in a JSON the
-page does not render; N500M has 31 closed trades and an EMPTY `n500m_equity` table so there is no
-curve to draw. This is finding #14 in `docs/APP_ASSESSMENT_2026-08-17.md`.
-
-**TO BUILD (read-only projection, no engine touched — inside the standing guardrail):**
-a per-book history footer on every paper page — last trade date, days since, trades in 30d,
-cumulative net, win rate, and a sparkline derived from the trade table. Plus the liveness rule
-(mode + last-trade + days-idle) so "is this thing running?" is answered on the page itself instead
-of by a database query.
-
-## 2026-08-19 — Breakout gate question: ALREADY ANSWERED by research/109 (no new study run)
-
-Arun, looking at 4 strong qualifiers the gate skipped: "the qualifying stocks picked up are excellent
-picks, in fact entry must hv been few days earlier too". Before running a gate-cost study I checked
-the shelf — **research/109 already swept exactly this**, from 2006, same rules and costs.
-
-Its verdict: **changing the gate threshold is a dead end; cadence was the lever.**
-
-| Gate (daily cadence) | CAGR | MaxDD | Calmar |
-|---|---|---|---|
-| ma200 (current) | 18.9% | -33.7% | 0.56 |
-| ma150 | 17.5% | -30.7% | 0.57 |
-| ma200 hysteresis +/-3% | 16.4% | -28.7% | 0.57 |
-| ma200 hysteresis +/-1% | 16.1% | -29.8% | 0.54 |
-| ema200 | 14.9% | -34.5% | 0.43 |
-| ma200 + rising slope | 13.6% | -30.7% | 0.44 |
-
-Note WHY hysteresis was tested: the book was paralysed with NIFTY 0.19% below its 200-DMA — the same
-complaint as today (NIFTYBEES -1.38% below). It bought essentially nothing (0.57 vs 0.56). The lever
-found instead was the WEEKLY cadence (same 18.9% CAGR, MaxDD -33.7% -> -27.3%, Calmar 0.56 -> 0.69),
-and that is already live in the book (`decision_cadence="weekly"`).
-
-Live-window context: since inception 01 Jul the gate has been ON for **1 of 33 sessions** (06 Aug).
-That single open window is what bought NAVINFLUOR, currently -4.6%. A 33-session sample cannot
-overturn a 20-year sweep, and re-testing a settled negative is the multiple-testing sin the playbook
-warns about — so **no new gate study was run**.
-
-**QUEUED (after 15:40, not during market hours):** the one interaction research/109 did NOT test —
-hysteresis +/-1% *combined with* the weekly cadence (its gate variants were all swept at daily
-cadence). ONE pre-registered cell vs the base config, using the existing harness
-`research/109_breakout_gate_freq/scripts/run_breakout_opt.py`. Deliberately not launched during
-market hours: heavy compute on this box has starved live monitors before.
-
-Housekeeping from the app review, same folder: **research/109 is used TWICE**
-(`109_breakout_gate_freq` and `109_intraday_stocks`) and neither is in `research/INDEX.md`.
-
-## 2026-08-19 — P0 ORB Cash: paper entries never booked since 05 May (FIX WRITTEN, NOT APPLIED)
-
-Arun asked why the paper books are not trading. ORB Cash is not "filtered out" — it is **broken**.
-
-**Root cause:** `services/orb_live_engine.py:1870` calls
-`self._verify_order(kite, order_id_str, instrument, 'entry')` where **`kite` is undefined** in that
-scope. Every entry raises `NameError: name 'kite' is not defined`; the enclosing `except` logs
-"Entry order FAILED", writes a REJECTED order row and returns None, so the caller skips on and
-**no position is ever recorded**. The exit path (line 2284) does it correctly, guarded by
-`if not self._is_paper(): kite = self._get_kite()`.
-
-**Regression:** commit `03fc917` (2026-05-05) added the `_kite_place_order` paper wrapper, removing
-the inline `kite = self._get_kite()` that had been defining the name. Last position recorded
-05 May 13:05. Since then PAPER-placed orders equal REJECTED rows 1:1 every month (Jun 225/225,
-Jul 200/200, Aug 83/83) with **0 positions**.
-
-**Severity:** in LIVE mode the real Kite order is placed BEFORE the NameError fires, so the engine
-would hold an untracked real intraday position with no SL and no monitoring. Currently PAPER, so
-nothing is at risk today — but the Live button is one click away.
-
-**Fix (one line, mirrors the exit path) — NOT applied; needs approval + after-15:40 deploy:**
-
-    if not self._is_paper():
-        kite = self._get_kite()
-        self._verify_order(kite, order_id_str, instrument, 'entry')
-
-Verify next session: `orb_positions` gains rows, and PAPER-placed no longer pairs 1:1 with REJECTED.
-
-Full forensic: `research/113_orb_paper_entry_forensic/ORB_PAPER_ENTRY_FORENSIC_STATUS.md`.
-
-**Side finding — this kills the filter-cost study for this question.** The filters were never the
-reason the book is flat. Stored counterfactuals in `backtest_data/orb_backtest.db` (186 run days,
-2025-08-18 to 2026-08-18): TAKEN 675 trades **+Rs 34,260**; BLOCKED 376 signals would-be
-**-Rs 25,104** — the filter stack SAVED about Rs 25k over the year. Separately, 1,105 ERROR rows in
-that table point at data-pipeline noise in the 15:45 backtest job, worth its own look.
-
-## 2026-08-17 — App review follow-ups (PENDING — from `docs/APP_ASSESSMENT_2026-08-17.md`)
-
-Independent structural review of the whole app (37 pages, 391 backend routes, 90 scheduled jobs,
-128 research folders). Full findings + evidence in the doc; rendered artifact "Quantifyd App
-Assessment". **Guardrail (Arun, binding, now in `.claude/CLAUDE.md`): none of this touches live or
-paper trading logic** — read-only projections, display/routing, shared components over existing
-endpoints, and docs only.
-
-In the order to do them:
-
-1. **Dead-link hygiene** (half a day) — (a) Settings nav item points at `/settings`, which has no
-   React and no Flask route: build the page or remove the item; (b) `nas_analyzer.py:5`,
-   `options_outlier_scan.py:5` and `docs/LABS_AND_JOBS_REFERENCE.md:46-47` all say `/app/reports`,
-   which never existed (the page is `/app/report`, nav label "Performance", title "NAS performance
-   report" — pick one name); (c) `/api/v2-ironfly/` bare-prefix fetch in `Straddles.tsx` matches no
-   route; (d) ORB Index (`/strangle`) has no nav entry — put it in Paper Books; (e) NotFound has no
-   way back.
-2. **Register the morning token chain in the Ops Centre** — `auto_login.sh` 08:50, `token_heal.sh`
-   09:06, `preopen_restart.sh` 09:00, `killflag_premarket_check.py` 09:05 appear in NEITHER
-   `ops_center.py` nor the labs doc, and a stale-token cascade is a known way to lose the 09:16
-   one-shot. Ten-minute edit, highest-consequence gap found. Then: ops page diffs
-   `scheduler.get_jobs()` + `crontab -l` against the curated table with paper/parked families
-   filtered out by design (Arun's ruling: ops covers live + research/re-assessment only), showing
-   in-scope-but-unregistered jobs as **UNREGISTERED**. Also missing and in scope:
-   `sensex_live_writer`, `publish_nifty_5m`, `gen_momentum_scan`, holdings jobs (3 + 2 cron),
-   `db_integrity_watchdog`, `instruments_dump`, `premarket_brief_*`, and the research recorders
-   (`sl_reanchor_shadow`, `dl_sensex_1min`, r/56, r/80, r/82, r/90 travel, mentor capture). Four
-   more are in the labs doc but not ops_center: `snapshot_nas_eod`, `dump_nas_mtm`,
-   `options_study_agg`, `backup_to_github_release`.
-3. **Liveness rule per system** — mode + last trade + last signal + days idle, computed from the
-   trade tables, shown on the register and on each page. This is what would have caught I75WR
-   (7 jobs, empty DB), Pairs (same) and MST (dead since 07 May) months ago.
-4. **Journal = exactly the live book** (Arun's ruling: live-only by design). Today it misses 3 of
-   the 5 live systems — TB-CSL NIFTY, NAS_COMB20 (both in `csl_paper_state.json`) and Momentum ₹3L
-   — while ingesting 3 non-live ones: ORB Index 349 trades (−₹2,02,510), ORB Cash 46 (−₹21,888),
-   KC6 6 (−₹5,528), i.e. ≈ −₹2.3L of paper/parked P&L inside a real-money ledger. Cheapest first
-   step needs no new code: filter to live strategies. Then add a CSL source + a momentum source and
-   retire/tag the orb, strangle and kc6 sources.
-5. **Shared page furniture** — `<PageHeader>` (name, purpose, mode chip, size, Rules/Study/Journal
-   links), `<ModeChip>` and `<ModeControl>` to end the nine-words-for-three-states problem
-   (LIVE/PAPER/REAL/ARMED/Off/Disabled/Parked/"Live trading"/"Paper trading"), one money formatter
-   (formatPnl 16 pages vs toLocaleString 18 vs Math.round 17; "₹" 15 pages vs "Rs" 12). Apply to
-   the five paper-book pages first — their stylesheets are byte-identical (md5 `434740f8…`), so they
-   collapse into one `<PaperBook>` driven by a config record.
-6. **Register's second pass** — derive mode/size/last-activity instead of declaring them (the
-   hand-maintained register repeats the ops-centre failure mode); keep rules, evidence and change
-   log by hand. Do this AFTER 3, or it just moves the drift.
-
-Also queued from the same review: per-book history footer (N500M shows today only while its DB holds
-31 trades / 25 sessions / +₹13,852, and `n500m_equity` has 0 rows); generate `research/INDEX.md`
-(47 folders unindexed, and `109` is used by two folders); decide the 7 live-but-unlinked Jinja
-dashboards (`/agent /kc6 /collar /maruthi /bnf /tactical /trident` — `/maruthi` still offers controls
-for a strategy with 9 known correctness bugs); route-level `React.lazy` + polling tiers (one 1.25 MB
-chunk; 23 pages polling 1–60s with no shared policy); accessibility basics (12 aria attrs total,
-`:focus-visible` in 1 of 30 stylesheets).
-
-## 2026-08-17 — Paper trading switched on for the labs (MST included — activates 09:00 Tue 18 Aug)
-
-Arun: "lets do paper trading for all of these... create a section Live above paper books".
-
-DONE:
-- **I75WR** — all 3 configs off → PAPER (persisted in `backtest_data/intraday_75wr_mode_overrides.json`).
-  Jobs were registered all along but every config sat at mode=off, so its DB is empty to date.
-- **Pairs** — off → PAPER. `/api/pair_trading/toggle-mode` only patches the running process, so
-  `config.py PAIR_TRADING_DEFAULTS['enabled']` was flipped to True as well (survives restart).
-- **N500M** — already PAPER and trading since 08 May: 31 closed trades / 25 sessions / 58% win /
-  **+₹13,852**. Nothing to enable.
-- **NWV** — already running as a paper book (`services/nwv_trade.py`, JSON state).
-- Sidebar: new **Live** section (NAS, Straddles) above Paper Books; NWV / N500M / MST / I75WR /
-  Pairs moved into Paper Books. Register updated to match (23 systems).
-
-**MST — DONE, activates at the 09:00 pre-open restart (Tue 18 Aug).** Arun: "MST shud be paper
-trading". The blocker was its stale state, now cleared:
-
-- 6 rows still marked OPEN from 07 May were the incident itself — **ids 1,2 real legs**
-  (`paper_mode=0`: BUY NIFTY 24450 CE @266.80 / SELL 24650 CE @173.65, 65 qty each) on the
-  **expired 2026-05-19 weekly**, plus ids 7-10 priced **0.00** from the frozen-tick
-  `credit_too_low: credit=0/lot` rolls (see `mst_events` 11:15 and 14:45 that day).
-- All 6 marked CLOSED with `exit_reason='STALE_CLEARED_20260817'`, **rows kept, P&L left NULL**
-  (no knowable exit). A `state_cleared` event records why. DB backup:
-  `backtest_data/mst_trading.db.bak_20260817_mst_paper`.
-- `config.py MST_DEFAULTS['enabled'] = True`; `paper_trading_mode` True, `live_trading_enabled`
-  False. The do-not-go-live note is preserved and extended: **LIVE stays barred** until the
-  2026-05-15 causes are closed (tick-pipeline freeze, spurious credit_too_low rolls, rejected
-  real-leg closes).
-- Activation needs one process restart, which the existing `0 9 * * 1-5 preopen_restart.sh` cron
-  performs — so the engine boots FLAT in paper mode at 09:00, before the open. No manual step.
-- **Verify after 09:00 Tue:** boot log should NOT say "State RESTORED from N open legs";
-  `/api/mst/state` should show `enabled: true, paper_trading_mode: true` and a flat state.
-- **WATCH (this is what killed it in May):** any 0.00-priced leg or repeated `credit_too_low` roll
-  in `mst_events` means the tick-freeze is back. Worth a dated review — suggest 2026-09-01.
-
-**OPEN, separate:** the two REAL legs from 07 May expired 19 May with **no exit ever recorded** in
-the app, so that real-money outcome is missing from the ledger. It is knowable from the broker
-statement / May tradebook only. Decide whether to reconstruct it (the journal is live-only by
-design, and MST was live then).
-
-~~PENDING — MST cannot be enabled yet.~~ Original note: every boot logged
-`[MST] State RESTORED from 6 open legs → state=DEBIT_OPEN_L1 direction=1 L1_anchor=24450
-expiry=2026-05-19`. Those legs are from 07 May on an expiry three months dead; switching mode to
-paper would have the engine manage phantom legs on an expired series and produce garbage marks.
-TO FIX: close out the 6 stale rows in `mst_positions` (mark CLOSED with a note — do not delete the
-07 May record), reset the engine state to FLAT, then `POST /api/mst/toggle-mode {"mode":"paper"}`
-(that route is `@login_required`, so it needs a browser session or a cookie).
-
-ALSO PENDING — **N500M page shows today only.** The 25-session history sits in `n500m_positions`
-and `n500m_equity` is empty (0 rows), so there is no equity curve. Worth surfacing past trades +
-a cumulative curve on `/app/n500m` the way the other paper books do.
-
-## ✅ 2026-08-17 — Strategies page → register of live / paper / parked systems (SHIPPED)
-
-Arun picked mocks **A (Register)** and **C (Spec)** — both built at `/app/strategies` behind a
-Register / Spec switch in the page header (choice persists in localStorage; clicking a system name
-or its Rules chip opens that system's Spec). Boxed metric tiles dropped at his request — the Spec
-pane opens on an unboxed stat line with hairline dividers.
-
-- `frontend/src/data/strategies.ts` — **the register of record**: 19 systems, each with status,
-  size, one-line rule, the rules as they run, source-of-truth doc path, published studies (real
-  slugs → `/app/backtest/<slug>`) or a visible "Study pending" gap, and a dated change log.
-  Plus `LAB_PAGES` so the no-capital lab pages aren't silently dropped.
-- `frontend/src/pages/Strategies.tsx` + `.module.css` — rewritten; old StrategyCard grid and
-  "Today at a glance" mini-stats removed.
-- Status split resolved from the repo: Momentum ₹3L = LIVE (real money), ORB Cash = PAPER
-  (resumed 08-17, paper-aware margin gate), KC6 = PARKED (scheduler runs, unfunded).
-- Day P&L only where a feed already exists (ORB `/api/orb/state`, ORB Index `/api/strangle/state`,
-  NAS NIFTY 8×state + SSE LTPs, NAS SENSEX `/app/sensex_live.json`); everything else reads "—".
-
-Mocks: `frontend/mockups/strategies/01_register_three_ways.html`. `tsc --noEmit` clean, built,
-frontend-only (no restart). OPEN: KC6 rows in the journal are tagged LIVE from the dashboard's own
-mode flag — confirm before reading them as real money. Uncommitted.
-
-Binding rule already added to `.claude/CLAUDE.md` — **THE STRATEGIES INDEX IS THE REGISTER OF
-RECORD**: any system going live/paper/parked, changing size, or changing a rule updates the
-index in the same commit (status, size, rule line, Rules/Study/Dashboard links, dated change-log
-entry). Uncommitted as of writing.
-
-## ✅ 2026-08-17 — Journal NAS filter fixed (live) + sidebar page shortcuts
-
-Journal showed "0 trades · Rs0" with the NAS chip selected even though the 15:50 sync had
-projected all 10 of today's NAS cycles. Cause: the chip sends `strategy=NAS` and
-`journal_db.py` matched `strategy = ?` exactly, while stored labels are per-system
-(`NAS-ATM2`, `NAS-916-ATM`, `SENSEX-ATM4`, `ORB-INDEX-OR60-STD`...). Added
-`STRATEGY_FAMILIES` + `strategy_clause()` (family → LIKE patterns, unmapped value still
-matches exactly) and used it in `list_trades`, `daily_summary`, `equity_curve`,
-`r_distribution`. NAS = `NAS-%` + `SENSEX-%`. Verified over HTTP after the 18:06 restart:
-NAS Aug = 11 sessions / 101 trades / +₹1,79,688; 17 Aug = 10 cycles, net −₹13,228.
-
-Also: single-letter page shortcuts in the sidebar (`frontend/src/components/Sidebar/hotkeys.ts`
-is the single source for both the badge and the key listener) — J journal, N nas, H holdings,
-M momentum, O opt-study, etc. Keyed by route, so moving an item between sections keeps its letter.
-`journal_db.py` + mockups + CLAUDE.md still uncommitted.
-
-## ✅ 2026-08-17 — NAS ST-trail confirm-counter bug FIXED + DEPLOYED (restart 15:48 IST, commit a792136)
-
-The intrabar ST-trail on naked ATM/ATM4 survivors never fired: the confirm counter lived in a
-throwaway LOCAL var (`self_atm_breach_ticks`) that read the instance attr via getattr but never
-wrote it back, so it reset to 1 every tick and never reached NAKED_TRAIL_CONFIRM_TICKS(3). Live
-symptom today: a NIFTY 24300 CE survivor breached its ~58.6 trail continuously for 40+s stuck at
-"1/3", never exiting (Arun had to exit manually). Renamed to instance attrs
-`self._atm_breach_ticks` / `self._atm4_breach_ticks` (ATM + ATM4). Deployed after close, service
-healthy, committed+pushed **a792136**.
-VERIFY (review 2026-08-21): next naked survivor should log 1/3->2/3->3/3 then TRAIL EXIT intrabar.
-
-## 2026-08-17 — Unified per-system position ledger (PENDING — "fix the overall stuff")
-
-Root cause of today's COMB mess: the portfolio stop flattens at the ACCOUNT level (it bought back
-COMB's CE without COMB knowing — COMB isn't even in the portfolio stop's system list), and COMB
-runs as a separate in-memory daemon. No shared tagged ledger, so trackers drift from the broker the
-moment any actor (system exit / portfolio stop / manual) touches a shared symbol. Also had to KILL
-the whole CSL daemon to stop COMB's 15:20 phantom-CE exit (freeze/kill flags don't gate an
-already-open book's exit; restart double-enters) — no per-book pause exists.
-
-BUILD: one position ledger where every leg is tagged by owning system; the portfolio stop, COMB, and
-manual fills all reconcile through it; ~~broker-qty ASSERT before any exit buy~~ **DONE 2026-08-18**
-(commit 0b581e7 - CSL exit path now checks broker-held qty: manual close -> reconcile, partial -> capped
-buyback); a per-book pause flag so one sleeve halts without killing the daemon or stranding the others. Registered in Ops Center REVIEWS (due 2026-08-24).
-Today's COMB rightful trade recorded as PAPER in csl_paper_state.json (−₹121 TIME_EXIT) for the
-later rules-vs-actual assessment.
-
-## ✅ 2026-08-14 — Momentum live book: top-up ledger bug FIXED + DEPLOYED (restart 2026-08-16 21:08 IST)
-
-Arun added ₹1L via `/app/momentum-paper` "Immediate equal top-up". Broker fills were correct
-(BHEL 134 / NATIONALUM 147 / LAURUSLABS 30 / RADICO 11 / POWERINDIA 1) but the ledger corrupted:
-
-1. `_buy()` used `INSERT OR REPLACE` → the top-up OVERWROTE the held row, wiping prior qty,
-   cost basis and entry_date. `_sell()` sells the RECORDED qty, so the next Donchian stop would
-   have sold 45 BHEL and ORPHANED 89 shares at the broker with no stop on them.
-2. `cash_deposit()` double-deducted the spend (`_buy` already deducts cash) — cash ₹78,113 short.
-
-DONE: ledger repaired by replaying `mp_fills` + asserting vs `_broker_qty()`; NAV back to
-₹396,204 (capital ₹4L, cash ₹142,289). Code patched in `services/momentum_paper.py` at 14:57.
-
-DEPLOYED Sun 2026-08-16 21:08 IST (market closed). Verified by FUNCTIONAL test on a DB copy,
-not a source grep: top-up of a held name took qty 134 -> 144 (accumulated, not overwritten),
-entry_date preserved (STCG clock intact), cost basis = weighted average 415.54, cash debited
-once. `live_armed` now also exposed by the state API (was returning None) and reads True.
-"Immediate equal top-up" is safe to use again.
-
-Add-funds UI now shows the MINIMUM for a full even split (dearest share price x n_holdings =
-Rs1,78,600 today, constrained by POWERINDIA) plus a live breakdown of what deploys vs what falls
-back to cash and which names get skipped. Frontend-only, shipped 2026-08-14.
-
-## ✅ 2026-08-14 — research/112 fresh-deposit deployment timing: SIGNAL
-
-Settles which policy applies to DEPOSITED cash (r/108 monthly = stop-out cash; r/41 ph-27 weekly
-= all-cash gate re-entry; neither covered deposits). 4 arms × 12 phase offsets, identical cash
-flows, 2011-2026 net of STCG. Winner: **immediate EVEN top-up of names already HELD (12/12
-phases)**; filling empty slots fast loses (false-dawn penalty, consistent with r/108). Edge is
-small — +0.8% terminal over 15.6y (~5bps/yr), 12 phases share one price history so not 12
-independent trials. Live `immediate` mode already implements the winner.
-TODO: make `immediate` the DEFAULT deposit mode when the gate is risk-ON (park only on risk-OFF).
-Details: research/112_deposit_timing/results/RESULTS.md
-
-## 2026-08-09 — research/110 alt-info intraday CONCLUDED: NO EDGE (0/14) — intraday line CLOSED
-Cross-sectional RS dead both directions; event-proxy fade fake (flips in Val); flow
-proxies negative everywhere. 58 intraday constructions total across r/89+109+110:
-OHLCV-derived intraday edge does not clear costs. Would need external data (news
-feeds, order-book depth) to reopen. Both new paper books (ORB revival Rs10L,
-OHOL first-candle 1-lot) LIVE from Mon 2026-08-10; /app pages pending.
-
-## 2026-08-09 — research/109 intraday stocks CONCLUDED: NO EDGE net of costs
-9 families/35 cells/1.94M trades: best signal (narrow-CPR trend-day short) carries
-+5-9bps real excess vs ~10bps cost floor; all Val nets negative. 20%-CAGR intraday
-goal ruled out for price/indicator signals; route ambition via multi-day books +
-ORB revival decision (still pending above) + NAS. OOS 2024+ untouched.
-
-## ✅ RESOLVED 2026-08-10 — research/89 ORB reassessment: revival armed as a PAPER book
-
-**Closed 2026-08-17 during the app review:** the Rs-capped paper revival went live 10 Aug
-(ORB Revival ₹10L, `/app/orb-paper`, multi-day signal only — never the intraday variant that
-killed the live book). ORB Cash itself resumed PAPER 17 Aug. Original entry below.
-
-### (original) 2026-08-09 — research/89 ORB reassessment CONCLUDED — revival decision PENDING (Arun)
-
-- ~~DONE 2026-08-14~~ **THE STACK DEPLOYED LIVE** - suite REAL Mon/Tue/Fri 2L; sleeves live-armed, first REAL fills Mon 17-AUG post LIMIT-fix; Thu shadow per stop-by-DTE evidence. Docs: THE_STACK_FULL_LIVE_DEPLOY_STATUS.md + LIVE_TRADING_SYSTEM_RULES.md. NEXT GATES: Mon 09:16 sleeve fills verify; ~2wk suite-Friday review; ~4wk TB reweight sec-18; 15-SEP paper checkpoint.
-Verdict: live intraday build was the failure (never validated, negative every era);
-multi-day gap-ORB long alive (+16-22bps/trade 2024-26, IN-SAMPLE — OOS consumed).
-Best never-died config: 90-min OR, gap>=0.4%, 4-day hold, long, NIFTY>50DMA gate.
-Offer on the table: Rs-capped sleeve PAPER book, 90-day soak. Do NOT re-arm live.
-Details: research/89_orb_reassessment/results/RESULTS.md
-
-## PENDING 2026-08-31 -- 45-DTE straddle: stress margin ANSWERED, sizing decision owed BEFORE go-live
-`research/119.../scripts/margin_stress_live.py` measured the moneyness x DTE margin surface
-against the real broker (a straddle m% offside == a strike m% away today, so the adverse-move
-axis is bought from Kite, not modelled). Two corrections mattered: compare **margin + MTM loss**
-to capital (margin alone never breaches), and use the **pre-premium-credit** margin, since
-`final` credits an inflated ITM premium that was never received.
-**Result: 3 lots BREACH the Rs 11.96L reserve at an 8% adverse move (110-115% of capital), and
-sit at 95% by 5%.** Running 3 lots through +/-8% needs Rs 13.10L. Safe size at this reserve is
-**2 lots**; 3 lots wants ~Rs 17-18L once a vol spike is allowed for (extrapolated, not measured).
-**And this is a BEST case** -- India VIX was 10.6, near the floor, so the true breach is BELOW 8%.
-DECISION OWED (Arun's -- it is a strategy parameter, nothing was changed): cut to 2 lots, or raise
-the reserve, before this book goes live alongside NAS. The VOL axis remains unmeasured (5 recorder
-days spanning 0.65 VIX pts) -- that half stays dated 2026-11-30.
-Detail: `research/119_45dte_short_straddle/results/RESULTS.md` section 7b.
-
-## PENDING 2026-08-27 -- research/134 follow-ups: weight the long-equity books against the short-vol book
-r/134 CONCLUDED: the short-vol book's enemy is the **low-vol melt-up, not the crash** -- it has never
-lost in a NIFTY down-trend in 75 months (+7.85% in Apr-2020). So no put hedge / jade lizard / skewed
-condor is wanted. The offset is **plain long equity at ~25-35% of combined risk**, which we already
-run (Momentum-30 Rs20L, Breakout Rs10L, HA-2green Rs20L). Verdict is **weighting guidance, not a new
-edge claim** -- nothing is deployed off it yet. Two things owed before acting:
-1. **Re-run Stage B/C with the real books' monthly series** in place of the NIFTY proxy -- those books
-   are higher-beta than the index, so the realised shape will be noisier than tested.
-2. **Per-leg attribution** -- does an index-level sleeve protect the C1 *stock* book, or only the NIFTY
-   straddle? research/128 found stock-strangle tails are idiosyncratic, so this cannot be assumed.
-Standing caveat for any sizing decision: only **7 down-trend months** in the sample, one fast V-shaped
-crash, **no slow grinding bear**. The down-tail is unmeasured, not proven safe -- a multi-quarter bear
-would hurt the equity sleeve *and* test the claim that the neutral book is safe there.
-Study: `research/134_directional_diversifier/results/RESULTS.md`.
+## ✅ 2026-09-02 — BananaPatterns replication (research/142): Phases 1+2 DONE — rules decoded & reproduced, published returns NOT
+
+Full verdict: `research/142_bananapatterns_replication/results/RESULTS.md`. Engine decoded
+(close>ATH-close trigger, at-pivot fill, IBD-RS≥70, ₹5cr TV floor, −8% close-stop, 50-SMA
+close-trail, 8 slots). Honest full-universe replica: 6.5–15.7× across selection paths vs
+their 33.74×; their −11.4% worst-fall unreachable (best −22% daily / −15.3% monthly).
+**PHASE 3 (G3) DONE same night — verdict STRATEGY (candidate), PUBLISHED to
+`/app/backtest/bluesky-ath-breakout-research142`** (tearsheet + vs-indices chart +
+full caveats). 2006-25 net/real-fills 10-seed ensembles: headline config D (gate ON +
+mcap≥₹500cr PIT proxy) median **30.4% CAGR [27.9-34.4] / −31.5% DD / ~203×** vs
+NIFTYBEES 12.3%/−59.7%; converges with research/75 momentum (31.9%/−31.6%).
+**PHASE 4 (optimization) also DONE 2026-09-02:** 48-cell sweep (6 axes + combos +
+sizing×slots, 10-seed ensembles each) — no adoptable betterment except THE CORRECTION:
+mcap-floor "risk filter" claim was an incomplete-snapshot artifact (925→2,042 symbols);
+full data shows floor = pure return drag → **no-floor book is the headline: 517× /
+35.3% / −36.9% (2006→Aug 2026 medians)**. Trail-15/20 spike rejected on plateau; slots
+inert (sizing binds ~5 positions); adaptive mcap switching moot. Correction published
+on the study page. Churn: BlueSky ~4.5× book/yr all-STCG vs momentum 0.38×/yr with
+LTCG → momentum keeps 2-4pp/yr after-tax edge.
+
+**PHASE 5 (2026-09-02, final): HARNESS BUG found in the sweep (trail-SMA NaN-poisoned →
+trail exits disabled → inflated numbers); all decisions re-made on corrected engine +
+Arun's NET-OF-TAX gate (STCG modelled in-sim via `--stcg`).** Locked outcomes:
+(a) ADOPTED SPEC = decoded rules, no mcap floor, gate ON, stop KEPT, trail 50:
+301×/31.8%/−45.7% pre-tax; (b) TAXABLE PICK = trail-20 variant: after-tax 28.0% @
+−33.4% beats trail-50's 25.7% @ −47.8% (tax scales with gains — ranking survives);
+(c) CAPSTONE = 50-50 monthly-rebalanced blend with r/75 momentum: 33.0% @ −27.5%,
+beats both legs (corr 0.29/0.52) — best construction in the study; (d) stop-off and
+mcap-floor rejections confirmed on corrected engine. All published in one consolidated
+update (commit 3f717e2).
+
+**G5 PAPER BOOK LIVE (2026-09-02, Arun: "go"):** `services/bluesky_paper.py` — ₹10L EOD
+soak of the adopted trail-20 spec; cron 18:40 IST; dashboard `/app/bluesky-paper`;
+Strategies index row; ops-center dated review **2026-12-05** (pass criterion
+pre-registered in `research/142_.../BLUESKY_PAPER_DAILY_RUN_STATUS.md`). Study page also
+gained the banana-style full trade book embed (1,082 trades, median seed). Remaining:
+watch first runs this week; momentum-leg tax model for the blend.
+
+**DIVIDEND ENGINE LIVE (2026-09-03, Arun: "yes this is good, build for both"):**
+Quarterly HWM dividend policy on BOTH sleeves — adopted spec = research/142
+`dividend_sim_v2.py` variant E: **25% of new profit above the flow-adjusted HWM;
+payout capped at last dividend +7.5%/qtr (smooth stepping income line); surplus →
+liquid equalization reserve (~6% p.a.) that bridges dry quarters; honest cut+rebase
+if the reserve empties; capital never invaded; positions never force-sold** (outflow
+clipped at cash+CASHIETF). Build: `services/dividend_engine.py` (book adapters +
+declaration math), `scripts/dividend_declare.py` cron **19:15 Mon-Fri** (idempotent,
+acts ≤12 days after quarter end), notices via `services/dividend_notify.py`
+(registrar-style email + WhatsApp both DORMANT until .env keys; desktop alert live),
+`/api/sleeves/dividends` + preview endpoint, Dividends card on /app/sleeves,
+ops-center GROUP + review dated **2026-10-01** (verify first declaration).
+HWMs anchored at adoption: TN ₹9,37,525 (contributed — book underwater, correctly
+pays nothing until recovery), OA ₹9,17,628 (NAV at adoption — backfilled 2020-26
+history is capital, never distributable). ALSO FIXED: True North deposit/withdraw
+endpoints didn't exist (Sleeves portal TN legs 404'd) — added
+`/api/sleeves/truenorth/deposit|withdraw` writing cash/capital/fund_flows in
+mp_state; Sleeves.tsx repointed. 10-yr sim tables:
+`research/142_.../results/dividend_sim_v2_*.csv`.
+
+**GO-LIVE ARCHITECTURE (decided with Arun 2026-09-02, build gated on the Dec-5 soak):**
+books stay SEPARATE (own engines/state/kill-switches); a **Sleeve Allocator** layer sits
+on top using unit-NAV accounting (deposits buy units at NAV per target split, withdrawals
+redeem pro-rata; sleeve-level `adjust_capital` API per engine; monthly rebalance between
+sleeves with ±10% bands). Combined REPORT layer built now: **/app/sleeves** (live 50-50
+blend curve vs both legs + NIFTYBEES, correlation, DD tiles). Live entry mechanic locked:
+evening AMO pivot buy-stops on all credible names → first-past-the-post → watcher cancels
+on book-full (fill-at-close variant REFUTED: 536×→14.4× — the edge lives in the entry
+price). **Standing infra item (independent):
+full-DB split-adjustment repair — remaining scale-broken symbols beyond study set (was
+72/1,666; extend_universe.py fixed those it touched; POCL-class stragglers remain).**
+
+bananapatterns.com claims 64.5% CAGR (PROVISIONAL, 2020-25) on an ATH-breakout screen.
+**Phase 1 (trade-level match, Arun's gate) PASSED** — see
+`research/142_bananapatterns_replication/results/RESULTS.md`: exits reproduced 22/23 to
+exact day+price (rules inferred: −8% stop on CLOSE with gap fills; 50-DMA trail booked AT
+the signal close — optimistic), entries ≈ recent swing-high pivots within ~1% (at-pivot
+buy-stop; some fills fantasy where the day opened above the pivot). Study lives on VPS +
+laptop (SFTP'd; laptop copy is source — NOTE laptop project folder is NOT a git repo,
+fix eventually). **Phase 2 pending:** (1) Arun re-runs the site backtest with "Blue sky"
+selected and shares its trade table (screenshots were VCP-screen); (2) fix our
+market_data.db split-adjustment defect (MCX/HEG/NAZARA/SMLMAH/MUFIN/KFINTECH old rows
+unadjusted; CUPID 5× scale — affects ALL ATH/52wk screens, not just this study);
+(3) extend universe (11/35 trade symbols absent, incl. big winner E2E); (4) full
+2020-25 replication + controls (next-open trail fills, fill realism, costs,
+survivorship, super-winner guard, 200DMA gate).
+
+**UPDATE same evening — Phase 1b DONE, engine fully solved:** Blue-sky ground truth
+(51 trades) validated — exits 37/39 exact; **entry pivot = ALL-TIME-HIGH CLOSE**
+(buy == prior ATH-close to the paisa on ~35/51); study symbols repaired/downloaded on
+VPS (`repair_data.py --apply`, backup in `market_data_unified_bak142`; E2E + BONDADA
+unavailable from Kite/NSE; POCL still 2.5× scale — add to full repair). **NEW STANDING
+ITEM: full-DB split-adjustment repair — 72/1,666 daily symbols have suspected
+unadjusted splits/bonuses** (review demergers before deleting; script pattern in
+research/142/scripts/repair_data.py). Phase-2 build next: point-in-time liquidity-floor
+universe (ALL stocks passing mcap ≥₹500cr + ₹5cr/day, not just their picks), RS-formula
+inference, 8-slot selection rule, then full 2020-25 replication + controls.
+
+## ⏳ 2026-09-01 — Nifty CSL: DTE-0 book selected; TIME-GRID RUN SHEET (11 AlgoTest runs) + restart pending
+
+**Where the study stands (see STATUS doc §0d):** all 14 NIFTY stops (10→300%) run and validated;
+the stop is NOT an optimisable parameter (paired |t|<1.5 everywhere; risk monotonic, return not).
+The book is **DTE-0 (expiry day) only** — 12/14 stops t≥3.0, 6/6 years positive, IS t=2.91 /
+OOS t=2.59. DTE-1 DROPPED (OOS-negative). **Tradeability gate now binding: WR≥45% & losing
+streak≤7** (rejects 10-30% stops — median trade negative). **BOOK: DTE-0 @ 60%** — ₹23.69L /
+294 tr / WR 63.6% / median +₹8,927 / MaxDD −₹1.52L / streak 6 / t 4.28 / OOS t 2.24 @10 lots.
+**SENSEX confirms on a 2nd index** (30SL/60SL, 814 tr, 2023-26): DTE-0 @30% = ₹14.26L / 172 tr /
+t 3.61 / Net-DD 13.8 PASSES; every other SENSEX DTE rejects; paired 30-vs-60 not significant.
+
+**☐ THE 11 TIME-GRID RUNS (Arun runs in AlgoTest; tracker rows 42-52 in CSL_TRACKER_v5.csv).**
+Fixed: NIFTY ATM weekly straddle SELL 10 lots, SL 60% both legs Percent, Partial, trail-BE ON,
+brokerage ON, slippage 0.5, DTE chip CLEARED (DTE split done offline — DTE-1 grid comes free),
+2021-01-01→2026-08-31, export "Download trades" CSV into ~/Downloads with EXACT filename:
+
+1. ☐ entry 09:25 → `algotest_entry0925.csv`   (P1 — most likely improvement)
+2. ☐ entry 09:30 → `algotest_entry0930.csv`   (P1)
+3. ☐ exit 15:00 → `algotest_exit1500.csv`     (P1 — dodge closing gamma)
+4. ☐ exit 14:30 → `algotest_exit1430.csv`     (P1)
+5. ☐ entry 09:20 → `algotest_entry0920.csv`   (P2 — plateau check around 09:16)
+6. ☐ entry 09:45 → `algotest_entry0945.csv`   (P2)
+7. ☐ entry 10:00 → `algotest_entry1000.csv`   (P2)
+8. ☐ exit 14:00 → `algotest_exit1400.csv`     (P2)
+9. ☐ exit 15:25 → `algotest_exit1525.csv`     (P2)
+10. ☐ entry 10:30 → `algotest_entry1030.csv`  (P3)
+11. ☐ entry 11:00 → `algotest_entry1100.csv`  (P3)
+
+STOP after 1-4 if none beats baseline (DTE-0 net ₹23,69,304) by >₹1.5L — that's inside noise.
+Analyser is pre-built & smoke-tested: `research/136_nifty_csl_portfolio/scripts/analyse_timegrid.py`
+(auto-detects the files, reports DTE-0/1/2 side-by-side with both gates). DTE-1 revisit is
+PRE-REGISTERED with a higher bar (both gates + plateau of ≥2 adjacent times + OOS positive alone).
+
+**☐ RESTART PENDING (backend): Straddle Intraday Study deployed to VPS but gunicorn not yet
+restarted** — Claude's restart was blocked by permission gate. Everything else is DONE and
+COMMITTED (`6068d8a`, pushed): 16 runs / 21,172 trades in `backtest_data/algotest_studies.db`
+(loader `scripts/load_algotest_studies.py`), query API `services/straddle_study_api.py`
+(`/api/straddle-study/runs|query` — filter by index/SL/DTE/year-range/events, cost model &
+lots-scale query-time, rank by net/WR/Calmar/Net-DD/PF/t/median/streak), React page
+`/app/straddle-study` ("Straddle Study" in sidebar Options section), frontend BUILT on VPS.
+To finish: `ssh arun@94.136.185.54 'sudo systemctl restart quantifyd'` (after-15:40 rule —
+verified 16:30 IST when staged). Page renders now; API 404s until restart. When new AlgoTest
+CSVs land, re-run: `python3 scripts/load_algotest_studies.py backtest_data/algotest_csv` on VPS
+(scp new files there first).
+
+## ⏳ 2026-08-31 — Nifty CSL (09:16 ATM straddle) → per-DTE configs → AlgoTest Portfolio [research/136]
+
+Arun ran 10 AlgoTest backtests on "Nifty CSL" (NIFTY weekly ATM short straddle, 10 lots / Qty 650,
+09:16 entry, 14:30 exit, 2021-08-31→2026-08-31) sweeping the per-leg stop 300→250→200→150→100→
+75→60→50→30, plus one 15:15-exit run at SL 30. All 10 decoded (PDFs are image-only — page
+images pulled via pypdf+PIL and read at native 3417×5280).
+
+**Findings so far:** SL 30 @ 15:15 is best on P&L (₹25.75L) and Return/MaxDD (3.69); SL 30 @ 14:30
+best on expectancy (0.30) with MaxDD only −₹1.31L. Wide stops (150-300) made NOTHING in 2021-2023
+— all their profit is 2024-26 (regime-dependent, treat as failed). SL 60 is the most year-stable
+(₹2.4-4.7L every year) → portfolio stability sleeve.
+
+**Problems that must be fixed before any conclusion:** (a) SL 30 is the EDGE of the tested grid —
+a boundary optimum, need 25/20/15/10; (b) "Include Brokerage" was OFF in all 10 runs; (c) CE leg
+stop is Percent(%) while PE leg stop is Points(Pts) in every run; (d) the DTE filter chip changed
+35→3→2 but trade count stayed 522 every time — **no run isolates a DTE**, so "DTE 1 and 2 work
+best" is unverified; (e) no margin figure → no ROI/CAGR exists yet; (f) Partial-vs-Complete and
+trail-to-breakeven were never isolated (run 1 vs run 2 changed 4 things at once).
+
+**Next:** work the 64-row tracker at `research/136_nifty_csl_portfolio/results/CSL_TRACKER.csv`
+in gate order — row 21 (brokerage ON) → 13 (SL 20) → 11/12/14 → 16/17 → 18/19 → 24-29 (DTE
+isolation, the real question) → 31-39 (time grid) → 40-50 (re-entry / redeploy-new-ATM / basket
+stops / strangle) → 51-59 (VIX, weekday, IS-OOS, margin) → 60-64 (AlgoTest Portfolio assembly).
+Status doc: `research/136_nifty_csl_portfolio/NIFTY_CSL_ATM_STRADDLE_INTRADAY_SWEEP_STATUS.md`.
 
 ## ⏳ 2026-08-07 — Breakout paper book: cash-model v2 (settlement realism) DEPLOYED, activates TODAY 15:32 IST
 `services/breakout_paper.py` rewritten (commit `f45f619`): 4 cash buckets — one slot's ₹
@@ -1023,13 +289,7 @@ survivor auto-arm. Guardian (`.claude/agents/nas-live-guardian.md`) mandate broa
   the squeeze wait gives it up + skips 15 no-squeeze days. **Recommend: paper squeeze family (nas_atm/atm2/
   atm4) drop the squeeze wait → enter 09:16/09:30** (sign-off needed). results/RESULTS.md.
 
-## ✅ RESOLVED 2026-07-27 — research/94: NWV → jade lizard / IC automation
-
-**Closed 2026-08-17 during the app review:** `services/nwv_trade.py` PAPER book was deployed
-27 Jul with the only rule that survived the bake-off (never roll; exit the threatened side on a
-close beyond S1/R2). Directional JL/IC mapping stays NO EDGE. Original entry below.
-
-### (original) ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
+## ★ DECISION PENDING — research/94: NWV → jade lizard / iron condor automation — 2026-07-27
 Arun's ask: automate the Nifty Weekly View into JL/IC trades ("construct like so" =
 his live 27-Jul position: short 23450 PE / long 22900 PE / short 24500 CE / long
 24700 CE, 10 lots, 4-Aug = pivot-anchored S1/R2 asymmetric condor). **Bake-off DONE
@@ -1158,18 +418,61 @@ high (sell a green pause-bar's low, short mirror "NARROW TO WIDE") when price is
 Verdict: `research/91_sma20_200_pullback/results/RESULTS.md`. SHELVE — do not re-litigate intraday
 (loses gross). Engine + G1/G2/G3 runners committed. Mandatory drift-control rule (r/87-88) applied.
 
-## ✅ RESOLVED 2026-07-21 — research/86 HA 2-green-no-wick 30m LONG: G5 paper book BUILT
-
-**Closed 2026-08-17 during the app review:** the ₹20L paper book has been live since 21 Jul
-(`services/ha_paper.py`, 81 sleeves, cash sleeves — the construction question was answered by
-shipping it). Soak review ~Oct 2026. Original entry below for the evidence trail.
-
-### (original) ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
+## ★ PENDING DECISION — research/86 HA 2-green-no-wick 30m LONG: build the G5 paper book? — 2026-07-20
 **STRATEGY CANDIDATE — the first full survivor of the r/81-86 program** (IS t3.7 → Val t6.0 →
 OOS t3.7 PASSED; OOS book 11.6% CAGR vs bench 5.6%, DD −11%, Calmar 1.03, beat bench all 3 OOS
 years incl. the 2026 down-tape). OOS consumed. Watch-item: per-trade fade 47→36→25bps across
 splits. NEXT: G5 paper book — construction choice needed (cash-CNC sleeves vs futures subset;
 fractional per-name sizing is the practical question). Verdict: `research/86_heikin_patterns/results/RESULTS.md`.
+
+## ⏰ REMINDER ~2026-09-15 — research/111 paper-verdict checkpoint
+After ~4-6 weeks of CSL paper data (books live since 2026-08-14, frozen 13-AUG config):
+compare paper vs in-sample expectations, re-run the weight scan (deliverable3_portfolio.py)
+with real CSL streams, decide STRATEGY-upgrade / re-freeze / kill. Books: csl_paper_state.json.
+
+## ✅ research/111 FINAL DELIVERABLES (user spec 2026-08-13) — ALL FOUR DELIVERED 13-AUG
+1. **CSL best config per index (NIFTY & SENSEX separately)**: per-DTE sweet spots for the
+   combined-SL **plus optimized ENTRY time and EXIT time** (drop the 9:16-only / hold-to-EOD
+   assumption). Engine: entry×exit×SL×DTE sweep on 3-sec dwell data (1-min fallback per day,
+   report n-days per resolution + live-first rule).
+2. **Comparison vs existing NAS systems** — live AND backtested, NIFTY + SENSEX, individual
+   systems AND paired portfolios (NIFTY NAS + NIFTY CSL; SENSEX NAS vs SENSEX CSL), with
+   VISUAL comparisons (equity + DD curves).
+3. **Best portfolio configurations** (weights/day-scheduling across the sleeves).
+4. **One traversable hub** (page/section) linking all tables + tearsheets/charts, lots+days
+   stated everywhere, ending in a CERTAIN conclusion. Findings so far live in
+   research/111_sensex_manual_mgmt/ STATUS + results/.
+
+## ★ NEXT UP (queued 2026-08-12, user-accepted order) — two straddle follow-ons
+
+**① SENSEX manual-trade → automated system (research/NN, new).** Reconstruct Arun's 2026-08-12
+manual SENSEX options trade vs price action — entry was post-ATR-squeeze; the REAL focus is the
+management after a 30% SL breach on one leg (range expanded, then closed after confirmed bullish
+moves). Phases: (1) reconstruct+narrate the trade timeline vs SENSEX/CPR/ATR/BB; (2) codify the
+management state-machine (entry → per-leg 30% SL → on breach expand range → exit on defined
+"confirmed bullish move"); (3) entry-condition bake-off: 09:16 fixed / ATR squeeze / ATR+BB
+squeeze / time-based / staggered time-based; (4) SENSEX theta-decay sweet spot by DTE+time (reuse
+the NIFTY EOD-decay treatment); (5) report page + factsheet per playbook. BLOCKED ON: Arun's
+trade fills (Kite Console export / paste — Kite MCP unauthenticated) + verify SENSEX chain depth
+in options_data.db (looked NIFTY-only; research/103 backfilled SENSEX 1-min underlying only).
+
+**② V1+30%-SL straddle vs NAS-ATM 30%-SL systems — portfolio report.** Compare the new SL30
+system (leaderboard #1, Calmar 6.2, 79 days, 10 lots) against every NAS ATM variant that runs a
+30% per-leg SL. KEY NUANCE: straddle SL is on COMBINED premium; NAS is 30% PER LEG (per-leg fires
+more often on one-sided spikes) — normalize and state clearly. One board: net/mean/win/MaxDD/
+Calmar/SL-hit at stated lots, then correlation → pick best or combine into an efficient blended
+book with combined equity curve. Report page like the others. Data: NAS paper/live records on VPS.
+
+## ✅ 2026-08-12 — /app/straddles: SL30 system + leaderboard + variant lab (commits 4fe808c, b0b94d6)
+Built from Arun's observation that a 30% combined-premium SL is rarely hit (verified: not hit 90%
+of days, 25% hit on DTE0 where it caps the +73–186% gamma spikes). V1 entry + 30% SL backtest over
+the recorded chain: +₹7.56L / 79 days / win 72% / SL-hit 9% / maxDD −₹1.22L at 10 lots — debuts
+**#1 on the Strategy Leaderboard (Calmar 6.2)**. Page adds: leaderboard (A–F grades, hyperlinked
+rows that scroll to each system's section), V2 variant lab (naked-vs-ironfly × stop sweep — calm-
+regime finding: wide/no stop beats tight stops, but naked tail is unbounded), SL30 card (stats,
+intraday + cumulative charts, by-DTE with mean+DD, lots always stated), exit-price column. All
+regenerated by the daily 15:40 post-close cron. Opt-Study page also got NIFTY candles+CPR,
+EOD-decay-by-DTE, sparkline wall (commits d5fe0d1…2d37dfe).
 
 ## ✅ CONCLUDED 2026-07-22 — research/89: Short straddle (calm + flip + real-IV mgmt) — NO ROBUST TRADEABLE EDGE
 User idea: sell monthly straddles into predicted-calm stocks; later reframe: don't hold a month,

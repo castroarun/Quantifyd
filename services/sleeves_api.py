@@ -14,9 +14,18 @@ no trading logic and edits the paper ledger under the engine's own lockfile.
   GET  /api/sleeves/status
   POST /api/sleeves/openalpha/deposit   {"amount": N, "dry_run": bool}
   POST /api/sleeves/openalpha/withdraw  {"amount": N, "dry_run": bool}
+  POST /api/sleeves/truenorth/deposit   {"amount": N, "dry_run": bool}
+  POST /api/sleeves/truenorth/withdraw  {"amount": N, "dry_run": bool}
+  GET  /api/sleeves/dividends           (policy state + ledger, both books)
+  POST /api/sleeves/dividends/preview   (dry-run declaration, both books)
+
+True North flows edit only the cash/capital ledger in momentum_paper.db
+(mp_state) — the momentum engine then sizes off the changed cash at its own
+next scheduled step. No order is placed here and no engine code is touched.
 """
 import json
 import os
+import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
@@ -169,3 +178,84 @@ def sleeves_deposit():
 @sleeves_bp.route('/api/sleeves/openalpha/withdraw', methods=['POST'])
 def sleeves_withdraw():
     return _flow_route('withdraw')
+
+
+# ───────────────────── True North (momentum book) flows ─────────────────────
+MP_DB = ROOT / 'backtest_data' / 'momentum_paper.db'
+
+
+def _mp_conn():
+    c = sqlite3.connect(str(MP_DB)); c.row_factory = sqlite3.Row
+    return c
+
+
+def _mp_get(key, default=None):
+    c = _mp_conn()
+    r = c.execute('SELECT val FROM mp_state WHERE key=?', (key,)).fetchone()
+    c.close()
+    return json.loads(r['val']) if r else default
+
+
+def _tn_flow(kind):
+    amt, dry = _params()
+    if amt is None:
+        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
+    if not MP_DB.exists():
+        return jsonify(error='momentum book DB not found'), 500
+    cash = float(_mp_get('cash', 0.0))
+    cap = float(_mp_get('capital', 0.0))
+    if kind == 'withdraw' and amt > cash + 1:
+        plan = dict(book='true-north', kind=kind, amount=amt, feasible=False,
+                    plan=[f'only Rs {cash:,.0f} is free cash',
+                          'holdings are never force-sold — withdraw less or wait for '
+                          'the next Donchian exit / rebalance to free cash'])
+        return (jsonify(plan) if dry else (jsonify(error=plan['plan'][0]), 409))
+    plan = dict(book='true-north', kind=kind, amount=amt, feasible=True,
+                cash_now=round(cash), capital_now=round(cap),
+                plan=([f'Rs {amt:,.0f} lands in book cash (earns liquid yield while idle)',
+                       'deployed at the next monthly rebalance / gate redeploy']
+                      if kind == 'deposit' else
+                      [f'Rs {amt:,.0f} from free cash', 'holdings untouched']),
+                capital_after=round(cap + (amt if kind == 'deposit' else -amt)))
+    if dry:
+        return jsonify(plan)
+    c = _mp_conn()
+    delta = amt if kind == 'deposit' else -amt
+    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
+              ('cash', json.dumps(cash + delta)))
+    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
+              ('capital', json.dumps(cap + delta)))
+    flows = _mp_get('fund_flows', []) or []
+    flows.append(dict(ts=str(datetime.now()), kind=kind, amount=amt,
+                      via='sleeves portal', positions_touched=False))
+    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
+              ('fund_flows', json.dumps(flows)))
+    c.commit(); c.close()
+    return jsonify(dict(ok=True, executed=plan, cash=round(cash + delta),
+                        capital=round(cap + delta)))
+
+
+@sleeves_bp.route('/api/sleeves/truenorth/deposit', methods=['POST'])
+def tn_deposit():
+    return _tn_flow('deposit')
+
+
+@sleeves_bp.route('/api/sleeves/truenorth/withdraw', methods=['POST'])
+def tn_withdraw():
+    return _tn_flow('withdraw')
+
+
+# ───────────────────── dividends (quarterly HWM policy) ─────────────────────
+@sleeves_bp.route('/api/sleeves/dividends')
+def sleeves_dividends():
+    from services.dividend_engine import POLICY, status
+    return jsonify(dict(policy=POLICY,
+                        truenorth=status('truenorth'),
+                        openalpha=status('openalpha')))
+
+
+@sleeves_bp.route('/api/sleeves/dividends/preview', methods=['POST'])
+def sleeves_div_preview():
+    from services.dividend_engine import declare
+    return jsonify(dict(truenorth=declare('truenorth', dry_run=True),
+                        openalpha=declare('openalpha', dry_run=True)))

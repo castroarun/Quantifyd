@@ -15,16 +15,6 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
-    ("Open Alpha (BlueSky ATH-breakout) paper book (research/142)", [
-        ("Open Alpha nightly EOD run + /app/bluesky-paper", "18:40 IST Mon-Fri (cron)",
-         "G5 paper soak of the adopted taxable spec (close>ATH-close, IBD-RS>=70, Rs5cr TV floor, no mcap floor, -8% stop, SMA20 trail, 200-DMA gate, Rs10L, 8 slots). Publishes static/app/bluesky_paper.json; state backtest_data/bluesky_paper_state.json. Intended live use: 50-50 monthly blend with the momentum book.",
-         "cd /home/arun/quantifyd && venv/bin/python services/bluesky_paper.py --dry"),
-    ]),
-    ("Straddle Intraday Study lab (research/136)", [
-        ("AlgoTest archive DB + /app/straddle-study", "on-demand (no cron)",
-         "Queryable archive of the AlgoTest CSL exports (16 runs / 21,172 trades: NIFTY stops 10-300%, SENSEX 30/60%) in backtest_data/algotest_studies.db - gross+turnover stored, cost model applied at query time. Page ranks any slice (index/SL/DTE/year-range, events excludable) by net/WR/Calmar/Net-DD/PF/t/median/streak with both gates as verdict chips. Re-load after new exports land.",
-         "cd /home/arun/quantifyd && python3 scripts/load_algotest_studies.py backtest_data/algotest_csv"),
-    ]),
     ("Options data capture (feeds every options study)", [
         ("option 1-min OHLC recorder", "15:35 Mon-Fri cron (flock)",
          "Captures 1-MINUTE OHLC (high/low, not just an LTP poll) for NIFTY/BANKNIFTY/SENSEX nearest-2-expiry contracts, ~540/day. MUST run daily: Kite refuses historical data for EXPIRED tokens ('invalid token'), so a missed day is lost forever. Unlocks stop-trigger verification and per-leg MAE/MFE, which the LTP-poll option_chain cannot provide. Read-only vs broker; no engine touched. Deploy doc: OPTIONS_OHLC_RECORDER_1MIN_DEPLOY_STATUS.md",
@@ -99,6 +89,18 @@ GROUPS = [
          "venv/bin/python3 research/111_sensex_manual_mgmt/scripts/per_dte_elimination_check.py"),
         ("nas_suite_csl_replay / csl_mgmt_replay / sleeve_pstop_test", "on demand", "suite-vs-CSL arms, TRAIL/SHIFT arms, portfolio-overlay test (~2 min each)", ""),
     ]),
+    ("Sleeves dividend engine (True North + Open Alpha)", [
+        ("dividend_declare", "19:15 Mon-Fri cron (idempotent)",
+         "Quarterly HWM dividend declarations for both sleeves (adopted policy research/142 "
+         "dividend_sim_v2 E: 25% of new profit above the flow-adjusted HWM, payout capped at "
+         "last dividend +7.5%/qtr, surplus to a 6%-p.a. equalization reserve that bridges dry "
+         "quarters; capital never invaded, positions never force-sold). Acts only within 12 days "
+         "after a calendar quarter end and never re-declares a quarter, so the daily run is a "
+         "no-op most nights. Fires the intimation email/desktop alert with the Console "
+         "withdrawal amount. State: 'dividend' in bluesky_paper_state.json / mp_state. "
+         "UI: /app/sleeves Dividends card.",
+         "cd /home/arun/quantifyd && venv/bin/python scripts/dividend_declare.py"),
+    ]),
     ("Kill / pause levers", [
         ("Freeze flag", "instant", "blocks ALL order placement (suite + sleeves)", "touch backtest_data/nas_manual_freeze.flag"),
         ("Master mode", "instant", "whole stack to paper", "echo '{\"mode\": \"paper\"}' > backtest_data/nas_master_mode.json"),
@@ -109,8 +111,14 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("Open Alpha paper (r/142, formerly BlueSky): soak review - paper vs backtest tracking after ~a quarter", "2026-12-05", "SCHEDULED",
-     "Pass criterion (pre-registered 2026-09-02): per-trade return distribution consistent with the trail-20 backtest ensemble, fills within ~0.5% of modeled (max(open,pivot)), miss-rate at pivot documented, gate behaviour correct. Decide G6 sizing or park. /app/bluesky-paper + research/142 STATUS."),
+    ("First live dividend declaration (True North + Open Alpha) - verify the 2026-Q3 run",
+     "2026-10-01", "SCHEDULED",
+     "The 19:15 dividend_declare cron should fire its first real declarations on 30-Sep/01-Oct. "
+     "Verify: both books declared exactly once (check ledger via /api/sleeves/dividends), the "
+     "HWM was flow-adjusted for any deposits, the outflow left cash/CASHIETF only, the "
+     "intimation notice rendered, and the Console withdrawal amount is sensible. Both books "
+     "are young - a skipped/zero declaration (NAV below contributed capital) is the CORRECT "
+     "outcome, not a failure."),
     ("Stock wings (r/127): REAL basket-margin check - the G4 gate", "2026-09-05", "PENDING",
      "The study sizes on a MODELED margin (1.25x max-loss + 2%, ~6.7% of notional; paper book uses a 10% estimate). Measure real SPAN+exposure via Kite basket_order_margins on a live C1 structure (e.g. the open HDFCBANK/INFY Sep-29 condors) and re-price the CAGR claim: 38.5% at modeled vs 20.2% at 2x. Until measured, quote the 2x row."),
     ("Stock wings (r/127): paper-vs-study tracking review after ~3 cycles", "2026-11-25", "PENDING",
