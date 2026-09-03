@@ -256,7 +256,6 @@ function DividendsCard() {
   const [busy, setBusy] = useState(false);
   const [showHow, setShowHow] = useState(false);
   useEffect(() => { apiGet<DivStatus>('/api/sleeves/dividends').then(setDv).catch(() => setDv(null)); }, []);
-  if (!dv) return null;
   const preview = () => {
     setBusy(true);
     fetch('/api/sleeves/dividends/preview', { method: 'POST', credentials: 'include' })
@@ -302,12 +301,22 @@ function DividendsCard() {
         automatically after each quarter end and fire the intimation email / desktop alert with the
         Console withdrawal amount.
       </p>
-      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-        {row(dv.truenorth, 'True North')}
-        {row(dv.openalpha, 'Open Alpha')}
-      </div>
+      {dv ? (
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+          {row(dv.truenorth, 'True North')}
+          {row(dv.openalpha, 'Open Alpha')}
+        </div>
+      ) : (
+        <p className={styles.note}>
+          Live HWM / reserve / ledger state arrives with the 15:40 IST service reload
+          (deferred-restart armed). Anchored today: True North HWM ₹9,37,525 (contributed
+          capital — currently underwater, so it correctly pays nothing until recovery),
+          Open Alpha HWM ₹9,17,628 (NAV at adoption — backfilled history is capital, never
+          distributable). First declaration: 30-Sep-2026, 19:15 cron.
+        </p>
+      )}
       <div style={{ marginTop: 10 }}>
-        <button disabled={busy} onClick={preview}
+        <button disabled={busy || !dv} onClick={preview}
           style={{ padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13,
                    border: '1px solid var(--hairline, #ccc)', background: 'var(--surface)', color: 'var(--ink)' }}>
           Preview next declaration (dry run)
