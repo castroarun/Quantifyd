@@ -461,10 +461,11 @@ which is the control that validates the campaign machinery.
 
 ## 5b. Premium-triggered management — ADD a second straddle instead of cutting (Phase G)
 
-**Verdict: the ADD idea is directionally right but NOT proven (t 1.15). The
-"equidistant pair" is REFUTED. The one solid result is negative and about the
-rule we already run: STOPPING OUT costs ~130–190 points per fired campaign at
-t ≈ −2.1 to −2.3.**
+**Verdict: REFUTED. Adding a second straddle flips sign when the sample doubles
+(+30.6 pts on the filtered 61, −15.4 on the unfiltered 89) — it was noise. The
+"equidistant pair" is dead flat (+1.3, t 0.03). The one robust result is negative
+and about the rule we already run: STOPPING OUT costs −130.9 pts at t −2.34 and
+RE-CENTRING −153.2 at t −2.44, on the unfiltered book where the sample is largest.**
 
 Phase E killed *move*-triggered management. This asks the different question: fire
 on the **premium ratio** (the live 200%-of-credit stop), and instead of cutting,
@@ -552,15 +553,51 @@ stop card ("fires 2–3 times in 61 trades") is quoting the count from the *unfi
 89-trade book. Fortunate, given the stop is harmful when it does fire — but the card
 should say so.
 
+### The decisive test — run it WITHOUT the VIX filter (Arun, 2026-09-04)
+
+The 200% stop never fires on the filtered book, so the natural next question is what
+happens on the unfiltered 89 where it does. Doubling the sample settles ADD_ATM, and
+not in its favour.
+
+Baseline HOLD, n=89: **76.8 pts/campaign, t 2.90**, MaxDD −1201.8.
+
+| Trigger | Arm | fires | net/camp | t | mean Δ vs HOLD | tΔ | helped |
+|---|---|---|---|---|---|---|---|
+| 130% | **STOP** | 24 | 41.6 | 1.54 | **−130.9** | **−2.34** | 7/24 |
+| 130% | **RECENTRE** | 22 | 36.6 | 1.27 | **−153.2** | **−2.44** | 9/22 |
+| 130% | ADD_ATM | 23 | 72.9 | 2.50 | **−15.4** | −0.46 | 13/23 |
+| 130% | ADD_MIRROR | 16 | 77.1 | 2.91 | +1.3 | +0.03 | 9/16 |
+| 150% | STOP | 13 | 64.9 | 2.43 | −81.4 | −0.99 | 3/13 |
+| 150% | RECENTRE | 13 | 64.4 | 2.36 | −85.3 | −1.58 | 4/13 |
+| 150% | ADD_ATM | 12 | 76.3 | 2.63 | −4.0 | −0.08 | 8/12 |
+| 150% | ADD_MIRROR | 8 | 71.8 | 2.70 | −55.8 | −1.09 | 2/8 |
+| 200% | STOP | **2** | 77.8 | 3.02 | +40.9 | 0.25 | 1/2 |
+| 200% | ADD_ATM | **2** | 76.5 | 2.86 | −17.1 | −0.51 | 1/2 |
+
+**ADD_ATM's advantage flips sign when the sample doubles: +30.6 on the filtered 61
+(11 fires) becomes −15.4 on the unfiltered 89 (23 fires).** That is the cleanest
+available refutation — the +30.6 was 11 campaigns of noise, exactly as the t of 1.15
+warned. ADD_MIRROR lands at +1.3 with t 0.03: a dead coin flip.
+
+**What survives, and more strongly than before: cutting is harmful.** On the bigger
+sample STOP costs −130.9 pts at **t −2.34** and RECENTRE −153.2 at **t −2.44**,
+helping in 7 of 24 and 9 of 22 fired campaigns. The larger sample sharpens the
+negative result while dissolving the positive one — which is the signature of a real
+effect and an imagined one sitting side by side.
+
+**At the live 200% trigger there are only 2 fires even unfiltered.** Nothing can be
+concluded there in either direction, and the +40.9 on STOP@200% is two campaigns.
+
 ### Recommendation
 
-**No change to the live book.** The stop stays where it is precisely because it is
+**No change to the live book, and the ADD family is now closed, not shelved.** The stop stays where it is precisely because it is
 inert; removing it is a separate decision with its own evidence bar, and the arms
-that would replace it do not clear theirs. ADD_ATM at 130% is the only idea here
-worth keeping on the shelf — mean +30.6 pts, t 1.15, better drawdown — but it needs
-either a materially bigger sample or a mechanism argument that survives a
-continuation event, and it needs **double the reserved capital**, which the
-2026-08-31 stress test says the book does not currently have.
+that would replace it do not clear theirs. ADD_ATM looked worth shelving on the filtered book;
+the unfiltered run removed that option. It would also have needed **double the
+reserved capital**, which the 2026-08-31 stress test says the book does not have.
+
+The standing lesson is the one Phase E already wrote and this reproduces on a
+second, independent trigger: **to cut risk on this book, cut LOTS — do not manage.**
 
 ## 6. Robustness
 

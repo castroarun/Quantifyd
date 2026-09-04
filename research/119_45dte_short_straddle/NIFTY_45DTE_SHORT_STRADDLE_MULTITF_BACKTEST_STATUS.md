@@ -248,7 +248,7 @@ not recommend arming it live today.
 
 ## PHASE G — premium-triggered management: RE-DEPLOY or ADD a second straddle
 
-**STATUS: DONE** (2026-09-04) — verdict: ADD_ATM unproven (t 1.15), equidistant pair REFUTED, STOPPING significantly harmful (t −2.06/−2.29). No live change. See RESULTS.md section 5b.
+**STATUS: DONE** (2026-09-04) — verdict **REFUTED**. On Arun's prompt the arms were re-run WITHOUT the VIX filter (n=89, where the 200% stop actually fires): ADD_ATM flips from +30.6 to **−15.4** (t −0.46), equidistant pair +1.3 (t 0.03) — both noise. STOP −130.9 (t −2.34) and RECENTRE −153.2 (t −2.44) are robustly harmful. No live change. See RESULTS.md section 5b.
 
 ### G.1 The Ask
 
