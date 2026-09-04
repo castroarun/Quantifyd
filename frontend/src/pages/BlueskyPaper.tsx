@@ -236,10 +236,14 @@ export default function BlueskyPaper() {
   const [r, setR] = useState<RealFeed | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
-    fetch('/app/oa_real.json')
-      .then((x) => (x.ok ? x.json() : Promise.reject(new Error(String(x.status)))))
-      .then(setR)
-      .catch((e) => setErr(String(e)));
+    const load = () =>
+      fetch('/app/oa_real.json?t=' + Date.now())
+        .then((x) => (x.ok ? x.json() : Promise.reject(new Error(String(x.status)))))
+        .then(setR)
+        .catch((e) => setErr(String(e)));
+    load();
+    const id = setInterval(load, 30000);   // marks refresh every minute in market hours
+    return () => clearInterval(id);
   }, []);
   if (err)
     return <div className={styles.root}><div className={styles.loading}>Real-book feed unavailable ({err}).</div></div>;
@@ -327,20 +331,21 @@ export default function BlueskyPaper() {
         <div style={{ overflowX: 'auto' }}>
         <table className={styles.table}>
           <thead><tr>
-            <th>Holding</th><th>Wt</th><th>Entry</th><th>Buy ₹</th><th>Now ₹</th><th>Today</th>
-            <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th>
+            <th>Holding</th><th>Entry</th><th>Buy ₹</th><th>Now ₹</th><th>Value</th><th>Today</th>
+            <th>P&L ₹</th><th>P&L %</th><th>Days</th>
             <th>Stop −8%</th><th>To stop</th><th>15-SMA trail</th><th>To trail</th>
           </tr></thead>
           <tbody>
             {r.positions.map((p) => (
               <tr key={p.symbol}>
-                <td className={styles.sym}>{p.symbol}</td>
-                <td>{p.weight}%</td>
+                <td className={styles.sym}>{p.symbol}
+                  <span className={styles.muted} style={{ fontSize: 11, marginLeft: 6 }}>{p.weight}%</span></td>
                 <td className={styles.muted}>{fmtD(p.entry_date)}</td>
                 <td>{p.buy}</td><td>{p.ltp ?? '—'}</td>
-                <td className={(p.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
-                  {p.day_move_pct == null ? '—' : (p.day_move_pct >= 0 ? '+' : '') + p.day_move_pct + '%'}</td>
                 <td>{lakh(p.value)}</td>
+                <td className={(p.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}
+                    style={pnlTint(p.day_move_pct == null ? null : p.day_move_pct * 3)}>
+                  {p.day_move_pct == null ? '—' : (p.day_move_pct >= 0 ? '+' : '') + p.day_move_pct + '%'}</td>
                 <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
                   {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
                 <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
@@ -358,10 +363,10 @@ export default function BlueskyPaper() {
           </tbody>
           <tfoot>
             <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
-              <td>TOTAL ({r.positions.length} stocks)</td>
-              <td>{((r.value / (r.nav || 1)) * 100).toFixed(0)}%</td>
-              <td /><td /><td /><td />
+              <td>TOTAL ({r.positions.length} stocks · {((r.value / (r.nav || 1)) * 100).toFixed(0)}% deployed)</td>
+              <td /><td /><td />
               <td>{lakh(r.value)}</td>
+              <td />
               <td className={r.pnl >= 0 ? styles.pos : styles.neg}>
                 {r.pnl >= 0 ? '+' : ''}{inr(r.pnl)}</td>
               <td className={r.pnl >= 0 ? styles.pos : styles.neg}>{pct(r.pnl_pct)}</td>

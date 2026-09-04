@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-09-04T15:00:02",
+ "generated_at": "2026-09-04T15:20:02",
  "books": {
   "orb": {
    "days": [
     {
      "date": "2026-09-04",
-     "trades": 10,
-     "wins": 4,
+     "trades": 12,
+     "wins": 6,
      "losses": 6,
-     "pnl": -27.61,
-     "deployed": 2739380.67,
-     "cum": -33678.43,
+     "pnl": 1519.89,
+     "deployed": 3334018.67,
+     "cum": -32130.93,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -105,6 +105,21 @@
        "conviction_grade": "B"
       },
       {
+       "symbol": "APOLLOHOSP",
+       "pnl": 1054.0,
+       "deployed": 295154.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 34,
+       "entry_price": 8681.0,
+       "exit_price": 8650.0,
+       "entry_time": "2026-09-04T11:00:05.361443",
+       "exit_time": "2026-09-04T15:16:00.258070",
+       "exit_reason": "EOD_SQUAREOFF",
+       "conviction_grade": "B"
+      },
+      {
        "symbol": "BAJFINANCE",
        "pnl": -424.5,
        "deployed": 299640.4,
@@ -117,6 +132,21 @@
        "entry_time": "2026-09-04T11:40:05.932100",
        "exit_time": "2026-09-04T14:30:01.062017",
        "exit_reason": "V9T_LOCK50_BE",
+       "conviction_grade": "A"
+      },
+      {
+       "symbol": "AXISBANK",
+       "pnl": 493.5,
+       "deployed": 299484.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 235,
+       "entry_price": 1274.4,
+       "exit_price": 1276.5,
+       "entry_time": "2026-09-04T11:55:05.037925",
+       "exit_time": "2026-09-04T15:07:16.389016",
+       "exit_reason": "SL_HIT",
        "conviction_grade": "A"
       },
       {
@@ -2226,20 +2256,20 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 223633.34,
+    "avg_trade": 224724.98,
     "days": 17,
-    "trades": 133,
-    "wins": 46,
-    "win_rate": 34.6,
-    "net": -33678.43,
+    "trades": 135,
+    "wins": 48,
+    "win_rate": 35.6,
+    "net": -32130.93,
     "best_day": 3123.4,
     "worst_day": -13754.43,
-    "green_days": 6,
+    "green_days": 7,
     "costs_modelled": false,
-    "t_stat": -1.58,
+    "t_stat": -1.51,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 87,
+    "sim_trades": 89,
     "first": "2026-04-27",
     "last": "2026-09-04"
    }
@@ -10117,6 +10147,33 @@
   "kc6": {
    "days": [
     {
+     "date": "2026-09-04",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 3124.45,
+     "deployed": 99820.0,
+     "cum": 688.07,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "ADANIENT",
+       "pnl": 3124.45,
+       "deployed": 99820.0,
+       "mode": "paper",
+       "origin": "sim",
+       "entry_date": "2026-09-01",
+       "entry_price": 2852.0,
+       "exit_price": 2941.27,
+       "qty": 35,
+       "hold_days": 3,
+       "pnl_pct": 3.13,
+       "exit_reason": "SIGNAL_KC6_MID"
+      }
+     ]
+    },
+    {
      "date": "2026-09-02",
      "trades": 1,
      "wins": 0,
@@ -10326,34 +10383,34 @@
     "basis": "KC6 mean reversion \u00b7 paper throughout",
     "max_position": 99990.8,
     "busiest_day": 199179.6,
-    "avg_trade": 99134.31,
-    "days": 7,
-    "trades": 8,
-    "wins": 5,
-    "win_rate": 62.5,
-    "net": -2436.38,
+    "avg_trade": 99210.5,
+    "days": 8,
+    "trades": 9,
+    "wins": 6,
+    "win_rate": 66.7,
+    "net": 688.07,
     "best_day": 4338.76,
     "worst_day": -4999.54,
-    "green_days": 4,
+    "green_days": 5,
     "costs_modelled": null,
-    "t_stat": -0.28,
-    "top3_share": null,
+    "t_stat": 0.07,
+    "top3_share": 1180.5,
     "broker_trades": 0,
-    "sim_trades": 8,
+    "sim_trades": 9,
     "first": "2026-02-13",
-    "last": "2026-09-02"
+    "last": "2026-09-04"
    }
   },
   "ha-paper": {
    "days": [
     {
      "date": "2026-09-04",
-     "trades": 7,
+     "trades": 9,
      "wins": 1,
-     "losses": 6,
-     "pnl": -2786.77,
-     "deployed": 164823.44,
-     "cum": -17242.18,
+     "losses": 8,
+     "pnl": -3126.92,
+     "deployed": 215469.06,
+     "cum": -17582.33,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10432,6 +10489,28 @@
        "side": "SELL",
        "price": 265.42035,
        "qty": 86.31206854750977,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "BPCL",
+       "pnl": -208.58,
+       "deployed": 25040.22,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 317.054855,
+       "qty": 78.97756874860559,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "CHOLAFIN",
+       "pnl": -131.57,
+       "deployed": 25605.4,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1829.451,
+       "qty": 13.99622247602212,
        "reason": "PATTERN"
       }
      ]
@@ -13475,20 +13554,20 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24638.18,
+    "avg_trade": 24643.7,
     "days": 32,
-    "trades": 246,
+    "trades": 248,
     "wins": 86,
-    "win_rate": 35.0,
-    "net": -17242.15,
+    "win_rate": 34.7,
+    "net": -17582.3,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.47,
+    "t_stat": -1.5,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 246,
+    "sim_trades": 248,
     "first": "2026-07-23",
     "last": "2026-09-04"
    }
