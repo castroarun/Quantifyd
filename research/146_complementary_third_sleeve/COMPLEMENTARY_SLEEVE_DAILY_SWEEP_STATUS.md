@@ -1,6 +1,6 @@
 # Complementary Third Sleeve for TN+OA — Mean-Reversion / Pullback Candidates, Judged on BLEND VALUE
 
-STATUS: RUNNING
+STATUS: DONE — **VERDICT: NO EDGE (as a complement) — nothing clears the pre-registered blend bar; TN+OA stands alone.** See `results/RESULTS.md`.
 
 ## 1. The Ask (verbatim)
 
@@ -122,4 +122,23 @@ proposed w3 ≤ 33% of a ₹20L-class book: not binding; stated.
 
 ## 8. Findings
 
-(populated per phase)
+Full write-up in `results/RESULTS.md`. Headlines:
+
+1. **G1: 3 of 4 families killed** — pullback-reversal (Arun's sketch) −0.69..−0.91%/trade
+   net across all 6 variants; Connors and washout are the r/84 WR-illusion (~60% WR,
+   negative expectancy). KC6 the sole survivor; its crash filter is what makes expectancy
+   positive (+0.104%/trade) — but net/after-tax/slot-constrained it compounds near cash.
+2. **Blend test: every KC6 variant at every weight LOWERS Calmar (1.65 → 1.21-1.53) and is
+   strictly dominated by a plain-cash third sleeve** (which itself fails the pre-registered
+   CAGR floor — de-levering, not alpha).
+3. **The structural finding: the TN gate + OA stops already removed the crash tail** —
+   baseline blend DD inside 2008 window −2.4%, inside 2020 crash −1.5%. Mean reversion's
+   losses land EXACTLY there (KC6 2008 −17..−32%, 2020 −3..−17%): a weakness-buying sleeve
+   adds back the tail the gate removed. Low average corr (0.06-0.15) hid this; the
+   pre-registered per-crash-window check caught it.
+4. The pair's real drawdowns are grinding phases (2018 −11%, 2022H1 −8.8%); mean reversion
+   helps a little there but nowhere near enough. A future third sleeve must earn in THOSE
+   regimes and stay flat in crashes — likely non-equity (new G0, own study).
+
+Closing log: 2026-09-03 23:4x G1 DONE (44 runs) → 23:5x blend+crash DONE → 2026-09-04 00:0x
+RESULTS.md written, verdict NO EDGE (as complement); committed + pushed + published to app.
