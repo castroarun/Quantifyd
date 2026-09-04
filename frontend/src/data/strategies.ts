@@ -225,6 +225,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'momentum-put-hedge-overlay', title: 'Put-hedge overlay vs the cash-exit gate', verdict: 'SIGNAL' },
       { slug: 'truenorth-reassessment-research144', title: 'True North reassessment - gate bake-off, action variants, OA blend (incumbent stands)' },
       { slug: 'truenorth-full-universe-research145', title: 'True North on the Open Alpha universe - r/62 universe rejection revalidated (REJECTED)' },
+      { slug: 'complementary-third-sleeve-research146', title: 'Third-sleeve search for the TN+OA pair - mean reversion / pullback candidates (NO EDGE as complement)' },
     ],
     changeLog: [
       { date: '3 Sep 2026', text: 'Re-assessed end-to-end (research/144): 71-cell gate bake-off, gate-action variants, slots/exits, 12-offset robustness, all after-tax - the incumbent spec WON everything; no change deployed. Block-new-only gate is a wash (tax saving only ~0.22pp/yr) and a worse Open Alpha blend partner; n5/Donch15 and n8/Donch20 add ~2pp CAGR but fail the tail-DD/Calmar gates. 50-50 blend with Open Alpha measured at 27.4% after-tax CAGR / -16.4% DD (Calmar 1.68).' },

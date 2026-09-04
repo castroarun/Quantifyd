@@ -15113,6 +15113,125 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\145_truenorth_full_universe\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'complementary-third-sleeve-research146',
+    title: 'A complementary third sleeve for TN+OA? Mean-reversion and pullback candidates, judged on blend value',
+    verdict:
+      'Arun asked for a least-correlated complement to the TN+OA pair — "may not be best on its own but complements the TN and OA systems and offers better numbers together". Four long-only NSE candidate families were built and judged on a pre-registered BLEND bar against the TN+OA 50-50 after-tax baseline (27.2% / -16.4% / Calmar 1.65), with an explicit plain-cash null and a per-crash-window check. G1 killed three of four families outright: the pullback-reversal sketch loses -0.69 to -0.91% per trade net across all six variants (standalone -11..-19% CAGR at -85..-97% DD); Connors RSI2/3 and N-day-low washout reproduce the research/84 win-rate illusion (~60% win rate, negative expectancy). KC6 — the parked live system, rebuilt honestly — is the sole survivor and its crash filter produces the only positive-expectancy cell (+0.104%/trade net, correlation to TN just 0.11), but net of costs, tax and slots on a survivorship-honest universe it compounds near cash rate. The blend test then failed it anyway: every KC6 variant at every weight (10-33%) LOWERS the 3-sleeve Calmar (1.65 -> 1.21-1.53) and is strictly dominated by plain cash at the same weight. The structural finding is the study\'s real product: the TN gate and OA stops have ALREADY stripped the crash tail out of the pair (drawdown inside the 2008 window -2.4%, inside the 2020 crash -1.5%) — while mean reversion, which buys weakness, takes its losses exactly in those windows (KC6 2008: -17..-32%; 2020: -3..-17%). A weakness-buying equity sleeve adds back the tail the gate removed; low AVERAGE correlation (0.06-0.15) hid this and the pre-registered crash-window check caught it. NO EDGE as a complement — the TN+OA pair stands alone. A smoother ride is an allocation choice (20-25% cash lifts Calmar to ~1.8 at ~5pp less CAGR), not a new system; any future third sleeve must earn in the pair\'s actual loss regimes (grinding phases like 2018 and 2022H1) while staying flat in crashes — likely non-equity, a new study.',
+    status: 'COMPLETE',
+    date: '2026-09-04',
+    cardBlurb:
+      'Can a mean-reversion or pullback sleeve improve the TN+OA pair? Four families tested under a pre-registered blend bar with a cash-null control and per-crash-window checks. Three died at the gate; KC6 survived standalone but failed the blend — mean reversion re-imports the crash tail the momentum gate already removed.',
+    cardStats: [
+      { label: 'Verdict', value: 'NO EDGE as complement — pair stands alone' },
+      { label: 'Best 3-sleeve Calmar (KC6)', value: '1.53 vs baseline 1.65' },
+      { label: 'Baseline crash DD (2008 / 2020)', value: '-2.4% / -1.5%' },
+    ],
+    system: {
+      intro: 'Candidate frame: long-only NSE cash equities, PIT top-500 traded-value universe, 10 slots x 10%, hard stops, NO averaging (r/84 prior binding), 25bps/side, FY-netted 20% STCG / 12.5% LTCG, cash 5%. Families:',
+      rows: [
+        { k: 'F1 KC6 (parked live system, rebuilt)', v: 'Entry close < EMA6 - 1.3xATR6 AND close > SMA200; exit standing limit at KC mid, SL 5%, TP 15%, 15d max hold; variants incl. the universe crash filter and 1.5x ATR.' },
+        { k: 'F2 Pullback-reversal (Arun\'s sketch, formalized)', v: 'Uptrend (close>SMA200, SMA50 rising); price touches/undercuts the 50-SMA (EMA variant); green candle after >=1 red; buy-stop above the green high; SL below min(green low, prior red low); exits 1.5/2/3R, time, SMA20-break.' },
+        { k: 'F3 Connors oversold-in-uptrend', v: 'close>SMA200, RSI(2)<5/10/15 or RSI(3)<15, enter at close; exit close>SMA5 or RSI>65 or time; hard SL 5-7%.' },
+        { k: 'F4 N-day-low washout', v: 'close>SMA200, close at 7/10-day low; exit on close > prior high or time; hard SL.' },
+      ],
+    },
+    conditions: {
+      intro: 'THE OBJECTIVE IS BLEND VALUE, NOT STANDALONE PERFORMANCE — pre-registered before any run: best 3-sleeve weight (w3 10-33%, TN=OA split the rest, monthly rebalanced, all legs after-tax) must beat the baseline by +0.10 Calmar (CAGR >= 25.2%) OR -2pp DD at CAGR >= 27.2%; candidate corr < 0.4 daily vs BOTH legs; robust across 10 OA seeds and TN offsets 0/4/8; crash windows not worsened by >2pp; and it must beat an explicit plain-cash third sleeve (the de-levering null).',
+      rows: [
+        { k: 'Legs', v: 'TN = deployed spec (r/144 engine, after-tax); OA = adopted spec (trail-15, 16 slots, no gate, 25bps, cash 5%, calendar-netted tax) via r/142 bluesky_replay, 10 seeds.' },
+        { k: 'Prior confronted', v: 'research/84: dip-buy + average-down = NO EDGE (win-rate illusion, averaging = tail bomb). Hence hard stops, no averaging, ranked on net expectancy per trade — never win rate; tradeability gate (WR, avg win/loss, max losing streak) shown in every table.' },
+        { k: 'Host / data', v: 'VPS market_data.db snapshot 2026-09-03; research/146 scripts; ~6 min compute.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'G1 — the candidate families (after-tax, 50bps RT, 2012->now; tradeability gate columns)',
+        caption: 'Ranked on net expectancy per trade, never win rate. The pullback sketch is a losing FAMILY, not a mis-tuned variant (all 6 cells deeply negative). Connors and washout show the classic r/84 pattern: ~60% win rate, negative expectancy. KC6 with the crash filter is the only positive-expectancy cell.',
+        columns: ['Family (best variant)', 'Trades', 'Win%', 'Avg win / loss', 'Expectancy/trade', 'Max lose streak', 'CAGR', 'MaxDD', 'corr TN'],
+        rows: [
+          ['KC6 + crash filter', '1,229', '60.5%', '+4.3% / -6.3%', '+0.104%', '20', '4.6%', '-16.0%', '0.11'],
+          ['KC6 base (SL5/TP15/15d)', '1,336', '59.1%', '+4.5% / -6.6%', '-0.016%', '28', '4.5%', '-21.0%', '0.12'],
+          ['KC6 1.5xATR (low exposure)', '413', '55.2%', '+5.5% / -7.2%', '-0.218%', '12', '5.5% (Sharpe 1.27)', '-7.2%', '0.06'],
+          ['Pullback-reversal (best of 6)', '4,101-7,818', '30-39%', '+5..7% / -3..5%', '-0.69..-0.91%', '33-57', '-11..-19%', '-85..-97%', '0.30'],
+          ['Connors RSI2/3 (best of 6)', '6,374-8,416', '~60%', '+2.8% / -4.6%', '-0.13..-0.16%', '16-18', '-1.5..-6%', '-46..-71%', '0.28'],
+          ['7/10d-low washout (best of 4)', '6,741-7,788', '56-60%', '+3.2% / -4.8%', '-0.25..-0.30%', '17-20', '-7..-11%', '-74..-86%', '0.33'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'The blend test — 3-sleeve portfolios vs the TN+OA baseline (after-tax, 10-OA-seed medians)',
+        caption: 'Every KC6 variant at every weight lowers the Calmar and is strictly dominated by the plain-cash null at the same weight. The cash null itself raises Calmar only by de-levering and fails the pre-registered CAGR floor — a sizing choice, not alpha. TN offsets 4/8 and worst-seed columns change nothing.',
+        columns: ['Third sleeve', 'w3', 'CAGR med', 'DD med', 'Calmar med', 'Verdict'],
+        rows: [
+          ['(baseline — none)', '0%', '27.2%', '-16.4%', '1.65', '—'],
+          ['KC6 crash-filtered', '10%', '24.8%', '-16.2%', '1.53', 'FAIL'],
+          ['KC6 crash-filtered', '20%', '22.5%', '-16.1%', '1.39', 'FAIL'],
+          ['KC6 base', '20%', '22.3%', '-19.4%', '1.14', 'FAIL — DD worsens'],
+          ['KC6 1.5xATR', '20%', '22.4%', '-17.9%', '1.25', 'FAIL'],
+          ['Plain cash 5% (the null)', '10%', '24.9%', '-14.5%', '1.71', 'fails CAGR floor by 0.3pp'],
+          ['Plain cash 5% (the null)', '25%', '21.6%', '-11.7%', '1.83', 'de-levering, not adoptable'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'Per-crash-window behavior — why low average correlation was a trap',
+        caption: 'The baseline pair is nearly FLAT inside the two great crashes (TN liquidated on its gate, OA stopped out name-by-name) — there is no crash pain left for a third sleeve to diversify. Mean reversion takes its losses exactly there, breaching the 2pp tolerance in 2008/2020. Its modest help arrives in grinding phases (2018), nowhere near enough to pay for the rest.',
+        columns: ['Window', 'Baseline blend DD', '+25% KC6-crash blend DD', 'KC6 sleeve return in window'],
+        rows: [
+          ['2008', '-2.4%', '-5.3%', '-17.2% (base variant -31.9%)'],
+          ['2015-16', '-6.8%', '-4.0%', '+6.7%'],
+          ['2018', '-11.0%', '-8.0%', '+2.5%'],
+          ['2020 crash', '-1.5%', '-3.2%', '-11.9% (base -17.0%)'],
+          ['2022 H1', '-8.8%', '-8.3%', '-8.1%'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Families adopted', value: '0 of 4', hint: 'pre-declared: "no third sleeve" is a valid outcome' },
+        { label: 'Pullback sketch expectancy', value: '-0.69..-0.91%/trade', tone: 'neg', hint: 'all 6 variants; killed plainly' },
+        { label: 'Only positive-expectancy cell', value: 'KC6 + crash filter', hint: '+0.104%/trade net; ~cash-rate standalone' },
+        { label: 'Best KC6 blend Calmar', value: '1.53 vs 1.65', tone: 'neg', hint: 'worse at every weight; dominated by plain cash' },
+        { label: 'Baseline DD in 2008 / 2020 windows', value: '-2.4% / -1.5%', tone: 'pos', hint: 'the gate+stops already removed the crash tail' },
+        { label: 'Smoother-ride lever', value: '20-25% cash', hint: 'Calmar ~1.8 at ~5pp less CAGR — allocation, not alpha' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'THE TN+OA 50-50 PAIR, UNCHANGED — no third sleeve',
+        summary: 'The structural discovery: the pair\'s crash windows are already nearly flat, so its residual drawdown lives in grinding phases (2018 -11%, 2022H1 -8.8%). Long-equity mean reversion cannot complement this book — it earns nothing in the grinding phases that matter and loses precisely in the crashes the gate already handled. A genuine complement must earn in derating grinds and stay flat in crashes — likely non-equity (carry/debt-plus/gold class), which is a new study with its own G0.',
+        metrics: [
+          { k: 'Baseline (kept)', v: '27.2% / -16.4% / Calmar 1.65 after-tax' },
+          { k: 'Crash windows (baseline)', v: '2008 -2.4%, 2020 -1.5%, 2018 -11.0%, 2022H1 -8.8%' },
+          { k: 'If less risk is wanted', v: '25% cash sleeve: 21.6% / -11.7% / Calmar 1.83 (sizing, not alpha)' },
+        ],
+        rejected: [
+          'Pullback-reversal (green-candle buy-stop at the 50-SMA) — losing family at every knob setting',
+          'Connors RSI2/3 and N-day-low washout — r/84 win-rate illusion, negative expectancy',
+          'KC6 as a third sleeve (any variant, any weight) — crash convergence + dominated by cash',
+          'Averaging-down variants — banned by the r/84 prior, not tested by design',
+        ],
+      },
+    ],
+    caveats: [
+      'Survivorship is the dominant caveat for dip-buying: delisted names are absent from the panel, so every standalone candidate number is optimistic-end — which makes the negative verdicts CONSERVATIVE.',
+      'The KC6 rebuild here (net, slot-constrained, after-tax, PIT top-500) compounds near cash rate — far below the parked live system\'s advertised gross PF 1.70. If KC6 live revival is ever considered, re-derive its economics with this engine first (separate exercise; live services untouched).',
+      'Blend legs: TN deterministic (offsets 0/4/8), OA 10 seeds (r/145 showed 10-seed pair numbers match the 30-seed run within 0.3pp).',
+      'The kills are cost-robust: flipping the dead families needs +0.25-0.9%/trade of edge, 5-18x the cost step between tiers.',
+      'Non-equity third sleeves (gold / debt-plus / carry) were NOT tested — outside the asked scope; the crash-window table is the motivation to study them properly.',
+    ],
+    githubLinks: [{ label: 'research/146 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/146_complementary_third_sleeve' }],
+    projectPaths: [
+      'research\\146_complementary_third_sleeve\\COMPLEMENTARY_SLEEVE_DAILY_SWEEP_STATUS.md',
+      'research\\146_complementary_third_sleeve\\scripts\\ (sleeve_engine, blend3).py',
+      'research\\146_complementary_third_sleeve\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
