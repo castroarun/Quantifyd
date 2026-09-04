@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import TopBar from '../TopBar/TopBar';
 import styles from './AppLayout.module.css';
+import { resolvePage } from '../GlobalSearch/favourites';
 import { apiGet } from '../../api/client';
 import type { AuthStatus } from '../../api/types';
 
@@ -29,6 +30,15 @@ export default function AppLayout({ active, children, topBarRight }: Props) {
         /* swallow — topbar still renders */
       });
   }, []);
+
+  // Tab title: page name FIRST, brand abbreviated - when several tabs are open
+  // the browser truncates from the right, so the page is what stays readable.
+  useEffect(() => {
+    const page = resolvePage(location.pathname);
+    const label = page?.label ?? '';
+    const short = label.length > 30 ? `${label.slice(0, 29)}…` : label;
+    document.title = short ? `${short} · Qntfd` : 'Qntfd';
+  }, [location.pathname]);
 
   // Navigating closes the drawer, so a tap on a page never leaves it covering
   useEffect(() => {

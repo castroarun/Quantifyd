@@ -623,7 +623,7 @@ function saveFlags(f: Record<string, FlagColor>) {
   try { localStorage.setItem('holdingsFlags', JSON.stringify(f)); } catch { /* ignore */ }
 }
 
-export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 'me' }: { holdings: HoldingsRecord[]; ohlcUrl?: string; ohlcUrls?: string[]; account?: 'me' | 'dad' | 'both' }) {
+export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 'me', stopLabel = 'trailing stop (exit)' }: { holdings: HoldingsRecord[]; ohlcUrl?: string; ohlcUrls?: string[]; account?: 'me' | 'dad' | 'both'; stopLabel?: string }) {
   const [view, setView] = useState<'wall' | 'focus'>('wall');
   const [sort, setSort] = useState('day');
   const [filter, setFilter] = useState('all');
@@ -1072,6 +1072,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
               <span><i style={{ borderColor: 'var(--brand-navy)' }} />200-DMA</span>
               <span><i style={{ borderColor: 'var(--ink-faint)', borderTopStyle: 'dashed' }} />52-wk hi / lo</span>
               <span><i style={{ borderColor: 'var(--ink-muted)', borderTopStyle: 'dotted' }} />avg cost</span>
+              <span><i style={{ borderColor: 'var(--accent-neg,#C0392B)', borderTopStyle: 'dashed' }} />{stopLabel}</span>
             </div>
             <div className={styles.kHint}>
               <span className={styles.kbd}><b>←</b><b>→</b></span> browse holdings

@@ -225,6 +225,7 @@ export default function MomentumPaper() {
           </div>
           <HoldingsCharts
             ohlcUrl="/static/momentum_ohlc.json"
+            stopLabel="Donchian 15-day-low stop (the exit rule)"
             holdings={s.holdings.filter((h) => !h.is_cash).map((h) => ({
               tradingsymbol: h.symbol,
               qty: h.qty ?? 0,

@@ -391,6 +391,7 @@ export default function BlueskyPaper() {
           </div>
           <HoldingsCharts
             ohlcUrl="/static/oa_real_ohlc.json"
+            stopLabel="15-SMA trail · floored at the −8% stop (the exit rule)"
             holdings={r.positions.map((p) => ({
               tradingsymbol: p.symbol,
               qty: p.qty,
