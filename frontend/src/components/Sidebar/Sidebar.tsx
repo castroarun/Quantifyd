@@ -221,6 +221,13 @@ export default function Sidebar({ active, userName = 'Trader', mobileOpen, onNav
             collapsed={collapsedEff}
           />
           <NavItem
+            to="/straddle-study"
+            icon={<IconFlask />}
+            label="AlgoTest Study"
+            active={active === 'straddle-study'}
+            collapsed={collapsedEff}
+          />
+          <NavItem
             to="/eod-breakout"
             icon={<IconBarChart />}
             label="EOD"
@@ -405,13 +412,6 @@ export default function Sidebar({ active, userName = 'Trader', mobileOpen, onNav
       <div className={styles.section}>
         {!collapsedEff && <div className={styles.sectionLabel}>Options</div>}
         <nav className={styles.nav}>
-          <NavItem
-            to="/straddle-study"
-            icon={<IconBarChart />}
-            label="Straddle Study"
-            active={active === 'straddle-study'}
-            collapsed={collapsedEff}
-          />
           <NavItem
             to="/options-study"
             icon={<IconBarChart />}
