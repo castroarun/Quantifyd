@@ -1,7 +1,5 @@
 # NIFTY 45-DTE Short Straddle — Replicating "The Long & The Short Ep. 48" + Monitoring-Timeframe Bake-off
 
-> **2026-08-31 — STRESS MARGIN ANSWERED (moneyness x DTE axis).** Measured against the broker instead of reconstructed: a straddle m%% offside == a strike m%% away today. **3 lots BREACH the Rs 11.96L reserve at an 8%% adverse move (110-115%% of capital) and sit at 95%% by 5%%** — and that is at India VIX 10.6, near the floor, so the true breach is below 8%%. Safe size at this reserve is **2 lots**. Go-live blocker as currently sized; nothing changed. See RESULTS.md section 7b. The VOL axis is still unmeasured (5 recorder days, 0.65 VIX pts) — review stays dated 2026-11-30.
-
 **STATUS: DONE — verdict STRATEGY-CANDIDATE (G3 passed, G4 conditional pass). Full write-up in `results/RESULTS.md`.**
 Owner: Claude · Host: Contabo VPS 94.136.185.54 · Started 2026-08-20
 
@@ -245,3 +243,91 @@ kill and restart at any point; each script rewrites its own CSV from scratch.
 lots**; VIX>25 for best risk-adjusted or no filter for best CAGR (never >75); **run the
 stress-margin test before sizing live**; paper-first with a margin-call rule. This study does
 not recommend arming it live today.
+
+---
+
+## PHASE G — premium-triggered management: RE-DEPLOY or ADD a second straddle
+
+**STATUS: DONE** (2026-09-04) — verdict: ADD_ATM unproven (t 1.15), equidistant pair REFUTED, STOPPING significantly harmful (t −2.06/−2.29). No live change. See RESULTS.md section 5b.
+
+### G.1 The Ask
+
+> "in those loss making backtested trades, can we try — when we reach the stop loss and
+> exit, if we deploy a new straddle at the then atm, or say, at 100%, we deploy new
+> straddle at that price or away from it so that we have 2 straddles spaced out
+> equidistant from the price — or any of these combinations for management"
+
+**What is actually being tested.** Phase E already refuted *move*-triggered management
+(exit at x% underlying move, optionally re-centre) — decisively, with a mechanism: cutting
+converts a winner-in-waiting into a booked loser, and every re-centre after the first is a
+coin flip that pays a round trip to play. This is a **different** question on two axes:
+
+1. the trigger is the **premium ratio** (the live 200%-of-credit stop), not the underlying move;
+2. one family of arms **ADDS** a second straddle while keeping the first, rather than cutting.
+
+Axis 2 is the reason this is worth running at all: Phase E's mechanism is a cutting
+mechanism. An arm that never closes the original cannot suffer it. Whether it suffers
+something worse — doubling size into a move that keeps going — is the open question.
+
+**Methodological note that shapes the whole design.** The ask says "in those loss making
+backtested trades". A rule cannot be applied only to the trades already known to have lost —
+that is look-ahead, and it would manufacture an edge out of hindsight. Every arm is therefore
+applied to **all** campaigns under a rule that fires on information available on the day. The
+subset where the trigger actually fired is reported separately, as a diagnostic.
+
+### G.2 Arms
+
+Unit of account: the campaign (one monthly expiry, 45 → 21 DTE), so n stays comparable to
+Phase A/E. All prices are real NSE bhavcopy closes; both legs of any new straddle must carry
+real traded volume and open interest on the day it is sold.
+
+| Arm | At the trigger | After |
+|---|---|---|
+| **HOLD** | nothing (baseline, no stop) | run to 21 DTE |
+| **STOP** | close everything | flat to 21 DTE — *this is the live rule at T=200%* |
+| **RECENTRE** | close, sell a fresh ATM straddle | run to 21 DTE, cap on re-entries |
+| **ADD_ATM** | keep the original, **sell a second straddle at the then-ATM** | both run to 21 DTE |
+| **ADD_MIRROR** | keep the original, **sell a second at K₁ = 2·S − K₀** | both run to 21 DTE |
+
+`ADD_MIRROR` is the ask's "2 straddles spaced equidistant from the price": if spot has moved
+up to S and the original strike K₀ now sits d below it, the new straddle goes d *above* S, so
+the pair brackets spot symmetrically.
+
+**Trigger sweep:** T ∈ {130%, 150%, 175%, 200%} of entry credit. The live stop sits at 200%
+and fires only 2–3 times in 61 trades — far too few to conclude anything from — so the sweep
+exists to buy sample, and every cell reports its own fire count.
+
+### G.3 The honest comparison
+
+The ADD arms carry **two** straddles after the trigger. Comparing their raw point P&L to a
+one-straddle baseline would reward them for nothing but being bigger. Every arm therefore
+reports:
+
+- net points per campaign (raw), **and**
+- net points per unit of **peak** straddles held (size-normalised), **and**
+- peak concurrent units, because margin is the real constraint
+
+**The margin objection, stated before the numbers.** An ADD arm doubles the position exactly
+when the position is most offside — which is precisely when SPAN is most expensive. The
+2026-08-31 stress test measured 3 lots at ±8% already consuming 110% of the book's ₹11.96L
+ring-fence. Doubling there is not free, and a P&L table alone will not show it. Peak capital
+demand is therefore a reported column, not a footnote.
+
+### G.4 Falsification, declared now
+
+- ADD arms are **rejected** unless they beat HOLD on **size-normalised** net points AND do not
+  worsen MaxDD per unit of peak capital.
+- Any arm whose advantage rests on fewer than ~10 fired campaigns is reported as
+  **anecdote, not evidence**, whatever its number looks like.
+- If no arm beats HOLD, the finding is the same as Phase E's and is reported as a
+  confirmation, not a failure.
+
+### G.5 Status
+
+| Date/time (IST) | Event | Notes |
+|---|---|---|
+| 2026-09-04 ~19:0x | Phase G opened; sections G.1–G.4 written before any run | Phase E prior art read first |
+| 2026-09-04 ~19:2x | BUG found and fixed before any result was trusted | trades_daily.csv is the OUTPUT of the stopped book — its exit_date is the stop date on 2 campaigns, which truncated the HOLD baseline and hid the trigger day. Window rebuilt from the expiry. |
+| 2026-09-04 ~19:3x | Fire-count cross-check | 200% never fires on the VIX>25 book; the 3 campaigns that reach it have VIX ranks 21/23/0 — all below the filter |
+| 2026-09-04 ~19:4x | **DONE** — paired test decides it | ADD_ATM t 1.15 (n=11), ADD_MIRROR negative, STOP t −2.06/−2.29 harmful |
+

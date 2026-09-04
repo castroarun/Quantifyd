@@ -459,6 +459,109 @@ which is the control that validates the campaign machinery.
 
 ---
 
+## 5b. Premium-triggered management — ADD a second straddle instead of cutting (Phase G)
+
+**Verdict: the ADD idea is directionally right but NOT proven (t 1.15). The
+"equidistant pair" is REFUTED. The one solid result is negative and about the
+rule we already run: STOPPING OUT costs ~130–190 points per fired campaign at
+t ≈ −2.1 to −2.3.**
+
+Phase E killed *move*-triggered management. This asks the different question: fire
+on the **premium ratio** (the live 200%-of-credit stop), and instead of cutting,
+**add** a second straddle. An arm that never closes the original cannot suffer
+Phase E's mechanism — so it deserved its own test.
+
+Applied to **all** campaigns, not only the known losers (that would be look-ahead),
+n = 61 on the live VIX-rank>25 ruleset, real bhavcopy closes, both legs of any new
+straddle required to carry real volume (≥100) and OI (≥500).
+
+### Aggregate — every arm, VIX>25 book
+
+| Trigger | Arm | fires | net/camp | t | size-normalised | win % | MaxDD | peak units |
+|---|---|---|---|---|---|---|---|---|
+| — | **HOLD (baseline)** | 0 | **104.2** | **3.53** | 104.2 | 72.1 | **−564.8** | 1.00 |
+| 130% | STOP | 12 | 78.5 | 2.39 | 78.5 | 67.2 | −1224.6 | 1.00 |
+| 130% | RECENTRE | 10 | 82.6 | 2.56 | 82.6 | 67.2 | −1186.7 | 1.00 |
+| 130% | **ADD_ATM** | 11 | **109.7** | 3.77 | **121.0** | 72.1 | **−500.7** | 1.18 |
+| 130% | ADD_MIRROR | 8 | 98.9 | 3.17 | 116.5 | 72.1 | −1054.9 | 1.13 |
+| 150% | STOP | 7 | 82.4 | 2.45 | 82.4 | 70.5 | −1049.5 | 1.00 |
+| 150% | RECENTRE | 7 | 88.7 | 2.74 | 88.7 | 70.5 | −921.2 | 1.00 |
+| 150% | **ADD_ATM** | 6 | **110.4** | 3.82 | 116.4 | **75.4** | **−464.3** | 1.10 |
+| 150% | ADD_MIRROR | 3 | 99.2 | 3.25 | 107.9 | 72.1 | −847.2 | 1.05 |
+| 175% / 200% | *all arms* | **0** | 104.2 | 3.53 | — | 72.1 | −564.8 | 1.00 |
+
+### The paired test — the number that decides
+
+Aggregates over 61 campaigns are mostly the 50 campaigns where nothing fired. The
+honest test is the **paired difference on the fired campaigns only**:
+
+| Trigger | Arm | n fired | mean Δ vs HOLD | t | helped |
+|---|---|---|---|---|---|
+| 130% | **ADD_ATM** | 11 | **+30.6** | **+1.15** | 6/11 |
+| 150% | **ADD_ATM** | 6 | +63.7 | +1.75 | 4/6 |
+| 130% | ADD_MIRROR | 8 | −39.7 | −0.54 | 4/8 |
+| 150% | ADD_MIRROR | 3 | −101.6 | −1.12 | **0/3** |
+| 130% | **STOP** | 12 | **−130.6** | **−2.06** | 3/12 |
+| 150% | **STOP** | 7 | **−189.2** | **−2.29** | 1/7 |
+| 130% | RECENTRE | 10 | −110.5 | −1.38 | 4/10 |
+| 150% | RECENTRE | 7 | −135.0 | −1.72 | 1/7 |
+
+**Only the STOP rows clear significance, and they clear it in the harmful
+direction.** Cutting helped in 4 of 19 fired campaigns across both triggers. This
+reproduces Phase E's mechanism on a completely different trigger — the seventh time
+in this repo that tightening a short-premium book has been shown to be destructive.
+
+### ADD_ATM, campaign by campaign (130%) — why t is only 1.15
+
+| Entry | HOLD | ADD_ATM | Δ |
+|---|---|---|---|
+| 2025-02-10 | **+64.1** | **−83.8** | **−147.9** |
+| 2022-07-11 | −452.7 | −500.7 | −48.0 |
+| 2020-11-13 | −292.2 | −316.7 | −24.5 |
+| 2019-05-13 | −82.1 | −95.1 | −13.0 |
+| 2021-11-15 | +56.0 | +49.2 | −6.9 |
+| 2025-04-11 | −444.2 | −399.2 | +45.0 |
+| 2019-10-14 | −263.6 | −208.7 | +54.9 |
+| 2019-03-11 | −119.2 | −26.2 | +93.0 |
+| 2022-09-12 | +122.6 | +243.3 | +120.7 |
+| 2023-12-11 | −187.0 | −64.2 | +122.8 |
+| 2025-03-10 | −120.6 | +20.1 | +140.7 |
+
+The shape is unmistakable: **adding rescues campaigns that were already deep in
+the red, and occasionally converts a winner into a loser** (2025-02-10, +64 → −84).
+That is averaging down. research/84 already labelled averaging a **tail bomb** — its
+apparent win rate is a no-stop illusion and its risk lives in a tail that a
+handful of observations cannot show. Eleven campaigns, none of them a sustained
+one-way continuation, cannot price that tail. The +30.6 mean is real in-sample and
+unproven out of it.
+
+### Two structural findings
+
+**1. The equidistant pair is the worst of the three add variants.** ADD_MIRROR
+loses on both triggers and helped 0 of 3 times at 150%. Placing the second straddle
+symmetrically *away* from spot sells cheaper, further options, so it collects less
+premium precisely where the decay is needed, and it widens the position's damage
+band. ADD_ATM — selling the new straddle **at** the money — beat it on every metric.
+
+**2. The live 200% stop never fires on the book we actually run.** On the VIX-rank>25
+ruleset the premium ratio never reaches 1.75, let alone 2.00, on a close basis. The
+three campaigns in the full 89 that do reach it carry VIX ranks of 21, 23 and 0 —
+**all below the filter's own threshold.** The filter already declines to trade every
+campaign the stop was built to catch. The two rules are redundant, and the app's
+stop card ("fires 2–3 times in 61 trades") is quoting the count from the *unfiltered*
+89-trade book. Fortunate, given the stop is harmful when it does fire — but the card
+should say so.
+
+### Recommendation
+
+**No change to the live book.** The stop stays where it is precisely because it is
+inert; removing it is a separate decision with its own evidence bar, and the arms
+that would replace it do not clear theirs. ADD_ATM at 130% is the only idea here
+worth keeping on the shelf — mean +30.6 pts, t 1.15, better drawdown — but it needs
+either a materially bigger sample or a mechanism argument that survives a
+continuation event, and it needs **double the reserved capital**, which the
+2026-08-31 stress test says the book does not currently have.
+
 ## 6. Robustness
 
 **Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
@@ -521,73 +624,6 @@ with a margin-call rule. Until that is done, the 11.47% CAGR is an upper bound.
   net-negative over 2015-26; the 45→21 window plus a stop is what rescues it.
 
 ---
-
-## 7b. The stress margin test — ANSWERED (2026-08-31), and it says 3 lots is too many
-
-### How it was finally measured
-
-The reconstruction road stayed closed. `margin_reconstruct.py` failed its calibration
-gate at 12.0% RMS against a 10% limit and was abandoned rather than tuned; the fallback,
-`margin_recorder.py`, has **5 days** of history with India VIX pinned in a 10.48–11.13
-band — nothing to regress. Neither can answer the question.
-
-`margin_stress_live.py` takes a road that needs no history:
-
-> A straddle struck at K, held while spot moves m%, has the same shape — and the same
-> SPAN scenario losses — as a straddle struck m% away from **today's** spot. So the
-> adverse-move axis can be **bought from the broker** instead of modelled.
-
-Crossed with the listed expiries, that gives the real surface. Two corrections were
-needed before the numbers meant anything, and both changed the conclusion:
-
-1. **Margin alone is the wrong number.** By the time you are 8% offside you have also
-   taken an MTM loss, out of the same reserve. The comparison to capital must be
-   **margin + MTM loss**. Margin alone never breaches — headroom 1.93–2.34× — which is
-   why the first cut looked comfortable and was wrong.
-2. **Use the pre-premium-credit margin (`initial`), not `final`.** `final` credits the
-   *current* inflated ITM premium, which was never received — the credit actually taken
-   was the ATM one at entry. Netting that against a separately-subtracted MTM loss
-   counts the premium twice. This alone moved peak capital use from 82% to 115%.
-
-### The result — total call on capital, 3 lots vs the ₹11.96L reserve
-
-| Tenor | flat | ±5% | ±8% |
-|---|---|---|---|
-| 57 DTE (entry) | 56% | 95% | **110%** |
-| 29 DTE | 54% | 91% | **109%** |
-| 22 DTE (exit) | 53% | 91% | strikes not listed |
-| 1 DTE | 54% | 95% | **115%** |
-
-**The book breaches its reserve at an 8% adverse move, and is already at 95% by 5%.**
-Running 3 lots through ±8% needs **₹13.10L**; the reserve is ₹11.96L — **short by
-₹1.14L (9.5%)**. Direction barely matters: +8% costs ₹13.10L, −8% ₹11.77L.
-
-### Why this is a BEST case, not a worst case
-
-- **India VIX was 10.6** on the measurement date, near its historic floor. A real 8%
-  move arrives with VIX at 20–30+, and SPAN's vol scan adds margin on top of the price
-  scan measured here. **The true breach point is below 8%, not at it.**
-- **Strikes beyond ±8% are not listed** on these expiries. At the −18.4% of April 2020
-  the position would sit at a strike that does not exist in today's chain — and
-  liquidity there is a separate problem from margin.
-- The vol axis remains genuinely unmeasured. A 0.65-point VIX span cannot be
-  extrapolated to a VIX 30–80 event, and fitting a slope to it would repeat the mistake
-  the reconstruction gate caught.
-
-### What it implies for sizing
-
-At ₹11.96L, the size that survives a ±8% move **at today's low vol** is **2 lots**
-(₹4.37L per lot at the +8% cell). Three lots requires roughly **₹13.5L at today's vol**,
-and materially more once a vol spike is allowed for — a ₹17–18L reserve is the
-defensible number for 3 lots, though that figure is an extrapolation, not a measurement.
-
-**This is a go-live blocker as sized.** The paper book runs `LOTS = 3` on `CAPITAL =
-1_196_000`. Nothing has been changed — lot sizing is a strategy parameter, not a display
-one — but either the size comes down to 2 or the reserve goes up before real money.
-
-Note this cuts *against* the direction of research/134's finding, which said the book's
-danger is an up-trend melt-up: +8% is the more expensive side here (₹13.10L vs ₹11.77L),
-so the two studies agree on which tail to fear.
 
 ## 8. Recommendation
 
