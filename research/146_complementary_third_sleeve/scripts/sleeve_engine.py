@@ -90,6 +90,8 @@ class SCtx:
         self.MIN7 = cl.rolling(7, min_periods=7).min().to_numpy(np.float32)
         self.MIN10 = cl.rolling(10, min_periods=10).min().to_numpy(np.float32)
         self._cl = cl; self._tr = tr
+        self._hi = hi; self._lo = lo
+        self._extras = False
         # monthly PIT top-500 membership
         s = pd.Series(np.arange(len(self.dates)), index=self.dates)
         me = [int(g.iloc[-1]) for _, g in s.groupby([self.dates.year, self.dates.month])]
@@ -111,6 +113,30 @@ class SCtx:
         except Exception:
             self.tn_nav = None
         print(f"panel {self.C.shape} + indicators [{time.time()-t0:.0f}s]", flush=True)
+
+    def ensure_pullback_extras(self):
+        """r/149 additions: RSI14, Stoch14 %K, CCI20, OA-style RS percentile, MA grid.
+        Lazy so r/146 reruns stay light."""
+        if self._extras:
+            return
+        cl, hi, lo = self._cl, self._hi, self._lo
+        self.RSI14 = _rsi(cl, 14).to_numpy(np.float32)
+        ll = lo.rolling(14, min_periods=14).min()
+        hh = hi.rolling(14, min_periods=14).max()
+        self.STO = ((cl - ll) / (hh - ll).replace(0, np.nan) * 100).to_numpy(np.float32)
+        tp = (hi + lo + cl) / 3
+        md = (tp - tp.rolling(20, min_periods=20).mean()).abs()\
+            .rolling(20, min_periods=20).mean()
+        self.CCI = ((tp - tp.rolling(20, min_periods=20).mean()) /
+                    (0.015 * md).replace(0, np.nan)).to_numpy(np.float32)
+        score = 2 * (cl / cl.shift(63) - 1) + (cl / cl.shift(126) - 1) \
+            + (cl / cl.shift(189) - 1) + (cl / cl.shift(252) - 1)
+        self.RSP = (score.rank(axis=1, pct=True) * 100).to_numpy(np.float32)
+        self.MA = {}
+        for L in (20, 50, 100, 200):
+            self.MA[("sma", L)] = cl.rolling(L, min_periods=L).mean().to_numpy(np.float32)
+            self.MA[("ema", L)] = cl.ewm(span=L, adjust=False).mean().to_numpy(np.float32)
+        self._extras = True
 
     def memb_at(self, i):
         # membership from the last completed month-end before i
@@ -268,14 +294,29 @@ def run_sleeve(ctx, family, p, tax=False, cost=COST):
                     if j not in pos:
                         cand.append((1.0, j))
             elif family == "pull":
-                ma = ctx.EMA50[i] if p.get("ema") else ctx.SMA50[i]
-                ma_hist = ctx.EMA50 if p.get("ema") else ctx.SMA50
+                if p.get("ma_len"):                     # r/149 generalized MA grid
+                    ctx.ensure_pullback_extras()
+                    ma_hist = ctx.MA[(p.get("ma_type", "sma"), p["ma_len"])]
+                else:                                   # r/146 defaults (50 SMA/EMA)
+                    ma_hist = ctx.EMA50 if p.get("ema") else ctx.SMA50
+                ma = ma_hist[i]
                 green = (C[i] > O[i])
                 red1 = (C[i - 1] < O[i - 1])
                 touched = (Lo[i] <= ma) | (Lo[i - 1] <= ma_hist[i - 1]) | \
                           (Lo[i - 2] <= ma_hist[i - 2])
-                rising = ctx.SMA50[i] > ctx.SMA50[i - 10]
+                rising = ma_hist[i] > ma_hist[i - 10]
                 sig = green & red1 & touched & rising & (c_row > s200) & memb
+                conf = p.get("conf")
+                if conf == "rsi14":
+                    sig = sig & (ctx.RSI14[i] < 40)
+                elif conf == "rsi2":
+                    sig = sig & (ctx.RSI2[i] < 10)
+                elif conf == "rs70":
+                    sig = sig & (ctx.RSP[i] >= 70)
+                elif conf == "stoch":
+                    sig = sig & (ctx.STO[i - 1] < 20) & (ctx.STO[i] > ctx.STO[i - 1])
+                elif conf == "cci":
+                    sig = sig & (ctx.CCI[i - 1] < -100) & (ctx.CCI[i] > ctx.CCI[i - 1])
                 for j in np.nonzero(sig)[0]:
                     if j not in pos and j not in pend:
                         stp = min(Lo[i, j], Lo[i - 1, j])
