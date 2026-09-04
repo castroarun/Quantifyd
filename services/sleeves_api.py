@@ -79,12 +79,26 @@ def _params():
     return amt, bool(body.get('dry_run', False))
 
 
+def _cashietf_px():
+    """Latest CASHIETF close from the market DB (liquid fund — moves ~0.02%/day,
+    so the last close is a safe realtime sweep price)."""
+    try:
+        import sqlite3
+        con = sqlite3.connect(str(ROOT / 'backtest_data' / 'market_data.db'))
+        r = con.execute("SELECT close FROM market_data_unified WHERE symbol='CASHIETF' "
+                        "AND timeframe='day' ORDER BY date DESC LIMIT 1").fetchone()
+        con.close()
+        return float(r[0]) if r else None
+    except Exception:
+        return None
+
+
 def _dep_plan(st, amt):
     return dict(book='open-alpha', kind='deposit', amount=amt,
                 cash_now=round(st['cash'], 0), liquid_now=round(_liquid(st), 0),
-                plan=[f'Rs {amt:,.0f} lands in cash immediately',
-                      'sweeps into CASHIETF at tonight\'s run',
-                      'funds new pivot buy-stops from the next signal (gate permitting)'],
+                plan=[f'Rs {amt:,.0f} lands in cash and sweeps into CASHIETF immediately '
+                      f'(at the latest close; the nightly cycle trues it up)',
+                      'funds new pivot buy-stops from the next signal'],
                 capital_after=round(st.get('capital', 0) + amt, 0))
 
 
@@ -125,6 +139,17 @@ def _execute(kind, amt):
         else:
             st['cash'] += amt
             st['capital'] = round(st.get('capital', 0) + amt, 0)
+            # realtime sweep (Arun 2026-09-04): park everything above the Rs 5k
+            # float into CASHIETF now at the latest close, instead of waiting for
+            # the nightly cycle. The cycle's redeem-and-resweep trues up interest.
+            px = _cashietf_px()
+            RESERVE = 5000.0
+            if px and st['cash'] > RESERVE:
+                sweep_amt = st['cash'] - RESERVE
+                sw = st.setdefault('sweep', {'symbol': 'CASHIETF', 'units': 0.0, 'cost': 0.0})
+                sw['units'] = round(sw.get('units', 0.0) + sweep_amt / px, 3)
+                sw['cost'] = round(sw.get('cost', 0.0) + sweep_amt, 2)
+                st['cash'] = RESERVE
         st.setdefault('fund_flows', []).append(dict(
             ts=str(datetime.now()), kind=kind, amount=amt,
             via='sleeves portal', positions_touched=False))
