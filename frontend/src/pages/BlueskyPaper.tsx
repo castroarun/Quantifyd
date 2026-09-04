@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
+import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
+import type { HoldingsRecord } from '../api/types';
 
 /* BlueSky paper book — deliberately shares the Momentum page's stylesheet and layout
    (headline book-summary, KPI language, cards, tables) so the two sleeves read as one
@@ -378,6 +380,33 @@ export default function BlueskyPaper() {
       </div>
 
       <CurveCard nc={r.navcurve} />
+
+      {r.positions.length > 0 && (
+        <div className={styles.chartsSection}>
+          <div className={styles.cardTitle}>
+            Charts — live positions
+            <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-muted,#888)', marginLeft: 8 }}>
+              scroll to zoom · drag to pan · red dashed line = 15-SMA trail floored at the −8% stop (the exit rule)
+            </span>
+          </div>
+          <HoldingsCharts
+            ohlcUrl="/static/oa_real_ohlc.json"
+            holdings={r.positions.map((p) => ({
+              tradingsymbol: p.symbol,
+              qty: p.qty,
+              avg_price: p.buy,
+              ltp: p.ltp ?? 0,
+              prev_close: p.buy,
+              day_pct: p.day_move_pct ?? 0,
+              day_pnl_inr: 0,
+              invested: (p.value ?? 0) - (p.pnl ?? 0),
+              current: p.value ?? 0,
+              total_pnl_inr: p.pnl ?? 0,
+              total_pnl_pct: p.pnl_pct ?? 0,
+            })) as HoldingsRecord[]}
+          />
+        </div>
+      )}
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>Closed trades</div>
