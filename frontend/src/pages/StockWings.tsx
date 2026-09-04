@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import s from './StockWings.module.css';
 
-const STUDY = '/app/backtest/stock-45dte-neutral-wings';
+const STUDY = '/backtest/stock-45dte-neutral-wings';
 const TEARSHEET = '/app/stock45_wings_tearsheet.png';
 const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/127_stock_neutral_wings';
 
