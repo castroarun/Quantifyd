@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-09-04T14:40:01",
+ "generated_at": "2026-09-04T15:00:02",
  "books": {
   "orb": {
    "days": [
     {
      "date": "2026-09-04",
-     "trades": 9,
-     "wins": 3,
+     "trades": 10,
+     "wins": 4,
      "losses": 6,
-     "pnl": -468.41,
-     "deployed": 2439471.37,
-     "cum": -34119.23,
+     "pnl": -27.61,
+     "deployed": 2739380.67,
+     "cum": -33678.43,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -148,6 +148,21 @@
        "exit_time": "2026-09-04T13:42:46.435565",
        "exit_reason": "TARGET_HIT",
        "conviction_grade": "B"
+      },
+      {
+       "symbol": "VEDL",
+       "pnl": 440.8,
+       "deployed": 299909.3,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 1102,
+       "entry_price": 272.15,
+       "exit_price": 272.55,
+       "entry_time": "2026-09-04T13:40:05.067650",
+       "exit_time": "2026-09-04T14:59:46.460966",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "A"
       }
      ]
     },
@@ -2211,20 +2226,20 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 223055.49,
+    "avg_trade": 223633.34,
     "days": 17,
-    "trades": 132,
-    "wins": 45,
-    "win_rate": 34.1,
-    "net": -34119.23,
+    "trades": 133,
+    "wins": 46,
+    "win_rate": 34.6,
+    "net": -33678.43,
     "best_day": 3123.4,
     "worst_day": -13754.43,
     "green_days": 6,
     "costs_modelled": false,
-    "t_stat": -1.61,
+    "t_stat": -1.58,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 86,
+    "sim_trades": 87,
     "first": "2026-04-27",
     "last": "2026-09-04"
    }

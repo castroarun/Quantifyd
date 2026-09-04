@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-04 14:55:05",
+ "asof": "2026-09-04 15:00:06",
  "upcoming": [
   {
    "expiry": "2026-10-27",
@@ -72,11 +72,11 @@
    "gain": 1917.3
   }
  ],
- "capital_deployed": 561233.25,
- "capital_deployed_peak": 663091.5,
- "margin_asof": "2026-09-04 14:55",
+ "capital_deployed": 561009.39,
+ "capital_deployed_peak": 663072.39,
+ "margin_asof": "2026-09-04 15:00",
  "running_pnl": 175832.14278000005,
- "running_pnl_pct": 31.329601868741747,
+ "running_pnl_pct": 31.342103343403938,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -103,10 +103,10 @@
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
    "mark_prem": 523.4,
-   "mark_date": "2026-09-04T14:54:00",
+   "mark_date": "2026-09-04T14:59:00",
    "mark_src": "chain-1min",
    "mtm_rs": 44128.500000000015,
-   "mark_spot": 23940.25,
+   "mark_spot": 23938.35,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
    "dte": 24,
@@ -211,30 +211,30 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 117.35,
+     "price": 118.0,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": -409.8
+     "itm_by": -411.7
     },
     {
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 406.05,
+     "price": 405.4,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": 409.8
+     "itm_by": 411.7
     }
    ],
-   "legs_asof": "2026-09-04T14:54:00",
+   "legs_asof": "2026-09-04T14:59:00",
    "legs_src": "chain 1-min",
-   "margin_real": 561233.25,
-   "margin_peak": 663091.5,
-   "mtm_pct": 7.862773632887934
+   "margin_real": 561009.39,
+   "margin_peak": 663072.39,
+   "mtm_pct": 7.865911121380699
   }
  ],
  "closed_trades": [

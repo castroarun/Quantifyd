@@ -200,11 +200,37 @@ function BookSummary({ f }: { f: Feed }) {
 
 type RealPos = {
   symbol: string; qty: number; buy: number; entry_date: string; stop: number; src: string;
-  ltp: number | null; day_move_pct: number | null; value: number; pnl: number;
-  pnl_pct: number | null; trail: number | null; to_stop_pct: number | null; to_trail_pct: number | null;
+  ltp: number | null; days: number; weight: number; day_move_pct: number | null;
+  value: number; pnl: number; pnl_pct: number | null; trail: number | null;
+  to_stop_pct: number | null; to_trail_pct: number | null;
 };
 type RealFeed = { updated: string; positions: RealPos[]; invested: number; value: number;
-  pnl: number; pnl_pct: number; note: string; trades: any[] };
+  cash: number; nav: number; pnl: number; realized: number; pnl_pct: number;
+  inception: string; navcurve: { d: string; nav: number }[]; note: string; trades: any[] };
+
+function CurveCard({ nc }: { nc: { d: string; nav: number }[] }) {
+  if (!nc || nc.length < 2)
+    return (
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>Equity curve</div>
+        <p className={styles.note}>The curve begins at tomorrow&apos;s close — the book is one day old.
+        Each post-close mark appends a point.</p>
+      </div>
+    );
+  const vals = nc.map((x) => x.nav);
+  const min = Math.min(...vals), max = Math.max(...vals), span = max - min || 1;
+  const W = 720, H = 160;
+  const pts = nc.map((x, k) => `${(k / (nc.length - 1)) * W},${H - 14 - ((x.nav - min) / span) * (H - 28)}`).join(' ');
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>Equity curve — since {fmtD(nc[0].d)}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }} role="img"
+           aria-label="real book equity curve">
+        <polyline points={pts} fill="none" stroke="var(--accent-pos,#0F6E56)" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
 
 export default function BlueskyPaper() {
   const [r, setR] = useState<RealFeed | null>(null);
@@ -218,15 +244,19 @@ export default function BlueskyPaper() {
   if (err)
     return <div className={styles.root}><div className={styles.loading}>Real-book feed unavailable ({err}).</div></div>;
   if (!r) return <div className={styles.root}><div className={styles.loading}>Loading book…</div></div>;
-  const runBtn = (
-    <button style={{ marginLeft: 10, padding: '3px 10px', borderRadius: 6, fontSize: 12,
-                     border: '1px solid var(--hairline, #888)', cursor: 'pointer',
-                     background: 'var(--surface, transparent)', color: 'inherit' }}
-      onClick={() => fetch('/api/sleeves/openalpha/run', { method: 'POST', credentials: 'include' })
-        .then((x) => x.json()).then((d) => alert(d.mode || 'started'))
-        .catch(() => alert('run API not loaded yet'))}>
-      Refresh marks</button>
-  );
+
+  const gain = r.pnl + r.realized;
+  const tone = (v: number) => (v > 0 ? 'var(--accent-pos,#0F6E56)' : v < 0 ? 'var(--accent-neg,#A32D2D)' : 'var(--ink,#1B1B1A)');
+  const segs = [
+    { k: 'Stocks', v: r.value, c: '#2563EB' },
+    { k: 'Cash', v: r.cash, c: 'var(--ink-faint,#B4B2A9)' },
+  ].filter((x) => x.v > 0);
+  const total = segs.reduce((a, x) => a + x.v, 0) || 1;
+  const pnlRows = [
+    { k: 'Unrealised', v: r.pnl, hint: 'open positions vs actual fills' },
+    { k: 'Realised (net)', v: r.realized, hint: 'closed trades, after costs' },
+  ];
+
   return (
     <div className={styles.root}>
       <BacktestEvidence />
@@ -234,22 +264,61 @@ export default function BlueskyPaper() {
         <div>
           <h1 className={styles.title}>Open Alpha — REAL Book</h1>
           <p className={styles.sub}>
-            <b>LIVE MONEY (RA6610)</b> · seeded 04-Sep-2026 with the top-16 by RS of the day's
-            21 ATH-breakout candidates · −8% close stop · 15-SMA close trail (entry-day exempt) ·
-            exits are MANUAL-ASSISTED: the 15:18 IST checker raises a desktop alert with the exact
-            sell order when a rule fires — no automated selling yet.
+            <b>LIVE MONEY (RA6610)</b> · ATH-close breakouts, top-16 by RS of 04-Sep&apos;s 21 candidates ·
+            −8% close stop · 15-SMA close trail (entry-day exempt) · exits manual-assisted:
+            the 15:18 IST checker alerts the exact sell order — no automated selling yet.
           </p>
         </div>
       </div>
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Book · updated {fmtD(r.updated)} {r.updated?.slice(11, 16)} {runBtn}</div>
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 14, margin: '6px 0 2px' }}>
-          <div><span className={styles.muted}>Invested</span> <b>₹{Math.round(r.invested).toLocaleString('en-IN')}</b></div>
-          <div><span className={styles.muted}>Value</span> <b>₹{Math.round(r.value).toLocaleString('en-IN')}</b></div>
-          <div><span className={styles.muted}>P&L</span> <b className={r.pnl >= 0 ? styles.pos : styles.neg}>
-            {r.pnl >= 0 ? '+' : ''}₹{Math.round(r.pnl).toLocaleString('en-IN')} ({r.pnl_pct}%)</b></div>
-          <div><span className={styles.muted}>Positions</span> <b>{r.positions.length}/16</b></div>
+      <div className={styles.bookSummary}>
+        <div className={styles.sumMain}>
+          <div className={styles.sumLabel}>Current value</div>
+          <div className={styles.sumHero}>{inr(r.nav)}</div>
+          <div className={styles.sumSub}>
+            on <b>{inr(r.invested)}</b> invested{' '}
+            <span style={{ color: tone(gain), fontWeight: 700 }}>
+              {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(r.pnl_pct)}
+            </span>
+            {' '}· since {r.inception}
+          </div>
+          <div className={styles.sumSub}>updated {fmtD(r.updated)} {r.updated?.slice(11, 16)} IST
+            · marks every 10 min market hours</div>
+          <div className={styles.barWrap} role="img"
+               aria-label={segs.map((x) => `${x.k} ${Math.round((x.v / total) * 100)}%`).join(', ')}>
+            {segs.map((x) => (
+              <div key={x.k} className={styles.barSeg}
+                   style={{ width: `${(x.v / total) * 100}%`, background: x.c }} />
+            ))}
+          </div>
+          <div className={styles.legend}>
+            {segs.map((x) => (
+              <span key={x.k} className={styles.legendItem}>
+                <i className={styles.swatch} style={{ background: x.c }} />
+                {x.k} <b>{lakh(x.v)}</b>
+                <span className={styles.legendPct}>{((x.v / total) * 100).toFixed(0)}%</span>
+              </span>
+            ))}
+          </div>
+          <div className={styles.sumStatus}>
+            <span><b>{r.positions.length}</b> holdings</span>
+            <span><b>{((r.value / (r.nav || 1)) * 100).toFixed(0)}%</b> deployed</span>
+            <span>no market gate</span>
+            <span>exit check <b>15:18</b> IST daily</span>
+          </div>
+        </div>
+        <div className={styles.sumPnl}>
+          <div className={styles.sumLabel}>Profit &amp; loss</div>
+          {pnlRows.map((x) => (
+            <div key={x.k} className={styles.pnlRow} title={x.hint}>
+              <span>{x.k}</span>
+              <b style={{ color: tone(x.v) }}>{x.v >= 0 ? '+' : '−'}{inr(Math.abs(x.v))}</b>
+            </div>
+          ))}
+          <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
+            <span>Total return</span>
+            <b style={{ color: tone(gain) }}>{gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(r.pnl_pct)}</b>
+          </div>
         </div>
       </div>
 
@@ -258,37 +327,63 @@ export default function BlueskyPaper() {
         <div style={{ overflowX: 'auto' }}>
         <table className={styles.table}>
           <thead><tr>
-            <th>Holding</th><th>Entry</th><th>Buy ₹</th><th>Now ₹</th><th>Today</th><th>Value</th>
-            <th>P&L ₹</th><th>P&L %</th><th>Stop −8%</th><th>To stop</th><th>15-SMA trail</th><th>To trail</th>
+            <th>Holding</th><th>Wt</th><th>Entry</th><th>Buy ₹</th><th>Now ₹</th><th>Today</th>
+            <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th>
+            <th>Stop −8%</th><th>To stop</th><th>15-SMA trail</th><th>To trail</th>
           </tr></thead>
           <tbody>
             {r.positions.map((p) => (
               <tr key={p.symbol}>
                 <td className={styles.sym}>{p.symbol}</td>
+                <td>{p.weight}%</td>
                 <td className={styles.muted}>{fmtD(p.entry_date)}</td>
                 <td>{p.buy}</td><td>{p.ltp ?? '—'}</td>
                 <td className={(p.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
                   {p.day_move_pct == null ? '—' : (p.day_move_pct >= 0 ? '+' : '') + p.day_move_pct + '%'}</td>
-                <td>₹{Math.round(p.value).toLocaleString('en-IN')}</td>
-                <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg}>
-                  {(p.pnl ?? 0) >= 0 ? '+' : ''}{Math.round(p.pnl).toLocaleString('en-IN')}</td>
-                <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
-                  {p.pnl_pct == null ? '—' : (p.pnl_pct >= 0 ? '+' : '') + p.pnl_pct + '%'}</td>
+                <td>{lakh(p.value)}</td>
+                <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
+                  {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
+                <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
+                  {pct(p.pnl_pct)}</td>
+                <td>{p.days}</td>
                 <td className={styles.muted}>{p.stop}</td>
-                <td style={exitTint(p.to_stop_pct)}>{p.to_stop_pct == null ? '—' : '+' + p.to_stop_pct + '%'}</td>
+                <td style={exitTint(p.to_stop_pct)} title="distance above the −8% hard stop">
+                  {p.to_stop_pct == null ? '—' : '+' + p.to_stop_pct + '%'}</td>
                 <td className={styles.muted}>{p.trail ?? '—'}</td>
-                <td style={exitTint(p.to_trail_pct)}>
+                <td style={exitTint(p.to_trail_pct)}
+                    title="distance above the 15-SMA trail — the usual exit">
                   {p.to_trail_pct == null ? '—' : (p.to_trail_pct >= 0 ? '+' : '') + p.to_trail_pct + '%'}</td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
+              <td>TOTAL ({r.positions.length} stocks)</td>
+              <td>{((r.value / (r.nav || 1)) * 100).toFixed(0)}%</td>
+              <td /><td /><td /><td />
+              <td>{lakh(r.value)}</td>
+              <td className={r.pnl >= 0 ? styles.pos : styles.neg}>
+                {r.pnl >= 0 ? '+' : ''}{inr(r.pnl)}</td>
+              <td className={r.pnl >= 0 ? styles.pos : styles.neg}>{pct(r.pnl_pct)}</td>
+              <td colSpan={5} />
+            </tr>
+          </tfoot>
         </table>
         </div>
-        <p className={styles.note} style={{ marginTop: 10 }}>{r.note}</p>
+      </div>
+
+      <CurveCard nc={r.navcurve} />
+
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>Closed trades</div>
+        {(!r.trades || r.trades.length === 0)
+          ? <p className={styles.note}>None yet — exits land here when the 15:18 checker fires and a sell executes.</p>
+          : <p className={styles.note}>{r.trades.length} closed.</p>}
+        <p className={styles.note}>{r.note}</p>
         <p className={styles.note}>
-          The paper model book has been retired from this page (Arun, 04-Sep-2026) — its engine still
-          runs headless as the reference model until the Sleeves/dividend plumbing is rewired to this
-          real book. Study: <a href="/app/backtest/bluesky-ath-breakout-research142">bluesky-ath-breakout-research142</a>.
+          Paper model retired from this page (Arun, 04-Sep-2026); its engine runs headless as the
+          reference model until Sleeves/dividends are rewired to this book.
+          Study: <a href="/app/backtest/bluesky-ath-breakout-research142">bluesky-ath-breakout-research142</a>.
         </p>
       </div>
     </div>

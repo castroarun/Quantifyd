@@ -111,16 +111,31 @@ def mark():
         tot_val += val
         tot_pnl += pnl
         sma = smas.get(p['symbol'])
-        rows.append(dict(**p, ltp=lp,
+        days_held = (date.today() - date.fromisoformat(p['entry_date'])).days
+        rows.append(dict(**p, ltp=lp, days=days_held,
                          day_move_pct=round((lp / prev - 1) * 100, 2) if lp and prev else None,
                          value=round(val), pnl=round(pnl),
                          pnl_pct=round((lp / p['buy'] - 1) * 100, 2) if lp else None,
                          trail=round(sma, 2) if sma else None,
                          to_stop_pct=round((lp / p['stop'] - 1) * 100, 1) if lp else None,
                          to_trail_pct=round((lp / sma - 1) * 100, 1) if lp and sma else None))
+    cash = float(st.get('cash', 0.0))
+    nav = tot_val + cash
+    for r in rows:
+        r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
+    # append the daily nav point on the post-close mark (>= 16:00 IST)
+    if datetime.now().hour >= 16:
+        nc = st.setdefault('navcurve', [])
+        today_s = str(date.today())
+        nc[:] = [x for x in nc if x['d'] != today_s]
+        nc.append(dict(d=today_s, nav=round(nav)))
+        json.dump(st, open(STATE, 'w'), indent=1)
+    realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
     ui = dict(updated=str(datetime.now()), positions=rows, invested=st['invested'],
-              value=round(tot_val), pnl=round(tot_pnl),
+              value=round(tot_val), cash=round(cash), nav=round(nav),
+              pnl=round(tot_pnl), realized=round(realized),
               pnl_pct=round(100 * tot_pnl / st['invested'], 2) if st['invested'] else 0,
+              inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               note=st['note'], trades=st.get('trades', []))
     json.dump(ui, open(UI, 'w'), indent=1)
     print(f"marked {len(rows)} positions: value Rs {tot_val:,.0f} P&L {tot_pnl:+,.0f}")
