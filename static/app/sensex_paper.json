@@ -6,13 +6,13 @@
  "lots": 2,
  "qty": 40,
  "lot_size": 20,
- "updated": "2026-09-04 14:10:03",
+ "updated": "2026-09-04 14:12:01",
  "today_day": "2026-09-04",
  "variants": {
   "straddle": {
    "all": {
     "n": 37,
-    "pnl": -22442,
+    "pnl": -22538,
     "win": 65
    },
    "system": {
@@ -22,7 +22,7 @@
    },
    "observational": {
     "n": 22,
-    "pnl": -27280,
+    "pnl": -27376,
     "win": 55
    },
    "curve": [
@@ -234,14 +234,14 @@
     ],
     [
      "2026-09-04",
-     -22442
+     -22538
     ]
    ]
   },
   "strangle": {
    "all": {
     "n": 37,
-    "pnl": 23212,
+    "pnl": 23136,
     "win": 65
    },
    "system": {
@@ -251,7 +251,7 @@
    },
    "observational": {
     "n": 22,
-    "pnl": 8446,
+    "pnl": 8370,
     "win": 59
    },
    "curve": [
@@ -463,7 +463,7 @@
     ],
     [
      "2026-09-04",
-     23212
+     23136
     ]
    ]
   }
@@ -481,12 +481,12 @@
    "ce_entry": 338.7,
    "pe_entry": 278.2,
    "credit": 616.9,
-   "ce_exit": 323.9,
-   "pe_exit": 253.5,
+   "ce_exit": 330.0,
+   "pe_exit": 249.3,
    "exit_reason": "time1445",
    "entry_time": "09:20",
    "exit_time": "14:45",
-   "pnl": 1540,
+   "pnl": 1464,
    "legs": [
     {
      "type": "CE",
@@ -494,8 +494,8 @@
      "strike": 77000,
      "qty": 40,
      "entry": 338.7,
-     "ltp": 323.9,
-     "pnl": 592
+     "ltp": 330.0,
+     "pnl": 348
     },
     {
      "type": "PE",
@@ -503,8 +503,8 @@
      "strike": 76400,
      "qty": 40,
      "entry": 278.2,
-     "ltp": 253.5,
-     "pnl": 988
+     "ltp": 249.3,
+     "pnl": 1156
     }
    ]
   },
@@ -520,12 +520,12 @@
    "ce_entry": 489.85,
    "pe_entry": 398.0,
    "credit": 887.85,
-   "ce_exit": 477.05,
-   "pe_exit": 364.45,
+   "ce_exit": 485.6,
+   "pe_exit": 358.3,
    "exit_reason": "time1515",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 1814,
+   "pnl": 1718,
    "legs": [
     {
      "type": "CE",
@@ -533,8 +533,8 @@
      "strike": 76700,
      "qty": 40,
      "entry": 489.85,
-     "ltp": 477.05,
-     "pnl": 512
+     "ltp": 485.6,
+     "pnl": 170
     },
     {
      "type": "PE",
@@ -542,8 +542,8 @@
      "strike": 76700,
      "qty": 40,
      "entry": 398.0,
-     "ltp": 364.45,
-     "pnl": 1342
+     "ltp": 358.3,
+     "pnl": 1588
     }
    ]
   },
