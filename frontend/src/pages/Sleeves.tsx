@@ -260,12 +260,22 @@ function HowItWorksModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+type SimRow = { year: number; q: (number | null)[]; src: string[]; profit: number;
+  total: number; reserve: number };
+type SimFeed = { policy: string; seed_capital: number; rows: SimRow[]; total_paid: number;
+  total_profit: number; end_nav: number; end_reserve: number; note: string };
+
 function DividendsCard() {
   const [dv, setDv] = useState<DivStatus | null>(null);
+  const [sim, setSim] = useState<SimFeed | null>(null);
+  const [showSim, setShowSim] = useState(false);
   const [prev, setPrev] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [showHow, setShowHow] = useState(false);
-  useEffect(() => { apiGet<DivStatus>('/api/sleeves/dividends').then(setDv).catch(() => setDv(null)); }, []);
+  useEffect(() => {
+    apiGet<DivStatus>('/api/sleeves/dividends').then(setDv).catch(() => setDv(null));
+    fetch('/app/dividend_sim.json').then((x) => x.json()).then(setSim).catch(() => setSim(null));
+  }, []);
   const preview = () => {
     setBusy(true);
     fetch('/api/sleeves/dividends/preview', { method: 'POST', credentials: 'include' })
@@ -332,6 +342,71 @@ function DividendsCard() {
           Preview next declaration (dry run)
         </button>
       </div>
+      {sim && (
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--hairline, rgba(0,0,0,0.12))', paddingTop: 12 }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); setShowSim(!showSim); }}
+             style={{ fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+            {showSim ? '\u25be' : '\u25b8'} What this policy would have paid \u2014 10-year rehearsal
+            <span style={{ fontWeight: 400, color: 'var(--ink-muted,#888)' }}>
+              {'  '}\u20b910L seed \u2192 \u20b9{(sim.total_paid / 100000).toFixed(1)}L paid out,
+              book ends \u20b9{(sim.end_nav / 100000).toFixed(1)}L + \u20b9{(sim.end_reserve / 100000).toFixed(1)}L reserve
+            </span>
+          </a>
+          {showSim && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table className={styles.table} style={{ fontSize: 12.5 }}>
+                  <thead><tr>
+                    <th>Year</th><th style={{ textAlign: 'right' }}>Q1</th>
+                    <th style={{ textAlign: 'right' }}>Q2</th><th style={{ textAlign: 'right' }}>Q3</th>
+                    <th style={{ textAlign: 'right' }}>Q4</th>
+                    <th style={{ textAlign: 'right' }}>Year paid</th>
+                    <th style={{ textAlign: 'right' }}>New profit above HWM</th>
+                    <th style={{ textAlign: 'right' }}>Reserve at year end</th>
+                  </tr></thead>
+                  <tbody>
+                    {sim.rows.map((r) => (
+                      <tr key={r.year}>
+                        <td style={{ fontWeight: 600 }}>{r.year}</td>
+                        {r.q.map((v, i) => (
+                          <td key={i} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {v == null ? '\u2014' : v === 0 ? '0'
+                              : Math.round(v).toLocaleString('en-IN')}
+                            {r.src[i] === 'reserve' && v ? (
+                              <sup title="paid from the equalization reserve \u2014 no new profit that quarter"
+                                   style={{ color: 'var(--brand-amber,#C97B20)' }}>r</sup>) : null}
+                          </td>
+                        ))}
+                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {r.total.toLocaleString('en-IN')}</td>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums',
+                                     color: r.profit === 0 ? 'var(--accent-neg,#A32D2D)' : 'inherit' }}>
+                          {r.profit === 0 ? '0' : r.profit.toLocaleString('en-IN')}</td>
+                        <td style={{ textAlign: 'right', color: 'var(--ink-muted,#888)',
+                                     fontVariantNumeric: 'tabular-nums' }}>
+                          {r.reserve.toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
+                      <td>Total</td><td colSpan={4} />
+                      <td style={{ textAlign: 'right' }}>{sim.total_paid.toLocaleString('en-IN')}</td>
+                      <td style={{ textAlign: 'right' }}>{sim.total_profit.toLocaleString('en-IN')}</td>
+                      <td style={{ textAlign: 'right' }}>{sim.end_reserve.toLocaleString('en-IN')}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className={styles.note}>
+                <sup style={{ color: 'var(--brand-amber,#C97B20)' }}>r</sup> = bridged by the equalization
+                reserve (a quarter with no new profit). Read the profit column against the payouts: the policy
+                distributes ~25% of genuinely new profit, so a zero-profit year pays only what the reserve can
+                bridge \u2014 2018\u201319 and 2022 show that working. {sim.note}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {prev && ['truenorth', 'openalpha'].map((k) => {
         const p = prev[k];
         return (

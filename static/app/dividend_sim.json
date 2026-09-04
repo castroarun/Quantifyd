@@ -1,0 +1,211 @@
+{
+ "policy": "25% of new profit above the flow-adjusted high-water mark; payout capped at last dividend +7.5%/quarter; surplus to a liquid equalization reserve (~6% p.a.) that bridges profitless quarters; capital never invaded.",
+ "seed_capital": 1000000,
+ "start": "2016-01",
+ "end": 2026,
+ "rows": [
+  {
+   "year": 2016,
+   "q": [
+    null,
+    0,
+    47696,
+    0
+   ],
+   "src": [
+    "",
+    "profit",
+    "profit",
+    "profit"
+   ],
+   "profit": 190784,
+   "reserve": 0,
+   "total": 47696
+  },
+  {
+   "year": 2017,
+   "q": [
+    32294,
+    34716,
+    37320,
+    40119
+   ],
+   "src": [
+    "profit",
+    "profit",
+    "profit",
+    "profit"
+   ],
+   "profit": 1856007,
+   "reserve": 321099,
+   "total": 144449
+  },
+  {
+   "year": 2018,
+   "q": [
+    43128,
+    46363,
+    49840,
+    53578
+   ],
+   "src": [
+    "reserve",
+    "reserve",
+    "reserve",
+    "reserve"
+   ],
+   "profit": 0,
+   "reserve": 143776,
+   "total": 192909
+  },
+  {
+   "year": 2019,
+   "q": [
+    57596,
+    61916,
+    28162,
+    0
+   ],
+   "src": [
+    "reserve",
+    "reserve",
+    "reserve",
+    "profit"
+   ],
+   "profit": 0,
+   "reserve": 0,
+   "total": 147674
+  },
+  {
+   "year": 2020,
+   "q": [
+    0,
+    0,
+    0,
+    30274
+   ],
+   "src": [
+    "profit",
+    "profit",
+    "profit",
+    "profit"
+   ],
+   "profit": 197226,
+   "reserve": 19032,
+   "total": 30274
+  },
+  {
+   "year": 2021,
+   "q": [
+    28188,
+    30302,
+    32574,
+    35018
+   ],
+   "src": [
+    "reserve",
+    "profit",
+    "profit",
+    "profit"
+   ],
+   "profit": 2848359,
+   "reserve": 614924,
+   "total": 126082
+  },
+  {
+   "year": 2022,
+   "q": [
+    37644,
+    40467,
+    43502,
+    46765
+   ],
+   "src": [
+    "reserve",
+    "reserve",
+    "reserve",
+    "reserve"
+   ],
+   "profit": 0,
+   "reserve": 480685,
+   "total": 168378
+  },
+  {
+   "year": 2023,
+   "q": [
+    50272,
+    54043,
+    58096,
+    62453
+   ],
+   "src": [
+    "reserve",
+    "reserve",
+    "profit",
+    "profit"
+   ],
+   "profit": 1505307,
+   "reserve": 659447,
+   "total": 224864
+  },
+  {
+   "year": 2024,
+   "q": [
+    67137,
+    72172,
+    77585,
+    83404
+   ],
+   "src": [
+    "reserve",
+    "profit",
+    "profit",
+    "profit"
+   ],
+   "profit": 2758277,
+   "reserve": 1096833,
+   "total": 300298
+  },
+  {
+   "year": 2025,
+   "q": [
+    89659,
+    96384,
+    103613,
+    111384
+   ],
+   "src": [
+    "reserve",
+    "reserve",
+    "profit",
+    "profit"
+   ],
+   "profit": 1748082,
+   "reserve": 1195410,
+   "total": 401040
+  },
+  {
+   "year": 2026,
+   "q": [
+    119737,
+    128718,
+    138372,
+    null
+   ],
+   "src": [
+    "reserve",
+    "profit",
+    "profit",
+    ""
+   ],
+   "profit": 2792142,
+   "reserve": 1561397,
+   "total": 386827
+  }
+ ],
+ "total_paid": 2170491,
+ "total_profit": 13896184,
+ "end_nav": 11422137,
+ "end_reserve": 1561397,
+ "note": "Simulated on the after-tax Open Alpha trail-20 equity curve (median seed) rescaled to Rs 10,00,000 at Jan-2016 \u2014 a policy rehearsal, not a record of payments made. The first real declaration is 30-Sep-2026."
+}
