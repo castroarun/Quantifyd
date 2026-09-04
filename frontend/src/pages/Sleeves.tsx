@@ -294,7 +294,7 @@ function DividendsCard() {
     </div>
   );
   return (
-    <div className={styles.card}>
+    <div className={styles.card} id="dividends">
       <div className={styles.cardTitle} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
         Dividends — quarterly high-water-mark policy
         <a onClick={(e) => { e.preventDefault(); setShowHow(true); }} href="#"

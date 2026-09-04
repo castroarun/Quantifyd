@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-04 15:59:02.462946",
+ "updated": "2026-09-04 18:46:02.440509",
  "positions": [
   {
    "symbol": "INDSWFTLAB",
@@ -14,9 +14,9 @@
    "value": 28476,
    "pnl": 34,
    "pnl_pct": 0.12,
-   "trail": 347.53,
+   "trail": 350.14,
    "to_stop_pct": 8.8,
-   "to_trail_pct": 2.4,
+   "to_trail_pct": 1.7,
    "weight": 6.4
   },
   {
@@ -32,9 +32,9 @@
    "value": 28218,
    "pnl": 10,
    "pnl_pct": 0.04,
-   "trail": 341.77,
+   "trail": 348.66,
    "to_stop_pct": 8.7,
-   "to_trail_pct": 19.7,
+   "to_trail_pct": 17.3,
    "weight": 6.3
   },
   {
@@ -50,9 +50,9 @@
    "value": 25906,
    "pnl": -65,
    "pnl_pct": -0.25,
-   "trail": 2306.24,
+   "trail": 2352.99,
    "to_stop_pct": 8.4,
-   "to_trail_pct": 12.3,
+   "to_trail_pct": 10.1,
    "weight": 5.8
   },
   {
@@ -68,9 +68,9 @@
    "value": 27960,
    "pnl": -41,
    "pnl_pct": -0.14,
-   "trail": 875.88,
+   "trail": 885.54,
    "to_stop_pct": 8.5,
-   "to_trail_pct": 10.1,
+   "to_trail_pct": 8.9,
    "weight": 6.3
   },
   {
@@ -86,9 +86,9 @@
    "value": 27301,
    "pnl": -38,
    "pnl_pct": -0.14,
-   "trail": 2855.63,
+   "trail": 2873.29,
    "to_stop_pct": 8.5,
-   "to_trail_pct": 6.2,
+   "to_trail_pct": 5.6,
    "weight": 6.1
   },
   {
@@ -104,9 +104,9 @@
    "value": 28027,
    "pnl": 105,
    "pnl_pct": 0.38,
-   "trail": 1047.18,
+   "trail": 1053.34,
    "to_stop_pct": 9.1,
-   "to_trail_pct": 7.1,
+   "to_trail_pct": 6.4,
    "weight": 6.3
   },
   {
@@ -122,9 +122,9 @@
    "value": 28393,
    "pnl": 34,
    "pnl_pct": 0.12,
-   "trail": 179.66,
+   "trail": 182.22,
    "to_stop_pct": 8.8,
-   "to_trail_pct": 11.3,
+   "to_trail_pct": 9.7,
    "weight": 6.4
   },
   {
@@ -140,9 +140,9 @@
    "value": 28423,
    "pnl": -14,
    "pnl_pct": -0.05,
-   "trail": 221.06,
+   "trail": 222.49,
    "to_stop_pct": 8.6,
-   "to_trail_pct": 3.7,
+   "to_trail_pct": 3.0,
    "weight": 6.4
   },
   {
@@ -158,9 +158,9 @@
    "value": 28738,
    "pnl": 289,
    "pnl_pct": 1.02,
-   "trail": 58.65,
+   "trail": 59.0,
    "to_stop_pct": 9.8,
-   "to_trail_pct": 8.4,
+   "to_trail_pct": 7.8,
    "weight": 6.4
   },
   {
@@ -176,9 +176,9 @@
    "value": 26974,
    "pnl": -50,
    "pnl_pct": -0.19,
-   "trail": 2039.51,
+   "trail": 2058.97,
    "to_stop_pct": 8.5,
-   "to_trail_pct": 10.2,
+   "to_trail_pct": 9.2,
    "weight": 6.0
   },
   {
@@ -194,9 +194,9 @@
    "value": 27599,
    "pnl": -138,
    "pnl_pct": -0.5,
-   "trail": 721.17,
+   "trail": 731.79,
    "to_stop_pct": 8.2,
-   "to_trail_pct": 9.3,
+   "to_trail_pct": 7.8,
    "weight": 6.2
   },
   {
@@ -212,9 +212,9 @@
    "value": 28948,
    "pnl": 454,
    "pnl_pct": 1.59,
-   "trail": 315.8,
+   "trail": 319.41,
    "to_stop_pct": 10.4,
-   "to_trail_pct": 14.6,
+   "to_trail_pct": 13.3,
    "weight": 6.5
   },
   {
@@ -230,9 +230,9 @@
    "value": 27414,
    "pnl": -85,
    "pnl_pct": -0.31,
-   "trail": 1632.63,
+   "trail": 1660.84,
    "to_stop_pct": 8.4,
-   "to_trail_pct": 11.9,
+   "to_trail_pct": 10.0,
    "weight": 6.1
   },
   {
@@ -248,9 +248,9 @@
    "value": 28118,
    "pnl": -125,
    "pnl_pct": -0.44,
-   "trail": 610.36,
+   "trail": 615.93,
    "to_stop_pct": 8.2,
-   "to_trail_pct": 4.7,
+   "to_trail_pct": 3.8,
    "weight": 6.3
   },
   {
@@ -266,9 +266,9 @@
    "value": 27974,
    "pnl": -5,
    "pnl_pct": -0.02,
-   "trail": 887.78,
+   "trail": 894.36,
    "to_stop_pct": 8.7,
-   "to_trail_pct": 5.0,
+   "to_trail_pct": 4.3,
    "weight": 6.3
   },
   {
@@ -284,9 +284,9 @@
    "value": 28228,
    "pnl": -17,
    "pnl_pct": -0.06,
-   "trail": 329.63,
+   "trail": 331.92,
    "to_stop_pct": 8.6,
-   "to_trail_pct": 3.2,
+   "to_trail_pct": 2.5,
    "weight": 6.3
   }
  ],
@@ -298,7 +298,12 @@
  "realized": 0,
  "pnl_pct": 0.08,
  "inception": "04-Sep-2026",
- "navcurve": [],
+ "navcurve": [
+  {
+   "d": "2026-09-04",
+   "nav": 446697
+  }
+ ],
  "note": "Seeded 04-Sep-2026 from Arun-executed CNC fills (top-16 by RS of the day's 21 triggered candidates). LIQUIDCASE 1757u sold to fund. Deliberate override of the Dec-5 soak gate. Exits manual-assisted: 15:18 checker alerts; no automated selling yet.",
  "trades": []
 }
