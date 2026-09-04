@@ -1,150 +1,181 @@
 {
- "generated_at": "2026-09-03T14:00:02",
+ "generated_at": "2026-09-04T14:00:02",
  "broker_legs": {
-  "SENSEX2690376900CE": {
-   "qty": -240,
-   "avg": 36.45,
-   "ltp": 39.5,
-   "pnl": -732.0,
+  "BSE26SEP3500CE": {
+   "qty": 200,
+   "avg": 104.35,
+   "ltp": 78.6,
+   "pnl": -5150.0,
    "product": "NRML",
-   "exchange": "BFO"
+   "exchange": "NFO"
   },
-  "SENSEX2690376900PE": {
-   "qty": -120,
-   "avg": 169.13333333333333,
-   "ltp": 286.1,
-   "pnl": -14036.0,
-   "product": "MIS",
-   "exchange": "BFO"
+  "BSE26SEP3700CE": {
+   "qty": -200,
+   "avg": 42.25,
+   "ltp": 30.35,
+   "pnl": 2380.0,
+   "product": "NRML",
+   "exchange": "NFO"
   },
-  "ANTHEM": {
-   "qty": 13,
-   "avg": 947.45,
-   "ltp": 943.5,
-   "pnl": -51.4,
+  "HAL26SEP4900CE": {
+   "qty": 300,
+   "avg": 132.975,
+   "ltp": 134.0,
+   "pnl": 307.5,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "HAL26SEP5000CE": {
+   "qty": -300,
+   "avg": 92.0,
+   "ltp": 89.3,
+   "pnl": 810.0,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "IDEA26SEP15CE": {
+   "qty": 71475,
+   "avg": 0.55,
+   "ltp": 0.69,
+   "pnl": 10006.5,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "IDEA26SEP17CE": {
+   "qty": -71475,
+   "avg": 0.12,
+   "ltp": 0.16,
+   "pnl": -2859.0,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "IDEA26SEP18CE": {
+   "qty": -71475,
+   "avg": 0.07,
+   "ltp": 0.08,
+   "pnl": -714.7,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "IDEA26SEP20CE": {
+   "qty": 71475,
+   "avg": 0.04,
+   "ltp": 0.04,
+   "pnl": 0.0,
+   "product": "NRML",
+   "exchange": "NFO"
+  },
+  "CMPDI": {
+   "qty": 45,
+   "avg": 243.36444444444444,
+   "ltp": 242.27,
+   "pnl": -49.2,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "DYCL": {
-   "qty": 19,
-   "avg": 528.5,
-   "ltp": 543.8,
-   "pnl": 290.7,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "GAUDIUMIVF-BE": {
-   "qty": -420,
-   "avg": 120.1,
-   "ltp": 117.23,
-   "pnl": 1205.4,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "INOXINDIA": {
-   "qty": 5,
-   "avg": 2102.4,
-   "ltp": 2163.4,
-   "pnl": 305.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "LUMAXIND": {
-   "qty": 2,
-   "avg": 6341.75,
-   "ltp": 6427.0,
-   "pnl": 170.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "MANORAMA": {
+  "INDNIPPON": {
    "qty": 15,
-   "avg": 1884.4,
-   "ltp": 1952.9,
-   "pnl": 1027.5,
+   "avg": 1113.1333333333334,
+   "ltp": 1127.5,
+   "pnl": 215.5,
    "product": "CNC",
    "exchange": "NSE"
   },
   "PAISALO": {
-   "qty": 285,
-   "avg": 69.78996491228071,
-   "ltp": 70.32,
-   "pnl": 151.1,
+   "qty": 210,
+   "avg": 71.55,
+   "ltp": 73.9,
+   "pnl": 493.5,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "SMSPHARMA": {
+   "qty": 39,
+   "avg": 388.92820512820515,
+   "ltp": 390.8,
+   "pnl": 73.0,
    "product": "CNC",
    "exchange": "NSE"
   }
  },
- "app_claimed": {
-  "SENSEX2690376900CE": {
-   "qty": -120,
-   "books": [
-    "sensex_atm2",
-    "sensex_atm4",
-    "sensex_atm"
-   ]
-  },
-  "SENSEX2690376900PE": {
-   "qty": -120,
-   "books": [
-    "sensex_atm2",
-    "sensex_atm4",
-    "sensex_atm"
-   ]
-  }
- },
+ "app_claimed": {},
  "findings": [
   {
-   "level": "ALERT",
-   "kind": "SIZE",
-   "symbol": "SENSEX2690376900CE",
-   "broker_qty": -240,
-   "app_qty": -120,
-   "detail": "broker -240 vs app -120 (sensex_atm/sensex_atm2/sensex_atm4) \u00b7 order tags: untagged -360"
-  },
-  {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "ANTHEM",
-   "broker_qty": 13,
+   "kind": "MULTI-BOOK",
+   "symbol": "BSE26SEP3500CE",
+   "broker_qty": 200,
    "app_qty": 0,
-   "detail": "manual holding, 13 \u2014 no book tracks it"
+   "detail": "broker 200 = BOV2f5Ocq2XeV3EwUp0Y +200 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "DYCL",
-   "broker_qty": 19,
+   "kind": "MULTI-BOOK",
+   "symbol": "BSE26SEP3700CE",
+   "broker_qty": -200,
    "app_qty": 0,
-   "detail": "manual holding, 19 \u2014 no book tracks it"
+   "detail": "broker -200 = BOV2fi7BOAiaivUU5cB7 -200 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "GAUDIUMIVF-BE",
-   "broker_qty": -420,
+   "kind": "MULTI-BOOK",
+   "symbol": "HAL26SEP4900CE",
+   "broker_qty": 300,
    "app_qty": 0,
-   "detail": "manual holding, -420 \u2014 no book tracks it"
+   "detail": "broker 300 = BOV2RWqL2K0vyDrqgdhW +300 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "INOXINDIA",
-   "broker_qty": 5,
+   "kind": "MULTI-BOOK",
+   "symbol": "HAL26SEP5000CE",
+   "broker_qty": -300,
    "app_qty": 0,
-   "detail": "manual holding, 5 \u2014 no book tracks it"
+   "detail": "broker -300 = BOV2yhcFcCJvQVU6xVTU -300 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "LUMAXIND",
-   "broker_qty": 2,
+   "kind": "MULTI-BOOK",
+   "symbol": "IDEA26SEP15CE",
+   "broker_qty": 71475,
    "app_qty": 0,
-   "detail": "manual holding, 2 \u2014 no book tracks it"
+   "detail": "broker 71475 = BOV2ZIH1seDKnK2WDVnf +71475 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "IDEA26SEP17CE",
+   "broker_qty": -71475,
+   "app_qty": 0,
+   "detail": "broker -71475 = BOV2hBxQ97mC3oNsQXDa -71475 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "IDEA26SEP18CE",
+   "broker_qty": -71475,
+   "app_qty": 0,
+   "detail": "broker -71475 = BOV21Hlv26lzstjmntic -71475 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "IDEA26SEP20CE",
+   "broker_qty": 71475,
+   "app_qty": 0,
+   "detail": "broker 71475 = BOV21Xh1FdZEBYn5gXhP +71475 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "MANORAMA",
+   "symbol": "CMPDI",
+   "broker_qty": 45,
+   "app_qty": 0,
+   "detail": "manual holding, 45 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "INDNIPPON",
    "broker_qty": 15,
    "app_qty": 0,
    "detail": "manual holding, 15 \u2014 no book tracks it"
@@ -153,31 +184,63 @@
    "level": "INFO",
    "kind": "MANUAL",
    "symbol": "PAISALO",
-   "broker_qty": 285,
+   "broker_qty": 210,
    "app_qty": 0,
-   "detail": "manual holding, 285 \u2014 no book tracks it"
+   "detail": "manual holding, 210 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "SMSPHARMA",
+   "broker_qty": 39,
+   "app_qty": 0,
+   "detail": "manual holding, 39 \u2014 no book tracks it"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "SENSEX2690376900CE",
-   "broker_qty": -240,
-   "app_qty": -120,
+   "symbol": "BSE26SEP3700CE",
+   "broker_qty": -200,
+   "app_qty": 0,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "SENSEX2690376900PE",
-   "broker_qty": -120,
-   "app_qty": -120,
+   "symbol": "HAL26SEP5000CE",
+   "broker_qty": -300,
+   "app_qty": 0,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "IDEA26SEP17CE",
+   "broker_qty": -71475,
+   "app_qty": 0,
+   "detail": "short option with no SL resting at the exchange (software-side stop only)"
+  },
+  {
+   "level": "WARN",
+   "kind": "NAKED",
+   "symbol": "IDEA26SEP18CE",
+   "broker_qty": -71475,
+   "app_qty": 0,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   }
  ],
  "filled_by_tag": {
-  "untagged": 1239
+  "BOV21Xh1FdZEBYn5gXhP": 71475,
+  "BOV2hBxQ97mC3oNsQXDa": 71475,
+  "BOV21Hlv26lzstjmntic": 71475,
+  "BOV2ZIH1seDKnK2WDVnf": 71475,
+  "untagged": 309,
+  "BOV2RWqL2K0vyDrqgdhW": 300,
+  "BOV2yhcFcCJvQVU6xVTU": 300,
+  "BOV2f5Ocq2XeV3EwUp0Y": 200,
+  "BOV2fi7BOAiaivUU5cB7": 200
  },
- "alerts": 1,
- "warns": 2,
- "infos": 7
+ "alerts": 0,
+ "warns": 4,
+ "infos": 12
 }

@@ -1589,8 +1589,18 @@ def get_state():
         val = p["qty"] * pr; equity += val
         low = _donchian_low(close, s, close.index[-1]) if close is not None else None
         hold = (date.today() - date.fromisoformat(p["entry_date"][:10])).days
+        # today's move: live price vs the last DB close BEFORE today (display-only)
+        mv = None
+        if close is not None and s in close.columns:
+            _ser = close[s].dropna()
+            if len(_ser) >= 2:
+                _base = float(_ser.iloc[-2] if _ser.index[-1].date() == date.today()
+                              else _ser.iloc[-1])
+                if _base > 0:
+                    mv = round((pr / _base - 1) * 100, 2)
         holdings.append(dict(
             symbol=s, qty=round(p["qty"], 1), entry_date=p["entry_date"][:10],
+            day_move_pct=mv,
             entry_price=round(p["entry_price"], 1), price=round(pr, 1),
             value=round(val), weight=0, pnl=round(val - p["invested"]),
             pnl_pct=round((pr / p["entry_price"] - 1) * 100, 1), days=hold,
@@ -1617,13 +1627,15 @@ def get_state():
         _gain = (_swept_val - float(_get("sweep_cost", 0.0) or 0.0)) if _u else 0.0
         _ledger = max(0.0, cash - _swept_val)
         if _ledger > 500:
-            holdings.insert(0, dict(
+            holdings.append(dict(
                 symbol="Un-swept cash", qty=None, entry_date=None, entry_price=None,
                 price=None, value=round(_ledger),
                 weight=round(_ledger / nav * 100, 1) if nav else 0,
                 pnl=0, pnl_pct=0.0, is_cash=True, days=0, stop=None, stop_dist_pct=None))
         if _u:
-            holdings.insert(0, dict(
+            # bottom rows, CASHIETF above un-swept: insert before a trailing cash row
+            _at = next((i for i, h in enumerate(holdings) if h.get("is_cash")), len(holdings))
+            holdings.insert(_at, dict(
                 symbol=CFG["sweep_symbol"], qty=round(_u, 2),
                 entry_date=(_since[:10] if _since else None),
                 entry_price=(round(float(_get("sweep_cost", 0.0) or 0.0) / _u, 2) if _u else None),

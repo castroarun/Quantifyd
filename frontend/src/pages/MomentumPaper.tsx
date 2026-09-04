@@ -11,6 +11,7 @@ import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
   symbol: string; qty: number | null; entry_date: string; entry_price: number | null;
+  day_move_pct?: number | null;
   price: number | null; value: number; weight: number; pnl: number; pnl_pct: number | null;
   days: number; stop: number | null; stop_dist_pct: number | null; is_cash?: boolean;
 };
@@ -154,7 +155,7 @@ export default function MomentumPaper() {
           <div className={styles.cardTitle}>Holdings</div>
           <table className={styles.table}>
             <thead><tr>
-              <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th>
+              <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Today</th>
               <th>Value</th><th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Donchian stop</th><th>To stop</th>
             </tr></thead>
             <tbody>
@@ -165,9 +166,10 @@ export default function MomentumPaper() {
                     {h.is_cash && <span className={styles.cashTag}>liquid fund @{h.pnl_pct}%</span>}
                   </td>
                   <td>{h.weight}%</td>
-                  <td className={styles.muted}>{h.entry_date}</td>
+                  <td className={styles.muted}>{fmtD(h.entry_date)}</td>
                   <td>{h.entry_price ?? '—'}</td>
                   <td>{h.is_cash ? lakh(h.value) : h.price}</td>
+                  <td className={(h.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{h.is_cash || h.day_move_pct == null ? '\u2014' : (h.day_move_pct >= 0 ? '+' : '') + h.day_move_pct + '%'}</td>
                   <td>{lakh(h.value)}</td>
                   <td className={(h.pnl ?? 0) >= 0 ? styles.pos : styles.neg}
                       style={h.is_cash ? {} : pnlTint(h.pnl_pct)}>
@@ -197,7 +199,7 @@ export default function MomentumPaper() {
                 return (
                   <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
                     <td>TOTAL ({stockRows.length} stocks + cash)</td>
-                    <td>100%</td><td /><td /><td />
+                    <td>100%</td><td /><td /><td /><td />
                     <td>{lakh(tv)}</td>
                     <td className={tp >= 0 ? styles.pos : styles.neg}
                         title="Unrealised P&L on the stocks only — the liquid ETF's interest is reported separately in the header">
@@ -327,8 +329,8 @@ export default function MomentumPaper() {
               {s.closed.map((c, i) => (
                 <tr key={i}>
                   <td className={styles.sym}>{c.symbol}</td>
-                  <td className={styles.muted}>{c.entry_date}</td>
-                  <td className={styles.muted}>{c.exit_date}</td>
+                  <td className={styles.muted}>{fmtD(c.entry_date)}</td>
+                  <td className={styles.muted}>{fmtD(c.exit_date)}</td>
                   <td>{c.entry_price}</td>
                   <td>{c.exit_price}</td>
                   <td className={c.net_pnl >= 0 ? styles.pos : styles.neg} style={pnlTint(c.gross_pct)}>
@@ -397,6 +399,14 @@ export default function MomentumPaper() {
  *  against. Numbers are pulled from the study record itself rather than retyped here — a hardcoded
  *  copy would drift the moment the study is revised, and a stale backtest figure next to live P&L
  *  is worse than none. */
+const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD = (x?: string | null) => {
+  if (!x) return '\u2014';
+  const d = new Date(x.slice(0, 10));
+  if (isNaN(+d)) return x;
+  return String(d.getDate()).padStart(2, '0') + '-' + MONS[d.getMonth()] + '-' + d.getFullYear();
+};
+
 /** Headline block. Hierarchy, not a row of equal tiles: what the book is worth, where that value
  *  sits, then the P&L parts before the total they add up to. */
 function BookSummary({ s }: { s: State }) {
@@ -407,7 +417,7 @@ function BookSummary({ s }: { s: State }) {
   let cagr: number | null = null, mdd: number | null = null, yrsSpan = 0;
   if (nc.length > 5) {
     yrsSpan = (Date.parse(nc[nc.length - 1].d) - Date.parse(nc[0].d)) / 3.15576e10;
-    if (yrsSpan > 0.02) cagr = (Math.pow(nc[nc.length - 1].nav / nc[0].nav, 1 / yrsSpan) - 1) * 100;
+    if (yrsSpan > 0.15) cagr = (Math.pow(nc[nc.length - 1].nav / nc[0].nav, 1 / yrsSpan) - 1) * 100;
     let peak = nc[0].nav, ddv = 0;
     for (const q of nc) { peak = Math.max(peak, q.nav); ddv = Math.min(ddv, q.nav / peak - 1); }
     mdd = ddv * 100;
@@ -452,7 +462,7 @@ function BookSummary({ s }: { s: State }) {
         </div>
         {cagr != null && (
           <div className={styles.sumSub}>
-            CAGR {pct(cagr)}{yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {s.data_asof || '—'}
+            CAGR {cagr == null ? '\u2014 (too early to annualize)' : pct(cagr)}{cagr != null && yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {fmtD(s.data_asof) || '—'}
           </div>
         )}
 
@@ -647,7 +657,7 @@ function HedgePanel({ s }: { s: State }) {
               <b>{h.pnl >= 0 ? '+' : ''}{inr(h.pnl)}</b> ({pct(h.pnl_pct)})</div></div>
           </div>
           <div style={{ fontSize: 12.5, color: 'var(--ink-muted,#888)' }}>
-            Bought {h.entry_date} on the risk-off gate. Strike {h.strike}, expiry {h.expiry}. It re-sizes if
+            Bought {fmtD(h.entry_date)} on the risk-off gate. Strike {h.strike}, expiry {h.expiry}. It re-sizes if
             holdings stop out, rolls at expiry while the gate stays risk-off, and is sold when the gate turns risk-on.
           </div>
         </>
@@ -706,7 +716,7 @@ function HedgePanel({ s }: { s: State }) {
                 {hist.map((x) => (
                   <tr key={x.id}>
                     <td>{x.tsym}</td>
-                    <td>{x.entry_date} → {x.exit_date}</td>
+                    <td>{fmtD(x.entry_date)} → {fmtD(x.exit_date)}</td>
                     <td>{inr(x.cost)}</td>
                     <td>{inr(x.proceeds)}</td>
                     <td style={{ color: x.pnl >= 0 ? '#1f9d55' : '#c0392b' }}>{x.pnl >= 0 ? '+' : ''}{inr(x.pnl)}</td>

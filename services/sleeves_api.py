@@ -245,6 +245,29 @@ def tn_withdraw():
     return _tn_flow('withdraw')
 
 
+# ───────────────────── Open Alpha: initiate a cycle from the UI ─────────────────────
+@sleeves_bp.route('/api/sleeves/openalpha/run', methods=['POST'])
+def oa_run():
+    """UI-initiated engine run. Before ~17:50 IST the day's official closes are not
+    in the DB yet, so a FULL cycle would trade on stale data — we run a display
+    refresh instead. After 17:50 (or on weekends) the full nightly cycle runs:
+    pending buy-stop fills, exits, fresh scan, CASHIETF sweep."""
+    import subprocess
+    now = datetime.now()
+    weekday = now.weekday() < 5
+    market_stale = weekday and (now.hour < 17 or (now.hour == 17 and now.minute < 50))
+    args = ['--ui-only'] if market_stale else []
+    py = str(ROOT / 'venv' / 'bin' / 'python')
+    subprocess.Popen([py, str(ROOT / 'services' / 'bluesky_paper.py'), *args],
+                     cwd=str(ROOT), stdout=open('/tmp/bluesky_ui_run.log', 'a'),
+                     stderr=subprocess.STDOUT)
+    return jsonify(ok=True,
+                   mode=('display refresh only — full cycle unlocks after 17:50 IST '
+                         'once the day\'s official closes are in' if market_stale
+                         else 'full nightly cycle initiated (fills, exits, scan, sweep)'),
+                   log='/tmp/bluesky_ui_run.log')
+
+
 # ───────────────────── dividends (quarterly HWM policy) ─────────────────────
 @sleeves_bp.route('/api/sleeves/dividends')
 def sleeves_dividends():

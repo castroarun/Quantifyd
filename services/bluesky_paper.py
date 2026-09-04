@@ -162,11 +162,14 @@ def bench_series(dates_list):
 
 
 def write_ui(st, close, sma_t, today, gate, log, dry):
-    cl_row = close.ffill().loc[close.index[close.index <= today][-1]]
+    idx = close.index[close.index <= today]
+    cl_row = close.ffill().loc[idx[-1]]
+    prev_row = close.ffill().loc[idx[-2]] if len(idx) >= 2 else None
     sma_row = sma_t.ffill().loc[sma_t.index[sma_t.index <= today][-1]]
     positions, tot_val, tot_pnl = [], 0.0, 0.0
     for p in st['positions']:
         lp = float(cl_row.get(p['symbol'], np.nan))
+        pv = float(prev_row.get(p['symbol'], np.nan)) if prev_row is not None else np.nan
         smav = float(sma_row.get(p['symbol'], np.nan))
         ok = not np.isnan(lp)
         val = p['qty'] * lp if ok else p['qty'] * p['buy']
@@ -178,6 +181,8 @@ def write_ui(st, close, sma_t, today, gate, log, dry):
             symbol=p['symbol'], qty=p['qty'], buy=p['buy'], entry_date=p['entry_date'],
             pivot=p.get('pivot'), src=p.get('src', 'live'),
             ltp=round(lp, 2) if ok else None,
+            day_move_pct=(round((lp / pv - 1) * 100, 2)
+                          if ok and not np.isnan(pv) and pv > 0 else None),
             value=round(val, 0), pnl=round(pnl, 0),
             pnl_pct=round((lp / p['buy'] - 1) * 100, 1) if ok else None,
             days=(pd.Timestamp(str(today.date())) - pd.Timestamp(p['entry_date'])).days,

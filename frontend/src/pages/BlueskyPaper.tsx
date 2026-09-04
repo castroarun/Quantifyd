@@ -9,6 +9,7 @@ import styles from './MomentumPaper.module.css';
 
 type Pos = {
   symbol: string; is_cash?: boolean; qty: number; buy: number | null; entry_date: string | null; pivot: number | null;
+  day_move_pct?: number | null;
   src?: string; ltp: number | null; value: number; pnl: number; pnl_pct: number | null;
   days: number; stop: number; to_stop_pct: number | null; trail: number | null;
   to_trail_pct: number | null; weight: number | null;
@@ -145,7 +146,15 @@ function BookSummary({ f }: { f: Feed }) {
         <div className={styles.sumHero}>{inr(f.nav)}</div>
         <div className={styles.sumSub}>
           CAGR {pct(f.cagr_pct)} (incl. backfill) · max drawdown {pct(f.max_dd_pct)} ·
-          updated {fmtD(f.updated)}
+          updated {fmtD(f.updated)}{' '}
+          <button style={{ marginLeft: 10, padding: '3px 10px', borderRadius: 6, fontSize: 12,
+                           border: '1px solid var(--hairline, #888)', cursor: 'pointer',
+                           background: 'var(--surface, transparent)', color: 'inherit' }}
+            onClick={() => fetch('/api/sleeves/openalpha/run', { method: 'POST', credentials: 'include' })
+              .then((r) => r.json()).then((d) => alert(d.mode || 'started'))
+              .catch(() => alert('run API not loaded yet (arrives with the next service reload)'))}
+            title="Initiate the engine: full nightly cycle after 17:50 IST, display refresh during market hours">
+            Run cycle now</button>
         </div>
         <div className={styles.barWrap}>
           <div className={styles.barSeg}
@@ -230,7 +239,7 @@ export default function BlueskyPaper() {
         {f.positions.length === 0 ? <div className={styles.loading}>none — in cash</div> : (
         <table className={styles.table}>
           <thead><tr>
-            <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Value</th>
+            <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Today</th><th>Value</th>
             <th>P&L ₹</th><th>P&L %</th><th>Days</th><th>Stop −8%</th><th>To stop</th>
             <th>20-SMA trail</th><th>To trail</th>
           </tr></thead>
@@ -239,7 +248,7 @@ export default function BlueskyPaper() {
               <tr key="cashietf" className={styles.cashRow}>
                 <td className={styles.sym}>{p.symbol}<span className={styles.cashTag}>liquid fund</span></td>
                 <td>{p.weight == null ? '—' : p.weight + '%'}</td>
-                <td className={styles.muted}>—</td><td>—</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
+                <td className={styles.muted}>—</td><td>—</td><td>{p.ltp ?? '—'}</td><td>—</td><td>{lakh(p.value)}</td>
                 <td className={styles.pos} title="sweep interest earned to date">+{inr(p.pnl ?? 0)}</td>
                 <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
               </tr>
@@ -248,7 +257,7 @@ export default function BlueskyPaper() {
                 <td className={styles.sym}>{p.symbol}</td>
                 <td>{p.weight == null ? '—' : p.weight + '%'}</td>
                 <td className={styles.muted}>{fmtD(p.entry_date)}</td>
-                <td>{p.buy ?? '—'}</td><td>{p.ltp ?? '—'}</td><td>{lakh(p.value)}</td>
+                <td>{p.buy ?? '—'}</td><td>{p.ltp ?? '—'}</td><td className={(p.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{p.day_move_pct == null ? '—' : (p.day_move_pct >= 0 ? '+' : '') + p.day_move_pct + '%'}</td><td>{lakh(p.value)}</td>
                 <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
                   {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
                 <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
@@ -267,7 +276,7 @@ export default function BlueskyPaper() {
           <tfoot>
             <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
               <td>TOTAL ({f.positions.filter((p) => !p.is_cash).length} stocks + sweep)</td>
-              <td>{f.invested_pct}%</td><td /><td /><td />
+              <td>{f.invested_pct}%</td><td /><td /><td /><td />
               <td>{lakh(totVal)}</td>
               <td className={totPnl >= 0 ? styles.pos : styles.neg}>{totPnl >= 0 ? '+' : ''}{inr(totPnl)}</td>
               <td colSpan={6} />
