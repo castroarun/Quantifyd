@@ -15355,6 +15355,251 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\147_third_sleeve_archetypes\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'paper-books-audit-research148',
+    title: 'N500M + I75WR — are the green paper books evidence of edge, or promotion-on-noise?',
+    verdict:
+      'Arun: "showing greens. pls study them." The honest read of both young intraday paper books. N500M (per-stock promoted volbo/CCRB rules, 35 closed trades since 08-May): the +Rs 18,151 / 57% WR headline dissolves under n-size truth — t = 1.78 gross and 1.40 at the research/109 10bps cost floor (paper fills book ZERO costs), every confidence interval includes zero, and the win-rate CI is [41%, 72%]. The selection-on-noise signature is present: each rule was promoted as the argmax-by-Sharpe over a variant grid then top-N across stocks, and promotion-time expectations shrank from +1.33%/trade (avg promoted WR ~83%) to +0.62% live (WR 57%), with the collapse concentrated exactly where regression to the mean predicts (ADANIGREEN +2.95% expected -> +0.07% live; HDFCAMC 1.46 -> 0.04; GODFRYPHLP 1.88 -> -0.44) while a few rules ran hot — the dispersion of luck. Top symbol = 42% of net; 32/35 exits are EOD (the stop/target machinery barely engages); trade cadence is slowing (9-11/month -> 3). VERDICT: INCONCLUSIVE, currently consistent with selection-on-noise — paper only, zero promotion pressure, judged 2027-03-31 or n>=100 against a pre-registered bar (net-of-10bps expectancy > 0 with t>=2), registered in the Ops & Review Center. I75WR: only Config C has fired — 8 trades, ALL on one symbol (AARTIIND short), +Rs 1,989 — no verdict is possible or manufactured; Configs A/B have produced zero trades in 2.5 weeks (ops flag: check their scanners). Judged 2026-12-31 or n>=40 (registered). Neither book qualifies for the TN+OA blend test or any real-money conversation today.',
+    status: 'COMPLETE',
+    date: '2026-09-04',
+    cardBlurb:
+      'Forensic audit of the two green intraday paper books: n-size truth, cost-floor stress, and a promotion-shrinkage test against each rule backtest expectation. Green is not evidence; both books get dated review gates instead of verdicts.',
+    cardStats: [
+      { label: 'N500M', value: 'INCONCLUSIVE — t 1.40 at cost floor' },
+      { label: 'Promotion shrinkage', value: '+1.33% expected -> +0.62% live' },
+      { label: 'I75WR', value: 'TOO EARLY (n=8) — review 2026-12-31' },
+    ],
+    system: {
+      intro: 'Read-only audit; both books keep running unchanged.',
+      rows: [
+        { k: 'N500M', v: 'Per-stock promoted volbo/CCRB intraday rules (argmax-by-Sharpe per stock, top-N across stocks — services/n500m_configs.py); paper since 2026-05-08; 35 closed trades.' },
+        { k: 'I75WR', v: '3 configs (A: TP0.5/SL1.5, B: TP2.0/SL1.5, C: multi-bar short bounce); paper since 2026-08-17; 8 closed trades, all Config C on AARTIIND.' },
+        { k: 'Prior', v: 'research/109-110: the intraday OHLCV family has NO EDGE at the ~10bps cost floor. The books are the surviving per-stock subset — the multiple-testing construction is the central risk.' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered before computing: N500M shows a defensible edge only at net-of-cost t >= 2; I75WR gets no verdict at n=8, only a registered review gate. The ideal null (replaying alternative non-promoted grid cells over the live window) was deliberately NOT run — heavy, and moot until the book clears t>=2 on its own trades; the shrinkage test stands in.',
+      rows: [
+        { k: 'Review gates (REGISTERED in Ops)', v: 'N500M: 2027-03-31 or n>=100; pass = net-of-10bps expectancy > 0 with t >= 2. I75WR: 2026-12-31 or n>=40; pass = net expectancy > 0 with t >= 2 AND every config with >=10 trades non-negative.' },
+        { k: 'Data', v: 'n500m_trading.db + intraday_75wr.db as of 2026-09-04 (read-only).' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'N500M: the green headline vs the honest statistics',
+        columns: ['Cost (RT)', 'Mean %/trade', 't-stat', '95% CI', 'P&L'],
+        rows: [
+          ['0 bps (as booked — paper has no costs)', '+0.473%', '1.78', '[-0.05, +0.99]', 'Rs 18,151'],
+          ['10 bps (r/109 floor)', '+0.373%', '1.40', '[-0.15, +0.89]', 'Rs 13,474'],
+          ['15 bps', '+0.323%', '1.21', '[-0.20, +0.84]', 'Rs 11,135'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'The promotion-shrinkage table (selection-on-noise signature)',
+        caption: 'Expected = the backtest numbers each rule was promoted on. Live = what actually happened. n-weighted: +1.33% -> +0.62%/trade; expected WRs ~80-92% -> live 57%. A few rules ran at/above expectation, the rest collapsed — the dispersion pattern of luck, not of a stable per-stock edge.',
+        columns: ['Rule', 'n live', 'Expected %/tr', 'Live %/tr', 'Expected WR', 'Live WR'],
+        rows: [
+          ['COCHINSHIP volbo', '6', '+0.70', '+0.99', '79%', '67%'],
+          ['RBLBANK volbo', '4', '+1.08', '+1.15', '92%', '75%'],
+          ['LT volbo', '4', '+0.68', '+0.25', '82%', '50%'],
+          ['ADANIGREEN volbo', '3', '+2.95', '+0.07', '82%', '33%'],
+          ['HDFCAMC volbo', '3', '+1.46', '+0.04', '91%', '33%'],
+          ['GODFRYPHLP volbo', '3', '+1.88', '-0.44', '80%', '33%'],
+          ['LAURUSLABS volbo', '3', '+1.42', '+1.71', '85%', '100%'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'N500M verdict', value: 'INCONCLUSIVE', hint: 'consistent with selection-on-noise; paper only' },
+        { label: 'WR confidence interval', value: '[41%, 72%]', hint: 'the 57% headline carries almost no information at n=35' },
+        { label: 'Concentration', value: '42% from one symbol', tone: 'neg', hint: '32/35 exits are EOD; cadence slowing' },
+        { label: 'I75WR', value: 'n=8, one symbol', hint: 'Configs A/B silent — ops flag raised' },
+        { label: 'Reviews registered', value: '2027-03-31 / 2026-12-31', tone: 'pos', hint: 'ops_center REVIEWS + LABS_AND_JOBS_REFERENCE' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'NO WINNER — dated review gates instead of verdicts',
+        summary: 'Green P&L on a young, selection-built book is the EXPECTED output of promotion-on-noise; the burden of proof is t>=2 net of the cost floor, and neither book carries it yet. Both keep running on paper; both have registered judgement dates with pre-registered pass bars.',
+        metrics: [
+          { k: 'N500M gate', v: 'n>=100 or 2027-03-31: net-of-10bps > 0, t>=2' },
+          { k: 'I75WR gate', v: 'n>=40 or 2026-12-31: net > 0, t>=2, each config non-negative' },
+        ],
+        rejected: ['Any real-money conversation before the gates', 'Reading 57% WR at n=35 as evidence', 'Torturing 8 trades into a verdict'],
+      },
+    ],
+    caveats: [
+      'The ideal null (alternative-cell live replay) was not run — declared up front; the shrinkage test is the cheap stand-in and points the same way as the r/109-110 family verdict.',
+      'Paper fills come from live quotes at signal time; a fill-quality audit becomes relevant only alongside a passing review.',
+      'N500M has a few more trades (35) than the registry note (31) — the note lagged the book.',
+    ],
+    githubLinks: [{ label: 'research/148 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/148_paper_books_audit' }],
+    projectPaths: [
+      'research\\148_paper_books_audit\\PAPER_BOOKS_N500M_I75WR_FORENSIC_STATUS.md',
+      'research\\148_paper_books_audit\\results\\RESULTS.md',
+    ],
+  },
+  {
+    slug: 'pullback-confluence-research149',
+    title: 'Pullback family done properly — every MA, every confluence filter: 0 of 96 cells positive',
+    verdict:
+      'Arun, on the r/146 pullback kill: "i said 50 sma as a sample, did u study other sma/emas? additional criteria like rsi, rs, stochs, ccrb?" Fair — r/146 only tested the 50-MA touch. This study swept the full sketch space on the same engine: MA {20/50/100/200} x {SMA, EMA} x confluence {none, RSI(14)<40, RSI(2)<10, RS-percentile>=70 (pullbacks in relative-strength LEADERS — the classically claimed edge), Stoch(14)<20 turning up, CCI(20)<-100 turning up} x two exits = 96 cells, gross and after-tax, with a pre-registered resurrection bar (positive after-tax expectancy + neighbor plateau + both windows) and the cell count disclosed for multiple-testing discount. RESULT: 0 of 96 cells has positive after-tax expectancy. The best cell in the entire grid is -0.195%/trade (ema20 + CCI-turn); the RS-leaders story lands at -0.58 at best; RSI(2)<10 confluence makes it WORSE (-0.94 mean), not better. The reason is structural and identical in every cell: the buy-stop above the green candle enters at the worst fill of the bounce, and the candle-low stop sits inside normal noise — a 30-40% win rate with 1.5-2R winners cannot cover it before costs. This is the fourth independent kill of the buy-the-dip-entry family (r/84 dip-buy, r/87-88 structure screens, r/146, now r/149). The sketch is closed permanently, with a clean conscience: it was not under-tested, it was tested 96 ways and lost 96 times. The signal DAYS were handed to research/150 to test Arun\'s options-structure idea — the honest way to extract any remaining value.',
+    status: 'COMPLETE',
+    date: '2026-09-04',
+    cardBlurb:
+      'Second-pass audit of a killed family at Arun\'s request: 96 MA x confluence x exit cells on the r/146 engine with a pre-registered resurrection bar. All 96 negative after tax. The pullback sketch is closed.',
+    cardStats: [
+      { label: 'Verdict', value: 'NO EDGE — 0/96 cells positive' },
+      { label: 'Best cell', value: '-0.195%/trade (ema20+CCI)' },
+      { label: 'RS-leaders confluence', value: '-0.58%/trade at best' },
+    ],
+    system: {
+      intro: 'Identical candle mechanics to r/146 (green after >=1 red at the MA touch, buy-stop above the green high, SL below min(green low, prior red low), hard stops, no averaging, PIT top-500, 10 slots, 25bps/side, FY-netted tax). Axes:',
+      rows: [
+        { k: 'MA grid', v: '20 / 50 / 100 / 200, SMA and EMA (trend filter: close > SMA200, chosen MA rising over 10d).' },
+        { k: 'Confluence', v: 'none - RSI(14)<40 - RSI(2)<10 - OA-style RS percentile >= 70 - Stoch(14)<20 turning up - CCI(20)<-100 turning up.' },
+        { k: 'Exits', v: '2R target / 10d time and 2R / 15d (the least-bad r/146 shapes).' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered (highest overfit risk of the three workstreams — second-pass mining of a dead family): resurrection requires a positive AFTER-TAX expectancy PLATEAU (cell + >=2 neighbors, both validation windows); 96 cells disclosed so any discovery is discounted as best-of-96. None was needed — nothing was positive.',
+      rows: [
+        { k: 'Windows', v: '2006-04->2026-09 full; W1 2016-06->2019-12; W2 2020->now.' },
+        { k: 'Runtime', v: '192 runs, 160s, VPS.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'After-tax expectancy per trade by confluence filter (mean and best across 16 cells each)',
+        columns: ['Confluence', 'Mean %/trade', 'Best cell', 'Note'],
+        rows: [
+          ['CCI(20)<-100 turning up', '-0.59%', '-0.195%', 'least bad — still negative in all 16 cells'],
+          ['Stoch(14)<20 turning up', '-0.69%', '-0.38%', ''],
+          ['RS-percentile >= 70 (leaders)', '-0.74%', '-0.58%', 'the classically claimed edge — does not survive'],
+          ['none (raw sketch)', '-0.76%', '-0.65%', ''],
+          ['RSI(14) < 40', '-0.82%', '-0.43%', ''],
+          ['RSI(2) < 10', '-0.94%', '-0.51%', 'deep oversold makes the candle entry WORSE'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'Best 3 cells of 96 (after-tax) — even the least-bad fail the tradeability gate',
+        columns: ['Cell', 'n', 'WR', 'Expectancy', 'Max losing streak', 'CAGR / DD'],
+        rows: [
+          ['ema20 + CCI, 2R/15d', '634', '38.3%', '-0.195%', '15', '+2.8% / -15.6%'],
+          ['ema50 + CCI, 2R/15d', '1,878', '38.0%', '-0.319%', '29', '-2.5% / -43.7%'],
+          ['ema20 + CCI, 2R/10d', '640', '39.7%', '-0.352%', '16', '+2.5% / -12.8%'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Cells positive after-tax', value: '0 of 96', tone: 'neg' },
+        { label: 'MA gradient', value: 'ema20 -0.52 .. sma200 -1.06', hint: 'shorter MA = shallower pullback = less bad, never good' },
+        { label: 'Family kill count', value: '4th independent', hint: 'r/84, r/87-88, r/146, r/149' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'NO WINNER — the family is dead at every parameterization',
+        summary: 'The entry geometry loses before the filter is even consulted: worst fill of the bounce + a stop inside noise. Confluence shrinks n; it cannot change the geometry.',
+        metrics: [{ k: 'Answer to the ask', v: 'yes — all other MAs and all suggested filters were tested; all negative' }],
+        rejected: ['Exit re-optimization per cell (third-pass mining)', 'Weekly-timeframe extension (nothing in the daily mechanics earns it)'],
+      },
+    ],
+    caveats: [
+      'Survivorship (dip-buying on survivor data) flatters these numbers — the true cells are WORSE, strengthening the kill.',
+      '96 cells were tested; the pre-registered plateau bar and cell-count disclosure guard the multiple-testing risk — none was triggered since nothing was positive.',
+    ],
+    githubLinks: [{ label: 'research/149 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/149_pullback_confluence' }],
+    projectPaths: [
+      'research\\149_pullback_confluence\\PULLBACK_CONFLUENCE_DAILY_SWEEP_STATUS.md',
+      'research\\149_pullback_confluence\\results\\RESULTS.md',
+    ],
+  },
+  {
+    slug: 'signal-options-overlay-research150',
+    title: 'Options structures on the high-WR killed signals — the payoff-restructuring test on real bhavcopy',
+    verdict:
+      'Arun\'s idea: "Connors RSI-2/3 ~60% WR, likewise KC6, -ve expectancy ok — how ab deploy options strategy like skewed iron condor, flies, bull/bear call/put spreads? same thing with pullback to 50 sma." The mechanism is sound to state: those signals have real ~60% directional hit rates but negative cash expectancy because average loss beats average win — a defined-risk premium structure (bull put spread wins on flat-or-up) reshapes the payoff to fit. Tested for real: 7,913 structures priced from actual NSE bhavcopy closes at entry (traded strikes only — the r/89 binding filter), front monthly 20-45 DTE, held to expiry intrinsic (no fabricated mid-life marks on illiquid stock options), 3 signals x 3 structures pre-declared, 5%/10% premium haircuts for the wide stock-option spreads. Window 2024-01 to 2026-09 — stock-option bhav is dense only from 2024 (disclosed everywhere). RESULT: NO EDGE — 0 of 9 cells passes the pre-registered bar. The restructuring HALF-works, and that is the study\'s lesson: the structures deliver exactly the promised win rates (57-73%) — but expectancy stays negative. Connors- and pullback-triggered cells are SIGNIFICANTLY negative net of the 10% haircut (t = -2.7 to -5.3); KC6 cells have positive point estimates on n~80 at t 0.2-1.0 — unbettable. The tell is the per-year split: every cell is deeply negative in 2026 (-5% to -47% RoR) — the overlay is short-put beta on weak stocks; the 2024-25 credits were bull-tape premium, not signal alpha. The r/129 conclusion (index-level regime credit spreads dead, 4th kill) extends to stock-level SIGNAL-TRIGGERED entry — a genuinely different construction, same graveyard, making this the 5th kill of the premium-on-a-timing-signal family. The durable takeaway for Arun: a high win rate is a PAYOFF-SHAPE CHOICE — any structure can buy WR by selling tail. Only a mispriced underlying distribution creates expectancy, and r/146, r/149 and now real option prices agree that none of these three signals has one.',
+    status: 'COMPLETE',
+    date: '2026-09-04',
+    cardBlurb:
+      'Does wrapping the ~60%-WR mean-reversion signals in defined-risk option structures create the expectancy the cash versions lacked? 7,913 real-priced structures say no: the WR arrives as designed, the expectancy does not — the left tail just moves into the strikes.',
+    cardStats: [
+      { label: 'Verdict', value: 'NO EDGE — 0 of 9 cells pass' },
+      { label: 'WR delivered', value: '57-73% (as designed)' },
+      { label: '2026 (the tell)', value: '-5% .. -47% RoR, every cell' },
+    ],
+    system: {
+      intro: 'Signal fires at close -> defined-risk structure at same-day bhav closes, nearest TRADED strikes (contracts>0 on every leg, else skip), front monthly 20-45 DTE, one structure per symbol-week, held to expiry (P&L = credit - intrinsic at the underlying\'s real expiry close):',
+      rows: [
+        { k: 'Signals', v: 'Connors RSI(2)<10 & >SMA200 - KC6 lower-band & >SMA200 - pullback-to-50SMA candle (signal DAYS from the r/146/149 engines; their cash exits irrelevant here).' },
+        { k: 'Structures', v: 'S1 bull put spread ~0.97/0.90 of spot - S2 tighter BPS ~ATM/0.95 - S3 skewed iron condor (puts 0.97/0.90 + calls 1.07/1.12).' },
+        { k: 'Costs', v: 'Gross, then credit haircuts of 5% and 10% of premium (stock-option monthlies are wide; median minimum-leg volume 25-150 contracts/day).' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered kill bar: positive mean return-on-risk at the 10% haircut with t >= 2 AND >=2 of 3 calendar years positive AND a capacity note. r/129 prior stated up front (index-level regime spreads killed at G1) with the honest distinction: this is stock-level signal-triggered entry — evidence decides. It decided.',
+      rows: [
+        { k: 'Window', v: '2024-01 -> 2026-09 (~2.7y) — stock-option bhav is dense only from 2024 (RELIANCE 2019: 140 rows vs 2025: 48,300). One up-cycle + one correction.' },
+        { k: 'Universe', v: '80 F&O stock underlyings with usable chains.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Mean return-on-risk per structure (held to expiry; h10 = 10%-of-premium haircut)',
+        caption: 'WR is exactly what the payoff shapes promise — and expectancy is negative or zero anyway. Bold verdict column: Connors and pullback cells are significantly NEGATIVE; KC6 cells are small-n noise.',
+        columns: ['Signal', 'Structure', 'n', 'WR', 'RoR gross', 'RoR @h10', 't @h10', '2026 RoR @h10'],
+        rows: [
+          ['Connors RSI2', 'S1 BPS 0.97/0.90', '1,414', '73%', '-1.1%', '-3.3%', '-3.0', '-21.0%'],
+          ['Connors RSI2', 'S2 BPS ATM/0.95', '1,445', '61%', '-0.7%', '-6.3%', '-3.7', '-26.5%'],
+          ['Connors RSI2', 'S3 skewed IC', '1,383', '62%', '+0.6%', '-3.6%', '-2.7', '-23.4%'],
+          ['KC6', 'S1 BPS', '81', '72%', '+4.6%', '+1.7%', '0.4', '-11.4%'],
+          ['KC6', 'S2 BPS ATM', '85', '57%', '-5.1%', '-9.9%', '-1.4', '-46.9%'],
+          ['KC6', 'S3 skewed IC', '80', '62%', '+5.6%', '+0.8%', '0.2', '-5.6%'],
+          ['Pullback-50SMA', 'S1 BPS', '1,152', '72%', '-1.8%', '-4.0%', '-3.3', '-12.3%'],
+          ['Pullback-50SMA', 'S2 BPS ATM', '1,160', '58%', '-5.1%', '-10.1%', '-5.3', '-14.0%'],
+          ['Pullback-50SMA', 'S3 skewed IC', '1,113', '61%', '-1.7%', '-5.6%', '-3.8', '-18.2%'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Cells passing the bar', value: '0 of 9', tone: 'neg' },
+        { label: 'Structures priced', value: '7,913', hint: 'real bhav closes, traded strikes only' },
+        { label: 'The mechanism', value: 'WR yes, expectancy no', hint: 'the left tail relocates into the strikes' },
+        { label: 'Family kill count', value: '5th', hint: 'premium-selling on a timing signal: r/129 x4 + r/150' },
+        { label: 'Capacity', value: '25-150 contracts/day', tone: 'neg', hint: 'median minimum-leg volume — thin wings' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'NO WINNER — reject the overlay; do not paper-trade it',
+        summary: 'The Connors/pullback cells are significantly negative and the KC6 cells cannot accumulate evidence at a useful rate (~30 fillable signals/year). Premium-selling capital belongs in the validated books (C1 winged strangles, the index stack), not in signal-triggered stock structures.',
+        metrics: [{ k: 'Durable lesson', v: 'high WR is a payoff-shape choice, not an edge' }],
+        rejected: ['Early-exit variants (needs fabricated marks on illiquid strikes)', 'Call-side structures on short signals (no validated short signal exists)', 'Index-option versions (r/129 already killed)'],
+      },
+    ],
+    caveats: [
+      'Short window (2.7y) by data necessity — but note the direction of the bias: the window is bull-heavy, which FLATTERS put-selling, and the family still fails.',
+      'Hold-to-expiry only; %-of-spot strikes (bhav has no greeks) — the honest EOD-implementable construction.',
+      'Two concurrent script instances ran from a launch retry (read-only, identical outputs — disclosed in STATUS).',
+    ],
+    githubLinks: [{ label: 'research/150 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/150_signal_options_overlay' }],
+    projectPaths: [
+      'research\\150_signal_options_overlay\\SIGNAL_OPTIONS_OVERLAY_DAILY_SWEEP_STATUS.md',
+      'research\\150_signal_options_overlay\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
