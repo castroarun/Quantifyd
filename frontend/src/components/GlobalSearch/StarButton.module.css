@@ -1,0 +1,39 @@
+.star {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.star svg {
+  width: 15px;
+  height: 15px;
+}
+.star:hover {
+  color: var(--brand-amber);
+  background: var(--nav-hover-bg, rgba(127, 127, 127, 0.1));
+}
+.star:focus-visible {
+  outline: 2px solid var(--brand-amber);
+  outline-offset: 1px;
+}
+.on {
+  color: var(--brand-amber);
+}
+
+.compact {
+  width: 22px;
+  height: 22px;
+}
+.compact svg {
+  width: 13px;
+  height: 13px;
+}

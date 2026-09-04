@@ -2,6 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 14px 24px;
   border-bottom: 0.5px solid var(--hairline-soft);
   background: var(--canvas);
@@ -12,12 +13,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .stamp {
   font-size: var(--text-xs);
   color: var(--brand-amber);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .right {
@@ -34,8 +37,49 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.status {
+  white-space: nowrap;
+}
+
+/* Drawer trigger — phone only (the sidebar is always visible above 768px). */
+.menu {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  flex: none;
+}
+.menu svg { width: 19px; height: 19px; }
+.menu:hover { background: var(--nav-hover-bg, rgba(0, 0, 0, 0.05)); color: var(--ink); }
+
+@media (max-width: 768px) {
+  .menu { display: inline-flex; }
+}
+
+@media (max-width: 900px) {
+  .bar { padding: 12px 18px; }
+  .right { gap: 12px; }
+}
+
+/* Phone: one tight line — clock, then search / star / connection dot.
+   The connection label collapses to its dot; the name drops out. */
 @media (max-width: 640px) {
-  .bar { padding: 10px 14px; }
+  .bar { padding: 8px 12px; gap: 8px; min-height: 44px; }
+  .left { gap: 6px; }
+  .stamp { font-size: 10px; }
   .user { display: none; }
-  .right { gap: 10px; }
+  .right { gap: 6px; }
+  .status span + span { display: none; }
+}
+
+@media (max-width: 380px) {
+  .stamp { overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
 }

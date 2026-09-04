@@ -61,3 +61,20 @@ body {
 .row-gap-8 { display: flex; align-items: center; gap: 8px; }
 .row-gap-12 { display: flex; align-items: center; gap: 12px; }
 .spacer { flex: 1; }
+
+/* Phone: a wide table scrolls inside its own box instead of squeezing the page
+   or running off-screen. Scoped to page content and to phone widths, so the
+   desktop layout is untouched. */
+@media (max-width: 768px) {
+  [data-search-root] table {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  [data-search-root] img,
+  [data-search-root] svg {
+    max-width: 100%;
+  }
+}

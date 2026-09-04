@@ -101,22 +101,43 @@
   padding-top: 14px;
 }
 
-/* Mobile: auto-collapse below 768px */
+/* Phone: an off-canvas drawer with full labels. The old 56px icon rail was
+   unusable — a dozen near-identical chart glyphs, no way to expand. */
 @media (max-width: 768px) {
   .sidebar {
-    width: 56px;
-    min-width: 56px;
-    padding: 16px 8px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1200;
+    width: 268px;
+    min-width: 268px;
+    max-height: 100vh;
+    padding: 16px 12px;
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
   }
-  .sidebar .logoText,
-  .sidebar .sectionLabel,
-  .sidebar .foot {
-    display: none;
+  /* the desktop collapse preference must not shrink the drawer */
+  .sidebar.collapsed {
+    width: 268px;
+    min-width: 268px;
+    padding: 16px 12px;
   }
-  .sidebar .logo {
-    padding: 6px 4px;
-    flex-direction: column;
-    gap: 8px;
+  .sidebar.mobileOpen {
+    transform: translateX(0);
+    box-shadow: 0 0 44px rgba(0, 0, 0, 0.34);
+  }
+  .sidebar .logo,
+  .sidebar.collapsed .logo {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 6px 4px 6px 10px;
     margin-bottom: 14px;
   }
+  .collapseBtn { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
 }

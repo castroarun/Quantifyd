@@ -1,0 +1,137 @@
+{
+ "book": "OA-REAL",
+ "seeded": "2026-09-04 14:49:08.392401",
+ "positions": [
+  {
+   "symbol": "INDSWFTLAB",
+   "qty": 80,
+   "buy": 355.53,
+   "entry_date": "2026-09-04",
+   "stop": 327.09,
+   "src": "real"
+  },
+  {
+   "symbol": "SETL",
+   "qty": 69,
+   "buy": 408.8,
+   "entry_date": "2026-09-04",
+   "stop": 376.1,
+   "src": "real"
+  },
+  {
+   "symbol": "WELCORP",
+   "qty": 10,
+   "buy": 2597.1,
+   "entry_date": "2026-09-04",
+   "stop": 2389.33,
+   "src": "real"
+  },
+  {
+   "symbol": "SHILPAMED",
+   "qty": 29,
+   "buy": 965.55,
+   "entry_date": "2026-09-04",
+   "stop": 888.31,
+   "src": "real"
+  },
+  {
+   "symbol": "KMEW",
+   "qty": 9,
+   "buy": 3037.64,
+   "entry_date": "2026-09-04",
+   "stop": 2794.63,
+   "src": "real"
+  },
+  {
+   "symbol": "SBCL",
+   "qty": 25,
+   "buy": 1116.9,
+   "entry_date": "2026-09-04",
+   "stop": 1027.55,
+   "src": "real"
+  },
+  {
+   "symbol": "IOLCP",
+   "qty": 142,
+   "buy": 199.71,
+   "entry_date": "2026-09-04",
+   "stop": 183.73,
+   "src": "real"
+  },
+  {
+   "symbol": "SPORTKING",
+   "qty": 124,
+   "buy": 229.33,
+   "entry_date": "2026-09-04",
+   "stop": 210.98,
+   "src": "real"
+  },
+  {
+   "symbol": "IRISDOREME",
+   "qty": 452,
+   "buy": 62.94,
+   "entry_date": "2026-09-04",
+   "stop": 57.9,
+   "src": "real"
+  },
+  {
+   "symbol": "INOXINDIA",
+   "qty": 12,
+   "buy": 2252.0,
+   "entry_date": "2026-09-04",
+   "stop": 2071.84,
+   "src": "real"
+  },
+  {
+   "symbol": "MANINDS",
+   "qty": 35,
+   "buy": 792.5,
+   "entry_date": "2026-09-04",
+   "stop": 729.1,
+   "src": "real"
+  },
+  {
+   "symbol": "SSWL",
+   "qty": 80,
+   "buy": 356.17,
+   "entry_date": "2026-09-04",
+   "stop": 327.67,
+   "src": "real"
+  },
+  {
+   "symbol": "ENTERO",
+   "qty": 15,
+   "buy": 1833.27,
+   "entry_date": "2026-09-04",
+   "stop": 1686.61,
+   "src": "real"
+  },
+  {
+   "symbol": "NITINSPIN",
+   "qty": 44,
+   "buy": 641.9,
+   "entry_date": "2026-09-04",
+   "stop": 590.55,
+   "src": "real"
+  },
+  {
+   "symbol": "TMB",
+   "qty": 30,
+   "buy": 932.62,
+   "entry_date": "2026-09-04",
+   "stop": 858.01,
+   "src": "real"
+  },
+  {
+   "symbol": "KTKBANK",
+   "qty": 83,
+   "buy": 340.3,
+   "entry_date": "2026-09-04",
+   "stop": 313.08,
+   "src": "real"
+  }
+ ],
+ "invested": 446348.0,
+ "note": "Seeded 04-Sep-2026 from Arun-executed CNC fills (top-16 by RS of the day's 21 triggered candidates). LIQUIDCASE 1757u sold to fund. Deliberate override of the Dec-5 soak gate. Exits manual-assisted: 15:18 checker alerts; no automated selling yet.",
+ "trades": []
+}

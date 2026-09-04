@@ -16,9 +16,28 @@
   flex: 1;
   min-width: 0;
 }
+
+/* Dimmer behind the phone navigation drawer */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+}
+@media (min-width: 769px) {
+  .backdrop { display: none; }
+}
+
 @media (max-width: 900px) {
   .content { padding: 24px 20px 40px; }
 }
+
+@media (max-width: 640px) {
+  .content { padding: 16px 12px 40px; }
+}
+
 @media (max-width: 480px) {
-  .content { padding: 20px 14px 32px; }
+  .content { padding: 14px 10px 32px; }
 }

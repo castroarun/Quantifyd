@@ -575,3 +575,111 @@ Live vs app reconciliation · 2026-09-02 14:00 IST
 Filled today by tag:
   untagged                    662
 ```
+
+## 2026-09-03 11:00 IST — 0 alerts, 2 warnings
+
+```
+Live vs app reconciliation · 2026-09-03 11:00 IST
+8 broker legs · 0 alerts · 2 warnings
+
+[INFO] MANUAL ANTHEM: manual holding, 13 — no book tracks it
+[INFO] MANUAL DYCL: manual holding, 19 — no book tracks it
+[INFO] MANUAL GAUDIUMIVF-BE: manual holding, -420 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 15 — no book tracks it
+[WARN] NAKED SENSEX2690376900CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2690376900PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                    714
+```
+
+## 2026-09-03 14:00 IST — 1 alerts, 2 warnings
+
+```
+Live vs app reconciliation · 2026-09-03 14:00 IST
+9 broker legs · 1 alerts · 2 warnings
+
+[ALERT] SIZE SENSEX2690376900CE: broker -240 vs app -120 (sensex_atm/sensex_atm2/sensex_atm4) · order tags: untagged -360
+[INFO] MANUAL ANTHEM: manual holding, 13 — no book tracks it
+[INFO] MANUAL DYCL: manual holding, 19 — no book tracks it
+[INFO] MANUAL GAUDIUMIVF-BE: manual holding, -420 — no book tracks it
+[INFO] MANUAL INOXINDIA: manual holding, 5 — no book tracks it
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[INFO] MANUAL MANORAMA: manual holding, 15 — no book tracks it
+[INFO] MANUAL PAISALO: manual holding, 285 — no book tracks it
+[WARN] NAKED SENSEX2690376900CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED SENSEX2690376900PE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   1239
+```
+
+## 2026-09-04 11:00 IST — 0 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-04 11:00 IST
+10 broker legs · 0 alerts · 4 warnings
+
+[INFO] MULTI-BOOK BSE26SEP3500CE: broker 200 = BOV2f5Ocq2XeV3EwUp0Y +200 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK BSE26SEP3700CE: broker -200 = BOV2fi7BOAiaivUU5cB7 -200 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK HAL26SEP4900CE: broker 300 = BOV2RWqL2K0vyDrqgdhW +300 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK HAL26SEP5000CE: broker -300 = BOV2yhcFcCJvQVU6xVTU -300 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP15CE: broker 71475 = BOV2ZIH1seDKnK2WDVnf +71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP17CE: broker -71475 = BOV2hBxQ97mC3oNsQXDa -71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP18CE: broker -71475 = BOV21Hlv26lzstjmntic -71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP20CE: broker 71475 = BOV21Xh1FdZEBYn5gXhP +71475 — placed by our books, not visible in the page feed
+[INFO] MANUAL INDNIPPON: manual holding, 15 — no book tracks it
+[INFO] MANUAL PAISALO: manual holding, 210 — no book tracks it
+[WARN] NAKED BSE26SEP3700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED HAL26SEP5000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP17CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP18CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  BOV21Xh1FdZEBYn5gXhP      71475
+  BOV2hBxQ97mC3oNsQXDa      71475
+  BOV21Hlv26lzstjmntic      71475
+  BOV2ZIH1seDKnK2WDVnf      71475
+  BOV2RWqL2K0vyDrqgdhW        300
+  BOV2yhcFcCJvQVU6xVTU        300
+  untagged                    225
+  BOV2f5Ocq2XeV3EwUp0Y        200
+  BOV2fi7BOAiaivUU5cB7        200
+```
+
+## 2026-09-04 14:00 IST — 0 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-04 14:00 IST
+12 broker legs · 0 alerts · 4 warnings
+
+[INFO] MULTI-BOOK BSE26SEP3500CE: broker 200 = BOV2f5Ocq2XeV3EwUp0Y +200 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK BSE26SEP3700CE: broker -200 = BOV2fi7BOAiaivUU5cB7 -200 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK HAL26SEP4900CE: broker 300 = BOV2RWqL2K0vyDrqgdhW +300 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK HAL26SEP5000CE: broker -300 = BOV2yhcFcCJvQVU6xVTU -300 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP15CE: broker 71475 = BOV2ZIH1seDKnK2WDVnf +71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP17CE: broker -71475 = BOV2hBxQ97mC3oNsQXDa -71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP18CE: broker -71475 = BOV21Hlv26lzstjmntic -71475 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IDEA26SEP20CE: broker 71475 = BOV21Xh1FdZEBYn5gXhP +71475 — placed by our books, not visible in the page feed
+[INFO] MANUAL CMPDI: manual holding, 45 — no book tracks it
+[INFO] MANUAL INDNIPPON: manual holding, 15 — no book tracks it
+[INFO] MANUAL PAISALO: manual holding, 210 — no book tracks it
+[INFO] MANUAL SMSPHARMA: manual holding, 39 — no book tracks it
+[WARN] NAKED BSE26SEP3700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED HAL26SEP5000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP17CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP18CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  BOV21Xh1FdZEBYn5gXhP      71475
+  BOV2hBxQ97mC3oNsQXDa      71475
+  BOV21Hlv26lzstjmntic      71475
+  BOV2ZIH1seDKnK2WDVnf      71475
+  untagged                    309
+  BOV2RWqL2K0vyDrqgdhW        300
+  BOV2yhcFcCJvQVU6xVTU        300
+  BOV2f5Ocq2XeV3EwUp0Y        200
+  BOV2fi7BOAiaivUU5cB7        200
+```

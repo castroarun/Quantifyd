@@ -12,10 +12,25 @@ import {
   IconJournal,
 } from '../Icons';
 import Avatar from '../Avatar/Avatar';
+import { useFavourites } from '../GlobalSearch/favourites';
 
 interface Props {
   active?: 'overview' | 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'stock-wings' | 'nwv' | 'options-study' | 'straddle-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'bluesky-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'settings';
   userName?: string;
+  /** Phone drawer is open (ignored from 769px up). */
+  mobileOpen?: boolean;
+  /** Called when a nav row is tapped, so the drawer can close itself. */
+  onNavigate?: () => void;
+}
+
+// Star icon for the Favourites section — filled, so a favourite reads as
+// "pinned" at a glance next to the outline icons of the normal rows.
+function IconStar() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+      <path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8Z" />
+    </svg>
+  );
 }
 
 // Briefcase icon for holdings, inlined to avoid growing Icons export surface
@@ -67,7 +82,7 @@ function IconLightbulb() {
 // and the user prefers seeing names rather than icon-only mode.
 const COLLAPSE_KEY = 'qf.sidebar.collapsed.v2';
 
-export default function Sidebar({ active, userName = 'Trader' }: Props) {
+export default function Sidebar({ active, userName = 'Trader', mobileOpen, onNavigate }: Props) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
@@ -106,13 +121,33 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [navigate]);
 
+  // Phone: the sidebar is a drawer, and a drawer of icon-only rows is exactly
+  // the problem being fixed (a dozen near-identical chart glyphs). Force the
+  // labelled form there, whatever the desktop collapse preference says.
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  const collapsedEff = isMobile ? false : collapsed;
+  const favs = useFavourites();
+
   const toggle = () => setCollapsed((c) => !c);
 
   return (
-    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
+    <aside
+      className={`${styles.sidebar} ${collapsedEff ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}
+      onClick={(e) => {
+        if (onNavigate && (e.target as HTMLElement).closest('a')) onNavigate();
+      }}
+    >
       <div className={styles.logo}>
         <div className={styles.logoIcon}>Q</div>
-        {!collapsed && <span className={styles.logoText}>Quantifyd</span>}
+        {!collapsedEff && <span className={styles.logoText}>Quantifyd</span>}
         <button
           className={styles.collapseBtn}
           onClick={toggle}
@@ -129,301 +164,312 @@ export default function Sidebar({ active, userName = 'Trader' }: Props) {
         </button>
       </div>
 
+      {favs.length > 0 && (
+        <div className={styles.section}>
+          {!collapsedEff && <div className={styles.sectionLabel}>Favourites</div>}
+          <nav className={styles.nav}>
+            {favs.map((f) => (
+              <NavItem key={f.to} to={f.to} icon={<IconStar />} label={f.label} collapsed={collapsedEff} />
+            ))}
+          </nav>
+        </div>
+      )}
+
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Workspace</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Workspace</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/overview"
             icon={<IconGrid />}
             label="Desk"
             active={active === 'overview'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/indices"
             icon={<IconBarChart />}
             label="Index Pulse"
             active={active === 'indices'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/strategies"
             icon={<IconGrid />}
             label="Strategies"
             active={active === 'strategies'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/nas-config"
             icon={<IconSettings />}
             label="NAS Config"
             active={active === 'nas-config'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/scaleup"
             icon={<IconBriefcase />}
             label="Scale-Up"
             active={active === 'scaleup'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/backtest"
             icon={<IconFlask />}
             label="Backtest"
             active={active === 'backtest'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/eod-breakout"
             icon={<IconBarChart />}
             label="EOD"
             active={active === 'eod-breakout'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/report"
             icon={<IconReport />}
             label="Performance"
             active={active === 'reports'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/journal"
             icon={<IconJournal />}
             label="Journal"
             active={active === 'journal'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/future-plans"
             icon={<IconLightbulb />}
             label="Future plans"
             active={active === 'future-plans'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Live</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Live</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/nas"
             icon={<IconLayers />}
             label="NAS"
             active={active === 'nas'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/straddles"
             icon={<IconLayers />}
             label="Straddles"
             active={active === 'straddles'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/straddle45"
             icon={<IconLayers />}
             label="45-DTE Straddle"
             active={active === 'straddle45'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/stock-wings"
             icon={<IconLayers />}
             label="Stock Wings"
             active={active === 'stock-wings'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Paper Books</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Paper Books</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/ha-paper"
             icon={<IconBarChart />}
             label="HA 2-Green ₹20L"
             active={active === 'ha-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/fnoms-paper"
             icon={<IconBarChart />}
             label="F&O Multi-Signal ₹20L"
             active={active === 'fnoms-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/breakout-paper"
             icon={<IconBarChart />}
             label="Breakout ₹10L"
             active={active === 'breakout-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/orb-paper"
             icon={<IconBarChart />}
             label="ORB Revival ₹10L"
             active={active === 'orb-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/ohol-paper"
             icon={<IconBarChart />}
             label="OHOL 1-Lot"
             active={active === 'ohol-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/orb"
             icon={<IconBarChart />}
             label="ORB Cash"
             active={active === 'orb'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/nwv"
             icon={<IconLayers />}
             label="NWV"
             active={active === 'nwv'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/n500m"
             icon={<IconLayers />}
             label="N500M"
             active={active === 'n500m'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/mst"
             icon={<IconLayers />}
             label="MST"
             active={active === 'mst'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/intraday75wr"
             icon={<IconLayers />}
             label="I75WR"
             active={active === 'intraday75wr'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/pair-trading"
             icon={<IconLayers />}
             label="Pairs"
             active={active === 'pair-trading'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Holdings</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Holdings</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/holdings"
             icon={<IconBriefcase />}
             label="Holdings"
             active={active === 'holdings'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/momentum-paper"
             icon={<IconBarChart />}
             label="True North LIVE"
             active={active === 'momentum-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/bluesky-paper"
             icon={<IconBarChart />}
             label="Open Alpha"
             active={active === 'bluesky-paper'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/sleeves"
             icon={<IconBarChart />}
             label="Sleeves 50-50"
             active={false}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Options</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Options</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/straddle-study"
             icon={<IconBarChart />}
             label="Straddle Study"
             active={active === 'straddle-study'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/options-study"
             icon={<IconBarChart />}
             label="Opt Study"
             active={active === 'options-study'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/options-data"
             icon={<IconDatabase />}
             label="Options data"
             active={active === 'options-data'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>Scanner</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>Scanner</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/scanner"
             icon={<IconLayers />}
             label="F&O Scanner"
             active={active === 'scanner'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/breakout-scanner"
             icon={<IconBarChart />}
             label="Breakout Scanner"
             active={active === 'breakout-scanner'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
           <NavItem
             to="/ath-scanner"
             icon={<IconBarChart />}
             label="ATH & Breakouts"
             active={active === 'ath-scanner'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
       <div className={styles.section}>
-        {!collapsed && <div className={styles.sectionLabel}>General</div>}
+        {!collapsedEff && <div className={styles.sectionLabel}>General</div>}
         <nav className={styles.nav}>
           <NavItem
             to="/settings"
             icon={<IconSettings />}
             label="Settings"
             active={active === 'settings'}
-            collapsed={collapsed}
+            collapsed={collapsedEff}
           />
         </nav>
       </div>
 
-      {!collapsed && (
+      {!collapsedEff && (
         <div className={styles.foot}>
           <Avatar name={userName} subtitle="Zerodha account" />
         </div>

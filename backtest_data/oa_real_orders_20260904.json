@@ -1,0 +1,74 @@
+[
+ {
+  "symbol": "INDSWFTLAB",
+  "qty": 80,
+  "limit": 356.6,
+  "oid": "260904151108762"
+ },
+ {
+  "symbol": "SHILPAMED",
+  "qty": 29,
+  "limit": 967.55,
+  "oid": "260904151108860"
+ },
+ {
+  "symbol": "KMEW",
+  "qty": 9,
+  "limit": 3044.0,
+  "oid": "260904151108891"
+ },
+ {
+  "symbol": "IOLCP",
+  "qty": 142,
+  "limit": 200.25,
+  "oid": "260904151108983"
+ },
+ {
+  "symbol": "SPORTKING",
+  "qty": 124,
+  "limit": 229.7,
+  "oid": "260904151109016"
+ },
+ {
+  "symbol": "IRISDOREME",
+  "qty": 452,
+  "limit": 63.1,
+  "oid": "260904151109038"
+ },
+ {
+  "symbol": "MANINDS",
+  "qty": 35,
+  "limit": 794.45,
+  "oid": "260904151109085"
+ },
+ {
+  "symbol": "SSWL",
+  "qty": 80,
+  "limit": 357.2,
+  "oid": "260904151109102"
+ },
+ {
+  "symbol": "ENTERO",
+  "qty": 15,
+  "limit": 1838.4,
+  "oid": "260904151109126"
+ },
+ {
+  "symbol": "NITINSPIN",
+  "qty": 44,
+  "limit": 643.85,
+  "oid": "260904151109153"
+ },
+ {
+  "symbol": "TMB",
+  "qty": 30,
+  "limit": 935.8,
+  "oid": "260904151109179"
+ },
+ {
+  "symbol": "KTKBANK",
+  "qty": 83,
+  "limit": 341.3,
+  "oid": "260904151109202"
+ }
+]

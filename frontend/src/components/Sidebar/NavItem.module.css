@@ -76,3 +76,16 @@
   padding: 9px 0;
   gap: 0;
 }
+
+/* Phone drawer: thumb-sized rows, full label */
+@media (max-width: 768px) {
+  .item {
+    padding: 10px 12px;
+    font-size: var(--text-sm);
+  }
+  .label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

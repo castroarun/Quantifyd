@@ -1,0 +1,237 @@
+/* Sits inside the TopBar's existing right-hand row — a 30px control inside a
+   48px bar, so it adds no height and the bar keeps its single line. The panel
+   is absolutely positioned and never affects layout flow. */
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px 0 9px;
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-input, 8px);
+  background: var(--surface);
+  transition: border-color 0.15s ease, width 0.15s ease;
+  width: 210px;
+}
+.wrap:focus-within {
+  border-color: var(--brand-navy, var(--ink-secondary));
+  width: 300px;
+}
+
+.icon {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--ink-faint);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  padding: 0;
+}
+.input::placeholder { color: var(--ink-faint); }
+
+.kbd,
+.itemKbd {
+  flex: none;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--ink-faint);
+  border: 0.5px solid var(--hairline);
+  border-radius: 4px;
+  padding: 2px 5px;
+  background: var(--canvas);
+}
+.itemKbd { margin-left: 6px; }
+
+.clear {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.clear:hover { color: var(--ink); }
+
+/* ---------------------------------------------------------------- panel */
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(460px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card, 10px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  z-index: 1400;
+  padding: 4px 0 0;
+  text-align: left;
+}
+
+.group { padding-bottom: 4px; }
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
+  font-size: var(--text-xxs, 10px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+/* On-page hit: whole row is one button */
+.item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  border-left: 2px solid transparent;
+}
+.itemActive {
+  background: var(--nav-hover-bg, rgba(127, 127, 127, 0.08));
+  border-left-color: var(--brand-amber);
+}
+
+/* Destination row: navigable area + its own star toggle */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-left: 2px solid transparent;
+}
+.rowActive {
+  background: var(--nav-hover-bg, rgba(127, 127, 127, 0.08));
+  border-left-color: var(--brand-amber);
+}
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 6px 4px 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.itemText {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemHint {
+  display: block;
+  font-size: var(--text-xxs, 10px);
+  color: var(--ink-faint);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mark {
+  background: var(--brand-amber-soft, rgba(214, 158, 46, 0.28));
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.empty {
+  padding: 14px 12px;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 12px;
+  border-top: 0.5px solid var(--hairline-softest, var(--hairline));
+  font-size: var(--text-xxs, 10px);
+  color: var(--ink-faint);
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+}
+
+@media (max-width: 900px) {
+  .wrap { width: 150px; }
+  .wrap:focus-within { width: 210px; }
+  .kbd { display: none; }
+}
+
+/* Phone: the box is a compact control; the panel opens full-width under the
+   bar so results are readable and thumb-sized. */
+@media (max-width: 640px) {
+  .wrap { width: 34px; padding: 0 6px; gap: 0; }
+  .wrap .input { width: 0; padding: 0; }
+  .wrap:focus-within { width: calc(100vw - 90px); max-width: 260px; padding: 0 8px 0 9px; gap: 6px; }
+  .wrap:focus-within .input { width: auto; }
+  .panel {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: 56px;
+    width: auto;
+    max-height: calc(100vh - 72px);
+  }
+  .foot { font-size: 9px; }
+}
+
+/* Flash applied to the matched element on the page when a result is opened.
+   Global because the target is arbitrary page markup, not our own DOM. */
+:global(.qf-search-hit) {
+  animation: qfSearchPulse 2.2s ease-out 1;
+  border-radius: 4px;
+}
+
+@keyframes qfSearchPulse {
+  0%, 55% {
+    background-color: var(--brand-amber-soft, rgba(214, 158, 46, 0.3));
+    box-shadow: 0 0 0 3px var(--brand-amber-soft, rgba(214, 158, 46, 0.3));
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.qf-search-hit) { animation-duration: 0.01s; }
+  .wrap { transition: none; }
+}

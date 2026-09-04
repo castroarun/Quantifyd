@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar/Sidebar';
 import TopBar from '../TopBar/TopBar';
 import styles from './AppLayout.module.css';
@@ -14,6 +15,10 @@ interface Props {
 
 export default function AppLayout({ active, children, topBarRight }: Props) {
   const [userName, setUserName] = useState('Trader');
+  // Phone-only navigation drawer. Above 768px the sidebar is always in flow
+  // and this flag does nothing.
+  const [navOpen, setNavOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     apiGet<AuthStatus>('/api/auth/status')
@@ -25,12 +30,39 @@ export default function AppLayout({ active, children, topBarRight }: Props) {
       });
   }, []);
 
+  // Navigating closes the drawer, so a tap on a page never leaves it covering
+  useEffect(() => {
+    setNavOpen(false);
+  }, [location.pathname]);
+
+  // Don't let the page behind the drawer scroll under a thumb
+  useEffect(() => {
+    if (!navOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [navOpen]);
+
   return (
     <div className={styles.root}>
-      <Sidebar active={active} userName={userName} />
+      <Sidebar
+        active={active}
+        userName={userName}
+        mobileOpen={navOpen}
+        onNavigate={() => setNavOpen(false)}
+      />
+      {navOpen && (
+        <div
+          className={styles.backdrop}
+          onClick={() => setNavOpen(false)}
+          role="presentation"
+        />
+      )}
       <div className={styles.main}>
-        <TopBar userName={userName} right={topBarRight} />
-        <div className={styles.content}>{children}</div>
+        <TopBar userName={userName} right={topBarRight} onMenu={() => setNavOpen(true)} />
+        <div className={styles.content} data-search-root>{children}</div>
       </div>
     </div>
   );
