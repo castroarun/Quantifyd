@@ -103,8 +103,6 @@ revived.)
 
 ---
 
----
-
 ## UX / REGISTRY WORK NEVER TOUCHES TRADING LOGIC (binding 2026-08-17)
 
 Arun's standing instruction for all app-quality work — cleanups, redesigns, registries,
@@ -170,6 +168,8 @@ the page exists to answer.
 Related bindings: publish every COMPLETE study to `frontend/src/data/backtests.ts`
 (playbook section above), and register every job, monitor or dated review in the
 Ops & Review Center (section below).
+
+---
 
 ## QUANT RESEARCH PLAYBOOK — READ BEFORE ANY BACKTEST (binding)
 
@@ -772,3 +772,27 @@ ANY session MUST be registered in the Ops & Review Center** — no exceptions:
 The weekly system re-assessment itself (`stack_reassessment.py`, Fri 16:35 — corr-drift, per-DTE
 shifts, TB-window revalidation, sizing revalidation, live-vs-model) is part of this registry;
 review its DRIFT flags every Friday evening (panel in the Portfolio Lab).
+
+---
+
+## SYSTEM-COMPARISON YoY REPORT FORMAT (binding, Arun 2026-09-04)
+
+Whenever comparing systems / sleeves / blends (any report, study page, or chat
+summary that puts two or more systems side by side), produce the standard YoY
+comparison table:
+
+- **One column per system AND per blend in scope** (e.g. OA, TN, 50-50 TN-OA,
+  45-45-10 with gold), plus the benchmark where relevant.
+- **Each year-cell = annual return with the intra-year max drawdown in small
+  font inside braces beneath it in the same cell** (HTML: return on one line,
+  `(dd%)` in a smaller muted line below; chat fallback: `+23.7 (−22.1)`).
+- **Three best-of columns on the right: BEST CAGR (highest return that year),
+  LEAST DD (shallowest intra-year drawdown), BEST OVERALL (highest return + dd,
+  i.e. return net of intra-year pain).** Benchmarks are excluded from best-of picks.
+- **Summary row at the bottom**: full-period CAGR / max drawdown (and Calmar)
+  per column, with each column's window stated when they differ.
+- Numbers are **after-tax, net of costs, medians across seeds/offsets** (state
+  the robustness basis); never single-path years without saying so.
+
+Reference implementations: the r/142 gate YoY Excel/HTML (2026-09-03) and the
+all-systems table in the "Forty Systems, One Gold" report artifact (2026-09-04).
