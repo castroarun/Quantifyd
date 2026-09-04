@@ -15232,6 +15232,129 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\146_complementary_third_sleeve\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'third-sleeve-archetypes-research147',
+    title: 'Third-sleeve archetypes — the broadened search: gold, Nasdaq, gilt, GTAA, index trend long-short, sector rotation',
+    verdict:
+      'Arun, after r/146 killed equity mean reversion: "apart from kc6, did u explore all possible systems?? not just stick to the studies we hv done". This study triaged EVERY archetype implementable in our EOD infra (cash equities + ETFs + index futures; options out of scope) — screened ten constructions to G1+blend and documented eleven more discards with reasons. The pre-registered r/146 blend bar was re-anchored to each candidate\'s common window (the ETF data reality: GOLDBEES/MON100/sectors start 2015, gilt mid-2016 — 2008 is untestable for candidates and every table says so). THE WINNER: a plain GOLD sleeve — GOLDBEES buy-and-hold at 10% of the combined book (TN 45 / OA 45 / GOLD 10). Same-window baseline 29.6% / -14.9% / Calmar 2.02 becomes 28.4% / -12.0% / 2.37 (+0.35 Calmar for -1.3pp CAGR); 15% weight also passes (2.60); it beats the plain-cash de-levering null at every weight, correlates at -0.04/+0.08 to the TN/OA legs, improves ALL FOUR stress windows (gold earned +7.2% through the 2018 grind, +4.9% through 2022H1, +17.6% through the 2020 crash — exactly the earn-in-grinds / flat-in-crashes profile r/146 proved this pair needs), and holds across TN rebalance offsets. The refinement of r/63\'s GTAA lesson: gold is the ONLY leg of that basket this book wants — the Nifty leg duplicates the pair\'s beta (and worsens the 2020 crash window), the Nasdaq leg fails the 2022 grind (-25.2% in-window). KILLED on evidence: index trend LONG/SHORT via futures (the monthly momentum-sign flips short after crashes and eats India\'s V-recoveries — -35.6% in the 2020 window; the short-only overlay has no positive expectancy at all, extending r/83\'s equity-short kill to index level by a different mechanism) and sector rotation (corr 0.37-0.39 to both legs AND crash-converges, -31.6% in 2020). Caveats stated loud: 2015-2026 is a gold-favorable window, gold has no carry, and its 2013-type -25% year is outside our data — so the recommendation is the MINIMUM passing weight (10%) with a written review clause, on the strength of the structural diversification case (corr ~0, crash-positive, grind-positive), not the regime return. Arun decides adoption.',
+    status: 'COMPLETE',
+    date: '2026-09-04',
+    cardBlurb:
+      'The full third-sleeve archetype sweep Arun asked for after r/146 — ten constructions screened, eleven more discarded with documented reasons, all judged on the pre-registered blend bar with a cash-null control and grind/crash window rules. One candidate clears everything: 10% GOLDBEES.',
+    cardStats: [
+      { label: 'Verdict', value: 'STRATEGY candidate — 10% gold sleeve' },
+      { label: 'Blend with 10% gold', value: '28.4% / -12.0% / Calmar 2.37' },
+      { label: 'Baseline (same window)', value: '29.6% / -14.9% / 2.02' },
+    ],
+    system: {
+      intro: 'Candidates built as daily NAV sleeves, net of costs (10bps/side ETF turnover; futures legs 5bps/side + collateral yield), blended monthly with the after-tax TN and OA legs (r/146 cached NAVs):',
+      rows: [
+        { k: 'A. Non-equity sleeves', v: 'GOLDBEES B&H + 10m-SMA-filtered; MON100 (Nasdaq) B&H + filtered; LTGILTBEES long-gilt; gold+nasdaq 50-50; gold+nasdaq+gilt EW; GTAA EW (the r/63 winner verbatim) + all-legs-trend-filtered.' },
+        { k: 'B. Index trend long/short (futures)', v: 'NIFTY momentum-sign (majority of 3/6/12m returns positive -> long, else short), monthly; short leg = -index + cash yield on collateral; also a short-only overlay (pure grind/crisis-alpha claim).' },
+        { k: 'C. Sector rotation (screen-level)', v: 'Top-2 of 9 Nifty sector indices by 6m momentum, monthly, 2015+ (indices not directly tradeable — promoted only if the profile screamed; it did not).' },
+        { k: 'Discarded at G0 (full list in STATUS)', v: 'Stock pairs / factor long-short (no shorting infra, cost floor); 52w-low turnaround (cannot be crash-flat + r/84/87/88); corporate credit, USDINR, MCX, VIX (no data / no instrument); factor-index ETFs (r/64 corrupt series); MAFANG-class (2021+); intraday (r/109-110); RSI-regime/HMA/GCO (prior kills); equity mean reversion (r/146); options (out of scope).' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered before any run: same bar as r/146 re-anchored to the candidate\'s common window — best w3 in {10..33}% must add +0.10 Calmar (CAGR give-up <= 2pp) OR cut 2pp DD at equal CAGR, after tax on the TN/OA legs; corr < 0.4 vs both legs; robust across 10 OA seeds and TN offsets 0/4/8; GRIND windows (2018, 2022H1) must IMPROVE and the 2020 crash window not worsen by >2pp; and it must beat the plain-cash null at the same weight. Candidate sleeves gross-of-tax with a kill-safe asymmetry: B&H sleeves genuinely defer tax, and no churny candidate passed (so none needs the tax re-run).',
+      rows: [
+        { k: 'Data reality', v: 'GOLDBEES / MON100 / LIQUIDBEES / sector indices: 2015+; LTGILTBEES 2016-07+ (with +-16-19% thin-ETF dislocation prints in Mar-2020); SILVERBEES 2022+ (too short). 2008 untestable for all candidates.' },
+        { k: 'Bug disclosure', v: 'v1 mix() built calendar-month-end NAVs whose intersection with the daily legs silently zeroed ~half the months (impossible same-window baselines exposed it); fixed to a daily-grid construction and ALL numbers regenerated before any conclusion.' },
+        { k: 'Host', v: 'VPS market_data.db snapshot 2026-09-04; research/147 scripts; one 40s pass.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'G1 — standalone profiles vs the target (earn in grinds, flat in crashes)',
+        caption: 'The four window columns ARE the r/146 target profile. Gold is the only candidate positive in all four. Nasdaq fails the 2022 grind (that grind WAS the Nasdaq derating). Index trend L/S is destroyed by the 2020 V-reversal. Sector rotation fails on both correlation and crash convergence.',
+        columns: ['Candidate', 'CAGR', 'MaxDD', 'corr TN/OA', '2015-16', '2018 grind', '2020 crash', '2022H1 grind'],
+        rows: [
+          ['GOLD (GOLDBEES B&H)', '15.1%', '-24.4%', '-0.04 / +0.08', '+16.5%', '+7.2%', '+17.6%', '+4.9%'],
+          ['NAS (MON100 B&H)', '23.8%', '-36.6%', '0.08 / 0.14', '+3.8%', '+21.5%', '+4.5%', '-25.2%'],
+          ['GN5050 (gold+nasdaq)', '20.3%', '-19.6%', '0.04 / 0.16', '+10.7%', '+14.8%', '+11.7%', '-10.9%'],
+          ['GTAA_EW (r/63 winner)', '17.4%', '-22.8%', '0.14 / 0.28', '+0.4%', '+10.2%', '+1.8%', '-10.5%'],
+          ['GILT (LTGILTBEES)', '6.6%', '-22.8% (noisy)', '0.02 / 0.01', '-', '+2.7%', '+6.4%', '-5.1%'],
+          ['Index trend L/S (futures)', '4.6%', '-61.0%', '0.26 / 0.23', '+7.6%', '+0.6%', '-35.6%', '-4.7%'],
+          ['Index SHORT-only overlay', '-0.2%', '-49.0%', '-0.03 / -0.08', '+15.9%', '+4.0%', '-11.8%', '+5.0%'],
+          ['Sector rotation (top-2 of 9)', '10.6%', '-53.2%', '0.37 / 0.39', '-17.6%', '+5.5%', '-31.6%', '-18.3%'],
+        ],
+        highlightRows: [0],
+        heatmap: false,
+      },
+      {
+        title: 'The blend test — 3-sleeve vs same-window TN+OA baseline (29.63 / -14.88 / Calmar 2.02; 10-OA-seed medians, after-tax legs)',
+        caption: 'Gold passes at 10% and 15%; at 20%+ the CAGR give-up breaches the pre-registered 2pp. Every alternative either fails a window rule or is dominated by gold. The cash null shows what pure de-levering buys — gold beats it at every weight, which is the proof of genuine diversification alpha.',
+        columns: ['Third sleeve', 'w3', 'CAGR med', 'DD med', 'Calmar', 'Cash-null Calmar @ same w3', 'Verdict'],
+        rows: [
+          ['(none — baseline)', '0%', '29.63%', '-14.88%', '2.02', '—', '—'],
+          ['GOLD', '10%', '28.36%', '-12.05%', '2.37', '2.13', 'PASSES every condition'],
+          ['GOLD', '15%', '27.70%', '-10.66%', '2.60', '2.20', 'passes (give-up 1.93pp, at the edge)'],
+          ['GOLD', '20-33%', '27.0 -> 25.2%', '-9.3 -> -7.4%', '2.92 -> 3.44', '2.29 -> 2.62', 'CAGR give-up > 2pp — not adoptable as registered'],
+          ['GN5050', '15%', '28.53%', '-11.52%', '2.54', '2.20', 'FAILS grind rule (2022H1 worsens: Nasdaq)'],
+          ['GNG3 (+gilt)', '20%', '29.92%', '-10.07%', '2.98', '2.29', 'FAILS grind rule + gilt data noise'],
+          ['GTAA_EW', '20%', '27.34%', '-10.98%', '2.54', '2.29', 'FAILS crash rule (2020: -1.5 -> -3.1)'],
+          ['NAS', '10%', '29.46%', '-13.14%', '2.27', '2.13', 'marginal, dominated by gold'],
+        ],
+        highlightRows: [1, 2],
+        heatmap: false,
+      },
+      {
+        title: 'Gold robustness — TN rebalance offsets (the deterministic analogue of seed variance)',
+        columns: ['TN offset', 'Baseline Calmar', '+10% gold', '+15% gold', 'Delta @10%'],
+        rows: [
+          ['0 (deployed anchor)', '2.02', '2.37', '2.60', '+0.35'],
+          ['4', '1.77', '2.01', '2.17', '+0.24'],
+          ['8', '1.72', '2.00', '2.19', '+0.28'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Winner', value: '10% GOLDBEES sleeve', tone: 'pos', hint: 'TN 45 / OA 45 / GOLD 10, B&H, monthly rebal, no trend filter' },
+        { label: 'Blend effect (10%)', value: '2.02 -> 2.37 Calmar', tone: 'pos', hint: '-1.3pp CAGR for -2.8pp DD; beats cash null 2.13' },
+        { label: 'Gold corr to TN / OA', value: '-0.04 / +0.08', tone: 'pos', hint: 'and positive in all four stress windows' },
+        { label: 'Index trend L/S', value: 'KILLED', tone: 'neg', hint: '-35.6% in the 2020 window: short-after-crash eats the V-recovery' },
+        { label: 'Sector rotation', value: 'KILLED', tone: 'neg', hint: 'corr 0.37-0.39 AND crash-converges (-31.6% in 2020)' },
+        { label: 'Window caveat', value: '2008 untestable', tone: 'neg', hint: 'ETF data starts 2015; gold-favorable decade — hence minimum weight + review clause' },
+      ],
+      tables: [],
+    },
+    winners: [
+      {
+        config: 'GOLD SLEEVE — GOLDBEES buy-and-hold at 10% of the combined book (STRATEGY candidate; Arun decides adoption)',
+        summary: 'The refinement of r/63: diversify with what the book does not already own. The pair is 100% Indian equity momentum; the one leg of the validated GTAA basket it wants is gold — corr ~0, positive through both grinds and the crash, beats pure de-levering at every weight, robust across OA seeds and TN offsets. Adopt at 10% (15% defensible), rebalance monthly with the pair, no trend filter, and register the review clause: re-examine if gold draws down >25% or the rolling-12m Calmar delta turns negative.',
+        metrics: [
+          { k: 'Spec', v: 'TN 45% / OA 45% / GOLDBEES 10%, B&H, monthly rebalance' },
+          { k: 'Same-window backtest', v: '28.4% / -12.0% / Calmar 2.37 vs 29.6% / -14.9% / 2.02' },
+          { k: 'Stress windows (w25 shown, monotone)', v: '2018: -11.0 -> -8.0 · 2022H1: -8.8 -> -6.9 · 2020: -1.5 -> -0.6 · 2015-16: -6.8 -> -2.6' },
+          { k: 'Capacity', v: 'w3=10% of Rs 20L = Rs 2L in the most liquid gold ETF — trivial' },
+        ],
+        rejected: [
+          'Index trend long/short and short-only overlays via futures — slow trend cannot monetize India fast crash-recoveries (r/83 extended to index level)',
+          'Sector rotation — wrong on correlation AND crash convergence',
+          'Nasdaq / gold+nasdaq / GTAA(with Nifty) / gilt mixes — each fails a window rule or is dominated by pure gold',
+          'GOLD at >=20% weight — breaches the pre-registered CAGR give-up; concentration in a no-carry commodity',
+          'Pairs, 52w-low value, credit, currency, VIX, factor ETFs, intraday, mean reversion — G0 discards with documented reasons',
+        ],
+      },
+    ],
+    caveats: [
+      'Gold-regime dependence is the big one: 2015-2026 holds two major gold bull runs; gold has no carry and its 2013-type -25% year is outside the data. The diversification case (corr ~0, crash-positive, grind-positive) is structural; the return contribution is regime. Minimum passing weight + review clause for exactly this reason.',
+      '2008 is untestable for every candidate (ETF histories start 2015). Gold\'s favorable 2008 in INR is prior knowledge, not our backtest.',
+      'Candidate sleeves are gross-of-tax by pre-registered kill-safe design; the passing sleeve is buy-and-hold so its tax deferral is genuine (12.5% LTCG on exit under current rules).',
+      'LTGILTBEES carries thin-ETF dislocation prints (+-16-19% days in Mar-2020) — gilt and GNG3 rows are noisy.',
+      'A mix-NAV calendar-alignment bug in v1 was caught via impossible baselines and fixed before any conclusion; all numbers regenerated (disclosed in the STATUS log).',
+      'Blend-level rebalancing tax between sleeves is ignored, consistently with how the TN+OA baseline itself is computed.',
+      'If adoption is considered: pull longer gold history (international spot or older gold funds) to pressure-test the regime caveat, and consider SGBs vs GOLDBEES as an implementation detail.',
+    ],
+    githubLinks: [{ label: 'research/147 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/147_third_sleeve_archetypes' }],
+    projectPaths: [
+      'research\\147_third_sleeve_archetypes\\THIRD_SLEEVE_ARCHETYPES_DAILY_SWEEP_STATUS.md',
+      'research\\147_third_sleeve_archetypes\\scripts\\arch_sleeves.py',
+      'research\\147_third_sleeve_archetypes\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {
