@@ -111,6 +111,19 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("N500M paper book judgement (research/148 audit: t=1.40 at 10bps floor, "
+     "promotion-shrinkage 1.33->0.62%%/tr - consistent with selection-on-noise)",
+     "2027-03-31", "SCHEDULED",
+     "Judge at n>=100 closed trades or 2027-03-31, whichever first. PASS bar "
+     "(pre-registered, research/148): net-of-10bps expectancy > 0 with t>=2. "
+     "Until then: paper only, NO real-money conversation. Artifacts: "
+     "research/148_paper_books_audit/results/RESULTS.md."),
+    ("I75WR paper book judgement (research/148: n=8, one sub-system C on one "
+     "symbol - no verdict possible; A/B have not fired, check their scanners)",
+     "2026-12-31", "SCHEDULED",
+     "Judge at n>=40 closed trades or 2026-12-31, whichever first. PASS bar "
+     "(pre-registered): net expectancy > 0 with t>=2 AND every config with "
+     ">=10 trades individually non-negative net. Artifacts: research/148."),
     ("Open Alpha FULL RESTUDY: joint gate x entry x exit/SL optimization (Arun 2026-09-03)",
      "2026-12-12", "SCHEDULED",
      "The 2026-09-03 gate bake-off (research/142 GATE_BAKEOFF_DAILY_SWEEP_STATUS.md) varied "

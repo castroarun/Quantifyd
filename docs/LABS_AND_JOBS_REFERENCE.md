@@ -125,3 +125,9 @@ the Zerodha Console withdrawal amount (broker APIs cannot push funds to bank).
 reinvest 100% of booked profits exactly as before; the declaration removes the
 entitlement from book cash like a user withdrawal, and each engine sizes off the
 smaller NAV at its own next step.
+
+
+## Paper-book judgement reviews (research/148, added 2026-09-04)
+
+- **N500M** - review 2027-03-31 or n>=100: pass = net-of-10bps expectancy > 0, t>=2. Audit found t=1.40 at the 10bps floor and 53% promotion-shrinkage (expected +1.33%/tr -> live +0.62%): currently consistent with selection-on-noise. Paper only.
+- **I75WR** - review 2026-12-31 or n>=40: pass = net expectancy > 0 with t>=2 and every config with >=10 trades non-negative. Only Config C has fired (8 trades, one symbol); check why A/B produce no trades.
