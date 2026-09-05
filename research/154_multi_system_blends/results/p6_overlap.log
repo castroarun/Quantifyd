@@ -1,0 +1,27 @@
+2321 symbols with >=260 daily rows
+  loaded 600/2321 (7s)
+  loaded 1200/2321 (15s)
+  loaded 1800/2321 (23s)
+wide frames: (5530, 2321) (44s)
+[16:01:40] OA: 17123 raw signals from 2010-01-01
+[16:01:40] VCP: 29130 raw signals from 2010-01-01
+[16:01:40] MYB: 1930 raw signals from 2010-01-01
+[16:01:43] IPO calendar reconstruction validated on 20244 trades: 100.00% of recorded holding periods reproduced exactly
+[16:01:44] IPO: 820 distinct (date, symbol) entries from 2010-01-01
+[16:01:44] SIGNAL OA~VCP: 14893 shared -> 87.0% of OA, 51.1% of VCP
+[16:01:44] SIGNAL OA~MYB: 0 shared -> 0.0% of OA, 0.0% of MYB
+[16:01:44] SIGNAL OA~IPO: 0 shared -> 0.0% of OA, 0.0% of IPO
+[16:01:44] SIGNAL VCP~MYB: 1740 shared -> 6.0% of VCP, 90.2% of MYB
+[16:01:44] SIGNAL VCP~IPO: 0 shared -> 0.0% of VCP, 0.0% of IPO
+[16:01:44] SIGNAL MYB~IPO: 0 shared -> 0.0% of MYB, 0.0% of IPO
+[16:01:47] OA: holding-day sets built for 5 seeds (seed1 = 37049 symbol-days)
+[16:01:51] VCP: holding-day sets built for 5 seeds (seed1 = 42873 symbol-days)
+[16:01:52] MYB: holding-day sets built for 5 seeds (seed1 = 7777 symbol-days)
+[16:01:53] IPO: holding-day sets built (seed1 = 5857 symbol-days)
+[16:01:53] HOLDING OA~VCP: 48.6% of OA's symbol-days, 41.5% of VCP's
+[16:01:53] HOLDING OA~MYB: 0.6% of OA's symbol-days, 2.9% of MYB's
+[16:01:53] HOLDING OA~IPO: 0.0% of OA's symbol-days, 0.0% of IPO's
+[16:01:53] HOLDING VCP~MYB: 4.0% of VCP's symbol-days, 22.0% of MYB's
+[16:01:53] HOLDING VCP~IPO: 0.0% of VCP's symbol-days, 0.0% of IPO's
+[16:01:53] HOLDING MYB~IPO: 0.0% of MYB's symbol-days, 0.0% of IPO's
+[16:01:53] P6 written

@@ -1,0 +1,8 @@
+source: Yahoo GC=F (COMEX front gold, USD/oz) x INR=X (USDINR), DAILY, aligned to the NSE trading calendar
+overlap days 2889 / months 140
+daily return corr  0.3896
+monthly return corr 0.8780
+annualised drift (GOLDBEES minus reconstruction) -1.005pp
+real GOLDBEES from 2015-01-01
+months missing after fix: 0
+NOTE: research/147's cached monthly gold_inr_ref.csv was missing 40 of 274 months; this rebuild replaces it for research/154.

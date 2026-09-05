@@ -1,0 +1,220 @@
+==============================================================================================================
+1. SLEEVE EXPOSURE AUDIT - how much of the 'diversification' is idle cash?
+   (a year that returns ~5.0% with ~0 intra-year drawdown is 100% CASH at the 5% idle yield)
+==============================================================================================================
+         OA    TN    VCP   MYB   IPO  GOLD IPO_cashlike
+2006    NaN   NaN    NaN   NaN   NaN  20.3             
+2007  137.5  56.4  128.7   NaN  97.2  17.1             
+2008  -16.2 -12.9  -29.8   NaN   4.2  27.5     <-- CASH
+2009   55.7  70.3   69.1   NaN   3.1  21.6     <-- CASH
+2010   14.4   6.8   23.6   NaN  33.2  25.3             
+2011   -6.0  -9.3  -16.8  -3.6  13.3  30.3             
+2012   12.6  21.8   12.6   3.5   2.5  10.5             
+2013   14.0   2.4    9.2  11.9   5.1 -19.0     <-- CASH
+2014   77.7  52.5   89.4  -0.1   5.0   1.1     <-- CASH
+2015   10.8  -5.5   11.1   7.8  13.9  -7.6             
+2016   11.5  29.4   17.8  13.6  48.7  12.5             
+2017  101.0  32.8  106.4  88.3  60.0   2.3             
+2018  -19.6  -6.7  -17.3   2.1   0.0   6.7             
+2019    5.8   1.1   15.0   1.2  14.3  23.0             
+2020  117.8  58.4   85.9  50.5  88.1  27.0             
+2021  151.9  57.9  132.4  93.7  40.7  -5.2             
+2022    2.5   6.0   33.8  28.6  15.0  12.8             
+2023   48.0  47.9   72.1  95.4  71.3  14.7             
+2024   64.0  25.1   57.6  21.7  77.8  19.4             
+2025   11.6   2.3   18.5  15.4  -1.4  71.8             
+2026   32.9   4.7   15.8   8.5  66.5  15.4             
+2005    NaN   NaN    NaN   NaN   NaN   NaN             
+
+==============================================================================================================
+PANEL A: 2010-01 -> 2026-08  (16.6y)  members ['OA', 'TN', 'VCP', 'MYB', 'IPO', 'GOLD']
+==============================================================================================================
+baseline TN+OA 50-50 max drawdown -14.84% : peak 2017-12 -> trough 2019-07
+  TN+OA 50-50 (baseline)               CAGR  26.63 [ 23.12.. 29.91]  DD  -15.69 (worst  -20.26)  Calmar 1.685
+  TN+OA 50-50 (DEPLOYED BASELINE)      CAGR  26.63 [ 23.12.. 29.91]  DD  -15.69 (worst  -20.26)  Calmar 1.685  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+                                           cash-null Calmar 1.685 (dCalmar +0.000, wins   0/360)
+  OA+TN+IPO+GOLD 25/25/25/25           CAGR  24.98 [ 22.78.. 27.11]  DD   -8.03 (worst  -11.01)  Calmar 3.103  | vs base dCAGR  -1.63  dDD  +7.39  dCalmar +1.355  wins 360/360
+                                           cash-null Calmar 2.583 (dCalmar +0.459, wins 348/360)  | IPO beta-matched null Calmar 2.832 (dCalmar +0.239, wins 232/360)
+  OA+TN+IPO+GOLD 30/30/20/20           CAGR  25.34 [ 22.95.. 27.66]  DD   -8.80 (worst  -12.10)  Calmar 2.877  | vs base dCAGR  -1.22  dDD  +6.57  dCalmar +1.115  wins 360/360
+                                           cash-null Calmar 2.296 (dCalmar +0.505, wins 360/360)  | IPO beta-matched null Calmar 2.662 (dCalmar +0.100, wins 237/360)
+  OA+TN+IPO+GOLD 40/40/10/10           CAGR  26.07 [ 23.19.. 28.82]  DD  -11.41 (worst  -15.02)  Calmar 2.267  | vs base dCAGR  -0.53  dDD  +4.38  dCalmar +0.580  wins 360/360
+                                           cash-null Calmar 1.929 (dCalmar +0.357, wins 360/360)  | IPO beta-matched null Calmar 2.085 (dCalmar +0.198, wins 346/360)
+  OA+IPO+GOLD 33/33/33                 CAGR  26.82 [ 25.48.. 28.19]  DD   -8.99 (worst   -9.75)  Calmar 2.977  | vs base dCAGR  +0.06  dDD  +6.73  dCalmar +1.297  wins 360/360
+                                           cash-null Calmar 1.899 (dCalmar +1.101, wins 360/360)  | IPO beta-matched null Calmar 2.671 (dCalmar +0.301, wins 336/360)
+  OA+TN+MYB+IPO+GOLD 20 each           CAGR  24.95 [ 23.20.. 26.83]  DD   -7.84 (worst   -9.60)  Calmar 3.158  | vs base dCAGR  -1.69  dDD  +7.88  dCalmar +1.504  wins 360/360
+                                           cash-null Calmar 2.977 (dCalmar +0.242, wins 260/360)  | IPO beta-matched null Calmar 3.079 (dCalmar +0.134, wins 278/360)
+  OA+TN+GOLD 45/45/10 (r147 rec)       CAGR  25.54 [ 22.41.. 28.49]  DD  -12.91 (worst  -17.02)  Calmar 1.968  | vs base dCAGR  -1.09  dDD  +2.79  dCalmar +0.266  wins 360/360
+                                           cash-null Calmar 1.793 (dCalmar +0.173, wins 360/360)
+  OA+TN+GOLD 40/40/20                  CAGR  24.38 [ 21.64.. 27.01]  DD  -10.57 (worst  -14.10)  Calmar 2.326  | vs base dCAGR  -2.24  dDD  +5.33  dCalmar +0.582  wins 360/360
+                                           cash-null Calmar 1.929 (dCalmar +0.355, wins 359/360)
+  OA+MYB 50-50 (r152 question)         CAGR  29.13 [ 27.97.. 31.28]  DD  -14.50 (worst  -17.23)  Calmar 2.017  | vs base dCAGR  +2.60  dDD  +1.15  dCalmar +0.316  wins 314/360
+                                           cash-null Calmar 1.645 (dCalmar +0.381, wins 360/360)
+  TN+OA 80 / GOLD 10 / MYB 10          CAGR  25.38 [ 22.53.. 28.15]  DD  -11.38 (worst  -14.90)  Calmar 2.212  | vs base dCAGR  -1.25  dDD  +4.31  dCalmar +0.524  wins 360/360
+                                           cash-null Calmar 1.929 (dCalmar +0.302, wins 360/360)
+  OA+TN+VCP 33 each                    CAGR  29.49 [ 26.56.. 32.33]  DD  -16.57 (worst  -20.93)  Calmar 1.776  | vs base dCAGR  +2.93  dDD  -0.76  dCalmar +0.094  wins 277/360
+                                           cash-null Calmar 2.158 (dCalmar -0.358, wins   2/360)
+
+==============================================================================================================
+PANEL B: 2006-04 -> 2026-08  (20.3y)  members ['OA', 'TN', 'VCP', 'IPO', 'GOLD']
+==============================================================================================================
+baseline TN+OA 50-50 max drawdown -15.93% : peak 2007-12 -> trough 2008-06
+  TN+OA 50-50 (baseline)               CAGR  27.74 [ 24.51.. 30.80]  DD  -17.01 (worst  -20.26)  Calmar 1.678
+  TN+OA 50-50 (DEPLOYED BASELINE)      CAGR  27.74 [ 24.51.. 30.80]  DD  -17.01 (worst  -20.26)  Calmar 1.678  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+                                           cash-null Calmar 1.678 (dCalmar +0.000, wins   0/360)
+  OA+TN+IPO+GOLD 25/25/25/25           CAGR  26.06 [ 24.14.. 28.02]  DD   -8.03 (worst  -11.01)  Calmar 3.224  | vs base dCAGR  -1.62  dDD  +8.66  dCalmar +1.552  wins 360/360
+                                           cash-null Calmar 2.243 (dCalmar +0.977, wins 360/360)  | IPO beta-matched null Calmar 2.334 (dCalmar +0.812, wins 360/360)
+  OA+TN+IPO+GOLD 30/30/20/20           CAGR  26.47 [ 24.33.. 28.57]  DD   -8.80 (worst  -12.10)  Calmar 2.998  | vs base dCAGR  -1.20  dDD  +7.81  dCalmar +1.308  wins 360/360
+                                           cash-null Calmar 2.046 (dCalmar +0.933, wins 360/360)  | IPO beta-matched null Calmar 2.330 (dCalmar +0.556, wins 356/360)
+  OA+TN+IPO+GOLD 40/40/10/10           CAGR  27.20 [ 24.56.. 29.77]  DD  -12.07 (worst  -15.02)  Calmar 2.324  | vs base dCAGR  -0.50  dDD  +4.99  dCalmar +0.640  wins 360/360
+                                           cash-null Calmar 1.805 (dCalmar +0.516, wins 360/360)  | IPO beta-matched null Calmar 2.083 (dCalmar +0.247, wins 359/360)
+  OA+IPO+GOLD 33/33/33                 CAGR  27.89 [ 26.77.. 29.03]  DD   -8.99 (worst   -9.75)  Calmar 3.103  | vs base dCAGR  +0.02  dDD  +7.94  dCalmar +1.458  wins 360/360
+                                           cash-null Calmar 1.930 (dCalmar +1.173, wins 360/360)  | IPO beta-matched null Calmar 2.133 (dCalmar +0.950, wins 360/360)
+  OA+TN+GOLD 45/45/10 (r147 rec)       CAGR  26.61 [ 23.74.. 29.34]  DD  -13.78 (worst  -17.02)  Calmar 1.989  | vs base dCAGR  -1.13  dDD  +3.22  dCalmar +0.309  wins 360/360
+                                           cash-null Calmar 1.736 (dCalmar +0.259, wins 360/360)
+  OA+TN+GOLD 40/40/20                  CAGR  25.42 [ 22.88.. 27.81]  DD  -11.48 (worst  -14.10)  Calmar 2.247  | vs base dCAGR  -2.33  dDD  +5.52  dCalmar +0.583  wins 360/360
+                                           cash-null Calmar 1.805 (dCalmar +0.412, wins 360/360)
+  OA+TN+VCP 33 each                    CAGR  30.60 [ 28.07.. 33.29]  DD  -22.00 (worst  -24.84)  Calmar 1.398  | vs base dCAGR  +3.01  dDD  -5.24  dCalmar -0.269  wins  13/360
+                                           cash-null Calmar 1.946 (dCalmar -0.545, wins   0/360)
+  [single] OA                          CAGR  34.58 [ 33.11.. 36.88]  DD  -25.58 (worst  -28.80)  Calmar 1.357  | vs base dCAGR  +7.13  dDD  -8.65  dCalmar -0.296  wins  26/360
+  [single] TN                          CAGR  19.98 [ 15.22.. 23.70]  DD  -18.89 (worst  -21.68)  Calmar 1.083  | vs base dCAGR  -8.05  dDD  -1.64  dCalmar -0.561  wins   0/360
+  [single] VCP                         CAGR  36.23 [ 31.56.. 38.42]  DD  -35.56 (worst  -38.44)  Calmar 1.020  | vs base dCAGR  +8.23  dDD -18.69  dCalmar -0.659  wins   0/360
+  [single] IPO                         CAGR  31.74 [ 29.49.. 34.21]  DD  -17.47 (worst  -20.09)  Calmar 1.844  | vs base dCAGR  +4.08  dDD  -0.41  dCalmar +0.192  wins 316/360
+  [single] GOLD                        CAGR  13.54 [ 13.54.. 13.54]  DD  -26.67 (worst  -26.67)  Calmar 0.508  | vs base dCAGR -14.20  dDD  -9.66  dCalmar -1.170  wins   0/360
+
+==============================================================================================================
+PANEL C: 2015-01 -> 2026-08  (11.6y)  members ['OA', 'TN', 'VCP', 'MYB', 'IPO', 'GOLD']
+==============================================================================================================
+baseline TN+OA 50-50 max drawdown -15.32% : peak 2017-12 -> trough 2019-07
+  TN+OA 50-50 (baseline)               CAGR  30.54 [ 25.54.. 33.91]  DD  -15.69 (worst  -20.26)  Calmar 1.925
+  TN+OA 50-50 (DEPLOYED BASELINE)      CAGR  30.54 [ 25.54.. 33.91]  DD  -15.69 (worst  -20.26)  Calmar 1.925  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+                                           cash-null Calmar 1.925 (dCalmar +0.000, wins   0/360)
+  OA+TN+IPO+GOLD 25/25/25/25           CAGR  29.72 [ 26.69.. 32.52]  DD   -8.03 (worst  -11.01)  Calmar 3.703  | vs base dCAGR  -0.66  dDD  +7.39  dCalmar +1.704  wins 360/360
+                                           cash-null Calmar 2.885 (dCalmar +0.697, wins 360/360)  | IPO beta-matched null Calmar 3.611 (dCalmar +0.083, wins 224/360)
+  OA+TN+IPO+GOLD 30/30/20/20           CAGR  30.00 [ 26.59.. 32.84]  DD   -8.80 (worst  -12.10)  Calmar 3.398  | vs base dCAGR  -0.44  dDD  +6.57  dCalmar +1.405  wins 360/360
+                                           cash-null Calmar 2.574 (dCalmar +0.696, wins 360/360)  | IPO beta-matched null Calmar 3.135 (dCalmar +0.148, wins 296/360)
+  OA+TN+IPO+GOLD 40/40/10/10           CAGR  30.31 [ 26.27.. 33.35]  DD  -11.40 (worst  -15.02)  Calmar 2.637  | vs base dCAGR  -0.14  dDD  +4.40  dCalmar +0.705  wins 360/360
+                                           cash-null Calmar 2.167 (dCalmar +0.473, wins 360/360)  | IPO beta-matched null Calmar 2.357 (dCalmar +0.273, wins 341/360)
+  OA+IPO+GOLD 33/33/33                 CAGR  32.73 [ 30.88.. 34.93]  DD   -8.99 (worst   -9.75)  Calmar 3.615  | vs base dCAGR  +2.19  dDD  +6.73  dCalmar +1.722  wins 360/360
+                                           cash-null Calmar 2.140 (dCalmar +1.528, wins 360/360)  | IPO beta-matched null Calmar 3.041 (dCalmar +0.592, wins 360/360)
+  OA+TN+MYB+IPO+GOLD 20 each           CAGR  30.62 [ 28.15.. 32.97]  DD   -7.84 (worst   -9.60)  Calmar 3.871  | vs base dCAGR  +0.31  dDD  +7.88  dCalmar +2.011  wins 360/360
+                                           cash-null Calmar 3.302 (dCalmar +0.650, wins 334/360)  | IPO beta-matched null Calmar 3.627 (dCalmar +0.296, wins 325/360)
+  OA+TN+GOLD 45/45/10 (r147 rec)       CAGR  29.21 [ 24.75.. 32.24]  DD  -12.90 (worst  -17.02)  Calmar 2.240  | vs base dCAGR  -1.33  dDD  +2.84  dCalmar +0.301  wins 360/360
+                                           cash-null Calmar 2.040 (dCalmar +0.201, wins 360/360)
+  OA+TN+GOLD 40/40/20                  CAGR  27.82 [ 23.89.. 30.51]  DD  -10.35 (worst  -14.10)  Calmar 2.663  | vs base dCAGR  -2.72  dDD  +5.42  dCalmar +0.708  wins 360/360
+                                           cash-null Calmar 2.167 (dCalmar +0.488, wins 360/360)
+  OA+MYB 50-50 (r152 question)         CAGR  36.87 [ 35.15.. 39.48]  DD  -14.50 (worst  -17.23)  Calmar 2.554  | vs base dCAGR  +6.67  dDD  +1.15  dCalmar +0.613  wins 349/360
+                                           cash-null Calmar 1.883 (dCalmar +0.695, wins 360/360)
+  TN+OA 80 / GOLD 10 / MYB 10          CAGR  29.57 [ 25.54.. 32.31]  DD  -11.38 (worst  -14.90)  Calmar 2.551  | vs base dCAGR  -0.90  dDD  +4.32  dCalmar +0.650  wins 360/360
+                                           cash-null Calmar 2.167 (dCalmar +0.413, wins 360/360)
+  OA+TN+VCP 33 each                    CAGR  34.07 [ 30.06.. 37.37]  DD  -16.57 (worst  -20.93)  Calmar 2.057  | vs base dCAGR  +3.97  dDD  -0.76  dCalmar +0.144  wins 296/360
+                                           cash-null Calmar 2.433 (dCalmar -0.342, wins   8/360)
+
+==============================================================================================================
+4. PER-WINDOW behaviour (median across 360 paths; monthly marks)
+   MYB cannot be evaluated in 2008 at all (its history starts 2010-01);
+   GOLD pre-2015 is the labelled reconstruction, not the real instrument.
+==============================================================================================================
+
+--- panel A ---
+                           book  2008 crash ret  2008 crash dd  2020 crash ret  2020 crash dd  2018 grind ret  2018 grind dd  2022H1 grind ret  2022H1 grind dd
+TN+OA 50-50 (DEPLOYED BASELINE)             NaN            NaN            -1.4           -8.3           -10.2          -12.7              -5.3            -11.0
+     OA+TN+IPO+GOLD 25/25/25/25             NaN            NaN             1.3           -0.1            -3.0           -7.9              -1.8             -6.8
+     OA+TN+IPO+GOLD 30/30/20/20             NaN            NaN             0.8           -0.4            -4.4           -8.7              -2.5             -7.5
+     OA+TN+IPO+GOLD 40/40/10/10             NaN            NaN            -0.3           -1.1            -7.3          -10.2              -3.9             -9.3
+           OA+IPO+GOLD 33/33/33             NaN            NaN             1.5           -0.3            -0.7           -8.3              -1.1             -7.4
+     OA+TN+MYB+IPO+GOLD 20 each             NaN            NaN             1.5           -0.0            -2.8           -6.2              -3.0             -7.8
+ OA+TN+GOLD 45/45/10 (r147 rec)             NaN            NaN             0.1           -4.0            -8.7          -11.0              -4.2             -9.5
+            OA+TN+GOLD 40/40/20             NaN            NaN             1.6           -1.4            -7.2           -9.5              -3.1             -8.1
+   OA+MYB 50-50 (r152 question)             NaN            NaN            -0.7           -2.4            -6.3           -8.2              -7.2            -13.6
+    TN+OA 80 / GOLD 10 / MYB 10             NaN            NaN             0.4           -3.1            -7.8           -9.8              -4.4             -9.5
+              OA+TN+VCP 33 each             NaN            NaN            -1.3           -6.8           -12.7          -13.8              -8.5            -11.3
+                       OA alone             NaN            NaN            -3.7           -9.7           -10.8          -18.3              -7.2            -17.4
+                       TN alone             NaN            NaN             1.0          -13.7           -10.7          -14.7              -4.7            -10.9
+                      VCP alone             NaN            NaN            -1.1           -8.1           -18.4          -18.6             -14.3            -16.8
+                      MYB alone             NaN            NaN             2.2           -2.0            -2.6           -6.8              -7.5            -13.6
+                      IPO alone             NaN            NaN            -5.5           -5.9             3.2          -11.9              -3.1            -11.9
+                     GOLD alone             NaN            NaN            13.9            0.0             4.6          -14.4               6.1            -12.5
+
+--- panel B ---
+                           book  2008 crash ret  2008 crash dd  2020 crash ret  2020 crash dd  2018 grind ret  2018 grind dd  2022H1 grind ret  2022H1 grind dd
+TN+OA 50-50 (DEPLOYED BASELINE)             0.8          -16.5            -1.4           -8.3           -10.2          -12.7              -5.3            -11.0
+     OA+TN+IPO+GOLD 25/25/25/25             9.0           -5.5             1.3           -0.1            -3.0           -7.9              -1.8             -6.8
+     OA+TN+IPO+GOLD 30/30/20/20             7.3           -7.5             0.8           -0.4            -4.4           -8.7              -2.5             -7.5
+     OA+TN+IPO+GOLD 40/40/10/10             4.0          -11.5            -0.3           -1.1            -7.3          -10.2              -3.9             -9.3
+           OA+IPO+GOLD 33/33/33            12.2           -4.1             1.5           -0.3            -0.7           -8.3              -1.1             -7.4
+ OA+TN+GOLD 45/45/10 (r147 rec)             3.7          -13.2             0.1           -4.0            -8.7          -11.0              -4.2             -9.5
+            OA+TN+GOLD 40/40/20             6.6          -10.9             1.6           -1.4            -7.2           -9.5              -3.1             -8.1
+              OA+TN+VCP 33 each            -9.1          -22.0            -1.3           -6.8           -12.7          -13.8              -8.5            -11.3
+                       OA alone             1.5          -17.7            -3.7           -9.7           -10.8          -18.3              -7.2            -17.4
+                       TN alone            -0.5          -16.4             1.0          -13.7           -10.7          -14.7              -4.7            -10.9
+                      VCP alone           -26.5          -35.6            -1.1           -8.1           -18.4          -18.6             -14.3            -16.8
+                      IPO alone             3.8           -2.7            -5.5           -5.9             3.2          -11.9              -3.1            -11.9
+                     GOLD alone            29.2          -13.1            13.9            0.0             4.6          -14.4               6.1            -12.5
+
+--- panel C ---
+                           book  2008 crash ret  2008 crash dd  2020 crash ret  2020 crash dd  2018 grind ret  2018 grind dd  2022H1 grind ret  2022H1 grind dd
+TN+OA 50-50 (DEPLOYED BASELINE)             NaN            NaN            -1.4           -8.3           -10.2          -12.7              -5.3            -11.0
+     OA+TN+IPO+GOLD 25/25/25/25             NaN            NaN             1.3           -0.1            -3.0           -7.9              -1.8             -6.8
+     OA+TN+IPO+GOLD 30/30/20/20             NaN            NaN             0.8           -0.4            -4.4           -8.7              -2.5             -7.5
+     OA+TN+IPO+GOLD 40/40/10/10             NaN            NaN            -0.3           -1.1            -7.3          -10.2              -3.9             -9.3
+           OA+IPO+GOLD 33/33/33             NaN            NaN             1.5           -0.3            -0.7           -8.3              -1.1             -7.4
+     OA+TN+MYB+IPO+GOLD 20 each             NaN            NaN             1.5           -0.0            -2.8           -6.2              -3.0             -7.8
+ OA+TN+GOLD 45/45/10 (r147 rec)             NaN            NaN             0.1           -4.0            -8.7          -11.0              -4.2             -9.5
+            OA+TN+GOLD 40/40/20             NaN            NaN             1.6           -1.4            -7.2           -9.5              -3.1             -8.1
+   OA+MYB 50-50 (r152 question)             NaN            NaN            -0.7           -2.4            -6.3           -8.2              -7.2            -13.6
+    TN+OA 80 / GOLD 10 / MYB 10             NaN            NaN             0.4           -3.1            -7.8           -9.8              -4.4             -9.5
+              OA+TN+VCP 33 each             NaN            NaN            -1.3           -6.8           -12.7          -13.8              -8.5            -11.3
+                       OA alone             NaN            NaN            -3.7           -9.7           -10.8          -18.3              -7.2            -17.4
+                       TN alone             NaN            NaN             1.0          -13.7           -10.7          -14.7              -4.7            -10.9
+                      VCP alone             NaN            NaN            -1.1           -8.1           -18.4          -18.6             -14.3            -16.8
+                      MYB alone             NaN            NaN             2.2           -2.0            -2.6           -6.8              -7.5            -13.6
+                      IPO alone             NaN            NaN            -5.5           -5.9             3.2          -11.9              -3.1            -11.9
+                     GOLD alone             NaN            NaN            13.9            0.0             4.6           -6.2               6.1            -12.5
+
+==============================================================================================================
+5. REGISTERED QUESTION (r/152 exploratory): 80% TN+OA / 10% GOLD / 10% MYB
+   tested against a GOLD-ONLY null at the same total satellite weight.
+==============================================================================================================
+
+--- panel A (2010-01 -> 2026-08) ---
+  80/10/10  OA .40 TN .40 GOLD .10 MYB .10 CAGR  25.38 [ 22.53.. 28.15]  DD  -11.38 (worst  -14.90)  Calmar 2.212  | vs base dCAGR  -1.25  dDD  +4.31  dCalmar +0.524  wins 360/360
+  GOLD-ONLY null: OA .40 TN .40 GOLD .20 CAGR  24.38 [ 21.64.. 27.01]  DD  -10.57 (worst  -14.10)  Calmar 2.326  | vs base dCAGR  -2.24  dDD  +5.33  dCalmar +0.582  wins 360/360   vs the 80/10/10: dCalmar -0.094 (80/10/10 wins  91/360)
+  GOLD-ONLY at same gold wt: OA .45 TN .45 GOLD .10 CAGR  25.54 [ 22.41.. 28.49]  DD  -12.91 (worst  -17.02)  Calmar 1.968  | vs base dCAGR  -1.09  dDD  +2.79  dCalmar +0.266  wins 360/360   vs the 80/10/10: dCalmar +0.257 (80/10/10 wins 359/360)
+  MYB-ONLY null: OA .40 TN .40 MYB .20 CAGR  26.29 [ 23.36.. 29.25]  DD  -12.62 (worst  -15.83)  Calmar 2.054  | vs base dCAGR  -0.31  dDD  +3.13  dCalmar +0.386  wins 357/360   vs the 80/10/10: dCalmar +0.135 (80/10/10 wins 355/360)
+  CASH null: OA .40 TN .40 CASH .20    CAGR  22.26 [ 19.53.. 24.82]  DD  -11.49 (worst  -15.18)  Calmar 1.929  | vs base dCAGR  -4.37  dDD  +4.35  dCalmar +0.220  wins 360/360   vs the 80/10/10: dCalmar +0.302 (80/10/10 wins 360/360)
+
+--- panel C (2015-01 -> 2026-08) ---
+  80/10/10  OA .40 TN .40 GOLD .10 MYB .10 CAGR  29.57 [ 25.54.. 32.31]  DD  -11.38 (worst  -14.90)  Calmar 2.551  | vs base dCAGR  -0.90  dDD  +4.32  dCalmar +0.650  wins 360/360
+  GOLD-ONLY null: OA .40 TN .40 GOLD .20 CAGR  27.82 [ 23.89.. 30.51]  DD  -10.35 (worst  -14.10)  Calmar 2.663  | vs base dCAGR  -2.72  dDD  +5.42  dCalmar +0.708  wins 360/360   vs the 80/10/10: dCalmar -0.092 (80/10/10 wins  60/360)
+  GOLD-ONLY at same gold wt: OA .45 TN .45 GOLD .10 CAGR  29.21 [ 24.75.. 32.24]  DD  -12.90 (worst  -17.02)  Calmar 2.240  | vs base dCAGR  -1.33  dDD  +2.84  dCalmar +0.301  wins 360/360   vs the 80/10/10: dCalmar +0.341 (80/10/10 wins 360/360)
+  MYB-ONLY null: OA .40 TN .40 MYB .20 CAGR  31.22 [ 27.12.. 34.30]  DD  -12.62 (worst  -15.83)  Calmar 2.438  | vs base dCAGR  +0.86  dDD  +3.13  dCalmar +0.535  wins 360/360   vs the 80/10/10: dCalmar +0.105 (80/10/10 wins 351/360)
+  CASH null: OA .40 TN .40 CASH .20    CAGR  25.32 [ 21.45.. 27.94]  DD  -11.49 (worst  -15.18)  Calmar 2.167  | vs base dCAGR  -5.22  dDD  +4.37  dCalmar +0.236  wins 360/360   vs the 80/10/10: dCalmar +0.413 (80/10/10 wins 360/360)
+
+==============================================================================================================
+6. REGISTERED QUESTION (r/152): does MYB+OA beat the deployed TN+OA pair?
+   The 2010+ comparison is re-run, and then the SAME question is asked of the
+   sleeves that CAN be tested through 2008, to see whether dropping TN is safe.
+==============================================================================================================
+
+--- panel A (2010-01 -> 2026-08) ---
+  OA+MYB 50-50                         CAGR  29.13 [ 27.97.. 31.28]  DD  -14.50 (worst  -17.23)  Calmar 2.017  | vs base dCAGR  +2.60  dDD  +1.15  dCalmar +0.316  wins 314/360
+  OA+IPO 50-50                         CAGR  32.91 [ 30.83.. 35.03]  DD  -18.76 (worst  -20.77)  Calmar 1.750  | vs base dCAGR  +6.18  dDD  -3.03  dCalmar +0.078  wins 217/360
+  OA+GOLD 50-50                        CAGR  24.13 [ 23.34.. 25.51]  DD  -10.56 (worst  -11.27)  Calmar 2.300  | vs base dCAGR  -2.45  dDD  +5.22  dCalmar +0.627  wins 352/360
+  OA alone (no TN at all)              CAGR  33.56 [ 31.79.. 36.32]  DD  -25.58 (worst  -28.80)  Calmar 1.305  | vs base dCAGR  +7.30  dDD  -9.80  dCalmar -0.366  wins  21/360
+  OA+TN 50-50 (deployed)               CAGR  26.63 [ 23.12.. 29.91]  DD  -15.69 (worst  -20.26)  Calmar 1.685  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+
+--- panel B (2006-04 -> 2026-08) ---
+  OA+MYB 50-50                           NOT TESTABLE on this panel (['MYB'] absent)
+  OA+IPO 50-50                         CAGR  34.30 [ 32.56.. 36.07]  DD  -18.76 (worst  -20.77)  Calmar 1.824  | vs base dCAGR  +6.42  dDD  -1.75  dCalmar +0.175  wins 330/360
+  OA+GOLD 50-50                        CAGR  24.92 [ 24.27.. 26.01]  DD  -12.71 (worst  -12.78)  Calmar 1.957  | vs base dCAGR  -2.81  dDD  +4.28  dCalmar +0.294  wins 360/360
+  OA alone (no TN at all)              CAGR  34.58 [ 33.11.. 36.88]  DD  -25.58 (worst  -28.80)  Calmar 1.357  | vs base dCAGR  +7.13  dDD  -8.65  dCalmar -0.296  wins  26/360
+  OA+TN 50-50 (deployed)               CAGR  27.74 [ 24.51.. 30.80]  DD  -17.01 (worst  -20.26)  Calmar 1.678  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+
+--- panel C (2015-01 -> 2026-08) ---
+  OA+MYB 50-50                         CAGR  36.87 [ 35.15.. 39.48]  DD  -14.50 (worst  -17.23)  Calmar 2.554  | vs base dCAGR  +6.67  dDD  +1.15  dCalmar +0.613  wins 349/360
+  OA+IPO 50-50                         CAGR  41.14 [ 38.25.. 44.60]  DD  -18.76 (worst  -20.77)  Calmar 2.185  | vs base dCAGR +10.75  dDD  -3.03  dCalmar +0.284  wins 305/360
+  OA+GOLD 50-50                        CAGR  27.75 [ 26.70.. 29.50]  DD   -9.98 (worst  -10.79)  Calmar 2.850  | vs base dCAGR  -2.25  dDD  +5.86  dCalmar +0.922  wins 359/360
+  OA alone (no TN at all)              CAGR  39.14 [ 36.90.. 42.79]  DD  -25.58 (worst  -28.80)  Calmar 1.523  | vs base dCAGR  +9.26  dDD  -9.80  dCalmar -0.381  wins  30/360
+  OA+TN 50-50 (deployed)               CAGR  30.54 [ 25.54.. 33.91]  DD  -15.69 (worst  -20.26)  Calmar 1.925  | vs base dCAGR  +0.00  dDD  +0.00  dCalmar +0.000  wins   0/360
+
+ANALYZE DONE

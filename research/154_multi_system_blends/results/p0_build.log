@@ -1,0 +1,68 @@
+[15:46:32] GOLDBEES real daily: 2015-01-01 -> 2026-09-04 n=2889
+[15:46:32] gold-INR reconstruction (monthly): 2003-12-31 -> 2026-09-30 n=234
+[15:46:32] reconstruction validation on 119 overlapping months: monthly-return corr 0.788, annualised drift +0.56pp
+[15:46:32] GOLD chained series written: 2003-12-31 -> 2026-09-04 n=3003 (114 reconstructed monthly points)
+panel (5379, 2670) 2005-01-03..2026-09-04 [23s]
+[15:46:56] TN offset 0/11 (1s) CAGR-ish 20.91
+[15:46:56] TN offset 1/11 (0s) CAGR-ish 24.65
+[15:46:56] TN offset 2/11 (0s) CAGR-ish 25.04
+[15:46:56] TN offset 3/11 (0s) CAGR-ish 23.49
+[15:46:56] TN offset 4/11 (0s) CAGR-ish 21.98
+[15:46:56] TN offset 5/11 (0s) CAGR-ish 22.56
+[15:46:56] TN offset 6/11 (0s) CAGR-ish 20.5
+[15:46:57] TN offset 7/11 (0s) CAGR-ish 19.15
+[15:46:57] TN offset 8/11 (0s) CAGR-ish 16.55
+[15:46:57] TN offset 9/11 (0s) CAGR-ish 15.98
+[15:46:57] TN offset 10/11 (0s) CAGR-ish 18.61
+[15:46:57] TN offset 11/11 (0s) CAGR-ish 14.92
+[15:46:57] TN 12 offsets written
+[15:46:57] OA: loading frames (trail_sma=15) ...
+2321 symbols with >=260 daily rows
+  loaded 600/2321 (16s)
+  loaded 1200/2321 (26s)
+  loaded 1800/2321 (35s)
+wide frames: (5530, 2321) (58s)
+[15:47:59] OA seed 1/30 (1s) final 457.06x
+[15:47:59] OA seed 2/30 (1s) final 421.91x
+[15:48:00] OA seed 3/30 (1s) final 485.93x
+[15:48:01] OA seed 4/30 (1s) final 384.57x
+[15:48:01] OA seed 5/30 (1s) final 609.51x
+[15:48:02] OA seed 6/30 (1s) final 439.40x
+[15:48:02] OA seed 7/30 (0s) final 551.98x
+[15:48:03] OA seed 8/30 (1s) final 426.43x
+[15:48:04] OA seed 9/30 (1s) final 388.85x
+[15:48:04] OA seed 10/30 (1s) final 445.05x
+[15:48:05] OA seed 11/30 (1s) final 553.43x
+[15:48:05] OA seed 12/30 (1s) final 487.98x
+[15:48:06] OA seed 13/30 (1s) final 544.91x
+[15:48:06] OA seed 14/30 (0s) final 593.33x
+[15:48:07] OA seed 15/30 (1s) final 456.26x
+[15:48:07] OA seed 16/30 (1s) final 591.85x
+[15:48:08] OA seed 17/30 (1s) final 604.22x
+[15:48:09] OA seed 18/30 (1s) final 422.15x
+[15:48:09] OA seed 19/30 (1s) final 493.91x
+[15:48:10] OA seed 20/30 (1s) final 601.62x
+[15:48:10] OA seed 21/30 (1s) final 444.54x
+[15:48:11] OA seed 22/30 (1s) final 469.79x
+[15:48:11] OA seed 23/30 (1s) final 532.48x
+[15:48:12] OA seed 24/30 (1s) final 413.64x
+[15:48:13] OA seed 25/30 (1s) final 464.42x
+[15:48:13] OA seed 26/30 (1s) final 603.61x
+[15:48:14] OA seed 27/30 (1s) final 688.97x
+[15:48:14] OA seed 28/30 (1s) final 676.25x
+[15:48:15] OA seed 29/30 (1s) final 468.68x
+[15:48:15] OA seed 30/30 (1s) final 507.54x
+[15:48:15] OA 30 seeds written
+OA (30 seeds)                  2006-01-02 ->   2026-09-04   n=  5128
+                             columns: 30
+TN (12 offsets)                2006-04-03 ->   2026-09-04   n=  5067
+                             columns: 12
+GOLD (chained)                 2003-12-31 ->   2026-09-04   n=  3003
+                             columns: 2
+VCP (30 seeds)                 2006-01-02 ->   2026-09-01   n=  5123
+                             columns: 30
+MYB (30 seeds)                 2010-01-04 ->   2026-09-04   n=  4140
+                             columns: 30
+IPO (30 seeds)                 2006-01-02 ->   2026-09-04   n=  5128
+                             columns: 30
+[15:48:16] P0 DONE

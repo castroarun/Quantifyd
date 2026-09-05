@@ -1293,3 +1293,36 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
 - Portfolio: corr 0.749 to the live Open Alpha book (bar <0.40); best blend weight adds +0.033 Calmar (bar +0.10) and loses to a plain cash sleeve at the same weight.
 - Published at `/app/backtest/vcp-breakout-research151`. Deliverables for study r/154 in place: `research/151_vcp_breakout/results/vcp_equity_seeds.csv` (30 after-tax daily curves) and `vcp_adopted_spec.json`.
 - Dated obligation registered in the Ops & Review Centre: re-open only on a published, reproducible VCP definition (due 2027-03-05).
+
+### research/154 — Six-sleeve correlation & blend matrix — DONE 2026-09-05, verdict STRATEGY (candidate)
+
+- **The deployed TN+OA pair's true 2008 drawdown is −16.5%, not −2.4%.** r/146 and r/151
+  measured the 2008 window from 2008-01-01, which is after the Dec-2007 peak. 2008 is the
+  pair's single deepest hole in twenty years. The standing claim that the TN gate plus OA's
+  stops "already stripped the crash tail" is **withdrawn**.
+  → **PENDING:** re-audit every per-window drawdown figure in r/146 through r/153 for the same
+  window-start artefact.
+- **VCP is Open Alpha.** 87.0% of OA's signals are VCP signals; 48.6% / 41.5% holding-day
+  overlap; correlation 0.749 daily. MYB shares 90.2% of its signals with VCP. Both are retired
+  from consideration permanently.
+- **OA and IPO have never once held the same stock on the same day** (0.0% signal and 0.0%
+  holding-day overlap, 2010–2026), at correlation 0.211 daily. Gold is ~0 to everything.
+- **197 of 1,767 enumerated weight vectors** clear the pre-registered bar on all three panels
+  against three nulls — a contiguous plateau. Recommended (constrained):
+  **OA 40 / TN 25 / IPO 20 / GOLD 15 → 28.21% / −10.77% / Calmar 2.61** vs the pair's
+  27.74% / −17.01% / 1.68 on 2006-04→2026-08.
+  Deployable today without an unproven sleeve: **OA 60 / TN 15 / GOLD 25 → 28.02% / −13.31% /
+  2.095**. r/147's 45/45/10 is NOT admitted (CAGR shortfall).
+- **IPO is 80% cash** (19.6% invested; zero trades in 2013 and 2014). A cash null does not
+  catch that, so a **beta-matched null** was built (IPO → 19.6% OA + 80.4% cash). Beyond ~20%
+  IPO weight the extra Calmar is indistinguishable from de-levering on two of three panels.
+- **Both r/152 open questions answered:** MYB+OA reproduces but is not actionable (2008 is
+  unreachable by construction for a 3-year-high screen); the 80/10/10 four-sleeve probe is
+  **REFUTED** against a gold-only null at the same satellite weight.
+- **Data defect fixed:** r/147's gold-INR reference series was missing 40 of 274 months.
+  Rebuilt at daily resolution, zero gaps, monthly correlation to real GOLDBEES 0.878.
+  Lives in `research/154_multi_system_blends/results/gold_nav.csv` — never in market_data.db.
+- Published at `/app/backtest/multi-system-blends-research154`.
+- **ARUN DECIDES.** Nothing deployed; no live engine, crontab or spec touched.
+  Dated obligation registered in the Ops & Review Centre (due 2026-10-15, merged with the
+  r/153 adoption call; the r/152 four-sleeve review is marked DONE by this study).

@@ -1,0 +1,13 @@
+pair,kind,a_signals,b_signals,both,pct_of_a,pct_of_b
+OA~VCP,signal,17123,29130,14893,87.0,51.1
+OA~MYB,signal,17123,1930,0,0.0,0.0
+OA~IPO,signal,17123,820,0,0.0,0.0
+VCP~MYB,signal,29130,1930,1740,6.0,90.2
+VCP~IPO,signal,29130,820,0,0.0,0.0
+MYB~IPO,signal,1930,820,0,0.0,0.0
+OA~VCP,holding-day,36921,43259,17952,48.6,41.5
+OA~MYB,holding-day,36921,7768,228,0.6,2.9
+OA~IPO,holding-day,36921,5857,0,0.0,0.0
+VCP~MYB,holding-day,43259,7768,1711,4.0,22.0
+VCP~IPO,holding-day,43259,5857,0,0.0,0.0
+MYB~IPO,holding-day,7768,5857,0,0.0,0.0

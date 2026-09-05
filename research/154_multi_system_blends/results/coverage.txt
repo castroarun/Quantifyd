@@ -1,0 +1,12 @@
+OA (30 seeds)                  2006-01-02 ->   2026-09-04   n=  5128
+                             columns: 30
+TN (12 offsets)                2006-04-03 ->   2026-09-04   n=  5067
+                             columns: 12
+GOLD (chained)                 2003-12-31 ->   2026-09-04   n=  3003
+                             columns: 2
+VCP (30 seeds)                 2006-01-02 ->   2026-09-01   n=  5123
+                             columns: 30
+MYB (30 seeds)                 2010-01-04 ->   2026-09-04   n=  4140
+                             columns: 30
+IPO (30 seeds)                 2006-01-02 ->   2026-09-04   n=  5128
+                             columns: 30
