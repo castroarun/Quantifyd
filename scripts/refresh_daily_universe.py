@@ -37,12 +37,37 @@ def main():
 
     conn = sqlite3.connect(str(ROOT / 'backtest_data' / 'market_data.db'))
     today = datetime.now().strftime('%Y-%m-%d')
-    rows = conn.execute(
+
+    # Two cohorts (05-Sep-2026). The original single query was `n >= 260 AND
+    # mx >= date(-30 day)`, and BOTH halves excluded every recently listed stock:
+    #
+    #   n >= 260   a name listed within six months has ~125 bars at most, so the
+    #              entire IPO-age universe was never refreshed — measured on the
+    #              live DB, 0 of the 211 symbols with under 150 bars were current.
+    #   mx >= -30d once a symbol falls a month behind it is locked out FOREVER,
+    #              because the filter that decides whether to refresh it is the
+    #              same staleness it is being punished for. Self-perpetuating.
+    #
+    # Established names keep the tight window (a 30-day-stale large cap is
+    # delisted, not neglected). Young names get a wide one precisely because they
+    # are the ones that fell behind, and no minimum bar count — a name with five
+    # bars must be allowed to grow into eligibility rather than be frozen below it.
+    established = conn.execute(
         "select symbol, mx from (select symbol, max(date) mx, count(*) n from "
         "market_data_unified where timeframe='day' group by symbol) "
         "where n >= 260 and mx >= date(?, '-30 day')", (today,)).fetchall()
+    young = conn.execute(
+        "select symbol, mx from (select symbol, max(date) mx, count(*) n from "
+        "market_data_unified where timeframe='day' group by symbol) "
+        "where n < 260 and mx >= date(?, '-180 day')", (today,)).fetchall()
     conn.close()
-    print(f'{datetime.now()} refresh: {len(rows)} symbols behind {today}', flush=True)
+    seen = set()
+    rows = []
+    for s, mx in list(established) + list(young):
+        if s not in seen:
+            seen.add(s); rows.append((s, mx))
+    print(f'{datetime.now()} refresh: {len(rows)} symbols behind {today} '
+          f'({len(established)} established, {len(young)} young)', flush=True)
     if not rows:
         return
 
