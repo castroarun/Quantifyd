@@ -29,9 +29,16 @@ MECHANICS — why this never touches trading logic:
   before comparing to NAV.
 
 State:
-  Open Alpha -> "dividend" key inside backtest_data/bluesky_paper_state.json
-               (edited under the engine's own lockfile, atomic replace)
+  Open Alpha -> "dividend" key inside backtest_data/oa_real_state.json — the REAL
+               book (edited under its lockfile, atomic replace). Repointed 05-Sep-2026:
+               this adapter previously read the retired paper model, so the policy was
+               being computed against notional money (defect D1).
   True North -> "dividend" row in mp_state (backtest_data/momentum_paper.db)
+
+Both books must maintain a `fund_flows` ledger for the HWM adjustment above to work.
+True North did not write one until 05-Sep-2026 (defect D2) — deposits were invisible to
+the HWM and were therefore counted as PROFIT, so the engine would have declared a
+dividend on Arun's own contributed capital.
 
 Each declaration fires services.dividend_notify (email/WhatsApp when armed,
 desktop alert always) with the Console withdrawal amount.
@@ -51,11 +58,22 @@ DECLARE_WINDOW_DAYS = 12   # declare on first run within N days after quarter en
 
 # ───────────────────────── book adapters ─────────────────────────
 class OpenAlphaBook:
+    """The REAL Open Alpha book (defect D1, repointed 05-Sep-2026).
+
+    This adapter used to read and write `bluesky_paper_state.json` — the retired paper
+    model — so the dividend policy was being computed against notional money while the
+    real Rs 4.46L book was invisible to it. The paper book remains as the reference
+    model; it holds no real capital and distributes nothing.
+
+    The dividend block was re-anchored to the real book on repointing: the paper HWM
+    (Rs 10.4L) sat far above the real book's NAV and would have suppressed every future
+    declaration. See `_reanchor_openalpha()` at the bottom of this module.
+    """
     name = 'Open Alpha'
     slug = 'openalpha'
-    STATE = ROOT / 'backtest_data' / 'bluesky_paper_state.json'
-    LOCK = ROOT / 'backtest_data' / 'bluesky_paper_state.lock'
-    UI = ROOT / 'static' / 'app' / 'bluesky_paper.json'
+    STATE = ROOT / 'backtest_data' / 'oa_real_state.json'
+    LOCK = ROOT / 'backtest_data' / 'oa_real_state.lock'
+    UI = ROOT / 'static' / 'app' / 'oa_real.json'
 
     def _lock(self):
         for _ in range(15):
@@ -94,6 +112,9 @@ class OpenAlphaBook:
         return float(st.get('cash', 0)) + float((st.get('sweep') or {}).get('cost', 0)) + pos
 
     def liquid(self, st):
+        # The real book holds plain cash — it has no CASHIETF sweep of its own (Arun
+        # parks spare cash in LIQUIDCASE by hand), so `sweep` is absent and .get()
+        # keeps this correct if one is ever added.
         return float(st.get('cash', 0)) + float((st.get('sweep') or {}).get('cost', 0))
 
     def get_div(self):
@@ -101,10 +122,10 @@ class OpenAlphaBook:
         return st.get('dividend'), st
 
     def init_div(self, st):
-        # HWM seeds at adoption: max(current NAV, contributed capital). The
-        # Open Alpha 'capital' field is the 2020 rupee-rebased BACKFILL seed
-        # (not contributed capital), so NAV-at-adoption is the anchor —
-        # backfilled gains are capital, never distributable.
+        # HWM seeds at adoption: max(current NAV, contributed capital), so nothing the
+        # book earned before the policy applied to it is ever distributable. On the real
+        # book `capital` IS contributed money (the seed fills plus every later deposit),
+        # unlike the paper model where it was a rebased backfill figure.
         return dict(hwm=max(self.nav(), float(st.get('capital', 0.0))), cap=None,
                     reserve=0.0, ledger=[], last_flow_ts=str(datetime.now()),
                     adopted=str(date.today()))
@@ -127,10 +148,20 @@ class OpenAlphaBook:
         st['cash'] = float(st.get('cash', 0)) - take_cash
         rem = outflow - take_cash
         if rem > 1e-6:
-            sw = st['sweep']
+            sw = st.get('sweep')
+            if not sw or not sw.get('cost'):
+                # The real book has no sweep to redeem. A declaration is clipped to
+                # `liquid()` upstream, so this should be unreachable; refuse loudly
+                # rather than silently paying out money the book does not hold.
+                raise RuntimeError(
+                    f'Open Alpha: dividend of Rs {outflow:,.0f} exceeds free cash '
+                    f'Rs {take_cash:,.0f} and there is no sweep to redeem')
             frac = rem / sw['cost'] if sw.get('cost') else 0
             sw['units'] = round(sw['units'] * (1 - frac), 3)
             sw['cost'] = round(sw['cost'] - rem, 2)
+        # `capital` is contributed money and is deliberately NOT reduced here: a dividend
+        # pays out profit, and the HWM (reset to nav - entitlement at declaration) already
+        # accounts for the money leaving. Touching capital too would double-count it.
         st.setdefault('fund_flows', []).append(dict(
             ts=str(datetime.now()), kind='dividend', amount=outflow,
             via='dividend engine', positions_touched=False, note=note))
@@ -340,3 +371,33 @@ if __name__ == '__main__':
         dry = '--dry' in sys.argv
         for slug in ('truenorth', 'openalpha'):
             print(json.dumps(declare(slug, dry_run=dry), indent=1, default=str))
+
+
+def _reanchor_openalpha(force=False):
+    """One-off: move the Open Alpha dividend block onto the REAL book (defect D1).
+
+    The block was adopted 03-Sep-2026 against the PAPER model, whose NAV was ~Rs 10.4L.
+    The real book, seeded 04-Sep-2026, holds Rs 4.46L. Carrying the paper HWM across
+    would put the bar ~Rs 6L above the real book's NAV and silently suppress every
+    declaration for years.
+
+    Re-anchoring follows the same rule a fresh adoption would: HWM = max(NAV, contributed
+    capital) at the moment of adoption, so nothing earned before the real book existed is
+    ever distributable. Idempotent — it refuses once the block names the real book.
+    """
+    book = OpenAlphaBook()
+    st = book._load()
+    div = st.get('dividend')
+    if div and div.get('anchored_on') == 'oa_real' and not force:
+        return dict(skipped='already anchored on the real book', hwm=div['hwm'])
+    fresh = book.init_div(st)
+    fresh['anchored_on'] = 'oa_real'
+    fresh['note'] = ('Re-anchored 05-Sep-2026 from the paper model (HWM Rs %s) to the real '
+                     'book. Nothing earned by the paper model is distributable.'
+                     % (f"{div['hwm']:,.0f}" if div else 'n/a'))
+    if div:
+        fresh['ledger'] = div.get('ledger', [])      # keep any declaration history
+    st['dividend'] = fresh
+    book._save(st)
+    return dict(reanchored=True, hwm=round(fresh['hwm']),
+                was=round(div['hwm']) if div else None)

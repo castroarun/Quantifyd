@@ -195,7 +195,18 @@ RULES = [
 
 # ───────────────────────── DB ─────────────────────────
 def _conn():
-    c = sqlite3.connect(str(DB)); c.row_factory = sqlite3.Row; return c
+    # The default 5s busy window is short for a DB the engine, the Capital Desk API and the
+    # dividend job can all touch at once, and the default rollback journal blocks readers for
+    # the whole of a write. WAL + a real timeout (2026-09-05, defect D7 — the 2026-08-05 paper
+    # state race was this class of bug, and the hardening never reached this book).
+    c = sqlite3.connect(str(DB), timeout=30.0)
+    c.row_factory = sqlite3.Row
+    try:
+        c.execute("PRAGMA journal_mode=WAL")
+        c.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        pass
+    return c
 
 
 def init_db():
@@ -235,6 +246,28 @@ def _get(key, default=None):
 def _set(key, val):
     c = _conn(); c.execute("INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)",
                            (key, json.dumps(val))); c.commit(); c.close()
+
+
+def _record_flow(kind, amount, via, positions_touched=True):
+    """Append to the append-only fund-flow ledger. REQUIRED on every capital change.
+
+    Added 2026-09-05 (defect D2). dividend_engine.TrueNorthBook.net_flows_since() reads
+    mp_state['fund_flows'] to flow-adjust the high-water mark, and this book never wrote
+    that key — so a deposit made through True North's own cash panel was invisible to the
+    HWM and counted as PROFIT. The engine would then declare a dividend on Arun's own
+    deposited capital. Any future code path that moves `capital` must call this.
+    """
+    # NOTE the timestamp format. net_flows_since() compares timestamps as STRINGS
+    # (`str(f['ts']) > ts`), and the existing anchors are `str(datetime.now())` —
+    # "2026-09-03 13:13:42.844462", space-separated. An isoformat() "T" separator sorts
+    # ABOVE a space, so a same-day flow written before the anchor time would wrongly
+    # count as after it. Keep this identical to the anchor format.
+    flows = _get("fund_flows", []) or []
+    flows.append(dict(ts=str(datetime.now()), kind=kind,
+                      amount=round(float(amount), 2), via=via,
+                      positions_touched=bool(positions_touched)))
+    _set("fund_flows", flows)
+    return flows
 
 
 # ───────────────────── kite / data ─────────────────────
@@ -1803,6 +1836,8 @@ def cash_deposit(amount, mode="immediate", dry_run=True):
                     _buy(p["symbol"], px, p["value"], d,
                          "DEPOSIT_NEWSLOT" if p.get("new") else "DEPOSIT_TOPUP")
         _set("capital", float(_get("capital", CFG["capital"])) + amount)
+        _record_flow("deposit", amount, f"cash_deposit({mode})",
+                     positions_touched=bool(use_immediate and plan))
         logger.warning(f"[MP] DEPOSIT Rs{amount:,.0f} ({mode})")
         # Park the leftover in the liquid ETF right away rather than letting it idle until the next
         # 15:05 job — the whole amount in `park` mode, or the whole-share rounding remainder in
@@ -1848,6 +1883,17 @@ def cash_withdraw(amount, dry_run=True):
     if from_cash > 0:
         plan.append({"source": "idle cash", "value": round(from_cash)}); raised += from_cash
     need = amount - raised
+    # Show the CASHIETF redemption in the PLAN, not just at execution. The unsweep above
+    # runs only when dry_run is False, so the preview used to jump straight to selling
+    # stock while the real run quietly redeemed the ETF first — a confirm dialog that
+    # named holdings it was not going to sell (found 05-Sep-2026 wiring the Capital Desk).
+    # Planning only: entries without an "action" key are skipped by the execution loop.
+    if need > 1 and CFG["live_cash_sweep"] and _sweep_units() > 0:
+        from_sweep = min(_sweep_value(), need)
+        if from_sweep > 0:
+            plan.append({"source": f'{CFG["sweep_symbol"]} (redeem)',
+                         "value": round(from_sweep)})
+            raised += from_sweep; need -= from_sweep
     weak, score = _held_weak_first()
     live = _live_prices(weak) if weak else {}
     for s in weak:
@@ -1872,6 +1918,8 @@ def cash_withdraw(amount, dry_run=True):
                 _sell(p["source"], live.get(p["source"]) or pos[p["source"]]["entry_price"], d, "WITHDRAWAL")
         _set("cash", max(0.0, _cash() - amount))
         _set("capital", max(0.0, float(_get("capital", CFG["capital"])) - amount))
+        _record_flow("withdraw", amount, "cash_withdraw",
+                     positions_touched=any(p.get("action") == "SELL" for p in plan))
         logger.warning(f"[MP] WITHDRAW Rs{amount:,.0f}")
         res["executed"] = True
     return res

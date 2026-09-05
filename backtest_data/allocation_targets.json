@@ -1,0 +1,15 @@
+{
+ "targets": {
+  "truenorth": 0.4,
+  "openalpha": 0.4,
+  "ipo": 0.2
+ },
+ "base": "truenorth",
+ "ipo_status": "paper",
+ "changelog": [
+  {
+   "date": "2026-09-05",
+   "text": "Adopted TN 40 / OA 40 / IPO 20. IPO is on paper, so its share is held in the liquid ETF until the sleeve graduates."
+  }
+ ]
+}

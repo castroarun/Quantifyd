@@ -1,27 +1,41 @@
 """
-Sleeves money-management API — Flask blueprint, momentum-framework contract.
+Capital Desk API — Flask blueprint. Every rupee in or out of every book goes here.
 
-Open Alpha (paper) endpoints follow True North's battle-tested deposit/withdraw
-shape: POST {"amount": N, "dry_run": true} returns a PLAN (no mutation);
-dry_run false executes. Withdrawals draw from cash + CASHIETF sweep only —
-positions are never force-sold. Every executed flow is ledgered in the state.
+Contract, uniform across books: POST {"amount": N, "dry_run": true} returns a PLAN and
+mutates nothing; dry_run false executes. Positions are never force-sold — a withdrawal
+that cannot be funded from cash (plus the CASHIETF sweep, on True North) is refused with
+409 and a plan showing what would have to be sold. Every executed flow is ledgered.
 
-The unified portal on /app/sleeves dispatches: its True North leg calls the
-existing /api/momentum-paper/deposit|withdraw (live, hardened, confirms real
-orders itself); its Open Alpha leg calls these endpoints. This module touches
-no trading logic and edits the paper ledger under the engine's own lockfile.
+Each leg dispatches to the BOOK'S OWN hardened implementation rather than reimplementing
+it here:
 
-  GET  /api/sleeves/status
-  POST /api/sleeves/openalpha/deposit   {"amount": N, "dry_run": bool}
-  POST /api/sleeves/openalpha/withdraw  {"amount": N, "dry_run": bool}
-  POST /api/sleeves/truenorth/deposit   {"amount": N, "dry_run": bool}
-  POST /api/sleeves/truenorth/withdraw  {"amount": N, "dry_run": bool}
-  GET  /api/sleeves/dividends           (policy state + ledger, both books)
-  POST /api/sleeves/dividends/preview   (dry-run declaration, both books)
+  truenorth  -> momentum_paper.cash_deposit / cash_withdraw
+                (deploy plan, CASHIETF unsweep before selling, weakest-momentum-first,
+                 mp_fills audit rows, capital fence, fund-flow ledger)
+  openalpha  -> oa_real.deposit / withdraw
+                (capital ledger + lockfile; alert-and-ledger only, since the real book
+                 has no automated executor — it records the money and tells Arun what to
+                 buy, it never places an order)
 
-True North flows edit only the cash/capital ledger in momentum_paper.db
-(mp_state) — the momentum engine then sizes off the changed cash at its own
-next scheduled step. No order is placed here and no engine code is touched.
+Rewritten 05-Sep-2026. What this file used to claim, and what it actually did:
+
+  - the docstring said the True North leg "calls the existing /api/momentum-paper/
+    deposit|withdraw"; it did not — it did raw INSERT OR REPLACE on mp_state, skipping
+    the deploy plan, the unsweep, the weakest-first sell and the audit trail (D3), which
+    is why the same Rs 1L withdrawal 409'd here and executed on the True North page (D4)
+  - the Open Alpha endpoints edited bluesky_paper_state.json, the RETIRED paper book,
+    while the real money book had no capital concept and no route at all (D1)
+
+  GET  /api/sleeves/status                 (all books + allocation drift)
+  POST /api/sleeves/{truenorth,openalpha}/{deposit,withdraw}  {"amount": N, "dry_run": bool}
+  GET  /api/sleeves/allocation             (targets, current weights, drift, gaps)
+  POST /api/sleeves/allocation/route       {"amount": N} -> where a deposit should go
+  POST /api/sleeves/allocation/targets     {"targets": {...}, "note": str}
+  GET  /api/sleeves/dividends              (policy state + ledger, both books)
+  POST /api/sleeves/dividends/preview      (dry-run declaration, both books)
+
+No trading logic is touched here: no entry, exit, stop, trail, sizing, gate or selection
+rule. This module moves money and reports; the engines decide what to do with it.
 """
 import json
 import os
@@ -163,111 +177,261 @@ def _execute(kind, amt):
 
 @sleeves_bp.route('/api/sleeves/status')
 def sleeves_status():
+    """One status payload covering every book the Capital Desk can move money into.
+
+    Previously this returned Open Alpha only — and the Open Alpha it returned was the
+    retired PAPER book, so the page showed paper balances for a real-money sleeve and
+    showed nothing at all for True North (defect D1).
+    """
+    out = dict(books={}, note='Every leg runs the book\'s own hardened flow: True North '
+                              'through cash_deposit/cash_withdraw, Open Alpha through '
+                              'the real book\'s capital ledger.')
     try:
+        mp = _tn_book()
+        out['books']['truenorth'] = dict(
+            name='True North', kind='live', capital=float(mp._get('capital', 0.0) or 0.0),
+            cash=round(float(mp._get('cash', 0.0) or 0.0)),
+            liquid=round(float(mp._get('cash', 0.0) or 0.0) + mp._sweep_value()),
+            flows=(mp._get('fund_flows', []) or [])[-10:])
+    except Exception as e:
+        out['books']['truenorth'] = dict(name='True North', error=str(e))
+    try:
+        out['books']['openalpha'] = dict(name='Open Alpha', kind='live',
+                                         **_oa_book().status())
+    except Exception as e:
+        out['books']['openalpha'] = dict(name='Open Alpha', error=str(e))
+    try:                                    # the retired paper model, display only
+        st = _load() or {}
         ui = json.load(open(UI_JSON))
+        out['books']['openalpha_model'] = dict(
+            name='Open Alpha (reference model)', kind='paper', nav=ui.get('nav'),
+            cash=st.get('cash'), capital=st.get('capital'),
+            note='Study-spec notional book. Takes no deposits.')
     except Exception:
-        ui = {}
-    st = _load() or {}
-    return jsonify(dict(
-        open_alpha=dict(nav=ui.get('nav'), cash=st.get('cash'), sweep=st.get('sweep'),
-                        liquid=round(_liquid(st), 0) if st else 0,
-                        capital=st.get('capital'),
-                        flows=(st.get('fund_flows') or [])[-10:]),
-        note='True North legs dispatch to /api/momentum-paper/deposit|withdraw '
-             '(its own live, hardened flow with real-order confirms).'))
+        pass
+    out['allocation'] = _drift()
+    return jsonify(out)
 
 
-def _flow_route(kind):
+# ═════════════════ money flows — one hardened path per book ═════════════════
+# Rewritten 05-Sep-2026 (defects D1, D3, D4).
+#
+#   D1  Every /api/sleeves/openalpha/* call used to mutate bluesky_paper_state.json —
+#       the RETIRED paper book — while the real money book (oa_real_state.json,
+#       Rs 4.46L) had no capital concept and no route at all. Real capital was
+#       untracked and unwithdrawable. OA now dispatches to services.oa_real.
+#   D3  The True North leg used to do raw INSERT OR REPLACE on mp_state, bypassing
+#       cash_deposit()/cash_withdraw() — so no deploy plan, no CASHIETF unsweep, no
+#       weakest-first sell, no mp_fills audit row, no capital fence. Two docstrings
+#       and the UI both claimed the opposite. It now calls the real functions.
+#   D4  Consequence of D3: the same Rs 1L withdrawal 409'd here and executed on the
+#       True North page, because this leg capped at ledger cash and never unswept the
+#       Rs 3.3L sitting in CASHIETF. Fixed by D3.
+#
+# The paper Open Alpha book stays running as the reference model; it simply no longer
+# takes money. Its notional capital is fixed by the study spec.
+MP_DB = ROOT / 'backtest_data' / 'momentum_paper.db'
+
+
+def _tn_book():
+    from services import momentum_paper as mp
+    return mp
+
+
+def _oa_book():
+    from services import oa_real
+    return oa_real
+
+
+def _flow(book, kind):
+    """Dispatch a deposit/withdraw to the named book's own hardened implementation."""
     amt, dry = _params()
     if amt is None:
         return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
-    st = _load()
-    if st is None:
-        return jsonify(error='paper book state not found'), 500
-    plan = _dep_plan(st, amt) if kind == 'deposit' else _wd_plan(st, amt)
-    if dry:
-        return jsonify(plan)
-    if kind == 'withdraw' and not plan['feasible']:
-        return jsonify(error=plan['plan'][0]), 409
-    st2, err = _execute(kind, amt)
-    if err:
-        return jsonify(error=err), 409
-    return jsonify(dict(ok=True, executed=plan, cash=st2['cash'], capital=st2['capital']))
+    try:
+        if book == 'truenorth':
+            mp = _tn_book()
+            res = (mp.cash_deposit(amt, mode='immediate', dry_run=dry) if kind == 'deposit'
+                   else mp.cash_withdraw(amt, dry_run=dry))
+            res.setdefault('book', 'true-north')
+        else:
+            oa = _oa_book()
+            res = (oa.deposit(amt, dry_run=dry) if kind == 'deposit'
+                   else oa.withdraw(amt, dry_run=dry))
+    except Exception as e:
+        return jsonify(error=f'{book} {kind} failed: {e}'), 500
+    if not res.get('ok', True):
+        return jsonify(res), 400
+    # a withdrawal that cannot be funded is a refusal, not a silent partial
+    if kind == 'withdraw' and not dry:
+        if res.get('feasible') is False or res.get('shortfall', 0) > 1:
+            return jsonify(res), 409
+    return jsonify(res)
 
 
 @sleeves_bp.route('/api/sleeves/openalpha/deposit', methods=['POST'])
 def sleeves_deposit():
-    return _flow_route('deposit')
+    return _flow('openalpha', 'deposit')
 
 
 @sleeves_bp.route('/api/sleeves/openalpha/withdraw', methods=['POST'])
 def sleeves_withdraw():
-    return _flow_route('withdraw')
-
-
-# ───────────────────── True North (momentum book) flows ─────────────────────
-MP_DB = ROOT / 'backtest_data' / 'momentum_paper.db'
-
-
-def _mp_conn():
-    c = sqlite3.connect(str(MP_DB)); c.row_factory = sqlite3.Row
-    return c
-
-
-def _mp_get(key, default=None):
-    c = _mp_conn()
-    r = c.execute('SELECT val FROM mp_state WHERE key=?', (key,)).fetchone()
-    c.close()
-    return json.loads(r['val']) if r else default
-
-
-def _tn_flow(kind):
-    amt, dry = _params()
-    if amt is None:
-        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
-    if not MP_DB.exists():
-        return jsonify(error='momentum book DB not found'), 500
-    cash = float(_mp_get('cash', 0.0))
-    cap = float(_mp_get('capital', 0.0))
-    if kind == 'withdraw' and amt > cash + 1:
-        plan = dict(book='true-north', kind=kind, amount=amt, feasible=False,
-                    plan=[f'only Rs {cash:,.0f} is free cash',
-                          'holdings are never force-sold — withdraw less or wait for '
-                          'the next Donchian exit / rebalance to free cash'])
-        return (jsonify(plan) if dry else (jsonify(error=plan['plan'][0]), 409))
-    plan = dict(book='true-north', kind=kind, amount=amt, feasible=True,
-                cash_now=round(cash), capital_now=round(cap),
-                plan=([f'Rs {amt:,.0f} lands in book cash (earns liquid yield while idle)',
-                       'deployed at the next monthly rebalance / gate redeploy']
-                      if kind == 'deposit' else
-                      [f'Rs {amt:,.0f} from free cash', 'holdings untouched']),
-                capital_after=round(cap + (amt if kind == 'deposit' else -amt)))
-    if dry:
-        return jsonify(plan)
-    c = _mp_conn()
-    delta = amt if kind == 'deposit' else -amt
-    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
-              ('cash', json.dumps(cash + delta)))
-    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
-              ('capital', json.dumps(cap + delta)))
-    flows = _mp_get('fund_flows', []) or []
-    flows.append(dict(ts=str(datetime.now()), kind=kind, amount=amt,
-                      via='sleeves portal', positions_touched=False))
-    c.execute('INSERT OR REPLACE INTO mp_state(key,val) VALUES(?,?)',
-              ('fund_flows', json.dumps(flows)))
-    c.commit(); c.close()
-    return jsonify(dict(ok=True, executed=plan, cash=round(cash + delta),
-                        capital=round(cap + delta)))
+    return _flow('openalpha', 'withdraw')
 
 
 @sleeves_bp.route('/api/sleeves/truenorth/deposit', methods=['POST'])
 def tn_deposit():
-    return _tn_flow('deposit')
+    return _flow('truenorth', 'deposit')
 
 
 @sleeves_bp.route('/api/sleeves/truenorth/withdraw', methods=['POST'])
 def tn_withdraw():
-    return _tn_flow('withdraw')
+    return _flow('truenorth', 'withdraw')
+
+
+# ═════════════════ target allocation and the deposit router ═════════════════
+# Defect D6: no cross-book allocation concept existed anywhere — the only ratio in the
+# repo was Math.round(n/2) in the UI. Arun's target is TN 40 / OA 40 / IPO 20, funded
+# over time, with True North as the BASE: nothing is ever sold to rebalance, arriving
+# cash is steered to whichever book is furthest below its share.
+ALLOC = ROOT / 'backtest_data' / 'allocation_targets.json'
+DEFAULT_ALLOC = dict(targets={'truenorth': 0.40, 'openalpha': 0.40, 'ipo': 0.20},
+                     base='truenorth',
+                     ipo_status='paper',
+                     changelog=[dict(date='2026-09-05',
+                                     text='Adopted TN 40 / OA 40 / IPO 20. IPO is on paper, '
+                                          'so its share is held in the liquid ETF until the '
+                                          'sleeve graduates.')])
+
+
+def _alloc():
+    try:
+        return json.load(open(ALLOC))
+    except Exception:
+        return dict(DEFAULT_ALLOC)
+
+
+def _book_values():
+    """Current deployed value per book, from each book's own source of truth."""
+    out = {}
+    try:
+        mp = _tn_book()
+        out['truenorth'] = float(mp._get('capital', 0.0) or 0.0)
+    except Exception:
+        out['truenorth'] = 0.0
+    try:
+        out['openalpha'] = float(_oa_book().load_state().get('capital', 0.0) or 0.0)
+    except Exception:
+        out['openalpha'] = 0.0
+    # IPO is a paper book: its live money is whatever has been earmarked, not notional NAV
+    out['ipo'] = float(_alloc().get('ipo_funded', 0.0) or 0.0)
+    return out
+
+
+def _drift():
+    a = _alloc()
+    tg = a['targets']
+    vals = _book_values()
+    total = sum(vals.values())
+    rows = []
+    for k, w in tg.items():
+        cur = vals.get(k, 0.0)
+        want = total * w
+        rows.append(dict(book=k, value=round(cur), target_pct=round(w * 100, 1),
+                         current_pct=round(100 * cur / total, 1) if total else 0.0,
+                         target_value=round(want), gap=round(want - cur)))
+    return dict(total=round(total), base=a.get('base', 'truenorth'),
+                ipo_status=a.get('ipo_status', 'paper'), rows=rows,
+                changelog=a.get('changelog', []))
+
+
+def _route(amount):
+    """Plan where an arriving deposit should go.
+
+    Rule (Arun, 05-Sep-2026): True North is the BASE — never sold down. Compute each
+    book's shortfall against its target share of the post-deposit total, fill the
+    largest shortfalls first, then split any remainder at the target weights so the
+    book lands ON target rather than overshooting.
+    """
+    a = _alloc()
+    tg = a['targets']
+    vals = _book_values()
+    total_after = sum(vals.values()) + amount
+
+    # Shortfalls are measured against each book's share of the POST-deposit total, which
+    # is what makes the deposit land ON target rather than overshooting. A consequence
+    # worth stating: those shortfalls always sum to at least the deposit. Without the
+    # max(0,...) clip they sum to exactly it (total_after - total == amount), and the clip
+    # only removes negatives, so it can only push the sum up. There is therefore never an
+    # "excess" left over to split at the target weights — when no book is overweight the
+    # proportional fill IS the 40/40/20 split, and it lands exactly on target.
+    short = {k: max(0.0, total_after * w - vals.get(k, 0.0)) for k, w in tg.items()}
+    total_short = sum(short.values())
+    over = [k for k, w in tg.items() if vals.get(k, 0.0) > total_after * w + 1]
+
+    alloc = {}
+    if total_short > 0:
+        for k, s in short.items():
+            alloc[k] = amount * s / total_short
+    else:                                   # degenerate: already exactly on target
+        for k, w in tg.items():
+            alloc[k] = amount * w
+
+    legs = [dict(book=k, amount=round(v, 2)) for k, v in alloc.items() if round(v, 2) > 0]
+    legs.sort(key=lambda r: -r['amount'])
+
+    notes = []
+    if a.get('ipo_status') == 'paper':
+        notes.append('IPO is a paper book — its share is parked in the liquid ETF and '
+                     'earmarked, not sent to a live sleeve.')
+    if over:
+        pretty = ', '.join(over)
+        notes.append(f'{pretty} is above its target share, so it receives nothing from '
+                     f'this deposit. Nothing is ever sold to rebalance — the base is held '
+                     f'and the others are funded up to it.')
+    if total_short > amount + 1:
+        notes.append(f'This deposit closes Rs {amount:,.0f} of a Rs {total_short:,.0f} gap '
+                     f'— it moves the book toward target without reaching it.')
+    else:
+        notes.append('This deposit lands the book exactly on its target weights.')
+    return dict(amount=round(amount, 2), legs=legs, notes=notes, drift_before=_drift())
+
+
+@sleeves_bp.route('/api/sleeves/allocation')
+def sleeves_allocation():
+    return jsonify(_drift())
+
+
+@sleeves_bp.route('/api/sleeves/allocation/route', methods=['POST'])
+def sleeves_route():
+    amt, _dry = _params()
+    if amt is None:
+        return jsonify(error='amount must be a number between 1 and 1,00,00,000'), 400
+    return jsonify(_route(amt))
+
+
+@sleeves_bp.route('/api/sleeves/allocation/targets', methods=['POST'])
+def sleeves_set_targets():
+    d = request.get_json(silent=True) or {}
+    tg = d.get('targets')
+    if not isinstance(tg, dict) or not tg:
+        return jsonify(error='targets must be an object of book -> weight'), 400
+    try:
+        tg = {k: float(v) for k, v in tg.items()}
+    except Exception:
+        return jsonify(error='weights must be numbers'), 400
+    if abs(sum(tg.values()) - 1.0) > 1e-6:
+        return jsonify(error=f'weights must sum to 1.0 (got {sum(tg.values()):.4f})'), 400
+    a = _alloc()
+    a['targets'] = tg
+    a.setdefault('changelog', []).append(dict(
+        date=str(datetime.now())[:19],
+        text=d.get('note') or ('Targets set to ' +
+                               ', '.join(f'{k} {v*100:.0f}' for k, v in tg.items()))))
+    tmp = ALLOC.with_suffix('.json.tmp')
+    json.dump(a, open(tmp, 'w'), indent=1)
+    os.replace(tmp, ALLOC)
+    return jsonify(_drift())
 
 
 # ───────────────────── Open Alpha: initiate a cycle from the UI ─────────────────────
