@@ -78,8 +78,19 @@ Their panel (stamped PROVISIONAL by the site, "under a methodology review"):
 - **The mechanics are right; the number is not.** Our trade count (121–124) lands close to
   their 164, so we are running their machine — we simply do not get their return, and our
   drawdown is **more than twice** what they publish.
-- **Their −14.8% "worst fall" is unreachable.** Our shallowest honest path is −21%; the median
-  is −34.5%. Exactly the r/142 result for Blue Sky (−11.4% claimed, −22% best reachable).
+- **Their −14.8% "worst fall" is reachable only on the single luckiest path, and only with
+  every optimism switched on.** Measured across 30 seeds (corrected 2026-09-05 — an earlier
+  draft of this file asserted "−21%, unreachable" before the best-seed spread had been
+  computed; that figure is retracted):
+
+  | Arm | Daily-marked DD: best / median / worst | Monthly-marked DD: best / median |
+  |---|---|---|
+  | Honest (realistic fills, 25 bps, after tax) | −27.5% / −34.5% / −43.0% | −20.7% / −28.9% |
+  | Their fills, no costs, no tax | −22.1% / −29.7% / −37.8% | **−14.7%** / −22.0% |
+
+  So −14.8% requires their optimistic pivot fills, zero costs, zero tax, month-end marking
+  **and** the best of 30 selection paths simultaneously. As an expectation it is meaningless;
+  the honest median is −34.5% and the number a plan should use is the worst seed, −43.0%.
 - **Path dependence is the whole story.** On their own dials the seed range spans
   **6.5% to 61.6% CAGR** — 55 points. Their single figure is one draw from that distribution.
   The cause is their sizing: risk 2% ÷ stop 7% = **28.6% of capital per position**, so with 5
