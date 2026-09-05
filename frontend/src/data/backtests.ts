@@ -15600,6 +15600,150 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research\\150_signal_options_overlay\\results\\RESULTS.md',
     ],
   },
+  {
+    slug: 'multiyear-breakout-research152',
+    title: 'Multi-Year Breakout (bananapatterns) — is a years-old ceiling worth clearing, or is this just Open Alpha again?',
+    verdict:
+      'The site sells this as its own screen, so the first question was not "does it work" but "is it something we do not already own". It is three different things, and they get three different verdicts. FIRST, the screen AS PUBLISHED is Open Alpha in disguise: 76-93% of its signals ARE Open Alpha signals (a close above the prior all-time-high close), and it captures 62-92% of everything Open Alpha fires on. Running it would be running the live book twice — the pre-registered duplicate-kill condition, written before the first run, is met by a wide margin. SECOND, the "multi-year" quality itself — the idea that the resistance has STOOD for years — is the part that does not pay: requiring the level to be at least 6 or 12 months old halves the return (22.8% -> 12.9% -> 11.1% CAGR) while Calmar stays flat, which is the signature of de-levering, not alpha. The premise of the screen is its weakest component. THIRD, what is left when you strip the overlap out — a 3-year high that is NOT an all-time high — is a genuinely new and genuinely good signal: 23.45% CAGR [21.74..25.37] at -25.3% drawdown (worst seed -28.2%), Calmar 0.93, after Indian tax and 25 bps a side, across 30 random-selection seeds over 2010-2026, on 1,929 trades at +3.78% per trade, and it keeps 84% of its per-trade edge with its ten best trades deleted. It holds genuinely different stocks from Open Alpha — only 3.8-4.4% of its holding-days coincide. AND WE STILL DID NOT ADOPT IT. It passes four of the five pre-registered complement conditions (+0.174 paired Calmar at a 10% sleeve weight, winning on 30 of 30 paths, beating a plain-cash sleeve by +0.086 Calmar and +2.00pp CAGR) and fails the fifth: correlation 0.426 daily / 0.535 monthly to Open Alpha against a bar of 0.40. Different holdings, same factor — a third long Indian smallcap-breakout sleeve. Run head-to-head on the window both can be measured on, research/147\'s plain GOLD sleeve beats it as a complement at every weight (+0.282 vs +0.240 paired Calmar at 10%) at roughly zero correlation, while MYB wins on raw CAGR by 1.7-3.5pp. The bar was not relaxed after the numbers came in — that is the whole point of writing it down first. Two harness bugs were found and fixed mid-study before any result was used, and both are disclosed on this page.',
+    status: 'COMPLETE',
+    date: '2026-09-05',
+    cardBlurb:
+      'A third bananapatterns screen decoded on the research/142 engine. The published version is 76-93% Open Alpha; the "years-old ceiling" filter halves returns; the distinctive residual is a real 23.5% CAGR system that still lost the third-sleeve contest to gold on correlation.',
+    cardStats: [
+      { label: 'Verdict', value: 'SIGNAL — not adopted' },
+      { label: 'Overlap with Open Alpha', value: '76-93% of signals' },
+      { label: 'Distinctive residual', value: '23.45% CAGR / -25.3% DD / Calmar 0.93' },
+    ],
+    system: {
+      intro: 'Engine is an extension of research/142\'s decoded bananapatterns engine, asserted BIT-IDENTICAL to it (same rupee, same trade count) with the new mechanics switched off. Common mechanics inherited unchanged: IBD-weighted RS percentile >= 70, 20-day median traded value >= Rs 5 cr at t-1, ETFs excluded, buy-stop AT the pivot filled max(pivot, open), close-based stop and moving-average trail.',
+      rows: [
+        { k: 'The signal', v: 'Close above the highest close (or highest high) of the previous N years, N in {2, 3, 5, 10}. A symbol only becomes eligible once it has N x 252 of its OWN prior daily rows, so an 8-month-old listing cannot print a "5-year high".' },
+        { k: 'The three-way split (the study\'s design question)', v: 'INCLUSIVE (all-time highs allowed) · EXCLUSIVE (the multi-year high is BELOW the all-time high, and the breakout close stays below it — the distinctive case) · ATH-ONLY (a control that is approximately Open Alpha).' },
+        { k: 'Base quality', v: 'Pivot age 0 / 6 / 12 months (the level must have HELD that long, computed exactly as "no new N-year high in the last X days"); max distance below the level at setup 12 / 20 / 30%; a 60-day range-tightness filter.' },
+        { k: 'Exits (tested jointly with entry)', v: '-7 / -8 / -10% close stop; trail on a close below SMA 10 / 15 / 20 / 25 / 30 / 50 / 150 ("30-week"); +25% take-profit alone and with a trail.' },
+        { k: 'Sizing (both families)', v: 'Fixed-% of NAV 3x30 / 5x20 / 8x18.75 / 10x10 / 16x6.25, and the SITE\'S OWN risk-based mechanic — position value = (risk% x equity) / stop%, capped at 30% of capital, risk 1 / 1.5 / 2%.' },
+        { k: 'Adopted-candidate spec', v: '3-year high on closes, NOT an all-time high, no age requirement, -8% close stop, exit below SMA-15, 16 slots @ 6.25% of NAV, no market gate, buy-stop at the pivot.' },
+      ],
+    },
+    conditions: {
+      intro: 'Pre-registered in the STATUS doc BEFORE the first run, including the duplicate-kill rule that made this study worth doing at all.',
+      rows: [
+        { k: 'Duplicate-kill rule', v: 'If the inclusive variant shows >= 60% signal overlap with Open Alpha AND the exclusive variant fails the standalone bar, the family dies as a duplicate of a deployed system (the research/145 precedent).' },
+        { k: 'Standalone bar', v: '30-seed median after-tax CAGR >= 20% AND Calmar >= 0.80, worst seed >= 15%, above NIFTYBEES in BOTH windows, surviving deletion of the top-10 trades.' },
+        { k: 'Complement bar', v: '+0.10 Calmar or -2pp drawdown at >= equal CAGR vs the TN+OA 50-50 book, after tax, robust across seeds and offsets, correlation < 0.40 to BOTH legs, and beating a plain-cash sleeve at the same weight.' },
+        { k: 'Windows', v: 'W1 2020-2025 (the site\'s window) and W2 2010-01 -> 2026-09-04 (the longest the data supports). Both must pass. The database holds only 527 symbols from 2005, so 2008 is untestable for a multi-year-high screen — stated up front, not discovered later.' },
+        { k: 'Scale of the search', v: '~580 configurations, ~5,150 book simulations. Disclosed so any single winner is discounted as best-of-580.' },
+        { k: 'Costs / tax / cash', v: '25 / 40 / 60 bps per side; 20% STCG / 12.5% LTCG netted within the Indian FY; idle cash at 5% p.a.' },
+      ],
+    },
+    comparisons: [
+      {
+        title: 'Is it Open Alpha? — signal-date overlap, W2 2010-2026 (highest-close level, no age filter)',
+        columns: ['Family', 'Signals', '% of ITS signals that are ALSO Open Alpha signals', '% of ALL Open Alpha signals it captures'],
+        rows: [
+          ['N = 2 years, inclusive', '19,963', '75.6%', '91.6%'],
+          ['N = 3 years, inclusive', '17,716', '80.2%', '86.3%'],
+          ['N = 5 years, inclusive', '14,929', '86.7%', '78.6%'],
+          ['N = 10 years, inclusive', '9,943', '93.3%', '62.1%'],
+          ['N = 3 years, EXCLUSIVE (the distinctive case)', '3,511', '0.0% by construction — and only 3.8-4.4% HOLDING-day overlap', '0.0%'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'The "multi-year" premise tested directly — how old must the ceiling be? (medians across all cells, W2, after tax)',
+        columns: ['Resistance must have held for', 'CAGR', 'MaxDD', 'Calmar', 'Trades/yr'],
+        rows: [
+          ['0 months (any N-year high)', '22.8%', '-34.8%', '0.67', '70-80'],
+          ['>= 6 months', '12.9%', '-19.1%', '0.68', '20-40'],
+          ['>= 12 months', '11.1%', '-18.1%', '0.61', '6-32'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'Third-sleeve head-to-head on the window BOTH can be measured on (2015-01 -> 2026-09, 10 OA seeds x 3 TN offsets, paired against the same-path TN+OA 50-50 baseline)',
+        columns: ['Third sleeve @ weight', 'CAGR', 'MaxDD', 'Calmar', 'Paired dCalmar', 'Paths won'],
+        rows: [
+          ['— (TN+OA 50-50 baseline)', '29.63%', '-16.10%', '1.79', '—', '—'],
+          ['MYB 10%', '30.09%', '-14.45%', '2.03', '+0.240', '30/30'],
+          ['GOLD 10% (research/147)', '28.36%', '-13.37%', '2.08', '+0.282', '30/30'],
+          ['cash-null 10%', '27.10%', '-14.07%', '1.87', '+0.095', '30/30'],
+          ['MYB 20%', '30.52%', '-12.73%', '2.31', '+0.525', '30/30'],
+          ['GOLD 20%', '27.03%', '-10.54%', '2.49', '+0.712', '30/30'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'Trail length is a property of the WHOLE breakout family, not a discovery about multi-year highs (W2 Calmar, after tax)',
+        columns: ['Trail SMA', '10', '15 (adopted)', '20', '25', '30', '50', '150'],
+        rows: [
+          ['3-yr high, NOT an ATH (the candidate)', '1.07', '0.93', '0.77', '0.79', '0.69', '0.60', '0.22'],
+          ['2-yr high that IS an ATH (Open-Alpha control)', '1.31', '0.92', '0.86', '0.82', '0.78', '0.71', '0.37'],
+        ],
+        heatmap: false,
+      },
+      {
+        title: 'Robustness battery — adopted-candidate spec, W2 2010-2026, 30 seeds unless stated',
+        columns: ['Test', 'Result', 'Read'],
+        rows: [
+          ['30-seed ensemble', '23.45% [21.74..25.37] CAGR, DD -25.3% / worst seed -28.2%, Calmar 0.93', '1,929 trades leaves little room for selection luck'],
+          ['Cost ladder 25 / 40 / 60 bps', '23.45% / 20.39% / 16.90% CAGR (Calmar 0.93 / 0.78 / 0.62)', '~1.7pp of CAGR per +10 bps a side — 115.9 trades/yr is 7.2x book turnover'],
+          ['Delete the top-10 trades', 'mean/trade 3.777% -> 3.161%', 'Not a few lottery tickets'],
+          ['Cap winners at +50% / +100%', '3.164% / 3.652%', 'Same conclusion'],
+          ['2020 crash window', '+2.5% (in-window DD -1.5%)', 'Flat-to-positive in the crash'],
+          ['2018 grind', '+1.8% vs the baseline blend\'s -9.9%', 'The one window where it genuinely helps the pair'],
+          ['2022H1 grind', '-11.9% vs the baseline blend\'s -5.9%', 'It LOSES in the other grind — no clean "earns in grinds" story'],
+        ],
+        heatmap: false,
+      },
+    ],
+    results: {
+      metrics: [
+        { label: 'Inclusive screen = Open Alpha', value: '76-93% signal overlap', tone: 'neg', hint: 'pre-registered duplicate-kill condition met' },
+        { label: '"Years-old ceiling" filter', value: 'halves CAGR, Calmar flat', tone: 'neg', hint: 'de-levering, not alpha' },
+        { label: 'Distinctive residual (30 seeds)', value: '23.45% / -25.3% / Calmar 0.93', tone: 'pos' },
+        { label: 'Holding overlap with Open Alpha', value: '3.8-4.4% of hold-days', hint: 'different stocks' },
+        { label: 'Correlation to Open Alpha', value: '0.426 daily / 0.535 monthly', tone: 'neg', hint: 'same factor — fails the < 0.40 bar' },
+        { label: 'Complement conditions passed', value: '4 of 5', tone: 'neg' },
+      ],
+      tables: [],
+      charts: [
+        { src: '/app/multiyear_breakout_research152.png', caption: 'Growth of Rs 100 (log) and drawdown, 2011 -> Sep-2026, after tax and 25 bps a side: the Multi-Year Breakout sleeve (seed median) against Open Alpha, True North, the deployed TN+OA 50-50 book, a 42/42/15 blend that adds it, and NIFTY 50 / Midcap 150 / Smallcap 250. Every column is on the same window — the first cut of this chart compared a 2006-start baseline against 2010-start candidates and was rebuilt.' },
+      ],
+    },
+    winners: [
+      {
+        config: 'NOT ADOPTED — the screen is a duplicate, its premise is subtractive, and the residual loses the third-sleeve contest to gold',
+        summary: 'The one number that decides it: research/147\'s plain GOLDBEES sleeve delivers +0.282 paired Calmar at a 10% weight with correlation near zero, while this sleeve delivers +0.240 at correlation 0.37-0.56 to the books we already run. Gold is a diversifier; this is more of what the book already owns, wearing a different chart pattern.',
+        metrics: [
+          { k: 'Answer to "is it new?"', v: 'as published, no — 76-93% Open Alpha. Stripped of the overlap, yes: only 3.8-4.4% holding overlap' },
+          { k: 'Answer to "does the multi-year part pay?"', v: 'no — an older ceiling costs about half the return for no Calmar gain' },
+          { k: 'Answer to "should we run it?"', v: 'not as the third sleeve. Gold wins that contest on the pre-registered bar' },
+        ],
+        rejected: [
+          'Pivot-age filters (6 / 12 months) — monotone negative across 24 cells and both windows; closed question',
+          'Concentrated sizing (3x30%, risk-2%) — buys CAGR, costs far more drawdown, Calmar falls in every family',
+          'Market gate ON, fill-at-the-close, tightness filters, +25% take-profits — all lose',
+          'Trail-10 (the best-scoring cell) — edge of the tested range at 140 trades/yr; trail-15 is the plateau\'s honest interior point',
+        ],
+      },
+    ],
+    caveats: [
+      'TWO HARNESS BUGS WERE FOUND AND FIXED MID-STUDY, before any result was used. (1) A rolling max with min_periods = W on a union-index wide frame demands zero missing rows in W trading days — N = 10 collapsed to ONE symbol and 32 signals; fixed with min_periods = 1 plus a separate per-symbol history mask, and Phase A re-run from scratch. This is the same failure class that silently disabled research/142\'s market gate. (2) The first blend pass computed the TN+OA baseline on a 2006 start while every candidate blend ran from 2010, putting the 2008 crash in the baseline only; every blend row was recomputed on the common window and reported PAIRED on the same path.',
+      'WINDOW DEPTH IS THE BINDING CONSTRAINT, and it is the screen\'s own fault: the database holds 2 symbols in 2000-2002 and only 527 from 2005, so an N-year-high screen cannot be tested before 2010 (N <= 5) or 2015 (N = 10). 2008 — the one crash that would discriminate a breakout book — is out of reach for this family.',
+      'N = 10 cells run on a different (2015+) window than N <= 5 and are not directly comparable; their apparent strength is partly a friendlier sample. On the common 2020-25 window, N = 3 and N = 5 beat N = 10.',
+      '"All-time high" means all-time WITHIN OUR DATA. For a 2005-listed stock the all-time high in 2020 is a 15-year high; the 1992 and 2000 bubble peaks are invisible, so the inclusive/exclusive split is approximate for the oldest names.',
+      'The split-adjustment defect matters more here than anywhere else, because a multi-year lookback straddles it: 131 unadjusted price-scale steps were detected and each affected symbol was blacked out for entries from N years before the break to 20 days after. Cost: 0.1-2.4% of signals, reported per cell. Phantom holiday rows were separately checked and are clean (2 days in 2010-2026).',
+      'Survivorship: the universe is today\'s symbol list applied to the past. Every number here is flattered, the pre-2015 ones most.',
+      'Turnover is high — 115.9 trades/yr on 16 slots, roughly 7.2x the book a year, all short-term gains. At -1.7pp of CAGR per +10 bps a side, execution quality decides whether this is a 23% book or a 17% book.',
+      'NO REPLICATION GATE WAS RUN. The site\'s exact dials and its published headline numbers for this screen were never legible, so every setting here is a swept axis. Nothing in this study either confirms or refutes what bananapatterns.com claims for it.',
+      'The four-sleeve result below is EXPLORATORY and post-hoc: 80% TN+OA / 10% gold / 10% MYB scored 28.81% / -11.54% / Calmar 2.43 (+0.628 paired, 30/30 paths) on a favourable 11.7-year window. It is a hypothesis, not a finding, and is registered in the Ops Centre for a pre-registered study by 2026-11-30 — with a GOLD-ONLY null, because the real question is what this adds on top of gold, not on top of nothing.',
+    ],
+    githubLinks: [{ label: 'research/152 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/152_multiyear_breakout' }],
+    projectPaths: [
+      'research\\152_multiyear_breakout\\MULTIYEAR_BREAKOUT_DAILY_SWEEP_STATUS.md',
+      'research\\152_multiyear_breakout\\results\\RESULTS.md',
+    ],
+  },
 ];
 
 export function getStudy(slug: string): BacktestStudy | undefined {

@@ -204,3 +204,6 @@ _stage/
 # never commit env backups (push-protection incident 2026-09-02)
 .env.bak*
 .env.*.bak
+
+# research/152 multi-year breakout: 81 MB wide-frame cache (rebuildable in ~1 min)
+research/152_multiyear_breakout/results/frames_cache.npz

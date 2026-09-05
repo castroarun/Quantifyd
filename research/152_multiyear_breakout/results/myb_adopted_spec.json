@@ -1,0 +1,32 @@
+{
+  "study": "research/152_multiyear_breakout",
+  "family": "N3_close_excl_age0",
+  "n_years": 3,
+  "level": "close",
+  "ath_variant": "excl",
+  "pivot_age_months": 0,
+  "maxdist": 0.2,
+  "tightness": null,
+  "stop_pct": 0.08,
+  "trail_sma": 15,
+  "take_profit": null,
+  "slots": 16,
+  "size_pct": 0.0625,
+  "risk_pct": null,
+  "cap_pct": 0.3,
+  "market_gate": false,
+  "fill": "buy_stop_at_pivot",
+  "cost_bps_per_side": 25,
+  "tax": "20% STCG / 12.5% LTCG, Indian FY netting",
+  "cash_yield": 0.05,
+  "capital": 1000000,
+  "window": [
+    "2010-01-01",
+    "2026-09-04"
+  ],
+  "seeds": 30,
+  "rs_min": 70,
+  "liquidity_floor_inr": 50000000.0,
+  "data_snapshot": "market_data.db 2026-09-04",
+  "built": "2026-09-05"
+}

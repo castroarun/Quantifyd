@@ -111,6 +111,20 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Four-sleeve study TN/OA/GOLD/MYB - pre-registered weight grid (research/152 "
+     "exploratory probe: 80/10/10 = Calmar 2.43 vs 2.08 gold-only, +0.628 paired on 30/30)",
+     "2026-11-30", "SCHEDULED",
+     "research/152 found the multi-year-breakout sleeve (MYB) and r/147's gold sleeve fail in "
+     "DIFFERENT windows (MYB earns in the 2018 grind and loses 2022H1; gold is flat-to-positive "
+     "in both), so a 4-sleeve book beat either on an exploratory, POST-HOC weight search. That "
+     "probe is a hypothesis, not a finding. Before any allocation change: pre-register the weight "
+     "grid, the ranking metric and the adoption bar; run BOTH windows; 30 OA seeds x 3 TN offsets "
+     "paired against the same-path TN+OA 50-50 baseline; include a cash-null AND a gold-only null "
+     "(the relevant question is what MYB adds ON TOP OF gold, not on top of nothing). Note MYB "
+     "FAILED r/152's own correlation condition (0.426 daily / 0.535 monthly to OA vs bar <0.40) - "
+     "the 4-sleeve study must justify overriding that or drop it. Artifacts: "
+     "research/152_multiyear_breakout/results/RESULTS.md, four_sleeve_exploratory.csv, "
+     "myb_vs_gold.csv, myb_equity_seeds.csv."),
     ("N500M paper book judgement (research/148 audit: t=1.40 at 10bps floor, "
      "promotion-shrinkage 1.33->0.62%%/tr - consistent with selection-on-noise)",
      "2027-03-31", "SCHEDULED",

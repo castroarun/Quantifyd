@@ -2,6 +2,37 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-05 — research/152 Multi-Year Breakout: SIGNAL, NOT ADOPTED (screen itself = an Open Alpha duplicate)
+
+Full verdict: `research/152_multiyear_breakout/results/RESULTS.md` · study page
+`/app/backtest/multiyear-breakout-research152`.
+
+Three separate answers to bananapatterns.com's "Multi-Year Breakout" screen:
+
+1. **As published (any multi-year high) — KILL, it is Open Alpha.** 76-93% of its signals
+   ARE OA signals; it captures 62-92% of everything OA fires on. Running it = running OA twice.
+2. **The "multi-year" quality itself — NO EDGE.** Requiring the ceiling to have stood ≥6 /
+   ≥12 months halves CAGR (22.8 → 12.9 → 11.1%) with Calmar flat. It is de-levering dressed
+   as a chart pattern. Closed question — do not re-test.
+3. **The distinctive residual — a real SIGNAL that is still not adopted.** A 3-year high that
+   is NOT an all-time high, trail-15: **23.45% CAGR [21.74..25.37] / −25.3% DD / Calmar 0.93**
+   after tax (30 seeds, 2010–2026), 1,929 trades, +3.78%/trade, robust to deleting its ten
+   best trades. Holding overlap with OA only **3.8-4.4%** — different stocks, same factor
+   (corr 0.43 daily / 0.53 monthly). Passes 4 of 5 pre-registered complement conditions and
+   **fails the correlation leg**; on a like-for-like window **gold beats it as the third
+   sleeve** (+0.282 vs +0.240 paired Calmar at 10% weight, at ~zero correlation).
+
+**PENDING — highest-value follow-up: a pre-registered FOUR-SLEEVE study (TN / OA / GOLD / MYB).**
+The exploratory probe (2015+, 30 paths, NOT pre-registered) put 80% TN+OA / 10% gold / 10% MYB
+at 28.81% / −11.54% / **Calmar 2.43** (+0.628 paired, 30/30 paths) vs 2.08 for gold alone and
+2.03 for MYB alone — they fail in different windows. That number must be re-earned under a
+pre-registered weight grid and bar before it means anything. Registered in the Ops Centre for
+2026-11-30.
+
+Hand-off for the follow-on correlation study (r/154) is written:
+`research/152_multiyear_breakout/results/myb_equity_seeds.csv` (30 seeds, daily, after-tax,
+cash 5%) + `results/myb_adopted_spec.json`.
+
 ## ✅ 2026-09-02 — BananaPatterns replication (research/142): Phases 1+2 DONE — rules decoded & reproduced, published returns NOT
 
 Full verdict: `research/142_bananapatterns_replication/results/RESULTS.md`. Engine decoded
