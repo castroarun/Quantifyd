@@ -171,6 +171,31 @@ Ops & Review Center (section below).
 
 ---
 
+## NEW SYSTEM TO TEST? DISPATCH THE `quant-researcher` AGENT (binding 2026-09-05)
+
+Whenever Arun brings a **new system, strategy idea, published claim (site/video/screenshot),
+"test this", "optimize X", "is this any good"** — or asks to **re-assess an existing book**,
+**audit a paper book that looks green**, or answer **"did we explore everything?"** — dispatch
+the **`quant-researcher`** agent (`.claude/agents/quant-researcher.md`) rather than
+hand-writing a brief.
+
+It carries the whole program so Arun does not have to re-specify it each time: the intake
+interview (with defaults), the replication-before-optimization gate, the data-sourcing
+decision tree (market_data.db vs Kite vs NSE bhavcopy vs external reference series, plus the
+known data defects), sweep breadth and plateau discipline, the robustness statistics
+(seed/offset ensembles, paired comparison, null controls, per-window checks), the after-tax
+and cost-sensitivity arithmetic, the correlation + blend-value test against the live books,
+the standard report package (YoY house format, curves vs the three indices, tradeability
+gate), publishing to the app, and the dated ops review. It also holds the **known dead ends**
+list so killed families are cited, not rediscovered.
+
+Layering: `research/QUANT_RESEARCH_PLAYBOOK.md` stays the doctrine (universal, cross-project);
+the agent is the operational layer on this project's data, infra and books. Keep the guardians
+(`nas-live-guardian`, `weekly-cpr-guardian`) separate — they watch live money on a live clock,
+which is a different job from research.
+
+---
+
 ## QUANT RESEARCH PLAYBOOK — READ BEFORE ANY BACKTEST (binding)
 
 Before conducting **any** investment/trading backtest, sweep, or strategy research,

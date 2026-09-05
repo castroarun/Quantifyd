@@ -157,6 +157,42 @@ No strategy graduates G3 without **all** of these, recorded in RESULTS:
 
 ---
 
+### 6.5 Path dependence, paired comparison and null controls (added 2026-09-05)
+
+Learned the hard way across research/142–150. These decide adoptions; none is optional.
+
+1. **Never report one path.** A book that must choose among more qualifying signals than it
+   has slots is **path-dependent**: which names it owns is set by arbitrary fill ordering.
+   Run a **random-selection seed ensemble** (10 seeds to scan, **30 for an adoption
+   decision**) and report **median [min..max] and the worst seed** — the worst seed is the
+   number the operator actually plans on. A deterministic rank-based book has no seed
+   variance; its analogue is the **12 rebalance-day offsets**, reported the same way. An
+   offset ensemble once *reversed* the ranking a single-offset run had produced.
+2. **Compare A against B paired on the same seed/offset**, then read the distribution of
+   differences. Unpaired ensemble medians lie at small n: a gate that looked like a winner on
+   10-seed medians lost on 20 of 30 paired paths. Report the median paired delta, the win
+   count, and what the loser buys in exchange (insurance with a premium is a legitimate
+   product — just never label it an edge).
+3. **Pre-register the ranking metric and the adoption threshold before running.** Deciding
+   the bar after seeing results is how sweeps lie. Disclose the number of cells tested.
+4. **Null controls matched to the claim** — random-entry, date-matched and drift-matched for
+   screens; a **cash-null at the same weight** for any diversification/sleeve claim (if plain
+   cash does as well, the "diversifier" is just de-levering); and a **promotion-shrinkage
+   check** for anything selected per symbol (promotion-time expectation vs live: a large
+   shrink is the fingerprint of selection-on-noise, not of an edge).
+5. **Per-window behaviour, not averages.** Report crash windows and grind windows separately.
+   Average correlation hides crash convergence — candidates with 0.06–0.15 full-period
+   correlation lost 17–32% inside exactly the crash window the book needed protecting.
+6. **Judge a complement on blend value, not on its own tearsheet.** Pre-register the bar
+   (e.g. +0.10 Calmar or −2pp drawdown at ≥ equal CAGR, after tax, robust across
+   seeds/offsets). A mediocre standalone that lifts the blend is a win; a brilliant standalone
+   that duplicates beta the book already owns is a kill.
+7. **Interactions are real.** Parameters tuned under one regime filter can flip when that
+   filter changes. When one leg of a spec changes, re-check the others jointly rather than
+   assuming the rest still holds.
+
+---
+
 ## 7. Portfolio construction & risk (turning a signal into a book)
 
 - **From R to equity curve.** Per-trade expectancy in R is the signal; convert to a real
