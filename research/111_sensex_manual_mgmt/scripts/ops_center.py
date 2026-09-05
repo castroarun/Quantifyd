@@ -111,6 +111,21 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Flask HTTP wedge - outbound connection leak exhausts the gunicorn thread pool",
+     "2026-09-19", "PENDING",
+     "2026-09-05 (Sat): every /app page and /api route timed out while systemd showed "
+     "quantifyd ACTIVE and APScheduler jobs kept ticking every 10s - so nothing alerted. "
+     "Cause: gunicorn runs ONE worker with 16 gthreads; the worker had accumulated ~79 "
+     "established outbound HTTPS connections (API calls with no timeout that never close). "
+     "Once all 16 threads were parked on dead sockets the app served no requests while "
+     "looking healthy. Restart cleared it instantly (2ms page responses, conns 79->5); "
+     "uptime at failure was ~24h since the 04-Sep 15:45 restart, so treat it as a slow leak "
+     "that WILL recur. TWO fixes owed, neither done: (a) explicit timeouts on every outbound "
+     "call made inside a request handler (and a session with connection pooling/recycling), "
+     "(b) the health watchdog must probe a real HTTP ROUTE - the existing integrity watchdog "
+     "checks the process, which was alive throughout and reported nothing. Until then: if "
+     "pages hang, restart is the remedy (respect the 15:40 IST rule). Re-check by 19-Sep "
+     "whether it recurred and whether the timeout fix has been scheduled."),
     ("research/153 IPO Base - adoption call at 10-20%, then paper-soak decision",
      "2026-10-15", "PENDING",
      "research/153 IPO-Base MID cleared EVERY leg of the pre-registered third-sleeve bar: at "
@@ -149,14 +164,14 @@ REVIEWS = [
      "the 4-sleeve study must justify overriding that or drop it. THIRD CANDIDATE ADDED 2026-09-05: research/153 IPO-Base sleeve is now the strongest complement measured - it PASSES the correlation leg MYB failed (0.16 daily to OA, 0.18 to TN) and its own exploratory 4-sleeve cell (40 OA / 40 TN / 10 gold / 10 IPO) scored 29.05% / -11.55% / Calmar 2.52 on 2015+. The weight grid for this review must therefore span TN / OA / GOLD / MYB / IPO, with the gold-only null as the binding comparison. Artifacts: "
      "research/152_multiyear_breakout/results/RESULTS.md, four_sleeve_exploratory.csv, "
      "myb_vs_gold.csv, myb_equity_seeds.csv. SECOND QUESTION IN THE SAME REVIEW: research/152's "
-     "post-hoc 50-50 pair check found MYB+OA at 28.71%% / -14.5%% / Calmar 1.98 vs the DEPLOYED "
-     "TN+OA at 26.16%% / -16.1%% / 1.56 over 2010-2026 (month-end NAV, 30 paths). Do NOT act on "
+     "post-hoc 50-50 pair check found MYB+OA at 28.71% / -14.5% / Calmar 1.98 vs the DEPLOYED "
+     "TN+OA at 26.16% / -16.1% / 1.56 over 2010-2026 (month-end NAV, 30 paths). Do NOT act on "
      "it as it stands: that window excludes 2008, which is the True North gate's entire "
      "documented case (r/144) and is untestable for a multi-year-high screen because the "
      "database holds only 527 symbols from 2005. Answer it with a pre-registered bar, a "
      "gate-matched comparison, and a crash-era proxy - or leave TN alone."),
     ("N500M paper book judgement (research/148 audit: t=1.40 at 10bps floor, "
-     "promotion-shrinkage 1.33->0.62%%/tr - consistent with selection-on-noise)",
+     "promotion-shrinkage 1.33->0.62%/tr - consistent with selection-on-noise)",
      "2027-03-31", "SCHEDULED",
      "Judge at n>=100 closed trades or 2027-03-31, whichever first. PASS bar "
      "(pre-registered, research/148): net-of-10bps expectancy > 0 with t>=2. "
