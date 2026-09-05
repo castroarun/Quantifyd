@@ -767,13 +767,13 @@ ORB_DEFAULTS = {
     'twilio_auth_token': os.getenv('TWILIO_AUTH_TOKEN', ''),
     'twilio_whatsapp_from': os.getenv('TWILIO_FROM_WHATSAPP', 'whatsapp:+14155238886'),
     'twilio_whatsapp_to': os.getenv('TWILIO_TO_WHATSAPP', ''),
-    'notify_on_entry': True,
-    'notify_on_exit': True,
-    'notify_on_sl': True,
-    'notify_on_target': True,
+    'notify_on_entry': False,   # 2026-09-04 (Arun): ORB is a paper book - no per-trade email
+    'notify_on_exit': False,    # 2026-09-04: silences SL_HIT / EOD_SQUAREOFF / V9T_LOCK50_BE mails
+    'notify_on_sl': False,      # 2026-09-04
+    'notify_on_target': False,  # 2026-09-04
     'notify_on_blocked': False,        # Too many, keep quiet
     'notify_on_risk': True,
-    'notify_on_system': True,
+    'notify_on_system': False,  # 2026-09-04: silences '14:30 trail activated' / 'Day Initialized'
     'notify_eod_report': False,
     'notify_midmorning_status': True,   # 10:30 mid-morning status (email + WhatsApp)
 

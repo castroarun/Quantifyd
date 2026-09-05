@@ -133,5 +133,32 @@
  ],
  "invested": 446348.0,
  "note": "Seeded 04-Sep-2026 from Arun-executed CNC fills (top-16 by RS of the day's 21 triggered candidates). LIQUIDCASE 1757u sold to fund. Deliberate override of the Dec-5 soak gate. Exits manual-assisted: 15:18 checker alerts; no automated selling yet.",
- "trades": []
+ "trades": [],
+ "navcurve": [
+  {
+   "d": "2026-09-04",
+   "nav": 446697
+  }
+ ],
+ "capital": 446348.68,
+ "cash": 0.0,
+ "fund_flows": [
+  {
+   "ts": "2026-09-04 14:49:08.392401",
+   "kind": "deposit",
+   "amount": 446348.68,
+   "via": "seed 04-Sep-2026 (backfilled by the D1 migration)",
+   "positions_touched": true
+  }
+ ],
+ "dividend": {
+  "hwm": 446697.0,
+  "cap": null,
+  "reserve": 0.0,
+  "ledger": [],
+  "last_flow_ts": "2026-09-05 21:16:22.105642",
+  "adopted": "2026-09-05",
+  "anchored_on": "oa_real",
+  "note": "Re-anchored 05-Sep-2026 from the paper model (HWM Rs n/a) to the real book. Nothing earned by the paper model is distributable."
+ }
 }

@@ -1,59 +1,58 @@
 {
-  "open": {
-    "entry_day": "2026-09-02",
-    "expiry": "2026-09-08",
-    "dte_at_entry": 6,
-    "spot_at_entry": 23855.7,
-    "credit": 80.25,
-    "credit_inr": 52160,
-    "max_loss_inr": 110340,
-    "legs": [
-      {
-        "strike": 24050,
-        "type": "CE",
-        "side": "SELL",
-        "qty": 650,
-        "entry": 70.3,
-        "ltp": 54.0,
-        "pnl": 10595,
-        "entry_time": "15:10"
-      },
-      {
-        "strike": 23650,
-        "type": "PE",
-        "side": "SELL",
-        "qty": 650,
-        "entry": 42.5,
-        "ltp": 12.4,
-        "pnl": 19565,
-        "entry_time": "15:10"
-      },
-      {
-        "strike": 24300,
-        "type": "CE",
-        "side": "BUY",
-        "qty": 650,
-        "entry": 17.9,
-        "ltp": 7.75,
-        "pnl": -6597,
-        "entry_time": "15:10"
-      },
-      {
-        "strike": 23400,
-        "type": "PE",
-        "side": "BUY",
-        "qty": 650,
-        "entry": 14.65,
-        "ltp": 4.0,
-        "pnl": -6922,
-        "entry_time": "15:10"
-      }
-    ],
-    "entry_time": "15:10",
-    "cur_value": 54.65,
-    "day_pnl": 16560
-  },
+  "open": null,
   "history": [
+    {
+      "entry_day": "2026-09-02",
+      "exit_day": "2026-09-04",
+      "expiry": "2026-09-08",
+      "spot_at_entry": 23855.7,
+      "spot_at_exit": 23935.15,
+      "credit": 80.25,
+      "exit_value": 54.8,
+      "pnl": 16463,
+      "legs": [
+        {
+          "strike": 24050,
+          "type": "CE",
+          "side": "SELL",
+          "qty": 650,
+          "entry": 70.3,
+          "ltp": 54.45,
+          "pnl": 10302,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 23650,
+          "type": "PE",
+          "side": "SELL",
+          "qty": 650,
+          "entry": 42.5,
+          "ltp": 12.05,
+          "pnl": 19792,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 24300,
+          "type": "CE",
+          "side": "BUY",
+          "qty": 650,
+          "entry": 17.9,
+          "ltp": 7.75,
+          "pnl": -6597,
+          "entry_time": "15:10"
+        },
+        {
+          "strike": 23400,
+          "type": "PE",
+          "side": "BUY",
+          "qty": 650,
+          "entry": 14.65,
+          "ltp": 3.95,
+          "pnl": -6955,
+          "entry_time": "15:10"
+        }
+      ]
+    },
     {
       "entry_day": "2026-08-26",
       "exit_day": "2026-08-28",

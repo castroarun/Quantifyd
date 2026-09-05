@@ -57,15 +57,6 @@
    "src": "backtest"
   },
   {
-   "symbol": "HAPPYFORGE",
-   "qty": 31,
-   "buy": 1650.7,
-   "entry_date": "2026-07-29",
-   "pivot": 1650.7,
-   "signal_date": "2026-07-29",
-   "src": "backtest"
-  },
-  {
    "symbol": "WELCORP",
    "qty": 28,
    "buy": 1848.5,
@@ -145,122 +136,89 @@
    "pivot": 387.05,
    "signal_date": "2026-09-03",
    "src": "live"
+  },
+  {
+   "symbol": "WELCORP",
+   "qty": 24,
+   "buy": 2649.2,
+   "entry_date": "2026-09-04",
+   "pivot": 2553.6,
+   "signal_date": "2026-09-03",
+   "src": "live"
   }
  ],
  "pending": [
   {
-   "symbol": "DEEPINDS",
-   "pivot": 717.95,
-   "rs": 88.6,
-   "signal_date": "2026-09-03"
+   "symbol": "ACMESOLAR",
+   "pivot": 409.15,
+   "rs": 84.2,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "ENTERO",
-   "pivot": 1809.9,
-   "rs": 92.4,
-   "signal_date": "2026-09-03"
+   "symbol": "BLISSGVS-BE",
+   "pivot": 648.65,
+   "rs": 99.8,
+   "signal_date": "2026-09-04"
+  },
+  {
+   "symbol": "CHENNPETRO",
+   "pivot": 1444.1,
+   "rs": 90.1,
+   "signal_date": "2026-09-04"
+  },
+  {
+   "symbol": "CRAFTSMAN",
+   "pivot": 11253.0,
+   "rs": 85.0,
+   "signal_date": "2026-09-04"
+  },
+  {
+   "symbol": "FCL",
+   "pivot": 50.79,
+   "rs": 93.5,
+   "signal_date": "2026-09-04"
   },
   {
    "symbol": "INOXINDIA",
    "pivot": 2177.9,
-   "rs": 93.3,
-   "signal_date": "2026-09-03"
+   "rs": 93.6,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "IOLCP",
-   "pivot": 194.95,
-   "rs": 96.7,
-   "signal_date": "2026-09-03"
+   "symbol": "QPOWER",
+   "pivot": 1488.0,
+   "rs": 91.6,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "IRISDOREME",
-   "pivot": 59.27,
-   "rs": 94.8,
-   "signal_date": "2026-09-03"
+   "symbol": "RATNAVEER",
+   "pivot": 306.02,
+   "rs": 95.9,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "KMEW",
-   "pivot": 3051.9,
-   "rs": 97.6,
-   "signal_date": "2026-09-03"
+   "symbol": "ROSSTECH",
+   "pivot": 1136.2,
+   "rs": 79.7,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "KTKBANK",
-   "pivot": 337.0,
-   "rs": 90.6,
-   "signal_date": "2026-09-03"
+   "symbol": "SBC",
+   "pivot": 44.09,
+   "rs": 89.0,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "MANINDS",
-   "pivot": 768.2,
-   "rs": 92.7,
-   "signal_date": "2026-09-03"
+   "symbol": "SMLMAH",
+   "pivot": 5808.0,
+   "rs": 87.4,
+   "signal_date": "2026-09-04"
   },
   {
-   "symbol": "MANORAMA",
-   "pivot": 1958.7,
-   "rs": 77.3,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "NAVINFLUOR",
-   "pivot": 8675.5,
-   "rs": 84.7,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "NITINSPIN",
-   "pivot": 630.75,
-   "rs": 90.9,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "PTCIL",
-   "pivot": 22755.0,
-   "rs": 78.7,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "REDINGTON",
-   "pivot": 366.0,
-   "rs": 87.6,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "SBCL",
-   "pivot": 1105.05,
-   "rs": 97.1,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "SHILPAMED",
-   "pivot": 949.3,
-   "rs": 99.2,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "SPORTKING",
-   "pivot": 229.91,
-   "rs": 95.6,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "SSWL",
-   "pivot": 357.25,
-   "rs": 92.6,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "TMB",
-   "pivot": 932.6,
-   "rs": 90.7,
-   "signal_date": "2026-09-03"
-  },
-  {
-   "symbol": "WELCORP",
-   "pivot": 2553.6,
-   "rs": 99.6,
-   "signal_date": "2026-09-03"
+   "symbol": "WELSPUNLIV",
+   "pivot": 207.26,
+   "rs": 88.6,
+   "signal_date": "2026-09-04"
   }
  ],
  "nav": [
@@ -6899,6 +6857,10 @@
   {
    "date": "2026-09-03",
    "nav": 1157828.0
+  },
+  {
+   "date": "2026-09-04",
+   "nav": 1030361.0
   }
  ],
  "trades": [
@@ -25799,12 +25761,151 @@
    "ret_pct": 13.56,
    "reason": "trail_sma20",
    "src": "backtest"
+  },
+  {
+   "symbol": "HAPPYFORGE",
+   "entry_date": "2026-07-29",
+   "exit_date": "2026-09-04",
+   "buy": 1650.7,
+   "sell": 2240.0,
+   "qty": 31,
+   "net_pnl": 17967.0,
+   "ret_pct": 35.7,
+   "reason": "trail_sma15",
+   "src": "live"
   }
  ],
- "missed": [],
+ "missed": [
+  {
+   "symbol": "SHILPAMED",
+   "pivot": 949.3,
+   "rs": 99.2,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KMEW",
+   "pivot": 3051.9,
+   "rs": 97.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SBCL",
+   "pivot": 1105.05,
+   "rs": 97.1,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "IOLCP",
+   "pivot": 194.95,
+   "rs": 96.7,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SPORTKING",
+   "pivot": 229.91,
+   "rs": 95.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "IRISDOREME",
+   "pivot": 59.27,
+   "rs": 94.8,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "INOXINDIA",
+   "pivot": 2177.9,
+   "rs": 93.3,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "MANINDS",
+   "pivot": 768.2,
+   "rs": 92.7,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SSWL",
+   "pivot": 357.25,
+   "rs": 92.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ENTERO",
+   "pivot": 1809.9,
+   "rs": 92.4,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "NITINSPIN",
+   "pivot": 630.75,
+   "rs": 90.9,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "TMB",
+   "pivot": 932.6,
+   "rs": 90.7,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KTKBANK",
+   "pivot": 337.0,
+   "rs": 90.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "DEEPINDS",
+   "pivot": 717.95,
+   "rs": 88.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "REDINGTON",
+   "pivot": 366.0,
+   "rs": 87.6,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "NAVINFLUOR",
+   "pivot": 8675.5,
+   "rs": 84.7,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "PTCIL",
+   "pivot": 22755.0,
+   "rs": 78.7,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  },
+  {
+   "symbol": "MANORAMA",
+   "pivot": 1958.7,
+   "rs": 77.3,
+   "signal_date": "2026-09-03",
+   "why": "book_full"
+  }
+ ],
  "started": "2020-01-01",
  "seeded_from": "History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-15 SMA, -8% stop, 16 slots @6.25%, NO gate; median seed 8, 2020-01-01 -> 2026-09-03, 1718 trades); LIVE paper from 2026-09-02, re-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 gate refuted + was NaN-dead since Apr-26; 16 slots halves path dependence). Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased to the momentum book NAV so the two sleeves stay equal-sized.",
- "last_run": null,
+ "last_run": "2026-09-04 18:40:02.600007",
  "fund_flows": [
   {
    "ts": "2026-09-03 15:26:47.901931",
@@ -25844,10 +25945,10 @@
  ],
  "sweep": {
   "symbol": "CASHIETF",
-  "units": 107.719,
-  "cost": 116120.4
+  "units": 112.844,
+  "cost": 121689.74
  },
- "interest_earned": 0.0,
+ "interest_earned": 42.69,
  "dividend": {
   "hwm": 1036879.0,
   "cap": null,
@@ -25855,5 +25956,7 @@
   "ledger": [],
   "last_flow_ts": "2026-09-03 20:10:45.887639",
   "adopted": "2026-09-03"
- }
+ },
+ "gate_weak": true,
+ "data_source": "db"
 }
