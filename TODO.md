@@ -1228,3 +1228,12 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
 ## Notes
 - NIFTY lot size = 65 (2026). 5 lots = 325 contracts/leg.
 - Reference spread (Sensibull): 23600/23400 PE, ~78 debit, R/R 1.56, max loss ≈ ₹25k @ 5 lots.
+
+### research/151 — BananaPatterns "VCP" screen — DONE 2026-09-05, verdict NO EDGE
+
+- Replication gate PARTIAL (62.2% joint match). Their exit engine reproduces 31/32 ground-truth trades exactly; their entry pivot is an exact prior close but carries no volatility-contraction structure, and no fixed lookback can fit it.
+- Published claim (25.99x / +72.1% CAGR / -14.8% worst fall) REFUTED: 32.4% CAGR [6.5..61.6] at -34.5% on their own dials, after tax and costs, 30 seeds.
+- Killed by its own null control: shrinking the pivot lookback toward no-pattern-at-all monotonically improves the book, so the screen subtracts value.
+- Portfolio: corr 0.749 to the live Open Alpha book (bar <0.40); best blend weight adds +0.033 Calmar (bar +0.10) and loses to a plain cash sleeve at the same weight.
+- Published at `/app/backtest/vcp-breakout-research151`. Deliverables for study r/154 in place: `research/151_vcp_breakout/results/vcp_equity_seeds.csv` (30 after-tax daily curves) and `vcp_adopted_spec.json`.
+- Dated obligation registered in the Ops & Review Centre: re-open only on a published, reproducible VCP definition (due 2027-03-05).

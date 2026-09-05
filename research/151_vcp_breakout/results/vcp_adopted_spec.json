@@ -1,0 +1,53 @@
+{
+  "study": "research/151_vcp_breakout",
+  "name": "VCP breakout (bananapatterns VCP screen, decoded approximation)",
+  "words": "Long-only NSE cash book. A stock qualifies when its CLOSE breaks above the highest close of the prior 30 trading days (the screen's pattern pivot), while the previous close sat below that pivot and within 20% of it, the 20-day median traded value is at least Rs 5 crore as of the previous day, ETFs are excluded, and the IBD-weighted relative-strength percentile (2*r63 + r126 + r189 + r252, ranked across eligible names) is at least 70. The order is a buy-stop at the pivot, filled at max(pivot, open). A position is cut when the CLOSE falls 8% below the fill, and winners are trailed out at the first CLOSE below the 15-day simple moving average. 16 slots at 6.25% of NAV each, cash-constrained, no leverage, no market-regime gate.",
+  "params": {
+    "pivot_n": 30,
+    "near_pct": 0.2,
+    "rs_min": 70.0,
+    "stop_pct": 0.08,
+    "exit_kind": "sma15",
+    "breakeven_at": 0.0,
+    "slots": 16,
+    "sizing": "fixed",
+    "risk_pct": 0.02,
+    "cap_pct": 0.3,
+    "size_pct": 0.0625,
+    "cost_bps": 25.0,
+    "fill": "realistic",
+    "gate": "",
+    "gate_sma": 200,
+    "tax": true,
+    "cash_yield": 0.05,
+    "start": "2006-01-01",
+    "end": "2026-09-01",
+    "selection": "random",
+    "capwin": 0.0,
+    "drop_topn": 0
+  },
+  "basis": {
+    "costs_bps_per_side": 25.0,
+    "tax": "20% STCG / 12.5% LTCG, Indian FY loss-netting with carry-forward",
+    "idle_cash_yield": 0.05,
+    "fills": "realistic max(pivot, open)",
+    "seeds": 30,
+    "window": "2006-01-01..2026-09-01",
+    "selection": "random among same-day candidates when slots are scarce"
+  },
+  "results": {
+    "cagr_median": 36.09,
+    "cagr_min": 31.51,
+    "cagr_max": 38.26,
+    "maxdd_median": -40.78,
+    "maxdd_worst": -42.86,
+    "calmar_median": 0.892,
+    "trades_median": 5247,
+    "win_rate_median": 45.1
+  },
+  "caveats": [
+    "Survivorship: Kite lists only current instruments; delisted names absent.",
+    "The site's VCP definition is unpublished; this is the best-matching approximation (62% joint trade match on their 40-trade ground truth).",
+    "Pre-2015 coverage is thin (2006 ~528 priced symbols) so the early window is survivorship-flattered."
+  ]
+}

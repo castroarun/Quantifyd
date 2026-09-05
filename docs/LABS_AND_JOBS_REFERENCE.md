@@ -131,3 +131,7 @@ smaller NAV at its own next step.
 
 - **N500M** - review 2027-03-31 or n>=100: pass = net-of-10bps expectancy > 0, t>=2. Audit found t=1.40 at the 10bps floor and 53% promotion-shrinkage (expected +1.33%/tr -> live +0.62%): currently consistent with selection-on-noise. Paper only.
 - **I75WR** - review 2026-12-31 or n>=40: pass = net expectancy > 0 with t>=2 and every config with >=10 trades non-negative. Only Config C has fired (8 trades, one symbol); check why A/B produce no trades.
+
+## research/151 — BananaPatterns "VCP" screen (review due 2027-03-05)
+
+Verdict **NO EDGE**. The screen reproduces the site exit engine exactly (31/32 trades) but its "volatility contraction pattern" is absent from its own published trades, a null control shows the pattern subtracts value, and the book correlates 0.75 with the live Open Alpha sleeve and loses the blend test to plain cash. Re-open only on a published, reproducible VCP definition. Study: `research/151_vcp_breakout/results/RESULTS.md`; page: `/app/backtest/vcp-breakout-research151`.

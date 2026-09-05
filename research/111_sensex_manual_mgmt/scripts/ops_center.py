@@ -111,6 +111,9 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("BananaPatterns screen family - re-open ONLY on new evidence (research/151 VCP verdict: NO EDGE)",
+     "2027-03-05", "SCHEDULED",
+     "research/151 killed the site VCP screen: their published trades contain NO volatility contraction (pivot ages 1-157 bars, 11/37 bases with zero contractions), the null control shows a SHORTER pivot lookback always scores better (2-day null Calmar 2.63 vs 30-day 1.28) so the pattern subtracts value, correlation to the live Open Alpha book is 0.749 daily / 0.759 monthly (bar <0.40), and the best blend weight adds +0.033 Calmar against a +0.10 bar while LOSING to a plain cash sleeve. RE-OPEN CRITERION (pre-registered): only if the site publishes an explicit, reproducible VCP definition (contraction count, tightness ratio, base depth, volume condition) OR supplies a trade list that our 30-day closing-high reconstruction fails to explain in a NEW way. Absent that, cite this study and decline. Artifacts: research/151_vcp_breakout/results/RESULTS.md, p1d_family_scan.csv, p6g_cells.csv, vcp_adopted_spec.json, vcp_equity_seeds.csv; published at /app/backtest/vcp-breakout-research151."),
     ("Four-sleeve study TN/OA/GOLD/MYB - pre-registered weight grid (research/152 "
      "exploratory probe: 80/10/10 = Calmar 2.43 vs 2.08 gold-only, +0.628 paired on 30/30)",
      "2026-11-30", "SCHEDULED",
@@ -124,7 +127,13 @@ REVIEWS = [
      "FAILED r/152's own correlation condition (0.426 daily / 0.535 monthly to OA vs bar <0.40) - "
      "the 4-sleeve study must justify overriding that or drop it. Artifacts: "
      "research/152_multiyear_breakout/results/RESULTS.md, four_sleeve_exploratory.csv, "
-     "myb_vs_gold.csv, myb_equity_seeds.csv."),
+     "myb_vs_gold.csv, myb_equity_seeds.csv. SECOND QUESTION IN THE SAME REVIEW: research/152's "
+     "post-hoc 50-50 pair check found MYB+OA at 28.71%% / -14.5%% / Calmar 1.98 vs the DEPLOYED "
+     "TN+OA at 26.16%% / -16.1%% / 1.56 over 2010-2026 (month-end NAV, 30 paths). Do NOT act on "
+     "it as it stands: that window excludes 2008, which is the True North gate's entire "
+     "documented case (r/144) and is untestable for a multi-year-high screen because the "
+     "database holds only 527 symbols from 2005. Answer it with a pre-registered bar, a "
+     "gate-matched comparison, and a crash-era proxy - or leave TN alone."),
     ("N500M paper book judgement (research/148 audit: t=1.40 at 10bps floor, "
      "promotion-shrinkage 1.33->0.62%%/tr - consistent with selection-on-noise)",
      "2027-03-31", "SCHEDULED",
