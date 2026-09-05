@@ -1,0 +1,13 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (25s)
+[ctx]   loaded 1600/2596 (37s)
+[ctx]   loaded 2400/2596 (49s)
+[ctx] wide panel (5276, 2596) (66s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (73s)
+[19:58:54] OA navs 2006-01-02->2026-09-04 (5128, 30); TN navs 2006-04-03->2026-09-04 (5067, 12)
+[19:58:54] PHASE R — replication of the r/153 sleeve (arm A, no parking)
+[19:58:59]   cell A_incumbent done
+[19:58:59] SWEEP DONE

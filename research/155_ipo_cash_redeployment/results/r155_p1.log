@@ -1,0 +1,20 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (8s)
+[ctx]   loaded 1600/2596 (17s)
+[ctx]   loaded 2400/2596 (25s)
+[ctx] wide panel (5276, 2596) (41s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (48s)
+[20:00:57] OA navs 2006-01-02->2026-09-04 (5128, 30); TN navs 2006-04-03->2026-09-04 (5067, 12)
+[20:00:57] resume: 1 cells already in paths.csv
+[20:00:57] PHASE 1 — parking asset bounds (T+1, reserve 0, daily, pro-rata, tax=full)
+[20:01:19]   cell P1_B_OA done
+[20:01:43]   cell P1_C_TN done
+[20:02:09]   cell P1_D_MIX done
+[20:02:34]   cell P1_N_NB done
+[20:02:42]   cell P1_B_OA_frictionless done
+[20:02:51]   cell P1_C_TN_frictionless done
+[20:02:59]   cell P1_D_MIX_frictionless done
+[20:02:59] SWEEP DONE

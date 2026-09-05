@@ -1,0 +1,11 @@
+[
+ {"label": "A_incumbent", "asset": null},
+ {"label": "E_gate_OA", "asset": "OA", "gateN": 25, "settle": 1, "reserve": 0,
+  "cadence": "monthly", "sell": "lifo"},
+ {"label": "CONT_OA_best_T1", "asset": "OA", "settle": 1, "reserve": 2,
+  "cadence": "monthly", "sell": "lifo"},
+ {"label": "CONT_OA_T0", "asset": "OA", "settle": 0, "reserve": 1,
+  "cadence": "weekly", "sell": "prorata"},
+ {"label": "E_gate_NB_null", "asset": "NB", "gateN": 25, "settle": 1, "reserve": 0,
+  "cadence": "daily", "sell": "lifo"}
+]

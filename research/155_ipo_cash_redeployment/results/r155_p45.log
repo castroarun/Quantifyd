@@ -1,0 +1,37 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (8s)
+[ctx]   loaded 1600/2596 (22s)
+[ctx]   loaded 2400/2596 (35s)
+[ctx] wide panel (5276, 2596) (51s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (58s)
+[20:17:49] OA navs 2006-01-02->2026-09-04 (5128, 30); TN navs 2006-04-03->2026-09-04 (5067, 12)
+[20:17:49] resume: 92 cells already in paths.csv
+[20:17:49] PHASE 4 — cost / tax ladders
+[20:17:54]   cell P4_A_c25 done
+[20:18:01]   cell P4_OA_c25_full done
+[20:18:08]   cell P4_OA_c25_txn done
+[20:18:12]   cell P4_A_c40 done
+[20:18:19]   cell P4_OA_c40_full done
+[20:18:26]   cell P4_OA_c40_txn done
+[20:18:30]   cell P4_A_c60 done
+[20:18:36]   cell P4_OA_c60_full done
+[20:18:43]   cell P4_OA_c60_txn done
+[20:18:43] gate N=25: pool empty on 19.0% of days (0s)
+[20:18:49]   cell P4_E25_OA_c25_full done
+[20:18:54]   cell P4_E25_OA_c25_txn done
+[20:19:00]   cell P4_E25_OA_c40_full done
+[20:19:06]   cell P4_E25_OA_c40_txn done
+[20:19:11]   cell P4_E25_OA_c60_full done
+[20:19:17]   cell P4_E25_OA_c60_txn done
+[20:19:17] PHASE 5 — cost / tax ladder on the gated arm (reserve 0, monthly, LIFO)
+[20:19:23]   cell P5_E25_OA_c25_full done
+[20:19:29]   cell P5_E25_OA_c25_txn done
+[20:19:35]   cell P5_E25_OA_c40_full done
+[20:19:40]   cell P5_E25_OA_c40_txn done
+[20:19:46]   cell P5_E25_OA_c60_full done
+[20:19:52]   cell P5_E25_OA_c60_txn done
+[20:19:57]   cell P5_E25_OA_frictionless done
+[20:19:57] SWEEP DONE

@@ -1,0 +1,25 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (7s)
+[ctx]   loaded 1600/2596 (14s)
+[ctx]   loaded 2400/2596 (21s)
+[ctx] wide panel (5276, 2596) (35s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (42s)
+[20:10:09] OA navs 2006-01-02->2026-09-04 (5128, 30); TN navs 2006-04-03->2026-09-04 (5067, 12)
+[20:10:09] resume: 62 cells already in paths.csv
+[20:10:09] PHASE 3 — forward-visibility gate, mech={'settle': 1, 'reserve': 2, 'cadence': 'monthly', 'sell': 'lifo'}
+[20:10:09] gate N=25: pool empty on 19.0% of days (0s)
+[20:10:14]   cell P3_E25_OA done
+[20:10:15] gate N=50: pool empty on 19.0% of days (0s)
+[20:10:20]   cell P3_E50_OA done
+[20:10:20] gate N=100: pool empty on 19.0% of days (0s)
+[20:10:26]   cell P3_E100_OA done
+[20:10:31]   cell P3_E25_TN done
+[20:10:37]   cell P3_E50_TN done
+[20:10:42]   cell P3_E100_TN done
+[20:10:48]   cell P3_E25_MIX done
+[20:10:53]   cell P3_E50_MIX done
+[20:10:58]   cell P3_E100_MIX done
+[20:10:58] SWEEP DONE

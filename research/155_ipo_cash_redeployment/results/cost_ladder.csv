@@ -1,0 +1,19 @@
+arm,tax,bps,cagr,dd,calmar,d_cagr,d_calmar,win_cagr,win_calmar,n
+"GATED (E25, OA, reserve 0, monthly, LIFO)",full,25,29.0246,-13.6616,2.1262,0.1048,0.0063,30,21,30
+"GATED (E25, OA, reserve 0, monthly, LIFO)",full,40,28.4766,-13.8362,2.0641,0.0047,-0.001,18,13,30
+"GATED (E25, OA, reserve 0, monthly, LIFO)",full,60,27.8082,-14.1597,1.9555,-0.1278,-0.024,0,0,30
+"GATED (E25, OA, reserve 0, monthly, LIFO)",txn,25,29.1337,-13.6616,2.1388,0.2125,0.0139,30,21,30
+"GATED (E25, OA, reserve 0, monthly, LIFO)",txn,40,28.587,-13.815,2.075,0.113,0.0069,30,19,30
+"GATED (E25, OA, reserve 0, monthly, LIFO)",txn,60,27.9174,-14.136,1.9692,-0.0184,-0.0112,9,5,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",full,25,29.0118,-13.6457,2.1504,0.0965,0.0065,30,21,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",full,40,28.5034,-13.7579,2.0754,0.0358,0.0021,30,21,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",full,60,27.8892,-13.9397,1.9962,-0.0448,-0.0039,1,1,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",txn,25,29.0876,-13.6305,2.1586,0.1729,0.0119,30,21,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",txn,40,28.5792,-13.7579,2.0844,0.1125,0.0075,30,21,30
+"GATED (E25, OA, reserve 2, monthly, LIFO)",txn,60,27.9652,-13.9253,2.0016,0.0328,0.0014,29,18,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",full,25,28.9448,-15.7493,1.8431,-0.0655,-0.358,12,0,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",full,40,28.551,-15.98,1.7958,-0.0642,-0.3526,12,0,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",full,60,27.9906,-16.2362,1.7233,-0.0334,-0.3474,13,0,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",txn,25,29.2432,-15.2344,1.8948,0.2457,-0.25,27,0,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",txn,40,28.828,-15.3971,1.8332,0.2922,-0.2513,26,0,30
+"CONTINUOUS (OA, reserve 2, monthly, LIFO)",txn,60,28.3073,-15.6224,1.7782,0.2955,-0.2375,27,0,30

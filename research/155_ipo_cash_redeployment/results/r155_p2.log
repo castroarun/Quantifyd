@@ -1,0 +1,67 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (8s)
+[ctx]   loaded 1600/2596 (15s)
+[ctx]   loaded 2400/2596 (23s)
+[ctx] wide panel (5276, 2596) (38s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (44s)
+[20:03:45] OA navs 2006-01-02->2026-09-04 (5128, 30); TN navs 2006-04-03->2026-09-04 (5067, 12)
+[20:03:45] resume: 8 cells already in paths.csv
+[20:03:45] PHASE 2 — mechanics sweep on asset=OA
+[20:04:04]   cell P2_OA_s1_r0_daily_prorata done
+[20:04:09]   cell P2_OA_s1_r0_daily_lifo done
+[20:04:15]   cell P2_OA_s1_r0_daily_fifo done
+[20:04:26]   cell P2_OA_s1_r0_weekly_prorata done
+[20:04:31]   cell P2_OA_s1_r0_weekly_lifo done
+[20:04:37]   cell P2_OA_s1_r0_weekly_fifo done
+[20:04:44]   cell P2_OA_s1_r0_monthly_prorata done
+[20:04:50]   cell P2_OA_s1_r0_monthly_lifo done
+[20:04:56]   cell P2_OA_s1_r0_monthly_fifo done
+[20:05:06]   cell P2_OA_s1_r1_daily_prorata done
+[20:05:11]   cell P2_OA_s1_r1_daily_lifo done
+[20:05:16]   cell P2_OA_s1_r1_daily_fifo done
+[20:05:23]   cell P2_OA_s1_r1_weekly_prorata done
+[20:05:29]   cell P2_OA_s1_r1_weekly_lifo done
+[20:05:34]   cell P2_OA_s1_r1_weekly_fifo done
+[20:05:40]   cell P2_OA_s1_r1_monthly_prorata done
+[20:05:47]   cell P2_OA_s1_r1_monthly_lifo done
+[20:05:53]   cell P2_OA_s1_r1_monthly_fifo done
+[20:06:00]   cell P2_OA_s1_r2_daily_prorata done
+[20:06:07]   cell P2_OA_s1_r2_daily_lifo done
+[20:06:12]   cell P2_OA_s1_r2_daily_fifo done
+[20:06:19]   cell P2_OA_s1_r2_weekly_prorata done
+[20:06:24]   cell P2_OA_s1_r2_weekly_lifo done
+[20:06:29]   cell P2_OA_s1_r2_weekly_fifo done
+[20:06:35]   cell P2_OA_s1_r2_monthly_prorata done
+[20:06:41]   cell P2_OA_s1_r2_monthly_lifo done
+[20:06:47]   cell P2_OA_s1_r2_monthly_fifo done
+[20:06:55]   cell P2_OA_s0_r0_daily_prorata done
+[20:07:01]   cell P2_OA_s0_r0_daily_lifo done
+[20:07:07]   cell P2_OA_s0_r0_daily_fifo done
+[20:07:14]   cell P2_OA_s0_r0_weekly_prorata done
+[20:07:20]   cell P2_OA_s0_r0_weekly_lifo done
+[20:07:25]   cell P2_OA_s0_r0_weekly_fifo done
+[20:07:32]   cell P2_OA_s0_r0_monthly_prorata done
+[20:07:37]   cell P2_OA_s0_r0_monthly_lifo done
+[20:07:43]   cell P2_OA_s0_r0_monthly_fifo done
+[20:07:50]   cell P2_OA_s0_r1_daily_prorata done
+[20:07:55]   cell P2_OA_s0_r1_daily_lifo done
+[20:08:01]   cell P2_OA_s0_r1_daily_fifo done
+[20:08:07]   cell P2_OA_s0_r1_weekly_prorata done
+[20:08:13]   cell P2_OA_s0_r1_weekly_lifo done
+[20:08:18]   cell P2_OA_s0_r1_weekly_fifo done
+[20:08:24]   cell P2_OA_s0_r1_monthly_prorata done
+[20:08:30]   cell P2_OA_s0_r1_monthly_lifo done
+[20:08:36]   cell P2_OA_s0_r1_monthly_fifo done
+[20:08:41]   cell P2_OA_s0_r2_daily_prorata done
+[20:08:47]   cell P2_OA_s0_r2_daily_lifo done
+[20:08:52]   cell P2_OA_s0_r2_daily_fifo done
+[20:08:57]   cell P2_OA_s0_r2_weekly_prorata done
+[20:09:03]   cell P2_OA_s0_r2_weekly_lifo done
+[20:09:08]   cell P2_OA_s0_r2_weekly_fifo done
+[20:09:14]   cell P2_OA_s0_r2_monthly_prorata done
+[20:09:20]   cell P2_OA_s0_r2_monthly_lifo done
+[20:09:26]   cell P2_OA_s0_r2_monthly_fifo done
+[20:09:26] SWEEP DONE

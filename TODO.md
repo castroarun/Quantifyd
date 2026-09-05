@@ -1326,3 +1326,18 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
 - **ARUN DECIDES.** Nothing deployed; no live engine, crontab or spec touched.
   Dated obligation registered in the Ops & Review Centre (due 2026-10-15, merged with the
   r/153 adoption call; the r/152 four-sleeve review is marked DONE by this study).
+
+## Done - 2026-09-05 - research/155 IPO idle-cash redeployment
+
+- **CONCLUDED - the idle cash stays in cash.** Tested Arun's proposal to park the IPO sleeve's
+  idle cash in Open Alpha / True North during listing droughts and pull it back when supply
+  returns, with every pull-back friction modelled (25/40/60 bps both ways, tax on the realised
+  gain with FY netting, T+1 settlement, pro-rata/LIFO/FIFO lot policy). The premise is
+  CONFIRMED and the mechanism WORKS (0 missed entries in 20 years), but it can only touch 2.7%
+  of the portfolio and buys +0.105pp CAGR / +0.006 Calmar - gone by 40 bps. Continuous
+  redeployment costs 0.375 of Calmar and takes the sleeve's correlation to Open Alpha from
+  0.21 to 0.90. A plain static TN35/OA35/IPO30 beats the whole mechanism.
+  Published: `/app/backtest/ipo-idle-cash-redeployment-research155`.
+  Nothing deployed; research/153's spec unchanged.
+- **Dated review registered:** 31-Mar-2027 - revisit only if the IPO sleeve's weight exceeds
+  30% or the pipeline has been in drought for more than 12 consecutive months.
