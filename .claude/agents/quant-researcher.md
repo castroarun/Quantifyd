@@ -208,6 +208,11 @@ premium, not an edge.
   windows (2018, 2022H1) separately. Average correlation hides crash convergence: r/146's
   mean-reversion candidates looked beautifully uncorrelated (0.06–0.15) while losing 17–32%
   in exactly the 2008 window the pair needed protecting.
+- **Measure a window's drawdown from the running peak of the FULL curve, never from the
+  window's first bar** (r/154, 2026-09-05). Slicing 2008-01-01→2008-12-31 and taking the
+  drawdown *within* the slice hides a fall that began at a Dec-2007 peak — it reported −2.4%
+  where the truth was −16.5%. This convention error ran through r/146–r/153; any per-window
+  drawdown quoted from those studies is suspect until re-audited.
 - **Outlier dependence.** Delete the top-10 trades and re-report; cap winners at +50% and
   +100% and re-report. If CAGR collapses, the "edge" is a few lottery tickets. (Open Alpha
   keeps ~90% of its growth rate with its ten best trades of two decades deleted — that is
@@ -252,7 +257,7 @@ killed candidates that looked fine standalone.
 |---|---|---|---|---|
 | True North (momentum) | Nifty-200, top-8 equal-weight, monthly rebalance, NIFTYBEES 100-SMA weekly liquidate-all gate, 15-day-low Donchian stop | ~20.7% (12-offset median) | −25.1% | 0.88 |
 | Open Alpha (ATH breakout) | 16 slots @ 6.25%, no market gate, −8% close stop, 15-SMA close trail | ~33.8% (30-seed median; worst seed 32.4%) | −27.3% | 1.24 |
-| **TN + OA 50-50, monthly rebalanced** | **the deployed pair — this is the baseline to beat** | **27.2%** | **−16.4%** | **1.65** |
+| **TN + OA 50-50, monthly rebalanced** | **the deployed pair — the baseline to beat** | **27.7%** | **−17.0%** (2008; daily −17.15%) | **1.68** |
 | (candidate) + GOLDBEES 10% | 45 / 45 / 10 | 28.4% | −12.0% | 2.37 (2015+ window) |
 
 **Compute for any candidate:**
@@ -270,10 +275,13 @@ that lifts the blend is a **win**; a brilliant standalone that duplicates existi
 **kill** — full-universe TN scored +2.2pp CAGR standalone and still failed, because it
 re-imported the smallcap beta OA already harvests (blend Calmar 1.65 → 1.47).
 
-**Structural finding to carry forward:** the TN gate plus OA's per-stock stops have already
-stripped the crash tail (blend drawdown inside the 2008 window is just −2.4%). Crash-alpha
-candidates therefore solve a problem the pair does not have; the pair's residual pain is in
-**grinding phases**. A genuine complement must earn in grinds and stay flat in crashes.
+**Structural finding to carry forward (corrected by r/154, 2026-09-05):** the pair's deepest
+hole in twenty years IS the 2008 crash — **−16.5% on monthly marks, −17.15% daily**, peaking
+Dec-2007. An earlier claim that the gate and stops had "already stripped the crash tail"
+(−2.4%) was an artifact of measuring a window's drawdown from the window's own first bar; it
+is **retracted**. The pair therefore needs BOTH: something that earns in grinds (2018 −12.7%,
+2022H1 −11.0%) and something that cushions crashes. r/154's admitted frontier holds gold in
+**every** vector, which is the crash leg; IPO-base supplies the grind leg.
 
 ---
 
