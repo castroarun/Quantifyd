@@ -1,0 +1,5 @@
+vs,corr_daily,corr_monthly
+OA,0.426,0.535
+TN_off0,0.379,0.438
+TN_off4,0.372,0.434
+TN_off8,0.371,0.406
