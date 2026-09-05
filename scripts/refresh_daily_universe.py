@@ -78,14 +78,36 @@ def main():
     for i, (s, mx) in enumerate(rows, 1):
         frm = datetime.strptime(mx[:10], '%Y-%m-%d') - timedelta(days=5)
         try:
-            # delete the overlap window so refreshed (final) candles can replace
-            # any partial ones — the store layer inserts only missing dates
+            # Delete the overlap window so refreshed (final) candles can replace any
+            # partial ones — the store layer inserts only missing dates.
+            #
+            # KEEP A COPY FIRST (05-Sep-2026). This delete used to be unconditional, and
+            # when the re-download came back empty the rows were simply gone: INDOMIM lost
+            # four real bars and its last close went from 03-Sep back to 28-Aug. It never
+            # bit before because only established names were refreshed and they always
+            # return data; extending the refresh to young names — many of them illiquid or
+            # suspended, and 63 of which returned nothing — turned a latent bug into a
+            # live one. A refresh must never be able to destroy history.
+            cutoff = frm.strftime('%Y-%m-%d')
+            keep = wconn.execute(
+                "select * from market_data_unified where symbol=? and timeframe='day' "
+                "and date >= ?", (s, cutoff)).fetchall()
             wconn.execute("delete from market_data_unified where symbol=? and "
-                          "timeframe='day' and date >= ?",
-                          (s, frm.strftime('%Y-%m-%d')))
+                          "timeframe='day' and date >= ?", (s, cutoff))
             wconn.commit()
             n_ok, n_fail, errs = dm.download_data([s], timeframe='day',
                                                   from_date=frm, to_date=datetime.now())
+            got = wconn.execute(
+                "select count(*) from market_data_unified where symbol=? and "
+                "timeframe='day' and date >= ?", (s, cutoff)).fetchone()[0]
+            if got == 0 and keep:
+                ncols = len(keep[0])
+                wconn.executemany(
+                    f"insert or ignore into market_data_unified values "
+                    f"({','.join('?' * ncols)})", keep)
+                wconn.commit()
+                print(f'  restored {len(keep)} bars for {s} (download returned nothing)',
+                      flush=True)
             ok += n_ok
             fail += n_fail
         except Exception as e:
