@@ -5,7 +5,10 @@ disguise, 76-93% signal overlap) · the "multi-year" quality itself = NO EDGE (a
 is subtractive) · the distinctive residual = SIGNAL, real and standalone-viable, but NOT
 ADOPTED (fails the pre-registered correlation leg of the complement bar; r/147's gold sleeve
 dominates it on risk-adjusted terms at ~zero correlation).**
-Full verdict: `results/RESULTS.md`.
+Full verdict: `results/RESULTS.md`. A post-hoc addendum also found that over
+2010-2026 an MYB+OA pair scores above the deployed TN+OA pair on both axes - flagged,
+caveated (2008 is excluded and untestable here) and registered for a pre-registered
+partner study rather than acted on.
 Study: `research/152_multiyear_breakout/` · Started 2026-09-05 · Host: VPS 94.136.185.54 ·
 Engine: extension of `research/142_bananapatterns_replication/scripts/bluesky_replay.py`
 
@@ -208,6 +211,7 @@ their CAGR / drawdown / trade count, report the match honestly, and only then op
 | 2026-09-05 15:07 | **BLEND BUG FOUND AND FIXED** | the first blend pass compared a 2006-start TN+OA baseline against 2010-start candidate blends (2008 in the baseline only). `myb_blend2.py` recomputes EVERY row on the common window and reports PAIRED deltas. Baseline corrected 27.16 -> 26.16% CAGR, DD -16.10% |
 | 2026-09-05 15:09 | MYB-vs-GOLD head-to-head + exploratory 4-sleeve probe | gold wins the complement contest at every weight; 4-sleeve probe flagged NOT pre-registered |
 | 2026-09-05 15:12 | RESULTS.md written, verdict recorded | study CLOSED |
+| 2026-09-05 15:30 | Addendum: literal 50-50 pair checks | **MYB+OA 50-50 = 28.71% / -14.5% / Calmar 1.98 vs the deployed TN+OA 26.16% / -16.1% / 1.56 (month-end NAV, 2010-2026).** NOT a recommendation - the window excludes 2008, which is TN gate's entire case and is untestable for this screen. Added to the 2026-11-30 ops review |
 
 ---
 

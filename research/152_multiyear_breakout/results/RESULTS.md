@@ -228,6 +228,55 @@ not relaxed after the blend numbers came in looking good.
 
 ---
 
+## Addendum — the literal 50-50 pair checks (requested), and the finding they surfaced
+
+Monthly-rebalanced pairs on the common window 2010-01-04 → 2026-09-03, after tax, 25 bps,
+idle cash 5%. **These rows are computed on MONTH-END NAV** (the r/146 blend convention), so
+their drawdowns are shallower than the daily-measured ones quoted elsewhere in this document
+— every row here is comparable to every other row here, and to nothing outside this table.
+
+| Book | CAGR (median) | MaxDD (median / worst path) | Calmar (median / worst) |
+|---|---|---|---|
+| MYB alone | 23.40% [21.70 .. 25.33] | −17.7% / −20.9% | 1.29 / 1.13 |
+| Open Alpha alone | 32.78% [32.04 .. 35.76] | −25.1% / −28.8% | 1.32 / 1.11 |
+| True North alone | 18.67% [14.52 .. 19.19] | −20.0% / −21.4% | 0.96 / 0.68 |
+| **TN + OA 50-50 (the deployed pair)** | **26.16%** | **−16.1% / −18.9%** | **1.56 / 1.39** |
+| **MYB + OA 50-50** | **28.71%** [27.83 .. 30.45] | **−14.5% / −17.2%** | **1.98 / 1.64** |
+| MYB + TN 50-50 | 21.44% | −14.1% / −16.1% | 1.50 / 1.21 |
+| MYB + OA + TN, a third each | 25.58% | −11.8% / −13.3% | **2.19 / 1.85** |
+
+Paired on the same path: **MYB + OA beats OA alone on 30/30 paths** (−4.13pp CAGR for
++10.74pp of drawdown, ΔCalmar +0.713) and **MYB + TN beats TN alone on 30/30 paths**
+(+2.98pp CAGR, +5.66pp drawdown, ΔCalmar +0.601).
+
+### The uncomfortable number, stated plainly
+
+**Over 2010-2026, replacing True North with this sleeve in the 50-50 pair scores better on
+both axes: 28.71% / −14.5% / Calmar 1.98 versus the deployed 26.16% / −16.1% / Calmar 1.56.**
+
+That is **not** a recommendation, and it is not what this study was chartered to test. Before
+anyone acts on it:
+
+1. **The window excludes 2008 — and that is precisely True North's case.** TN's entire
+   documented value is its NIFTYBEES 100-SMA liquidate-all gate protecting the book in a
+   crash; r/144 showed the incumbent gate won its own 71-cell bake-off specifically because
+   only NIFTYBEES-based gates protect 2008. A multi-year-high screen **cannot be tested in
+   2008 at all** (see caveats), so this comparison is run on exactly the era that flatters
+   the ungated challenger.
+2. **MYB has no market gate** (gate-ON lost in the sweep) and no crash evidence beyond 2020,
+   which it passed only mildly (+2.5%).
+3. **The comparison is post-hoc.** It was not pre-registered, it emerged from a requested
+   sanity check, and the r/135 and r/145 precedents both show how a strong single-window
+   partner comparison collapses out of sample.
+4. True North is a **live real-money book**; MYB has never traded a rupee.
+
+**Registered as a dated obligation** rather than acted on: the four-sleeve review
+(2026-11-30) now also carries the TN-versus-MYB partner question, to be answered with a
+pre-registered bar, a crash-era proxy for the untestable 2008 window, and a gate-matched
+comparison.
+
+---
+
 ## Files
 
 | File | Contents |
@@ -243,5 +292,6 @@ not relaxed after the blend numbers came in looking good.
 | `results/blend152_corrected.csv` · `blend152_paired.csv` · `blend152_windows.csv` | same-window blend, paired deltas, per-window |
 | `results/myb_vs_gold.csv` | head-to-head against the r/147 gold sleeve |
 | `results/four_sleeve_exploratory.csv` | **exploratory, not pre-registered** |
+| `results/pair_5050.csv` | the literal 50-50 pair checks (month-end NAV) |
 | `results/yoy_table.html` · `yoy_table.csv` | house-format YoY table |
 | `results/myb_curve_vs_indices.png` | growth of ₹100 (log) + drawdown panel vs NIFTY 50 / Midcap 150 / Smallcap 250 |
