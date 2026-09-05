@@ -1,0 +1,68 @@
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (8s)
+[ctx]   loaded 1600/2596 (15s)
+[ctx]   loaded 2400/2596 (23s)
+[ctx] wide panel (5276, 2596) (40s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (47s)
+ctx built in 47s
+panel: 2005-06-01 -> 2026-09-04 (5276, 786)
+
+=== SIGNAL COUNTS (whole panel) ===
+ age_m    L  depth  rs_policy  signals  symbols
+     3   25   0.25    relaxed      517      237
+     3   25   0.35    relaxed      678      281
+     3   25   0.50    relaxed      739      288
+     3   40   0.25    relaxed      165      100
+     3   40   0.35        off      268      141
+     3   40   0.35    relaxed      268      141
+     3   40   0.35      short        2        2
+     3   40   0.35     strict        0        0
+     3   40   0.50    relaxed      336      162
+     3   60   0.25    relaxed       12       12
+     3   60   0.35    relaxed       26       24
+     3   60   0.50    relaxed       33       31
+     6   25   0.25    relaxed     1336      371
+     6   25   0.35    relaxed     1666      408
+     6   25   0.50    relaxed     1792      416
+     6   40   0.25    relaxed      659      246
+     6   40   0.35        off      986      298
+     6   40   0.35    relaxed      986      298
+     6   40   0.35      short      356      139
+     6   40   0.35     strict        0        0
+     6   40   0.50    relaxed     1177      321
+     6   60   0.25    relaxed      239      115
+     6   60   0.35    relaxed      472      188
+     6   60   0.50    relaxed      660      220
+    12   25   0.25    relaxed     2878      455
+    12   25   0.35    relaxed     3470      493
+    12   25   0.50    relaxed     3662      503
+    12   40   0.25    relaxed     1619      371
+    12   40   0.35        off     2322      430
+    12   40   0.35    relaxed     2322      430
+    12   40   0.35      short     1010      266
+    12   40   0.35     strict        0        0
+    12   40   0.50    relaxed     2663      455
+    12   60   0.25    relaxed      724      239
+    12   60   0.35    relaxed     1394      325
+    12   60   0.50    relaxed     1836      363
+    24   25   0.25    relaxed     3976      515
+    24   25   0.35    relaxed     4793      553
+    24   25   0.50    relaxed     5052      561
+    24   40   0.25    relaxed     2298      428
+    24   40   0.35        off     4414      516
+    24   40   0.35    relaxed     3363      498
+    24   40   0.35      short     1998      389
+    24   40   0.35     strict      951      203
+    24   40   0.50    relaxed     3855      522
+    24   60   0.25    relaxed     1060      289
+    24   60   0.35    relaxed     2121      392
+    24   60   0.50    relaxed     2844      446
+
+=== ONE BOOK (age12, L40, depth .35, relaxed RS, 8 slots, 18.75%) ===
+  seed 1:   55.72x CAGR  21.47% DD  -36.52% n  318 tpy  15.4 win 46.2% mean  +8.88% inv   50% passed 2004 [0s]
+  seed 2:   43.89x CAGR  20.07% DD  -37.29% n  330 tpy  16.0 win 44.8% mean  +8.16% inv   50% passed 1992 [0s]
+  seed 3:   46.54x CAGR  20.42% DD  -35.35% n  325 tpy  15.7 win 46.2% mean  +8.37% inv   51% passed 1997 [0s]
+DONE

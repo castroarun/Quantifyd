@@ -2,6 +2,62 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-05 — research/153 IPO Base breakout: STRATEGY CANDIDATE — the first third sleeve to clear every leg of the bar
+
+Full verdict: `research/153_ipo_base/results/RESULTS.md` · study page
+`/app/backtest/ipo-base-breakout-research153`.
+
+**The study was really a data-integrity study.** We have no listing-date table, and the obvious
+proxy (a symbol's first row in `market_data_unified`) is only **70% accurate**. Bulk
+data-onboarding waves masquerade as IPOs — 451 symbols start on 2005-01-03, 15 on 2025-05-26
+including **ABB, listed in the 1990s** — and pre-listing junk rows sit on reused tickers
+(DELHIVERY carries 8 rows at ₹5–11 from 2016 before its real ₹536 listing: a **93× jump inside
+what a base window would measure**). A vetted table now exists at
+`research/153_ipo_base/results/listing_dates.csv` (1,293 accepted listings, 2006–2026) and was
+**validated before any backtest ran: 48/48 known NSE IPOs accepted, date exact to ±3 days for
+47/48, 0/12 known onboardings leaked.** Reusable by any future study that needs listing dates.
+
+**Adopted spec (IPO-Base MID):** listed within 6 months · 25-day base, depth ≤ 30% · buy-stop at
+the base high · −8% close stop · exit below SMA-20 · **+25% take-profit** · 8 slots @ 18.75% ·
+no market gate. Standalone, 30 seeds, after tax and 25 bps a side, 2006→Sep-2026:
+**31.03% CAGR [28.82..33.44], worst seed 28.82%, −20.88% drawdown, Calmar 1.50**, 32.6 trades a
+year at +4.89% per trade net.
+
+**As a third sleeve at 20% beside True North + Open Alpha: +1.13pp CAGR, −3.63pp drawdown,
++0.56 Calmar** (27.14 / −16.42 / 1.65 → **28.27 / −12.79 / 2.21**), correlation **0.16** daily
+to OA and **0.18** to TN — lower than OA↔TN at 0.42 — and it beats a plain-cash sleeve at the
+same weight by 5.60pp of CAGR. **Every leg of the pre-registered bar is met with room.** On the
+common 2015+ window it beats r/147's gold on return at comparable Calmar: gold buys Calmar by
+*lowering* return, this buys it while *raising* return.
+
+### ⏳ PENDING — Arun's adoption call on IPO-Base MID at 10–20% of the book
+Nothing was deployed. If adopted, the next step is a **G5 paper soak with a pre-registered fill
+criterion** (modeled vs actual fill within 0.5% of the pivot, miss rate < 15%) and a dated
+review — because **the entire edge lives in getting filled AT the pivot**: filling at the
+signal-day close instead costs **−14.08pp of CAGR and loses on 30 of 30 paired seeds**.
+Registered in the Ops Centre for 2026-10-15.
+
+### ⏳ PENDING — send the site's IPO-Base panel dials + claimed numbers when legible
+No replication gate was run (the screenshots did not come through). The engine is built so the
+gate is a one-command run. Note in advance that two dials the site exposes — *Trail 30-week*
+and *Breakout close* — are the **worst** settings we tested, so their published figures cannot
+be assumed comparable.
+
+### ⏳ PENDING — fold IPO into the four-sleeve study already owed from r/152
+The exploratory cell 40% OA / 40% TN / 10% gold / 10% IPO scored **29.05% / −11.55% /
+Calmar 2.52** on 2015+. That is one un-swept cell, not a finding. It joins the r/152 four-sleeve
+question under the same Ops Centre review (2026-11-30) and must be run with a **gold-only null**
+— the real question is what each candidate adds *on top of gold*.
+
+**Operator caveats to carry forward:** the book earned only the idle-cash yield in **2013 and
+2014** (no trades at all — the Indian IPO pipeline supplied 8–17 usable listings a year in
+2012–14 against 80–182 in 2021–25); 2020–2026 supplies much of the record; capacity is
+comfortable to about a ₹10 cr portfolio and binds near ₹50 cr.
+
+Hand-off for the follow-on correlation study (r/154) is written:
+`research/153_ipo_base/results/ipo_equity_seeds.csv` (30 seeds, daily, after-tax, cash 5%)
++ `results/ipo_adopted_spec.json`.
+
 ## ✅ 2026-09-05 — research/152 Multi-Year Breakout: SIGNAL, NOT ADOPTED (screen itself = an Open Alpha duplicate)
 
 Full verdict: `research/152_multiyear_breakout/results/RESULTS.md` · study page

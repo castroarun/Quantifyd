@@ -207,3 +207,6 @@ _stage/
 
 # research/152 multi-year breakout: 81 MB wide-frame cache (rebuildable in ~1 min)
 research/152_multiyear_breakout/results/frames_cache.npz
+
+# research/153 heavy per-trade dumps (regeneratable from scripts/ipo_g3.py)
+research/153_ipo_base/results/g3_trades_*.csv

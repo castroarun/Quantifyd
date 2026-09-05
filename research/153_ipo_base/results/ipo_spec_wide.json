@@ -1,0 +1,21 @@
+{
+  "name": "IPO-Base WIDE (pre-registered CAGR-max)",
+  "max_age_m": 24,
+  "min_bars": 25,
+  "L": 15,
+  "max_depth": 0.3,
+  "rs_policy": "off",
+  "rs_min": 70.0,
+  "tight_max": null,
+  "pivot_mode": "close",
+  "stop": 0.07,
+  "trail": 20,
+  "target": 0.25,
+  "slots": 8,
+  "size_pct": 0.1875,
+  "risk_pct": null,
+  "stop_mode": "pct",
+  "cost": 0.0025,
+  "gate": false,
+  "fill_close": false
+}

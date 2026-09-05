@@ -111,6 +111,27 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/153 IPO Base - adoption call at 10-20%, then paper-soak decision",
+     "2026-10-15", "PENDING",
+     "research/153 IPO-Base MID cleared EVERY leg of the pre-registered third-sleeve bar: at "
+     "20% weight beside TN+OA it adds +1.13pp CAGR, -3.63pp drawdown and +0.56 Calmar "
+     "(27.14/-16.42/1.65 -> 28.27/-12.79/2.21), at correlation 0.16 daily to Open Alpha and "
+     "0.18 to True North (LOWER than OA-to-TN at 0.42), and it beats a plain-cash sleeve at the "
+     "same weight by +5.60pp of CAGR. Standalone 30 seeds 2006-2026 after tax: 31.03% CAGR "
+     "[28.82..33.44], worst seed 28.82%, MaxDD -20.88%, Calmar 1.50, 32.6 trades/yr at "
+     "+4.89%/trade net. ARUN TO DECIDE ADOPTION - nothing is deployed. PASS CRITERION IF "
+     "ADOPTED: a G5 paper soak whose criterion is pre-registered BEFORE it starts - actual fills "
+     "within 0.5% of the modelled pivot and a miss rate under 15% - because the ENTIRE edge "
+     "lives in the entry price: filling at the signal-day close instead of the pivot buy-stop "
+     "costs -14.08pp of CAGR and loses on 30 of 30 paired seeds. Two operator caveats to restate "
+     "at the review: the book earned ONLY the idle-cash yield in 2013 and 2014 (no trades at all "
+     "- the IPO pipeline supplied 8-17 usable listings a year in 2012-14 against 80-182 in "
+     "2021-25), and capacity is comfortable to about a Rs 10 cr portfolio but binds near Rs 50 "
+     "cr. IF NOT ADOPTED, record why and close. Artifacts: "
+     "research/153_ipo_base/results/RESULTS.md; listing_dates.csv (a VETTED NSE listing-date "
+     "table, 1,293 listings 2006-2026, validated at 48/48 recall and 0/12 leaks - REUSABLE by "
+     "any future study that needs listing dates); ipo_equity_seeds.csv; ipo_adopted_spec.json. "
+     "Published at /app/backtest/ipo-base-breakout-research153."),
     ("BananaPatterns screen family - re-open ONLY on new evidence (research/151 VCP verdict: NO EDGE)",
      "2027-03-05", "SCHEDULED",
      "research/151 killed the site VCP screen: their published trades contain NO volatility contraction (pivot ages 1-157 bars, 11/37 bases with zero contractions), the null control shows a SHORTER pivot lookback always scores better (2-day null Calmar 2.63 vs 30-day 1.28) so the pattern subtracts value, correlation to the live Open Alpha book is 0.749 daily / 0.759 monthly (bar <0.40), and the best blend weight adds +0.033 Calmar against a +0.10 bar while LOSING to a plain cash sleeve. RE-OPEN CRITERION (pre-registered): only if the site publishes an explicit, reproducible VCP definition (contraction count, tightness ratio, base depth, volume condition) OR supplies a trade list that our 30-day closing-high reconstruction fails to explain in a NEW way. Absent that, cite this study and decline. Artifacts: research/151_vcp_breakout/results/RESULTS.md, p1d_family_scan.csv, p6g_cells.csv, vcp_adopted_spec.json, vcp_equity_seeds.csv; published at /app/backtest/vcp-breakout-research151."),
@@ -125,7 +146,7 @@ REVIEWS = [
      "paired against the same-path TN+OA 50-50 baseline; include a cash-null AND a gold-only null "
      "(the relevant question is what MYB adds ON TOP OF gold, not on top of nothing). Note MYB "
      "FAILED r/152's own correlation condition (0.426 daily / 0.535 monthly to OA vs bar <0.40) - "
-     "the 4-sleeve study must justify overriding that or drop it. Artifacts: "
+     "the 4-sleeve study must justify overriding that or drop it. THIRD CANDIDATE ADDED 2026-09-05: research/153 IPO-Base sleeve is now the strongest complement measured - it PASSES the correlation leg MYB failed (0.16 daily to OA, 0.18 to TN) and its own exploratory 4-sleeve cell (40 OA / 40 TN / 10 gold / 10 IPO) scored 29.05% / -11.55% / Calmar 2.52 on 2015+. The weight grid for this review must therefore span TN / OA / GOLD / MYB / IPO, with the gold-only null as the binding comparison. Artifacts: "
      "research/152_multiyear_breakout/results/RESULTS.md, four_sleeve_exploratory.csv, "
      "myb_vs_gold.csv, myb_equity_seeds.csv. SECOND QUESTION IN THE SAME REVIEW: research/152's "
      "post-hoc 50-50 pair check found MYB+OA at 28.71%% / -14.5%% / Calmar 1.98 vs the DEPLOYED "

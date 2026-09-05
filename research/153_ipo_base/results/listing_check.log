@@ -1,0 +1,181 @@
+============================================================================================
+[A] LISTING-DATE PROXY vs KNOWN NSE LISTING DATES
+============================================================================================
+symbol        known        first_row     delta_d  first_close    first_vol  verdict
+ACMESOLAR     2024-11-13   2024-11-13          0       252.69     22939368  EXACT
+ADANIWILMAR   2022-02-08   ABSENT               
+AJAXENGG      2025-02-17   2025-02-17          0       595.40      6686060  EXACT
+AWL           2022-02-08   2022-02-08          0       268.25    135533461  EXACT
+BAJAJHFL      2024-09-16   2024-09-16          0       165.00    636727334  EXACT
+BANDHANBNK    2018-03-27   2018-03-27          0       476.85     91036634  EXACT
+BHARTIHEXA    2024-04-12   2024-04-12          0       813.30     53465498  EXACT
+BRAINBEES     2024-08-13   ABSENT               
+BURGERKING    2020-12-14   ABSENT               
+CAMPUS        2022-05-09   2022-05-09          0       378.90     58753140  EXACT
+CAMS          2020-10-01   2020-10-05          4       280.30      3190475  LATE
+CHEMPLASTS    2021-08-24   2021-08-24          0       535.60     14253757  EXACT
+DELHIVERY     2022-05-24   2016-01-18      -2318        11.20          200  EARLY-JUNK
+DMART         2017-03-21   2017-03-21          0       647.80     85711090  EXACT
+FUSION        2022-11-15   2016-02-22      -2458         5.95         6501  EARLY-JUNK
+GLAND         2020-11-20   2020-11-20          0      1819.55     11310647  EXACT
+GLOBALHEALTH  2022-11-16   ABSENT               
+HAPPSTMNDS    2020-09-17   2020-09-17          0       358.78     52000357  EXACT
+HDFCLIFE      2017-11-17   2017-11-17          0       344.60    168836552  EXACT
+HEXT          2025-02-19   2025-02-19          0       749.56     18950180  EXACT
+HYUNDAI       2024-10-22   2024-10-22          0      1802.15     28619978  EXACT
+IDEAFORGE     2023-07-07   2023-07-07          0      1294.95      9712139  EXACT
+IEX           2017-10-26   2017-10-23         -3        54.30    100373940  EARLY-JUNK
+INDIGOPNTS    2021-02-02   2021-02-02          0      3087.74     12652036  EXACT
+IRCTC         2019-10-14   2019-10-14          0       145.55    226353035  EXACT
+IREDA         2023-11-29   2023-11-29          0        60.00    579810954  EXACT
+JIOFIN        2023-08-21   2023-08-21          0       248.51     74715306  EXACT
+LATENTVIEW    2021-11-23   2019-02-22      -1005        92.20            1  EARLY-JUNK
+LICI          2022-05-17   2022-05-17          0       427.60     97585754  EXACT
+MANKIND       2023-05-09   2023-05-09          0      1422.30     33193796  EXACT
+MAPMYINDIA    2021-12-21   2021-12-21          0      1384.06     13396843  EXACT
+MAZDOCK       2020-10-12   2017-12-04      -1043         0.00      7154666  EARLY-JUNK
+MEDANTA       2022-11-16   2022-11-18          2       414.00      3521333  EXACT
+NIVABUPA      2024-11-14   2024-11-14          0        74.02     38862503  EXACT
+NTPCGREEN     2024-11-27   2024-11-27          0       121.65    300960804  EXACT
+NUVOCO        2021-08-23   2021-08-23          0       531.70     22080190  EXACT
+NYKAA         2021-11-10   2021-11-10          0       367.65    205947786  EXACT
+OLAELEC       2024-08-09   2024-08-09          0        91.20    525179173  EXACT
+PAYTM         2021-11-18   2021-11-18          0      1560.80     23955434  EXACT
+POLICYBZR     2021-11-15   2021-11-15          0      1202.30     36379065  EXACT
+PREMIERENE    2024-09-03   2024-09-03          0       838.86     58922092  EXACT
+QUALITYPOWER  2025-02-24   ABSENT               
+RBA           2020-12-14   2020-12-14          0       135.00    186792834  EXACT
+ROUTE         2020-01-28   2020-09-21        237       651.30     29189660  LATE
+SAGILITY      2024-11-12   2024-11-12          0        29.32    270448925  EXACT
+SBICARD       2020-03-16   2015-01-01      -1901       312.85          393  EARLY-JUNK
+SENORES       2025-01-01   2024-12-30         -2       557.05     14234437  EXACT
+STANDARD      2025-01-01   ABSENT               
+STARHEALTH    2021-12-10   2016-01-04      -2167      1076.00           10  EARLY-JUNK
+SWIGGY        2024-11-13   2024-11-13          0       456.00    112960103  EXACT
+TATATECH      2023-11-30   2023-11-30          0      1313.00     46579444  EXACT
+VMM           2024-12-18   2024-12-18          0       111.93    728732202  EXACT
+ZOMATO        2021-07-23   ABSENT               
+
+  EXACT (|delta| <= 2 trading-ish days): 37/53 (70%)
+  EARLY-JUNK: 7 -> DELHIVERY(-2318d), FUSION(-2458d), IEX(-3d), LATENTVIEW(-1005d), MAZDOCK(-1043d), SBICARD(-1901d), STARHEALTH(-2167d)
+  LATE: 2 -> CAMS(+4d), ROUTE(+237d)
+  absent: 7 -> ADANIWILMAR, BRAINBEES, BURGERKING, GLOBALHEALTH, QUALITYPOWER, STANDARD, ZOMATO
+
+============================================================================================
+[B] ANATOMY OF THE PRE-LISTING JUNK ROWS (the split-scale scan's biggest suspects)
+============================================================================================
+
+  DELHIVERY: 1073 rows 2016-01-18 -> 2026-09-04; biggest jump at row 8 (2022-05-24) x93.3
+    first 4 rows: [{'date': '2016-01-18', 'open': 11.2, 'high': 11.2, 'low': 11.2, 'close': 11.2, 'volume': 200}, {'date': '2016-02-01', 'open': 10.65, 'high': 10.65, 'low': 10.65, 'close': 10.65, 'volume': 150}, {'date': '2016-03-08', 'open': 7.0, 'high': 7.0, 'low': 7.0, 'close': 7.0, 'volume': 60}, {'date': '2016-04-25', 'open': 6.65, 'high': 6.65, 'low': 6.65, 'close': 6.65, 'volume': 500}]
+    rows around the jump:
+      date   open   high    low  close   volume
+2016-05-23   5.75   5.75   5.75   5.75      150
+2016-06-13   5.75   5.75   5.75   5.75      300
+2022-05-24 495.20 568.90 467.50 536.35 14210358
+2022-05-25 543.80 544.00 500.30 510.70  3810345
+
+  FUSION: 1069 rows 2016-02-22 -> 2026-09-04; biggest jump at row 123 (2022-11-15) x97.1
+    first 4 rows: [{'date': '2016-02-22', 'open': 6.1, 'high': 6.25, 'low': 5.76, 'close': 5.95, 'volume': 6501}, {'date': '2016-02-23', 'open': 6.1, 'high': 6.1, 'low': 5.71, 'close': 5.95, 'volume': 9909}, {'date': '2016-02-24', 'open': 6.0, 'high': 6.0, 'low': 5.66, 'close': 5.76, 'volume': 3041}, {'date': '2016-02-25', 'open': 5.81, 'high': 5.81, 'low': 5.52, 'close': 5.76, 'volume': 27086}]
+    rows around the jump:
+      date   open   high    low  close   volume
+2016-08-19   3.10   3.15   3.10   3.15    70173
+2016-08-22   3.05   3.29   3.05   3.24   105656
+2022-11-15 348.10 353.23 310.92 314.50 17276689
+2022-11-16 314.69 337.59 313.24 334.50  3798738
+
+  LATENTVIEW: 1205 rows 2019-02-22 -> 2026-09-04; biggest jump at row 16 (2021-11-23) x7.5
+    first 4 rows: [{'date': '2019-02-22', 'open': 92.2, 'high': 92.2, 'low': 92.2, 'close': 92.2, 'volume': 1}, {'date': '2019-03-01', 'open': 87.59, 'high': 90.0, 'low': 87.59, 'close': 90.0, 'volume': 20}, {'date': '2019-03-05', 'open': 85.5, 'high': 85.5, 'low': 85.5, 'close': 85.5, 'volume': 2}, {'date': '2019-03-22', 'open': 81.23, 'high': 81.23, 'low': 81.23, 'close': 81.23, 'volume': 1}]
+    rows around the jump:
+      date   open   high    low  close   volume
+2019-07-31  56.07  61.97  56.07  61.97        2
+2019-08-05  58.88  65.06  58.88  65.06        2
+2021-11-23 512.20 548.00 461.10 488.75 28823707
+2021-11-24 499.00 586.50 488.75 584.95 24383396
+
+  COHANCE: 1632 rows 2015-01-01 -> 2026-09-04; biggest jump at row 20 (2020-03-09) x1123.5
+    first 4 rows: [{'date': '2015-01-01', 'open': 0.5, 'high': 0.5, 'low': 0.45, 'close': 0.5, 'volume': 1762484}, {'date': '2015-01-02', 'open': 0.5, 'high': 0.5, 'low': 0.5, 'close': 0.5, 'volume': 751580}, {'date': '2015-01-05', 'open': 0.45, 'high': 0.5, 'low': 0.45, 'close': 0.45, 'volume': 376626}, {'date': '2015-01-06', 'open': 0.45, 'high': 0.45, 'low': 0.45, 'close': 0.45, 'volume': 88260}]
+    rows around the jump:
+      date   open   high   low  close  volume
+2015-01-28   0.35   0.35   0.3   0.30  679422
+2015-01-29   0.35   0.35   0.3   0.30  335940
+2020-03-09 321.00 337.05 321.0 337.05  416907
+2020-03-11 353.90 353.90 320.2 322.70  875368
+
+  GOYALALUM: 997 rows 2015-12-31 -> 2026-09-04; biggest jump at row 66 (2022-11-04) x95.4
+    first 4 rows: [{'date': '2015-12-31', 'open': 3.35, 'high': 3.35, 'low': 3.35, 'close': 3.35, 'volume': 20466}, {'date': '2016-01-01', 'open': 3.2, 'high': 3.5, 'low': 3.2, 'close': 3.5, 'volume': 31393}, {'date': '2016-01-04', 'open': 3.65, 'high': 3.65, 'low': 3.4, 'close': 3.55, 'volume': 136953}, {'date': '2016-01-05', 'open': 3.55, 'high': 3.7, 'low': 3.55, 'close': 3.7, 'volume': 58476}]
+    rows around the jump:
+      date   open   high    low  close  volume
+2016-09-06   1.65   1.65   1.55   1.55   19911
+2016-09-12   1.50   1.50   1.50   1.50    2950
+2022-11-04 144.80 148.60 126.30 143.05   26500
+2022-11-07 145.95 157.35 145.95 157.35   38179
+
+============================================================================================
+[C] GENERIC PRE-LISTING-JUNK DETECTOR over all post-2006-first-row symbols
+     rule: within the first 60 rows there is a close jump >5x or <1/5
+============================================================================================
+  10 / 2079 symbols show pre-listing junk (0.5%)
+  median junk rows before the real start: 13
+    symbol      first  junk_rows true_start        ratio
+   HARDWYN 2022-04-12         47 2022-06-21 7.409698e-02
+   RAINBOW 2019-04-01         39 2022-05-10 6.002667e+02
+   COHANCE 2015-01-01         20 2020-03-09 1.123500e+03
+KOKUYOCMLN 2008-07-28         18 2008-08-22 1.029412e-01
+LATENTVIEW 2019-02-22         16 2021-11-23 7.512296e+00
+   GVPTECH 2022-09-08         10 2022-09-22 5.479760e+00
+ DELHIVERY 2016-01-18          8 2022-05-24 9.327826e+01
+   MAZDOCK 2017-12-04          8 2020-10-12 8.600000e+10
+ MOM30IETF 2022-08-10          2 2022-08-12 1.012217e-01
+LIQUIDIETF 2016-01-12          1 2018-09-26 9.090909e+01
+
+============================================================================================
+[D] THE 2025 COHORT'S 48.6% 'ENDS EARLY' — delisting or feed gap?
+============================================================================================
+  2025-first-row symbols: 280; median rows 212
+  stale-days distribution:
+count    280.000000
+mean      57.767857
+std       60.554366
+min        0.000000
+25%        0.000000
+50%        3.000000
+75%      112.000000
+max      199.000000
+
+  20 examples of the stale ones (symbol, rows, first, last):
+    symbol   n         d0         d1
+      MEIL 118 2025-08-28 2026-02-17
+ RNBDENIMS 113 2025-09-04 2026-02-17
+  GEMAROMA 119 2025-08-26 2026-02-17
+     GVPIL 124 2025-08-19 2026-02-17
+KAVDEFENCE 171 2025-06-12 2026-02-17
+GLOBECIVIL 158 2025-07-01 2026-02-17
+  HILINFRA 127 2025-08-12 2026-02-17
+     CPCAP 232 2025-03-11 2026-02-17
+    VMSTMT  99 2025-09-24 2026-02-17
+    REGAAL 174 2025-08-20 2026-05-07
+LAXMIINDIA 184 2025-08-05 2026-05-07
+ TIGERLOGS 154 2025-09-18 2026-05-07
+CHEMBONDCH 193 2025-07-23 2026-05-07
+ ADVENTHTL 123 2025-11-13 2026-05-15
+   ADVANCE 147 2025-10-08 2026-05-15
+     ABLBL 220 2025-06-23 2026-05-15
+    AMANTA 165 2025-09-11 2026-05-15
+   ALLTIME 183 2025-08-14 2026-05-15
+ AEROENTER 226 2025-06-16 2026-05-15
+     AEQUS 104 2025-12-10 2026-05-15
+
+  ... and the fresh ones for contrast:
+    symbol   n         d0         d1
+    360ONE 320 2025-05-26 2026-09-04
+       ABB 320 2025-05-26 2026-09-04
+   ACUTAAS 320 2025-05-26 2026-09-04
+AGARWALEYE 391 2025-02-04 2026-09-04
+      AHCL 247 2025-09-03 2026-09-01
+  AJAXENGG 382 2025-02-17 2026-09-04
+    ALIVUS 408 2025-01-13 2026-09-04
+ AMANTA-BE 243 2025-09-09 2026-09-01
+  AONEGOLD 242 2025-09-10 2026-09-01
+AONELIQUID 356 2025-03-28 2026-09-04
+
+DONE

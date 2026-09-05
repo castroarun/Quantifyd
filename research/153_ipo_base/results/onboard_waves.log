@@ -1,0 +1,118 @@
+============================================================================================
+[A] BULK-ONBOARDING WAVES — dates on which many symbols' series begin
+============================================================================================
+  top 30 first-row dates by symbol count:
+    2005-01-03   451 symbols
+    2015-01-01    95 symbols
+    2026-08-17    45 symbols
+    2026-04-20    41 symbols
+    2003-01-01    17 symbols
+    2025-05-26    15 symbols
+    2003-01-27    12 symbols
+    2010-01-08    12 symbols
+    2011-01-03     8 symbols
+    2017-03-15     6 symbols
+    2015-01-02     6 symbols
+    2025-12-15     6 symbols
+    2024-09-16     5 symbols
+    2006-11-21     5 symbols
+    2016-03-02     5 symbols
+    2017-07-27     5 symbols
+    2024-12-27     5 symbols
+    2025-08-26     5 symbols
+    2022-11-22     5 symbols
+    2020-10-01     4 symbols
+    2023-11-10     4 symbols
+    2025-11-27     4 symbols
+    2025-09-30     4 symbols
+    2026-02-16     4 symbols
+    2007-11-02     4 symbols
+    2024-06-24     4 symbols
+    2023-08-29     4 symbols
+    2025-10-01     4 symbols
+    2024-02-14     4 symbols
+    2025-10-16     4 symbols
+
+  dates with >=5 new symbols: 19; they account for 749 of 2671 symbols (28%)
+    threshold >= 3:  123 dates,  1084 symbols affected
+    threshold >= 5:   19 dates,   749 symbols affected
+    threshold >= 8:    9 dates,   696 symbols affected
+    threshold >=12:    8 dates,   688 symbols affected
+    threshold >=20:    4 dates,   632 symbols affected
+
+============================================================================================
+[B] LISTING-DAY FINGERPRINT
+============================================================================================
+  KNOWN IPOs (n=45): day-1 volume / next-20d median volume
+     median 14.98  p10 1.12  p90 50.77 | day-1 range%% median 10.5
+  KNOWN long-listed (onboarded) (n=18):
+     median 2.18  p10 0.62  p90 60.23 | day-1 range%% median 5.9
+
+  onboarded sample first-rows:
+    symbol      first     vratio      rng0
+       ABB 2025-05-26   1.194251  1.384141
+    360ONE 2025-05-26   0.503433  2.778461
+   SIEMENS 2005-01-03   1.029334  1.535312
+CUMMINSIND 2005-01-03   0.640508  4.066333
+   HAVELLS 2005-01-03   2.200974  6.222222
+PIDILITIND 2005-01-03   5.053275  5.940594
+  BOSCHLTD 2005-01-03   1.471246  6.535158
+SUPREMEIND 2005-01-03   3.268913  2.732240
+    ASTRAL 2007-03-20 136.609412 13.684211
+   POLYCAB 2019-04-16  34.742005  5.772755
+ APLAPOLLO 2011-12-14  37.136638 12.714777
+   COFORGE 2005-01-03   2.149093  2.439024
+PERSISTENT 2010-04-06  41.665703 21.096838
+      LTTS 2016-09-23 103.552061  8.116902
+   MPHASIS 2005-01-03   0.557592  2.322880
+      OFSS 2005-01-03   6.172679  7.946027
+ TATAELXSI 2005-01-03   0.789750  3.109137
+  KPITTECH 2019-04-22   2.090810  9.523810
+
+============================================================================================
+[C] ACCEPTED-LISTING FILTER
+============================================================================================
+  bulk-day threshold >=3: keeps 32/45 known IPOs, wrongly keeps 6/18 known onboardings
+  bulk-day threshold >=5: keeps 43/45 known IPOs, wrongly keeps 6/18 known onboardings
+  bulk-day threshold >=8: keeps 44/45 known IPOs, wrongly keeps 6/18 known onboardings
+  vol-ratio >= 2.0: keeps 39/45 known IPOs, wrongly keeps 11/18 known onboardings
+  vol-ratio >= 3.0: keeps 38/45 known IPOs, wrongly keeps 8/18 known onboardings
+  vol-ratio >= 5.0: keeps 36/45 known IPOs, wrongly keeps 7/18 known onboardings
+  COMBINED bulk>=5 AND volratio>=2.0: keeps 38/45 IPOs, wrongly keeps 6/18 onboardings
+  COMBINED bulk>=5 AND volratio>=3.0: keeps 37/45 IPOs, wrongly keeps 5/18 onboardings
+  COMBINED bulk>=3 AND volratio>=3.0: keeps 27/45 IPOs, wrongly keeps 5/18 onboardings
+
+============================================================================================
+[D] BUILDING results/listing_dates.csv
+============================================================================================
+  2610 symbols profiled; 1286 ACCEPTED as real listings (post-2006, non-bulk day, day-1 volume >= 2x next-20d median)
+
+  accepted listings per year:
+    2006:   57
+    2007:   91
+    2008:   35
+    2009:   14
+    2010:   62
+    2011:   46
+    2012:   16
+    2013:    8
+    2014:   12
+    2015:   36
+    2016:   55
+    2017:   93
+    2018:   74
+    2019:   35
+    2020:   42
+    2021:   95
+    2022:   82
+    2023:  103
+    2024:  123
+    2025:  170
+    2026:   37
+
+  sanity: known IPOs accepted?
+    40/45 known IPOs accepted; rejected: ['SBICARD', 'STARHEALTH', 'FUSION', 'JIOFIN', 'BAJAJHFL']
+  sanity: known long-listed wrongly accepted?
+    ['ASTRAL', 'POLYCAB', 'APLAPOLLO', 'PERSISTENT', 'LTTS', 'KPITTECH']
+
+DONE -> results/listing_dates.csv

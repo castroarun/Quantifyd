@@ -1,0 +1,92 @@
+profiled 2610 symbols; ACCEPTED as real listings: 1293
+
+accepted per year:
+  2006:   52
+  2007:   78
+  2008:   39
+  2009:   15
+  2010:   52
+  2011:   31
+  2012:   17
+  2013:    9
+  2014:    8
+  2015:   62
+  2016:   52
+  2017:   76
+  2018:   55
+  2019:   51
+  2020:   41
+  2021:  108
+  2022:   80
+  2023:   97
+  2024:  139
+  2025:  182
+  2026:   49
+
+--- RECALL: known IPOs ---
+  ACMESOLAR    known 2024-11-13  vetted 2024-11-13 (  +0d) junk=  0 bulk= 3 vr=   8.58 rng= 10.9  OK 
+  AJAXENGG     known 2025-02-17  vetted 2025-03-19 ( +30d) junk= 20 bulk= 3 vr=   6.58 rng=  6.5  OK 
+  ASTRAL       known 2007-03-20  vetted 2007-03-20 (  +0d) junk=  0 bulk= 1 vr= 136.61 rng= 13.7  OK 
+  AWL          known 2022-02-08  vetted 2022-02-08 (  +0d) junk=  0 bulk= 1 vr=  10.23 rng= 16.5  OK 
+  BAJAJHFL     known 2024-09-16  vetted 2024-09-16 (  +0d) junk=  0 bulk= 5 vr=  19.29 rng= 11.5  OK 
+  BANDHANBNK   known 2018-03-27  vetted 2018-03-27 (  +0d) junk=  0 bulk= 1 vr=  48.91 rng=  9.2  OK 
+  BHARTIHEXA   known 2024-04-12  vetted 2024-04-12 (  +0d) junk=  0 bulk= 1 vr=  52.02 rng= 15.4  OK 
+  CAMPUS       known 2022-05-09  vetted 2022-05-09 (  +0d) junk=  0 bulk= 1 vr=  42.24 rng= 21.4  OK 
+  CAMS         known 2020-10-05  vetted 2020-10-05 (  +0d) junk=  0 bulk= 3 vr=   3.59 rng=  8.4  OK 
+  CHEMPLASTS   known 2021-08-24  vetted 2021-08-24 (  +0d) junk=  0 bulk= 2 vr=  12.33 rng=  7.5  OK 
+  DELHIVERY    known 2022-05-24  vetted 2022-05-24 (  +0d) junk=  8 bulk= 2 vr=  15.38 rng= 18.9  OK 
+  DMART        known 2017-03-21  vetted 2017-03-21 (  +0d) junk=  0 bulk= 3 vr=  25.39 rng= 13.7  OK 
+  FUSION       known 2022-11-15  vetted 2022-11-15 (  +0d) junk=123 bulk= 0 vr=  21.38 rng= 13.5  OK 
+  GLAND        known 2020-11-20  vetted 2020-11-20 (  +0d) junk=  0 bulk= 1 vr=  15.82 rng=  8.2  OK 
+  HAPPSTMNDS   known 2020-09-17  vetted 2020-09-17 (  +0d) junk=  0 bulk= 1 vr=  19.58 rng= 12.1  OK 
+  HDFCLIFE     known 2017-11-17  vetted 2017-11-17 (  +0d) junk=  0 bulk= 1 vr=  67.11 rng= 18.0  OK 
+  HEXT         known 2025-02-19  vetted 2025-02-19 (  +0d) junk=  0 bulk= 1 vr=  14.98 rng= 10.5  OK 
+  HYUNDAI      known 2024-10-22  vetted 2024-10-22 (  +0d) junk=  0 bulk= 2 vr=  25.54 rng=  9.0  OK 
+  IDEAFORGE    known 2023-07-07  vetted 2023-07-07 (  +0d) junk=  0 bulk= 2 vr=  43.46 rng=  6.5  OK 
+  IEX          known 2017-10-26  vetted 2017-10-23 (  -3d) junk=  0 bulk= 2 vr= 111.47 rng=  9.9  OK 
+  INDIGOPNTS   known 2021-02-02  vetted 2021-02-02 (  +0d) junk=  0 bulk= 1 vr= 105.54 rng= 22.2  OK 
+  IRCTC        known 2019-10-14  vetted 2019-10-14 (  +0d) junk=  0 bulk= 1 vr=  13.41 rng= 16.3  OK 
+  IREDA        known 2023-11-29  vetted 2023-11-29 (  +0d) junk=  0 bulk= 1 vr=   7.34 rng= 16.7  OK 
+  JIOFIN       known 2023-08-21  vetted 2023-08-21 (  +0d) junk=  0 bulk= 4 vr=   1.98 rng=  5.3  OK 
+  LATENTVIEW   known 2021-11-23  vetted 2021-11-23 (  +0d) junk= 16 bulk= 2 vr=  18.81 rng= 17.8  OK 
+  LICI         known 2022-05-17  vetted 2022-05-17 (  +0d) junk=  0 bulk= 1 vr=  12.53 rng=  6.7  OK 
+  LTTS         known 2016-09-23  vetted 2016-09-23 (  +0d) junk=  0 bulk= 1 vr= 103.55 rng=  8.1  OK 
+  MANKIND      known 2023-05-09  vetted 2023-05-09 (  +0d) junk=  0 bulk= 2 vr=  58.20 rng=  9.1  OK 
+  MAPMYINDIA   known 2021-12-21  vetted 2021-12-21 (  +0d) junk=  0 bulk= 2 vr=  14.54 rng= 22.1  OK 
+  MAZDOCK      known 2020-10-12  vetted 2020-10-12 (  +0d) junk=  8 bulk= 0 vr=  23.32 rng= 26.2  OK 
+  MEDANTA      known 2022-11-18  vetted 2022-11-18 (  +0d) junk=  0 bulk= 3 vr=   4.93 rng=  3.9  OK 
+  NIVABUPA     known 2024-11-14  vetted 2024-11-14 (  +0d) junk=  0 bulk= 3 vr=   6.66 rng= 10.1  OK 
+  NTPCGREEN    known 2024-11-27  vetted 2024-11-27 (  +0d) junk=  0 bulk= 2 vr=  10.89 rng=  9.2  OK 
+  NUVOCO       known 2021-08-23  vetted 2021-08-23 (  +0d) junk=  0 bulk= 1 vr=  25.13 rng= 12.2  OK 
+  NYKAA        known 2021-11-10  vetted 2021-11-10 (  +0d) junk=  0 bulk= 1 vr=  16.69 rng= 11.2  OK 
+  OLAELEC      known 2024-08-09  vetted 2024-08-09 (  +0d) junk=  0 bulk= 1 vr=   5.77 rng= 16.7  OK 
+  PAYTM        known 2021-11-18  vetted 2021-11-18 (  +0d) junk=  0 bulk= 2 vr=  10.59 rng= 25.3  OK 
+  PERSISTENT   known 2010-04-06  vetted 2010-04-06 (  +0d) junk=  0 bulk= 1 vr=  41.67 rng= 21.1  OK 
+  POLICYBZR    known 2021-11-15  vetted 2021-11-15 (  +0d) junk=  0 bulk= 3 vr=  32.96 rng=  8.3  OK 
+  POLYCAB      known 2019-04-16  vetted 2019-04-16 (  +0d) junk=  0 bulk= 1 vr=  34.74 rng=  5.8  OK 
+  PREMIERENE   known 2024-09-03  vetted 2024-09-03 (  +0d) junk=  0 bulk= 1 vr=  15.28 rng= 22.9  OK 
+  RBA          known 2020-12-14  vetted 2020-12-14 (  +0d) junk=  0 bulk= 1 vr=  21.28 rng= 19.7  OK 
+  SAGILITY     known 2024-11-12  vetted 2024-11-12 (  +0d) junk=  0 bulk= 2 vr=  11.02 rng= 13.4  OK 
+  SBICARD      known 2020-03-16  vetted 2020-03-16 (  +0d) junk= 20 bulk= 0 vr=  11.60 rng= 14.5  OK 
+  STARHEALTH   known 2021-12-10  vetted 2021-12-10 (  +0d) junk= 61 bulk= 1 vr=  34.97 rng= 12.4  OK 
+  SWIGGY       known 2024-11-13  vetted 2024-11-13 (  +0d) junk=  0 bulk= 3 vr=   7.71 rng= 16.4  OK 
+  TATATECH     known 2023-11-30  vetted 2023-11-30 (  +0d) junk=  0 bulk= 3 vr=  23.85 rng= 15.2  OK 
+  VMM          known 2024-12-18  vetted 2024-12-18 (  +0d) junk=  0 bulk= 3 vr=  19.41 rng=  9.3  OK 
+  recall: 48/48 accepted (100%); listing DATE within +-3d for 47/48 (98%)
+
+--- PRECISION: known onboardings (must all be REJECTED) ---
+  ABB          start 2025-05-26 bulk= 15 vr=   1.19 rng=  1.4  rejected
+  SIEMENS      start 2005-01-03 bulk=451 vr=   1.03 rng=  1.5  rejected
+  CUMMINSIND   start 2005-01-03 bulk=451 vr=   0.64 rng=  4.1  rejected
+  HAVELLS      start 2005-01-03 bulk=451 vr=   2.20 rng=  6.2  rejected
+  PIDILITIND   start 2005-01-03 bulk=451 vr=   5.05 rng=  5.9  rejected
+  BOSCHLTD     start 2005-03-31 bulk=  0 vr=   2.03 rng=  5.0  rejected
+  SUPREMEIND   start 2005-01-03 bulk=451 vr=   3.27 rng=  2.7  rejected
+  COFORGE      start 2005-01-03 bulk=451 vr=   2.15 rng=  2.4  rejected
+  MPHASIS      start 2005-01-03 bulk=451 vr=   0.56 rng=  2.3  rejected
+  OFSS         start 2005-01-03 bulk=451 vr=   6.17 rng=  7.9  rejected
+  TATAELXSI    start 2005-01-03 bulk=451 vr=   0.79 rng=  3.1  rejected
+  360ONE       start 2025-05-26 bulk= 15 vr=   0.50 rng=  2.8  rejected
+  precision leak: 0/12
+
+DONE -> results/listing_dates.csv

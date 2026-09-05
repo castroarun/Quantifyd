@@ -1,0 +1,86 @@
+SPEC: {"name": "IPO-Base NARROW (headline)", "max_age_m": 3, "min_bars": 25, "L": 25, "max_depth": 0.3, "rs_policy": "off", "rs_min": 70.0, "tight_max": null, "pivot_mode": "close", "stop": 0.08, "trail": 20, "target": 0.25, "slots": 8, "size_pct": 0.1875, "risk_pct": null, "stop_mode": "pct", "cost": 0.0025, "gate": false, "fill_close": false}
+[ctx] 1293 vetted listings
+[ctx]   loaded 800/2596 (9s)
+[ctx]   loaded 1600/2596 (17s)
+[ctx]   loaded 2400/2596 (25s)
+[ctx] wide panel (5276, 2596) (42s)
+[ctx] 786 tradeable young-listing symbols
+/home/arun/quantifyd/research/153_ipo_base/scripts/ipo_replay.py:147: RuntimeWarning: All-NaN slice encountered
+  np.nanmax(np.stack([hi - lo_, np.abs(hi - pc), np.abs(lo_ - pc)]), axis=0),
+[ctx] ready (49s)
+signals in panel: 612
+
+=== ADOPTED-SPEC 30-SEED ENSEMBLE (W2 2006->2026, after-tax, 25bps, cash 5%) ===
+  CAGR   24.10 [22.97..24.87]  worst seed 22.97%
+  MaxDD  -13.80 [-17.68..-12.97]  worst -17.68%
+  Calmar 1.744   terminal x 86.79
+  trades/yr 19.4  win 55.2%  avgW 15.22%  avgL -4.18%  mean 6.53%  netexp 6.03%
+  max losing streak 9  hold 19d   invested 19.6% of NAV
+  -> wrote results/ipo_equity_seeds.csv (5128, 30) and ipo_adopted_spec.json
+
+=== W1 2020-2025 (the site's window) === CAGR 38.60 [35.87..40.17]  DD -13.11%  Calmar 2.964  tpy 40.7
+
+=== PER YEAR (median across 30 seeds; intra-year max drawdown) ===
+      ret_med  ret_min  ret_max  intra_dd_med
+2006    19.10    19.10    19.10        -11.41
+2007    53.25    53.25    53.25         -7.83
+2008     2.71     2.71     2.71         -5.72
+2009     4.53     4.53     4.53         -3.29
+2010    24.10    24.10    24.10         -3.94
+2011     2.22     2.22     2.22         -2.20
+2012     5.11     5.11     5.11          0.00
+2013     5.08     5.08     5.08          0.00
+2014     5.00     5.00     5.00          0.00
+2015    15.99    15.99    15.99         -5.94
+2016    77.22    77.22    77.22         -7.21
+2017    34.38    34.38    34.38        -11.43
+2018    -7.08    -7.08    -3.79        -13.80
+2019    15.92    15.91    15.92         -4.49
+2020    32.47    32.46    32.47         -3.69
+2021    24.94    23.72    29.55         -7.55
+2022     8.94     8.33     9.11        -11.69
+2023   109.48    96.19   125.05         -7.68
+2024    38.15    22.93    46.11        -12.89
+2025    37.72    29.59    39.44        -10.00
+2026    40.10    33.10    48.54        -11.22
+
+=== COST LADDER (bps per side) ===
+  cost 25bps (headline)              CAGR  24.10 [ 22.97.. 24.87]  DD  -13.80%  Calmar  1.74  tpy  19.4 
+  cost 40bps                         CAGR  23.02 [ 22.42.. 23.69]  DD  -14.21%  Calmar  1.62  tpy  19.5 (10 seeds)
+  cost 60bps                         CAGR  21.46 [ 20.80.. 22.03]  DD  -14.76%  Calmar  1.43  tpy  19.5 (10 seeds)
+
+=== MARKET GATE (NIFTYBEES < SMA200 blocks entries), paired on seed ===
+  gate ON                            CAGR  20.72 [ 19.81.. 21.77]  DD  -14.16%  Calmar  1.47  tpy  17.0 
+  paired delta (gate ON - OFF): median -3.37pp, gate wins 0/30 seeds
+
+=== FILL MECHANIC ===
+  fill at signal-day CLOSE           CAGR  14.03 [ 13.03.. 15.33]  DD  -20.25%  Calmar  0.70  tpy  19.1 
+  paired delta (close-fill - pivot-fill): median -10.10pp, close-fill wins 0/30
+
+=== OUTLIER DEPENDENCE (re-priced trade returns; NAV effect approximated by re-running with winners capped) ===
+  sum of trade returns: total median 26.27, top-10 trades median 3.68 (14% of the summed return)
+  mean per-trade return with winners capped at +50%: 6.53% (uncapped 6.53%)
+  mean per-trade return with winners capped at +100%: 6.53% (uncapped 6.53%)
+  mean per-trade return excluding each seed's 10 best trades: 5.76%  (net of 50bps round trip: 5.26%)
+
+=== NULL CONTROLS (all fills at the CLOSE on both arms, for a fair pairing) ===
+  REAL signal (close fill)           CAGR  14.03 [ 13.03.. 15.33]  DD  -20.25%  Calmar  0.70  tpy  19.1 
+  NULL random young+liquid, date-matched CAGR   8.20 [  8.01..  8.40]  DD  -28.63%  Calmar  0.28  tpy  23.3 
+  paired delta (real - null): median +5.75pp CAGR, real wins 30/30 seeds
+  per-trade: real 3.80% vs null 1.72%  -> edge +2.08pp/trade
+
+=== COHORT DRIFT NULL (equal-weight hold of every young+liquid name, monthly) ===
+  cohort equal-weight drift: CAGR 17.93%  DD -75.22%  (gross, no costs/tax)
+
+=== CAPACITY (position notional vs the name's 20d median traded value) ===
+  book Rs 10,00,000: median 1.401% of daily traded value, p90 6.687%, p99 21.117%
+  scaled to Rs 1 cr: median 14.01%, p90 66.87%, p99 211.17% of daily traded value
+  scaled to Rs 10 cr: median 140.11%, p90 668.72%, p99 2111.66% of daily traded value
+  scaled to Rs 50 cr: median 700.55%, p90 3343.59%, p99 10558.28% of daily traded value
+
+=== SURVIVORSHIP inside the traded cohort ===
+  traded universe: 230 distinct names; 27 of them have a series that ends >90d early
+  6.8% of trades were in such names; their mean return 1.21% vs 6.92% for the rest
+  (dead-name series ARE retained in the DB and DO get traded and stopped out; the unmeasurable residual is names never onboarded to Kite at all)
+
+G3 DONE

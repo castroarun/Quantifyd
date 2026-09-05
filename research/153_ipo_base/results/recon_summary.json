@@ -1,0 +1,10 @@
+{
+  "db": "/home/arun/quantifyd/backtest_data/market_data.db",
+  "db_min": "2000-01-03",
+  "db_max": "2026-09-04",
+  "n_symbols": 2671,
+  "n_first_row_ge_2010": 1915,
+  "n_first_row_ge_2015": 1703,
+  "ends_early_pct": 8.985398727068514,
+  "split_suspects": 42
+}
