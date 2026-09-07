@@ -646,6 +646,7 @@ import gzip as _gzip
 _COMPRESSIBLE = ('text/', 'application/json', 'application/javascript',
                  'text/javascript', 'application/xml', 'image/svg+xml')
 _MIN_GZIP_BYTES = 1024
+_MAX_INLINE_BYTES = 12 * 1024 * 1024   # never buffer a big download
 
 
 @app.after_request
@@ -656,8 +657,29 @@ def _compress_and_cache(resp):
         if '/assets/' in path and any(path.endswith(x) for x in ('.js', '.css', '.woff2', '.woff')):
             resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
 
-        if resp.direct_passthrough or resp.is_streamed:
-            return resp                        # never buffer a stream to compress it
+        # WHICH RESPONSES CAN SAFELY BE BUFFERED.
+        # Not `is_streamed`, which is what the first version tested and why it compressed
+        # nothing in production: Werkzeug reports is_streamed=True for ordinary static
+        # files as well, because a file wrapper is not a sequence — even with a known
+        # Content-Length. send_from_directory serves the JS bundle and every baked JSON
+        # feed that way, so exactly the payloads worth compressing were being skipped.
+        #
+        # The property that actually separates them is the length. A live SSE stream has
+        # no Content-Length and must never be buffered; a file response has one and is
+        # safe to materialise, bounded so a large download is not pulled into memory.
+        ctype_raw = (resp.headers.get('Content-Type') or '').lower()
+        if 'text/event-stream' in ctype_raw:
+            return resp
+        _clen = resp.headers.get('Content-Length')
+        if _clen is None:
+            return resp                        # unknown length: genuinely streaming
+        try:
+            if int(_clen) > _MAX_INLINE_BYTES:
+                return resp
+        except (TypeError, ValueError):
+            return resp
+        if resp.direct_passthrough:
+            resp.direct_passthrough = False
         if resp.headers.get('Content-Encoding'):
             return resp
         if 'gzip' not in (request.headers.get('Accept-Encoding') or '').lower():

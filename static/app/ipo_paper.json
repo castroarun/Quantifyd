@@ -1,41 +1,66 @@
 {
- "updated": "2026-09-06 16:44:13.494198",
- "asof": "2026-09-04",
+ "updated": "2026-09-07 18:45:03.411508",
+ "asof": "2026-09-07",
  "mode": "paper",
- "positions": [],
- "capital": 1000000,
- "cash": 1000000,
- "value": 0,
- "nav": 1000000,
- "pnl": 0,
- "realized": 0,
- "gain": 0,
- "return_pct": 0.0,
- "invested_pct": 0.0,
- "slots": 8,
- "slots_used": 0,
- "pending": [
+ "positions": [
   {
    "symbol": "MARSONS",
+   "qty": 1345,
+   "buy": 139.4,
+   "entry_date": "2026-09-07",
+   "stop": 128.25,
    "pivot": 133.17,
-   "close": 137.56,
-   "depth_pct": 24.7,
-   "tv": 364840622.28,
    "listed": "2026-03-13",
-   "age_days": 175
+   "ltp": 128.8,
+   "value": 173236,
+   "pnl": -14257,
+   "pnl_pct": -7.6,
+   "trail": 117.76,
+   "target": 174.25,
+   "to_stop_pct": 0.4,
+   "to_trail_pct": 9.4,
+   "days": 0,
+   "weight": 17.6
+  }
+ ],
+ "capital": 1000000,
+ "cash": 812038,
+ "value": 173236,
+ "nav": 985274,
+ "pnl": -14257,
+ "realized": 0,
+ "gain": -14726,
+ "return_pct": -1.47,
+ "invested_pct": 17.6,
+ "slots": 8,
+ "slots_used": 1,
+ "pending": [
+  {
+   "symbol": "KISSHT",
+   "pivot": 313.6,
+   "close": 320.95,
+   "depth_pct": 9.2,
+   "tv": 353533403.425,
+   "listed": "2026-05-08",
+   "age_days": 122
   }
  ],
  "navcurve": [
   {
    "d": "2026-09-04",
    "nav": 1000000
+  },
+  {
+   "d": "2026-09-07",
+   "nav": 985274
   }
  ],
  "trades": [],
  "data_events": [],
  "started": "2026-09-06",
  "log": [
-  "panel 20 names in the age band, asof 2026-09-04",
-  "1 candidates, 8 slots free, 1 buy-stops armed for tomorrow"
+  "panel 23 names in the age band, asof 2026-09-07",
+  "FILL MARSONS x1345 @139.40 (pivot 133.17)",
+  "1 candidates, 7 slots free, 1 buy-stops armed for tomorrow"
  ]
 }
