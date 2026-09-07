@@ -70,6 +70,14 @@ def init_db():
       gross REAL, turnover REAL, net REAL, n_sl INTEGER, note TEXT,
       updated_at TEXT);
     """)
+    # book column: 'dte0' = the official study book; 'dte1' = the shadow book
+    # Arun asked for (2026-09-07) - same mechanics on DTE-1 days, kept separate
+    # because the study REJECTED that DTE (forward test, never blended).
+    for tbl in ("legs", "days"):
+        try:
+            con.execute("ALTER TABLE %s ADD COLUMN book TEXT DEFAULT 'dte0'" % tbl)
+        except sqlite3.OperationalError:
+            pass
     return con
 
 
@@ -81,23 +89,23 @@ def nearest_expiry(c, day):
     return r[0] if r else None
 
 
-def minute_rows(c, day, hhmm):
-    """All chain rows for `day`'s own expiry in the given minute."""
+def minute_rows(c, day, expiry, hhmm):
+    """All chain rows for the given expiry in the given minute of `day`."""
     return c.execute(
         "SELECT strike, instrument_type, ltp, underlying_spot FROM option_chain "
         "WHERE symbol=? AND expiry_date=? AND snapshot_time >= ? AND snapshot_time < ? "
         "AND ltp > 0",
-        (SYMBOL, day, "%sT%s:00" % (day, hhmm), "%sT%s:60" % (day, hhmm))).fetchall()
+        (SYMBOL, expiry, "%sT%s:00" % (day, hhmm), "%sT%s:60" % (day, hhmm))).fetchall()
 
 
-def leg_series(c, day, strike, opt_type):
+def leg_series(c, day, expiry, strike, opt_type):
     """(hh:mm, ltp) series for one leg from entry minute to square-off."""
     rows = c.execute(
         "SELECT snapshot_time, ltp FROM option_chain "
         "WHERE symbol=? AND expiry_date=? AND strike=? AND instrument_type=? "
         "AND snapshot_time >= ? AND snapshot_time <= ? AND ltp > 0 "
         "ORDER BY snapshot_time",
-        (SYMBOL, day, strike, opt_type,
+        (SYMBOL, expiry, strike, opt_type,
          "%sT%s:00" % (day, ENTRY_HHMM), "%sT15:30:59" % day)).fetchall()
     return [(t[11:16], p) for t, p in rows]
 
@@ -116,9 +124,10 @@ def pick_atm(rows):
     return atm, by_strike[atm], spot
 
 
-def replay_day(c, day):
+def replay_day(c, day, expiry=None):
     """Deterministic replay of the day. Returns dict or None (no data/MISSED)."""
-    rows = minute_rows(c, day, ENTRY_HHMM)
+    expiry = expiry or day
+    rows = minute_rows(c, day, expiry, ENTRY_HHMM)
     atm, prices, spot = pick_atm(rows)
     if atm is None:
         return None
@@ -127,7 +136,7 @@ def replay_day(c, day):
         legs[typ] = dict(strike=atm, entry=prices[typ], sl=SL_MULT * prices[typ],
                          exit=None, exit_ts=None, reason=None, ltp=prices[typ],
                          ltp_ts=ENTRY_HHMM)
-    series = {t: dict(leg_series(c, day, atm, t)) for t in ("CE", "PE")}
+    series = {t: dict(leg_series(c, day, expiry, atm, t)) for t in ("CE", "PE")}
     minutes = sorted(set(series["CE"]) | set(series["PE"]))
     for mm in minutes:
         if mm <= ENTRY_HHMM:
@@ -180,28 +189,28 @@ def day_totals(legs):
     return gross, turnover, net, n_sl, closed
 
 
-def persist(con, day, res, source):
+def persist(con, day, res, source, book="dte0"):
     gross, turnover, net, n_sl, closed = day_totals(res["legs"])
     now = datetime.now().isoformat(timespec="seconds")
     for typ, lg in res["legs"].items():
         px_out = lg["exit"] if lg["exit"] is not None else lg["ltp"]
         con.execute(
-            "INSERT OR REPLACE INTO legs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO legs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (day, typ, lg["strike"], QTY, lg["entry"], ENTRY_HHMM, lg["sl"],
              lg["exit"], lg["exit_ts"], lg["reason"],
              "CLOSED" if lg["exit"] is not None else "OPEN",
-             lg["ltp"], lg["ltp_ts"], (lg["entry"] - px_out) * QTY))
+             lg["ltp"], lg["ltp_ts"], (lg["entry"] - px_out) * QTY, book))
     con.execute(
-        "INSERT OR REPLACE INTO days VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT OR REPLACE INTO days VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
         (day, "CLOSED" if closed else "OPEN", source, res["atm"], res["spot"],
-         round(gross, 2), round(turnover, 2), round(net, 2), n_sl, "", now))
+         round(gross, 2), round(turnover, 2), round(net, 2), n_sl, "", now, book))
     con.commit()
 
 
-def mark_missed(con, day, note):
+def mark_missed(con, day, note, book="dte0"):
     now = datetime.now().isoformat(timespec="seconds")
-    con.execute("INSERT OR IGNORE INTO days VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (day, "MISSED", "live", None, None, 0, 0, 0, 0, note, now))
+    con.execute("INSERT OR IGNORE INTO days VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (day, "MISSED", "live", None, None, 0, 0, 0, 0, note, now, book))
     con.commit()
 
 
@@ -211,8 +220,10 @@ def publish(con):
     today = datetime.now().strftime("%Y-%m-%d")
     legs = [dict(zip([c[0] for c in con.execute("SELECT * FROM legs LIMIT 0").description], r))
             for r in con.execute("SELECT * FROM legs WHERE trade_date=?", (today,))]
-    traded = [d for d in days if d["status"] in ("CLOSED", "OPEN")]
-    cum = sum(d["net"] for d in traded)
+    d0 = [d for d in days if d.get("book", "dte0") == "dte0"
+          and d["status"] in ("CLOSED", "OPEN")]
+    d1 = [d for d in days if d.get("book") == "dte1"
+          and d["status"] in ("CLOSED", "OPEN")]
     payload = dict(
         system="CSL 60 - DTE-0", mode="paper", symbol=SYMBOL,
         lots=LOTS, qty=QTY, sl_pct=60, entry=ENTRY_HHMM, exit=EXIT_HHMM,
@@ -220,7 +231,10 @@ def publish(con):
               "trail-to-BE after first stop - square off 15:15",
         study="/app/straddle-study",
         today=today, today_legs=legs,
-        days=days[-60:], n_days=len(traded), cum_net=round(cum, 2),
+        days=days[-60:], n_days=len(d0), cum_net=round(sum(d["net"] for d in d0), 2),
+        shadow=dict(book="dte1", n_days=len(d1),
+                    cum_net=round(sum(d["net"] for d in d1), 2),
+                    note="DTE-1 shadow - study REJECTED this DTE; forward test only"),
         generated=datetime.now().isoformat(timespec="seconds"))
     blob = json.dumps(payload, indent=1)
     for pub in PUBS:
@@ -242,8 +256,17 @@ def mark():
     if day in EVENT_SKIP:
         return
     with ro() as c:
-        if nearest_expiry(c, day) != day:
-            return                                     # not DTE-0: nothing to do
+        exp = nearest_expiry(c, day)
+        if not exp:
+            return
+        dte = (datetime.strptime(exp, "%Y-%m-%d")
+               - datetime.strptime(day, "%Y-%m-%d")).days
+        if dte == 0:
+            book = "dte0"                              # the official study book
+        elif dte == 1:
+            book = "dte1"                              # Arun's shadow (2026-09-07)
+        else:
+            return                                     # DTE 2+ never trades
         con = init_db()
         already = con.execute("SELECT status FROM days WHERE trade_date=?",
                               (day,)).fetchone()
@@ -251,13 +274,13 @@ def mark():
             return
         if now.time() < dtime(9, 17):
             return                                     # entry minute not complete yet
-        res = replay_day(c, day)
+        res = replay_day(c, day, exp)
         if res is None:
             if now.strftime("%H:%M") > LATE_HHMM:
-                mark_missed(con, day, "no 09:16 chain snapshot by %s" % LATE_HHMM)
+                mark_missed(con, day, "no 09:16 chain snapshot by %s" % LATE_HHMM, book)
                 publish(con)
             return
-        persist(con, day, res, "live")
+        persist(con, day, res, "live", book)
         publish(con)
         con.close()
 
@@ -289,6 +312,42 @@ def seed():
     con.close()
 
 
+def seed_dte1():
+    """Backfill the DTE-1 SHADOW book: for each recorded expiry, replay the
+    prior session (only when it is exactly 1 calendar day before expiry)."""
+    con = init_db()
+    with ro() as c:
+        rows = c.execute(
+            "SELECT DISTINCT expiry_date FROM option_chain WHERE symbol=? "
+            "AND expiry_date <= date('now','localtime') ORDER BY expiry_date",
+            (SYMBOL,)).fetchall()
+        for (exp,) in rows:
+            prev = c.execute(
+                "SELECT MAX(substr(snapshot_time,1,10)) FROM option_chain "
+                "WHERE symbol=? AND expiry_date=? AND snapshot_time < ?",
+                (SYMBOL, exp, exp + "T00:00")).fetchone()[0]
+            if not prev or prev in EVENT_SKIP:
+                continue
+            dte = (datetime.strptime(exp, "%Y-%m-%d")
+                   - datetime.strptime(prev, "%Y-%m-%d")).days
+            if dte != 1:
+                continue                               # holiday-shifted, not true DTE-1
+            live = con.execute("SELECT source FROM days WHERE trade_date=?",
+                               (prev,)).fetchone()
+            if live and live[0] == "live":
+                continue                               # live-first, never overwrite
+            res = replay_day(c, prev, exp)
+            if res is None:
+                print("%s  no data - skipped" % prev)
+                continue
+            persist(con, prev, res, "replay", "dte1")
+            g, _t, n, n_sl, _cl = day_totals(res["legs"])
+            print("%s  DTE-1 shadow  ATM %.0f  gross %+10.0f  net %+10.0f  SLs %d"
+                  % (prev, res["atm"], g, n, n_sl))
+    publish(con)
+    con.close()
+
+
 def replay_cli(day):
     with ro() as c:
         res = replay_day(c, day)
@@ -307,7 +366,7 @@ def replay_cli(day):
 
 def show():
     con = init_db()
-    for r in con.execute("SELECT trade_date,status,source,atm_strike,net,n_sl "
+    for r in con.execute("SELECT trade_date,book,status,source,atm_strike,net,n_sl "
                          "FROM days ORDER BY trade_date"):
         print(r)
     con.close()
@@ -324,6 +383,8 @@ if __name__ == "__main__":
             mark()
         elif verb == "seed":
             seed()
+        elif verb == "seed-dte1":
+            seed_dte1()
         elif verb == "replay":
             replay_cli(sys.argv[2])
         elif verb == "show":

@@ -693,6 +693,7 @@ export const SYSTEMS: StrategySystem[] = [
     studies: [],
     studyGap: 'Interactive study is the AlgoTest Study page (/app/straddle-study); /app/backtest factsheet entry owed',
     changeLog: [
+      { date: '7 Sep 2026', text: 'DTE-1 SHADOW added on Arun’s instruction: same mechanics on DTE-1 days, separate ledger (book=dte1), own Trade Book group — never blended with the DTE-0 record. Backfilled 12 recorded DTE-1 sessions: +₹99,619 cum net (vs DTE-0 +₹24,116 same window; study verdict on DTE-1 unchanged — this is the forward test). Today 7-Sep trading live from the recorded capture.' },
       { date: '7 Sep 2026', text: 'PAPER book deployed: services/csl60_paper.py (1-min cron, deterministic replay each run), seeded from 12 recorded expiry days 16-Jun→1-Sep: +₹24,116 net, 58% WR, worst day −₹28,170 (10 lots). Renders in the NAS Trade Book as NIFTY CSL60 · DTE-0. First live paper trade Tue 8 Sep 09:16.' },
     ],
   },

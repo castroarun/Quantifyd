@@ -14,7 +14,11 @@ rendered as a new group in the NAS Trade Book. **DTE-0 ONLY** — the study
 explicitly dropped DTE-1 (t 0.91, Net/DD 0.94 at 60%, OOS-negative years; only a
 lone 200%-stop cell ever passed, i.e. the multiple-testing false-positive rate).
 If Arun wants DTE-1 shadowed anyway it becomes a second, separately-tagged book —
-not silently folded into this one.
+not silently folded into this one. **Arun took that option on 2026-09-07** ("use
+today's options data capture and playback and put the positions"): the service
+now also trades DTE-1 days into a `book='dte1'` SHADOW ledger, rendered as its
+own Trade Book group (NIFTY CSL60 · DTE-1 shadow) and reported separately
+(`shadow` block in the JSON). The DTE-0 record stays pure.
 
 ## 2. The Base — rules (locked, AlgoTest-parity)
 
@@ -82,6 +86,8 @@ fallback; 3-sec ticks are not recorded for the full chain.)
 | 2026-09-07 ~12:30 IST | Cron installed (safety procedure, 97→99 lines) | `* 9-15 * * 1-5 ... csl60_paper.py mark`; no-ops on non-expiry days |
 | 2026-09-07 ~12:40 IST | NAS Trade Book wired (frontend-only, no restart) | Nas.tsx: sleeve def + /app/csl60_paper.json fetch + adapter; planned row shows 'Tue 09:16' on non-expiry days |
 | 2026-09-07 ~12:50 IST | Registered: /app/strategies (paper row) + Ops Center (job + review due 2026-11-30) | Study-slot gap noted: /app/backtest factsheet entry owed |
+| 2026-09-07 ~12:10 IST | DTE-1 SHADOW added on Arun's instruction | `book` column (dte0/dte1); mark() trades DTE-1 too, tagged; `seed-dte1` backfills prior sessions; separate Trade Book group; JSON `shadow` block keeps ledgers apart |
+| 2026-09-07 12:06 IST | Today's positions LIVE from recorded capture | DTE-1 shadow ATM 23850: CE in 71.35 / PE in 70.1 at 09:16, SLs 114.2/112.2, both OPEN (CE +6,142 / PE −11,765 at 12:06) |
 
 ## 6. Crash recovery
 

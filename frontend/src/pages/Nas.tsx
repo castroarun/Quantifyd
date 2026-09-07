@@ -162,6 +162,7 @@ const SLEEVE_TB_DEFS: SystemDef[] = [
   { id: 'csl-comb-sx', key: 'csl-comb-sx', label: 'SENSEX COMB30 · control', subtitle: 'fixed-SL30 control arm (paper)', rules: '', configNote: 'paper A/B', group: '916' },
   { id: 'csl-timeb-sx', key: 'csl-timeb-sx', label: 'TimeB SENSEX', subtitle: 'Wed + Thu windows', rules: '', configNote: 'live · Wed 8L window / Thu 5L full-day', group: '916' },
   { id: 'csl60-dte0', key: 'csl60-dte0', label: 'NIFTY CSL60 · DTE-0', subtitle: 'expiry-day 09:16 ATM · per-leg 60% SL + BE-trail', rules: '', configNote: 'PAPER 10L · DTE-0 only · AlgoTest study r/136 rank-1', group: '916' },
+  { id: 'csl60-dte1', key: 'csl60-dte1', label: 'NIFTY CSL60 · DTE-1 shadow', subtitle: 'same mechanics on DTE-1 — study REJECTED this DTE (forward test)', rules: '', configNote: 'PAPER 10L shadow · never blended with the DTE-0 book', group: '916' },
 ];
 
 // Map NAS-OPT's today-position + closed trades into the Trade Book's NASState leg shape.
@@ -1651,8 +1652,8 @@ export default function Nas() {
     return { state: { positions: { ce, pe, closed_today: closed } } as any, err: null };
   };
   // CSL-60 DTE-0 (research/136): today's legs from csl60_paper.json, else the planned window.
-  const csl60TbState = (): SystemStateRecord => {
-    const legs: any[] = csl60?.today_legs ?? [];
+  const csl60TbState = (book: string): SystemStateRecord => {
+    const legs: any[] = (csl60?.today_legs ?? []).filter((l: any) => (l.book ?? 'dte0') === book);
     if (legs.length) {
       const ce: any[] = [], pe: any[] = [], closed: any[] = [];
       for (const l of legs) {
@@ -1672,6 +1673,7 @@ export default function Nas() {
       }
       return { state: { positions: { ce, pe, closed_today: closed } } as any, err: null };
     }
+    if (book !== 'dte0') return { state: null, err: null } as any;  // shadow: only visible when it traded
     // no legs: waiting for the next expiry day (NIFTY weekly = Tuesday)
     const entryLbl = new Date().getDay() === 2 ? '09:16' : 'Tue 09:16';
     return { state: { planned: { entry: entryLbl, exit: '15:15', sl: '60%/leg', qty: 650, mode: 'paper' } } as any, err: null };
@@ -2019,7 +2021,7 @@ export default function Nas() {
       <Collapsible title="Trade Book" meta="NAS positions - live + closed today" defaultOpen>
         <TradeBook
           systems={[...ENTRY_916_SYSTEMS, ...SLEEVE_TB_DEFS, NAS_OPT_DEF, ...SQUEEZE_SYSTEMS]}
-          states={{ ...states, 'nas-opt': nasOptTb, 'csl60-dte0': csl60TbState(), 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-timeb2': sleeveTbState('CSL_TIMEB2_LIVE', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160),
+          states={{ ...states, 'nas-opt': nasOptTb, 'csl60-dte0': csl60TbState('dte0'), 'csl60-dte1': csl60TbState('dte1'), 'csl-comb': sleeveTbState('NAS_COMB20', 130), 'csl-timeb': sleeveTbState('CSL_TIMEB_NIFTY', 520), 'csl-timeb2': sleeveTbState('CSL_TIMEB2_LIVE', 520), 'csl-comb-sx': sleeveTbState('CSL30F_SENSEX', 60), 'csl-timeb-sx': sleeveTbState('CSL_TIMEB_SENSEX', 160),
             'csl-comb-sx-wed': sleeveTbState('CSL30F_SENSEX_WED', 60),
             'csl-timeb-mon-am': sleeveTbState('CSL_TIMEB_NIFTY_MON_AM', 520),
             'csl-timeb-mon': sleeveTbState('CSL_TIMEB_NIFTY_MON', 520),
