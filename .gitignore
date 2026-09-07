@@ -214,3 +214,10 @@ research/153_ipo_base/results/g3_trades_*.csv
 # transient artefacts (2026-09-05)
 research/_tmp_*
 static/snapshots_backup_*/
+
+# r/156 regenerable panels (rebuilt in ~90s by research/156_sector_rotation/scripts/p1_ic.py)
+research/156_sector_rotation/results/ind20_nav.csv
+research/156_sector_rotation/results/ind20_breadth50.csv
+research/156_sector_rotation/results/ind20_breadth200.csv
+research/156_sector_rotation/results/ind20_counts.csv
+research/156_sector_rotation/results/p5_navs.csv

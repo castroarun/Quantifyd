@@ -119,6 +119,18 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Sector indices - back-fill to 2005 inception, then re-ask research/156",
+     "2027-03-07", "PENDING",
+     "research/156 found NO EDGE in sector rotation and NO ADDED VALUE in sector-gated stock "
+     "picking, but the sample is the binding constraint: the 9 real NSE sector indices start "
+     "2015-01-01 in market_data.db, giving 11.7 years, one crash (2020) and no 2008. NSE "
+     "publishes these series back to ~2005. TASK: back-fill NIFTYAUTO/IT/ENERGY/FINSRV/FMCG/"
+     "METAL/PHARMA/PSUBANK/REALTY to inception, then re-run research/156's p1_ic.py and "
+     "p2_rotation.py unchanged (both are resume-safe). PASS CRITERION for reopening the line: "
+     "any signal family reaching abs(IC t) >= 2.5 on the real indices over the LONGER window "
+     "with monotone terciles, AND a rotation config clearing 20% CAGR / Calmar 1.0 after tax. "
+     "Otherwise the NO EDGE verdict stands permanently and this review closes. Study: "
+     "/app/backtest/sector-trend-rotation-research156."),
     ("CSL-60 DTE-0 paper soak - live-vs-study profile check",
      "2026-11-30", "SCHEDULED",
      "After ~12 live expiry Tuesdays, compare the paper book (services/csl60_paper.py, days table) "

@@ -2,6 +2,47 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-07 — research/156 sector trend: NO EDGE (rotation) / NO ADDED VALUE (sector filter)
+
+Full verdict: `research/156_sector_rotation/results/RESULTS.md` · study page
+`/app/backtest/sector-trend-rotation-research156`.
+
+Arun asked whether the sector indices can be read for trend — ride the leaders in proportions, or
+drill into their leader stocks for a curated book above 20% CAGR — and whether it complements
+TN+OA. Both branches were built with **no inherited design** from OA or TN and both failed.
+
+- **Branch A (allocate across sectors): 0 of 1,440 configurations** clear the bar. Best 16.3%
+  CAGR / −36.9% DD / Calmar 0.44 after tax. Equal-weighting all nine sectors gives 14.0% / 0.32;
+  **Midcap 150 buy-and-hold gives 18.0% / 0.41 and beats every cell we built.** Momentum does rank
+  sectors better than chance (94th–100th percentile of a 500-draw random-sector null) — and the
+  ranking is worth less than the diversification it destroys. That is the r/63 lesson again.
+- **"To-be trending" is empty.** Acceleration t = 1.37 (1m) / 1.79 (3m); breadth-change t = 0.36.
+  Nothing anticipates leadership.
+- **Branch B (sector as a universe filter): the sector layer adds nothing.** The sector-gated stock
+  book returns 32.5% / Calmar 0.85 — and the *identical stock rule with no sector filter at all*
+  returns 32.9% / 0.84 and wins 11 of 16 paired offsets. All the return is stock momentum, which
+  TN and OA already harvest.
+- **No complement value.** Correlation 0.41–0.54 to the live legs (ceiling 0.40); best blend gain
+  +0.04 Calmar at slightly lower CAGR; **a plain cash sleeve at the same weight beats every
+  candidate.**
+- **Confirms and extends r/147** — its single SECROT cell reproduces after tax at 8.9% / −56.0% /
+  0.16, the worst book in the study.
+
+**A reusable data warning was produced and belongs to future studies, not just this one:** synthetic
+sector proxies built from today's index membership out-drift the real sector indices by **+4 to
++14pp of CAGR per year**, and **shuffled industry labels reproduce most of the apparent "sector
+momentum". Any future sector work must run the same-universe head-to-head and the shuffled-label
+null before believing a wide-panel result.**
+
+### Pending — the only follow-up worth having
+
+**Back-fill the nine real NSE sector indices to their 2005 inception** (Ops review 2027-03-07).
+The database starts them at 2015, which caps the sample at 11.7 years with one crash and no 2008.
+NSE publishes the history. This is a data-acquisition task, not a modelling one, and it is the only
+thing that could reopen this line honestly. It would also improve any future sector-aware work
+(regime gates, sector caps on TN/OA) regardless of this verdict.
+
+
 ## ✅ 2026-09-06 — DECIDED: no gold sleeve for now (Arun)
 
 The book stands at **True North 40 / Open Alpha 40 / IPO Base 20**, and gold is not in it.

@@ -1,0 +1,9 @@
+industry,sector_index,n_days,corr_daily,corr_monthly,cagr_synth,cagr_real,drift_pp
+Information Technology,NIFTYIT,2884,0.808,0.826,21.31,9.2,12.11
+Healthcare,NIFTYPHARMA,2884,0.819,0.813,21.77,8.07,13.7
+Automobile and Auto Components,NIFTYAUTO,2884,0.855,0.874,23.49,11.26,12.23
+Fast Moving Consumer Goods,NIFTYFMCG,2884,0.743,0.781,19.4,7.54,11.86
+Metals & Mining,NIFTYMETAL,2884,0.932,0.936,26.47,14.85,11.62
+Realty,NIFTYREALTY,2884,0.932,0.964,24.96,13.72,11.24
+Financial Services,NIFTYFINSRV,2884,0.796,0.836,15.49,11.42,4.07
+Oil Gas & Consumable Fuels,NIFTYENERGY,2884,0.808,0.842,18.82,13.56,5.26
