@@ -672,6 +672,31 @@ export const SYSTEMS: StrategySystem[] = [
     ],
   },
 
+  {
+    id: 'csl60-dte0',
+    name: 'NIFTY CSL60 · DTE-0',
+    subtitle: 'Expiry-day 09:16 ATM short straddle — per-leg 60% SL, trail-to-BE',
+    status: 'paper',
+    size: '10 lots (650 qty, paper)',
+    since: '8 Sep 2026',
+    rule: 'On NIFTY weekly expiry day only: sell the ATM straddle at 09:16; each leg stops at 1.60x its entry premium; when the first leg stops, the survivor’s stop tightens to its own entry (break-even); square off 15:15. Budget/election days skipped by calendar.',
+    rules: [
+      ['Why DTE-0 only', 'Rank 1 of 98 in the AlgoTest study (r/136): net ₹23.7L / 294 trades / WR 63.6% / t 4.28 / OOS t 2.24 at 10 lots. DTE-1 explicitly dropped — OOS-negative (t 0.91, Net/DD 0.94 at 60%)'],
+      ['Entry', '09:16 recorded 1-min chain LTP, ATM = strike nearest spot. One-shot: no entry after 09:30 (day logged MISSED)'],
+      ['Stops', 'Per-leg 60% — exits at the breaching LTP, not the theoretical 1.60x; after the first stop the surviving leg trails to break-even'],
+      ['Exit', '15:15 square-off; partial — legs exit independently'],
+      ['Data & costs', 'options_data.db recorded 1-min chain (study ran on AlgoTest 1-min bars — resolution-consistent); costs at study parity: 0.59% of premium turnover + ₹80/day'],
+      ['Why paper', 'Forward-validate the study’s WR / streak / median-trade profile on live recorded quotes before any sizing call. No orders — no engine touched'],
+    ],
+    rulesDoc: 'research/136_nifty_csl_portfolio/CSL60_DTE0_PAPER_1MIN_DEPLOY_STATUS.md',
+    dashboard: '/nas',
+    studies: [],
+    studyGap: 'Interactive study is the AlgoTest Study page (/app/straddle-study); /app/backtest factsheet entry owed',
+    changeLog: [
+      { date: '7 Sep 2026', text: 'PAPER book deployed: services/csl60_paper.py (1-min cron, deterministic replay each run), seeded from 12 recorded expiry days 16-Jun→1-Sep: +₹24,116 net, 58% WR, worst day −₹28,170 (10 lots). Renders in the NAS Trade Book as NIFTY CSL60 · DTE-0. First live paper trade Tue 8 Sep 09:16.' },
+    ],
+  },
+
   // ---------------------------------------------------------------- PARKED
   {
     id: 'straddle45',

@@ -135,3 +135,6 @@ smaller NAV at its own next step.
 ## research/151 — BananaPatterns "VCP" screen (review due 2027-03-05)
 
 Verdict **NO EDGE**. The screen reproduces the site exit engine exactly (31/32 trades) but its "volatility contraction pattern" is absent from its own published trades, a null control shows the pattern subtracts value, and the book correlates 0.75 with the live Open Alpha sleeve and loses the blend test to plain cash. Re-open only on a published, reproducible VCP definition. Study: `research/151_vcp_breakout/results/RESULTS.md`; page: `/app/backtest/vcp-breakout-research151`.
+
+### CSL-60 DTE-0 straddle PAPER book (2026-09-07, research/136)
+- services/csl60_paper.py — cron every minute 09-15 Mon-Fri; acts only on NIFTY expiry days; log /tmp/csl60_paper.log; manual: ./venv/bin/python3 services/csl60_paper.py mark|show|seed. Renders in NAS Trade Book; review due 2026-11-30 (Ops Center).

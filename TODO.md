@@ -1361,3 +1361,5 @@ Bear/bull debit spread → **30-min R1/S1 stop (PRIMARY management)** → **Frid
   Nothing deployed; research/153's spec unchanged.
 - **Dated review registered:** 31-Mar-2027 - revisit only if the IPO sleeve's weight exceeds
   30% or the pipeline has been in drought for more than 12 consecutive months.
+
+- [ ] CSL-60 DTE-0 paper book: publish /app/backtest factsheet entry for the r/136 study (strategies.ts studyGap notes it); paper-soak review 2026-11-30 (Ops Center) — added 2026-09-07

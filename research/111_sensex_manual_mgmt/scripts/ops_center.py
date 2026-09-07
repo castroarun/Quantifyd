@@ -15,6 +15,14 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("CSL-60 DTE-0 straddle PAPER book (research/136)", [
+        ("csl60_paper mark", "every minute 09:00-15:59 Mon-Fri cron (flock; acts only on NIFTY expiry days)",
+         "Paper-trades the AlgoTest study's rank-1 system: expiry-day 09:16 ATM straddle, per-leg 60% SL, "
+         "trail-to-breakeven, 15:15 exit, 10 lots. Reads recorded 1-min option_chain only; no orders, no engine. "
+         "Renders in the NAS Trade Book (NIFTY CSL60 - DTE-0). Deploy doc: "
+         "research/136_nifty_csl_portfolio/CSL60_DTE0_PAPER_1MIN_DEPLOY_STATUS.md",
+         "cd /home/arun/quantifyd && ./venv/bin/python3 services/csl60_paper.py mark"),
+    ]),
     ("Options data capture (feeds every options study)", [
         ("option 1-min OHLC recorder", "15:35 Mon-Fri cron (flock)",
          "Captures 1-MINUTE OHLC (high/low, not just an LTP poll) for NIFTY/BANKNIFTY/SENSEX nearest-2-expiry contracts, ~540/day. MUST run daily: Kite refuses historical data for EXPIRED tokens ('invalid token'), so a missed day is lost forever. Unlocks stop-trigger verification and per-leg MAE/MFE, which the LTP-poll option_chain cannot provide. Read-only vs broker; no engine touched. Deploy doc: OPTIONS_OHLC_RECORDER_1MIN_DEPLOY_STATUS.md",
@@ -111,6 +119,12 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("CSL-60 DTE-0 paper soak - live-vs-study profile check",
+     "2026-11-30", "SCHEDULED",
+     "After ~12 live expiry Tuesdays, compare the paper book (services/csl60_paper.py, days table) "
+     "against the study profile (r/136 rank-1: WR 63.6%, mean +8,059/day, worst -52k, streak<=6 at 10 lots). "
+     "PASS: live WR and mean inside the study's per-12-day sampling band; FAIL: stop or re-study. "
+     "Study: /app/straddle-study."),
     ("IPO Base paper soak - fill quality against the pivot",
      "2026-10-15", "SCHEDULED",
      "The IPO Base book went to paper on 2026-09-06 (services/ipo_paper.py, /app/ipo-paper), "
