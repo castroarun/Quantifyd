@@ -1,28 +1,28 @@
 {
- "updated": "2026-09-07 14:06:06.832056",
+ "updated": "2026-09-07 14:31:08.779598",
  "asof": "2026-09-07",
  "positions": [
   {
    "symbol": "AUROPHARMA",
    "qty": 64.0,
    "entry_price": 1692.7,
-   "ltp": 1654.5,
+   "ltp": 1660.3,
    "prev_close": 1653.1,
-   "day_move_pct": 0.08,
-   "value": 105888,
-   "pnl": -2445,
-   "pnl_pct": -2.26
+   "day_move_pct": 0.44,
+   "value": 106259,
+   "pnl": -2074,
+   "pnl_pct": -1.91
   },
   {
    "symbol": "BHEL",
    "qty": 258.0,
    "entry_price": 421.54,
-   "ltp": 423.75,
+   "ltp": 423.2,
    "prev_close": 431.1,
-   "day_move_pct": -1.7,
-   "value": 109328,
-   "pnl": 569,
-   "pnl_pct": 0.52
+   "day_move_pct": -1.83,
+   "value": 109186,
+   "pnl": 427,
+   "pnl_pct": 0.39
   },
   {
    "symbol": "IDEA",
@@ -39,32 +39,32 @@
    "symbol": "LAURUSLABS",
    "qty": 61.0,
    "entry_price": 1833.72,
-   "ltp": 1869.2,
+   "ltp": 1868.7,
    "prev_close": 1840.0,
-   "day_move_pct": 1.59,
-   "value": 114021,
-   "pnl": 2164,
-   "pnl_pct": 1.93
+   "day_move_pct": 1.56,
+   "value": 113991,
+   "pnl": 2134,
+   "pnl_pct": 1.91
   },
   {
    "symbol": "OFSS",
    "qty": 9.0,
    "entry_price": 12160.89,
-   "ltp": 11749.0,
+   "ltp": 11738.0,
    "prev_close": 12058.0,
-   "day_move_pct": -2.56,
-   "value": 105741,
-   "pnl": -3707,
-   "pnl_pct": -3.39
+   "day_move_pct": -2.65,
+   "value": 105642,
+   "pnl": -3806,
+   "pnl_pct": -3.48
   }
  ],
- "value": 556000,
+ "value": 556100,
  "cash": 27608,
- "swept": 330012,
- "nav": 913620,
+ "swept": 330018,
+ "nav": 913725,
  "capital": 937525,
- "pnl": 2998,
- "pnl_pct": 0.54,
+ "pnl": 3098,
+ "pnl_pct": 0.56,
  "n": 5,
  "source": "gen_momentum_live"
 }

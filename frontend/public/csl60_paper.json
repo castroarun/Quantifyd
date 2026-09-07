@@ -23,9 +23,9 @@
    "exit_ts": null,
    "exit_reason": null,
    "status": "OPEN",
-   "ltp": 62.25,
-   "ltp_ts": "14:05",
-   "pnl_gross": 5914.999999999996,
+   "ltp": 61.75,
+   "ltp_ts": "14:30",
+   "pnl_gross": 6239.999999999996,
    "book": "dte1"
   },
   {
@@ -40,9 +40,9 @@
    "exit_ts": null,
    "exit_reason": null,
    "status": "OPEN",
-   "ltp": 71.5,
-   "ltp_ts": "14:05",
-   "pnl_gross": -910.0000000000036,
+   "ltp": 70.4,
+   "ltp_ts": "14:30",
+   "pnl_gross": -195.0000000000074,
    "book": "dte1"
   }
  ],
@@ -389,12 +389,12 @@
    "source": "live",
    "atm_strike": 23850.0,
    "entry_spot": 23838.4,
-   "gross": 5005.0,
-   "turnover": 178880.0,
-   "net": 3869.61,
+   "gross": 6045.0,
+   "turnover": 177840.0,
+   "net": 4915.74,
    "n_sl": 0,
    "note": "",
-   "updated_at": "2026-09-07T14:06:02",
+   "updated_at": "2026-09-07T14:31:02",
    "book": "dte1"
   }
  ],
@@ -403,8 +403,8 @@
  "shadow": {
   "book": "dte1",
   "n_days": 13,
-  "cum_net": 110309.27,
+  "cum_net": 111355.4,
   "note": "DTE-1 shadow - study REJECTED this DTE; forward test only"
  },
- "generated": "2026-09-07T14:06:02"
+ "generated": "2026-09-07T14:31:02"
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './BlueskyPaper.module.css';
+import LiveTick from '../components/LiveTick/LiveTick';
 
 /* CAPITAL DESK (/app/capital) — the one page that owns every rupee in and out.
    Renamed from "Sleeves 50-50" on 05-Sep-2026: the book is three systems on a
@@ -552,86 +553,155 @@ function DividendsCard() {
   );
 }
 
-export default function CapitalDesk() {
-  const [mom, setMom] = useState<MomState | null>(null);
-  const [bs, setBs] = useState<BsFeed | null>(null);
-  const [tn, setTn] = useState<TnBench | null>(null);
-  useEffect(() => {
-    apiGet<MomState>('/api/momentum-paper/state').then(setMom).catch(() => setMom(null));
-    fetch('/app/bluesky_paper.json').then((r) => r.json()).then(setBs).catch(() => setBs(null));
-    apiGet<TnBench>('/api/momentum-paper/benchmarks').then(setTn).catch(() => setTn(null));
-  }, []);
+/* ── the desk's own view: three live books, one portfolio ────────────────────────
+   This page used to read bluesky_paper.json for Open Alpha and show Rs 10,30,361 for a
+   book holding Rs 4,45,774 — the retired paper model, the same defect the money paths
+   had (D1) surviving in the display layer. IPO was absent entirely.
 
-  /* Drive True North off the TIME-WEIGHTED curve, never off NAV: deposits are not
-     returns. Falls back to nothing rather than to NAV, because a wrong line is worse
-     than a missing one. */
-  const tMap = new Map((tn?.book ?? []).map((r) => [r.d, r]));
-  const rows = (bs?.nav_curve ?? []).filter((r) => tMap.has(r.date));
-  const enough = rows.length >= 25;
+   Every number below now comes from a live book feed:
+     True North  /app/momentum_live.json   (cron-baked marks, ~2ms)
+     Open Alpha  /app/oa_real.json         (the REAL book)
+     IPO Base    /app/ipo_paper.json       (paper until the desk funds it)
+   NIFTY for the curve comes from the True North benchmark endpoint, which already
+   carries a time-weighted book curve — deposits are not returns, and True North was
+   funded from Rs 2.98L to Rs 9.38L inside this window, so raw NAV would not be a
+   return series. */
 
-  const win = rows.length;
-  const tnFirst = rows.length ? tMap.get(rows[0].date)! : null;
-  const tnLast = rows.length ? tMap.get(rows[rows.length - 1].date)! : null;
-  /* r is cumulative-since-inception in %, so the window return chains the two ends. */
-  const tnWin = tnFirst && tnLast
-    ? ((1 + tnLast.r / 100) / (1 + tnFirst.r / 100) - 1) * 100 : null;
-  const oaWin = rows.length ? (rows[rows.length - 1].nav / rows[0].nav - 1) * 100 : null;
-  const nbFirst = rows.find((r) => r.bench != null)?.bench ?? null;
-  const nbLast = [...rows].reverse().find((r) => r.bench != null)?.bench ?? null;
-  const nbWin = nbFirst && nbLast ? (nbLast / nbFirst - 1) * 100 : null;
+type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
+  swept: number; pnl: number; n: number };
+type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
+  pnl: number; realized: number; gain: number; return_pct: number;
+  navcurve: { d: string; nav: number }[]; positions: unknown[] };
+type LiveIPO = { updated: string; mode: string; nav: number; capital: number; value: number;
+  cash: number; pnl: number; realized: number; gain: number; return_pct: number;
+  slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
+  pending: unknown[] };
 
-  function ddOf(v: number[]) {
-    let peak = v[0] ?? 1, d = 0;
-    for (const x of v) { peak = Math.max(peak, x); d = Math.min(d, x / peak - 1); }
-    return d * 100;
-  }
-  const tnDD = rows.length ? ddOf(rows.map((r) => 1 + tMap.get(r.date)!.r / 100)) : null;
-  const oaDD = rows.length ? ddOf(rows.map((r) => r.nav)) : null;
+function Tile({ label, value, sub, tone }:
+  { label: string; value: string; sub?: string; tone?: 'pos' | 'neg' }) {
+  return (
+    <div className={styles.tile}>
+      <div>{label}</div>
+      <b className={tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : undefined}>{value}</b>
+      {sub && <div className={styles.muted} style={{ fontSize: 11, marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
 
-  const cell = (v: number | null) =>
-    v == null ? <span className={styles.muted}>—</span>
-      : <b className={v >= 0 ? styles.pos : styles.neg}>{pct(v)}</b>;
+/* Growth of 100 for each book and the portfolio, on the days they share. Books started
+   on different dates, so the common window is the shortest of them — stated on the card
+   rather than quietly padded. */
+function CombinedCurve({ tn, oa, ipo }:
+  { tn: TnBench | null; oa: LiveOA | null; ipo: LiveIPO | null }) {
+  const series: { name: string; color: string; pts: { d: string; v: number }[] }[] = [];
+  if (tn?.book?.length)
+    series.push({ name: 'True North', color: '#2563EB',
+                  pts: tn.book.map((r) => ({ d: r.d, v: 1 + r.r / 100 })) });
+  if (oa?.navcurve?.length)
+    series.push({ name: 'Open Alpha', color: '#0891B2',
+                  pts: oa.navcurve.map((r) => ({ d: r.d, v: r.nav })) });
+  if (ipo?.navcurve?.length)
+    series.push({ name: 'IPO Base', color: '#D946A0',
+                  pts: ipo.navcurve.map((r) => ({ d: r.d, v: r.nav })) });
+  const bench = (tn?.book ?? []) as unknown as { d: string; bench?: number }[];
+  const nb = (tn?.series as any)?.NIFTYBEES as { d: string; v: number }[] | undefined;
 
-  let combined: React.ReactNode = null;
-  if (enough && mom && bs && tn) {
-    const dates = rows.map((r) => r.date);
-    const bV = rows.map((r) => 100 * r.nav / rows[0].nav);
-    /* time-weighted, so the funding that took this book from Rs2.98L to Rs9.07L
-       inside the window does not masquerade as +205% of performance */
-    const mV = rows.map((r) => 100 * (1 + tMap.get(r.date)!.r / 100) / (1 + tnFirst!.r / 100));
-    const benchRaw = rows.map((r) => r.bench);
-    const b0 = benchRaw.find((v) => v != null) ?? 1;
-    const nV = benchRaw.map((v) => (v == null ? NaN : 100 * v / (b0 as number)));
-    const blend = blend5050(dates, mV, bV);
-    const sM = stats(mV, dates), sB = stats(bV, dates), sX = stats(blend, dates);
-    const corr = corrMonthly(dates, mV, bV);
-    combined = (
-      <>
-        <div className={styles.tiles}>
-          <div className={styles.tile}><div>True North</div>
-            <b className={sM.total >= 0 ? styles.pos : styles.neg}>{pct(sM.total)}</b></div>
-          <div className={styles.tile}><div>Open Alpha</div>
-            <b className={sB.total >= 0 ? styles.pos : styles.neg}>{pct(sB.total)}</b></div>
-          <div className={styles.tile}><div>50-50 blend</div>
-            <b className={sX.total >= 0 ? styles.pos : styles.neg}>{pct(sX.total)}</b></div>
-          <div className={styles.tile}><div>Blend CAGR</div><b>{pct(sX.cagr)}</b></div>
-          <div className={styles.tile}><div>Blend MaxDD</div><b className={styles.neg}>{pct(sX.dd)}</b></div>
-          <div className={styles.tile}><div>Monthly corr</div><b>{corr == null ? '—' : corr.toFixed(2)}</b></div>
-        </div>
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>
-            Growth of 100 (log) — gold = 50-50 blend · green = True North · blue = Open Alpha · dashed = NIFTYBEES
-          </div>
-          <MultiCurve dates={dates} lines={[
-            { name: 'NIFTYBEES', v: nV.map((v) => (isNaN(v) ? 100 : v)), color: 'var(--ink-muted)', dash: '4 3' },
-            { name: 'True North', v: mV, color: '#1f9d55' },
-            { name: 'Open Alpha', v: bV, color: '#3b82d6' },
-            { name: '50-50 blend', v: blend, color: '#d4a017' },
-          ]} />
-        </div>
-      </>
+  const dateSets = series.map((s) => new Set(s.pts.map((p) => p.d)));
+  const common = series.length
+    ? [...dateSets[0]].filter((d) => dateSets.every((s) => s.has(d))).sort()
+    : [];
+
+  if (common.length < 3) {
+    return (
+      <div className={styles.card}>
+        <div className={styles.cardTitle}>Combined curve</div>
+        <p className={styles.note}>
+          The books start on different dates and share only {common.length} common
+          {common.length === 1 ? ' day' : ' days'} so far — Open Alpha since 04-Sep and
+          IPO Base since 06-Sep. The curve draws once there are a few days they all cover.
+          Each book&apos;s own curve is on its tab in the meantime.
+        </p>
+      </div>
     );
   }
+
+  const reb = (s: typeof series[0]) => {
+    const m = new Map(s.pts.map((p) => [p.d, p.v]));
+    const base = m.get(common[0])!;
+    return common.map((d) => (m.get(d)! / base) * 100);
+  };
+  const lines = series.map((s) => ({ name: s.name, color: s.color, v: reb(s) }));
+  const port = common.map((_, i) => lines.reduce((a, l) => a + l.v[i], 0) / lines.length);
+  lines.unshift({ name: 'Portfolio (blend)', color: '#111', v: port });
+  if (nb?.length) {
+    const m = new Map(nb.map((r) => [r.d, r.v]));
+    if (common.every((d) => m.has(d))) {
+      const b0 = m.get(common[0])!;
+      lines.push({ name: 'NIFTY', color: '#B4B2A9', v: common.map((d) => (m.get(d)! / b0) * 100) });
+    }
+  }
+  const st = stats(port, common);
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>
+        Combined curve — growth of 100 over the {common.length} days all books share
+      </div>
+      <MultiCurve dates={common} lines={lines.map((l) => ({
+        name: l.name, v: l.v, color: l.color,
+        dash: l.name === 'NIFTY' ? '4 3' : undefined,
+      }))} />
+      <div className={styles.legend} style={{ marginTop: 8 }}>
+        {lines.map((l) => (
+          <span key={l.name} className={styles.legendItem}>
+            <i className={styles.swatch} style={{ background: l.color }} />
+            {l.name} <b>{pct(l.v[l.v.length - 1] - 100)}</b>
+          </span>
+        ))}
+      </div>
+      <p className={styles.note}>
+        Equal-weighted blend of the books that have started, rebased to 100 on the first
+        shared day. True North is drawn from its TIME-WEIGHTED curve — it was funded from
+        Rs 2.98L to Rs 9.38L inside this window, so raw NAV is not a return series.
+        Portfolio over this window: {pct(st.total)} · worst drawdown {pct(st.dd)}.
+      </p>
+    </div>
+  );
+}
+
+export default function CapitalDesk() {
+  const [tnLive, setTnLive] = useState<LiveTN | null>(null);
+  const [oa, setOa] = useState<LiveOA | null>(null);
+  const [ipo, setIpo] = useState<LiveIPO | null>(null);
+  const [tn, setTn] = useState<TnBench | null>(null);
+  const [showEvidence, setShowEvidence] = useState(false);
+
+  useEffect(() => {
+    const j = (u: string) => fetch(u + '?t=' + Date.now()).then((r) => (r.ok ? r.json() : null));
+    const load = () => {
+      j('/app/momentum_live.json').then(setTnLive).catch(() => {});
+      j('/app/oa_real.json').then(setOa).catch(() => {});
+      j('/app/ipo_paper.json').then(setIpo).catch(() => {});
+    };
+    load();
+    apiGet<TnBench>('/api/momentum-paper/benchmarks').then(setTn).catch(() => setTn(null));
+    const id = setInterval(load, 10000);
+    return () => clearInterval(id);
+  }, []);
+
+  const navTN = tnLive?.nav ?? 0;
+  const navOA = oa?.nav ?? 0;
+  const navIPO = ipo?.nav ?? 0;
+  const capTN = tnLive?.capital ?? 0;
+  const capOA = oa?.capital ?? 0;
+  /* IPO on paper runs a notional Rs 10L, which is NOT the portfolio's money — counting it
+     would inflate every total on this page. Only real money committed to it counts. */
+  const ipoLive = ipo?.mode === 'live';
+  const navIPOreal = ipoLive ? navIPO : 0;
+  const capIPOreal = ipoLive ? (ipo?.capital ?? 0) : 0;
+  const portNav = navTN + navOA + navIPOreal;
+  const portCap = capTN + capOA + capIPOreal;
+  const gain = portNav - portCap;
+  const dayPnl = (tnLive?.pnl ?? 0) + (oa?.pnl ?? 0) + (ipoLive ? (ipo?.pnl ?? 0) : 0);
 
   return (
     <div className={styles.page}>
@@ -639,115 +709,71 @@ export default function CapitalDesk() {
         <div>
           <h1>Capital Desk</h1>
           <div className={styles.sub}>
-            Every rupee in and out, and the target it is working toward · {win} overlapping
-            trading days
-            {bs && bs.n_live_trades === 0
-              ? ' — True North LIVE against the Open Alpha reference model'
-              : ' of common live history'}
+            Every rupee in and out, and the target it is working toward · live book values
           </div>
         </div>
+        <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+          <LiveTick updated={tnLive?.updated || oa?.updated} />
+        </span>
       </div>
 
       <div className={styles.tiles}>
-        <div className={styles.tile}><div>Portfolio NAV</div>
-          <b>{mom && bs ? '₹' + Math.round(mom.nav + bs.nav).toLocaleString('en-IN') : '…'}</b></div>
-        <div className={styles.tile}><div>True North NAV</div>
-          <b>{mom ? '₹' + Math.round(mom.nav).toLocaleString('en-IN') : '…'}</b></div>
-        <div className={styles.tile}><div>Open Alpha NAV</div>
-          <b>{bs ? '₹' + Math.round(bs.nav).toLocaleString('en-IN') : '…'}</b></div>
-        <div className={styles.tile}><div>Overlapping days</div><b>{win || '…'}</b></div>
+        <Tile label="Portfolio NAV" value={rup(portNav)}
+              sub={`on ${rup(portCap)} of capital`} />
+        <Tile label="Total return" value={`${gain >= 0 ? '+' : '−'}${rup(Math.abs(gain)).slice(1)}`}
+              sub={portCap ? pct((gain / portCap) * 100) : '—'}
+              tone={gain >= 0 ? 'pos' : 'neg'} />
+        <Tile label="Open P&L today" value={`${dayPnl >= 0 ? '+' : '−'}${rup(Math.abs(dayPnl)).slice(1)}`}
+              sub="unrealised, across the live books" tone={dayPnl >= 0 ? 'pos' : 'neg'} />
+        <Tile label="True North" value={rup(navTN)}
+              sub={tnLive ? `${tnLive.n} holdings · liquid ${rup(tnLive.swept + tnLive.cash)}` : '—'} />
+        <Tile label="Open Alpha" value={rup(navOA)}
+              sub={oa ? `${oa.positions?.length ?? 0} holdings · REAL money` : '—'} />
+        <Tile label="IPO Base" value={ipoLive ? rup(navIPO) : 'on paper'}
+              sub={ipo ? `${ipo.slots_used}/${ipo.slots} slots · ${ipo.pending?.length ?? 0} armed`
+                       : 'not started'} />
       </div>
+
+      <AllocationDesk />
+      <CombinedCurve tn={tn} oa={oa} ipo={ipo} />
+      <FundsPanel />
+      <DividendsCard />
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>
-          Each sleeve over the SAME {win} days — measured the same way
+          Backtest evidence
+          <button onClick={() => setShowEvidence(!showEvidence)}
+                  style={{ marginLeft: 10, cursor: 'pointer', font: '500 11px inherit',
+                           padding: '3px 8px', borderRadius: 5, background: 'transparent',
+                           border: '1px solid var(--hairline,rgba(0,0,0,0.16))',
+                           color: 'var(--ink-muted,#8a8a85)' }}>
+            {showEvidence ? 'hide' : 'show'}
+          </button>
         </div>
-        <table className={styles.tbl}>
-          <thead>
-            <tr><th className={styles.txt}>&nbsp;</th><th>True North</th><th>Open Alpha</th>
-              <th>NIFTYBEES</th></tr>
-          </thead>
-          <tbody>
-            <tr><td className={styles.txt}>Money at risk</td>
-              <td>{mom?.mode === 'LIVE' ? 'LIVE · real' : 'paper'}</td>
-              <td>paper</td><td className={styles.muted}>index</td></tr>
-            <tr><td className={styles.txt}>Record over this window</td>
-              <td>live</td>
-              <td className={styles.neg}>{bs && bs.n_live_trades === 0 ? 'BACKFILL' : 'live'}</td>
-              <td className={styles.muted}>actual</td></tr>
-            <tr><td className={styles.txt}>Return</td>
-              <td>{cell(tnWin)}</td><td>{cell(oaWin)}</td><td>{cell(nbWin)}</td></tr>
-            <tr><td className={styles.txt}>Max drawdown</td>
-              <td>{cell(tnDD)}</td><td>{cell(oaDD)}</td><td className={styles.muted}>—</td></tr>
-            <tr><td className={styles.txt}>vs NIFTYBEES</td>
-              <td>{cell(tnWin != null && nbWin != null ? tnWin - nbWin : null)}</td>
-              <td>{cell(oaWin != null && nbWin != null ? oaWin - nbWin : null)}</td>
-              <td className={styles.muted}>—</td></tr>
-          </tbody>
-        </table>
-        <p className={styles.note}>
-          True North's return is <b>time-weighted</b> — the book was funded from ₹2.98L to
-          ₹9.07L inside this window, and raw NAV would show that ₹6L of deposits as +205% of
-          performance. <b>No figure here is annualised.</b> {win} days is not a year, and
-          scaling it up is how a −3% becomes a headline in either direction.
-        </p>
+        {!showEvidence
+          ? <p className={styles.note}>
+              Everything above is live. The studies behind these books are one click away.
+            </p>
+          : (
+            <table className={styles.tbl}>
+              <thead><tr><th className={styles.txt}>Book</th><th>Study</th><th>Headline</th></tr></thead>
+              <tbody>
+                <tr><td className={styles.txt}>True North</td>
+                  <td><a href="/app/backtest/momentum30-etf-subselection-research62">research/62</a></td>
+                  <td className={styles.muted}>Nifty-200 momentum, top-8, 100-SMA gate</td></tr>
+                <tr><td className={styles.txt}>Open Alpha</td>
+                  <td><a href="/app/backtest/bluesky-ath-breakout-research142">research/142</a></td>
+                  <td className={styles.muted}>30.4% CAGR / −31.5% DD, 20-year ensemble</td></tr>
+                <tr><td className={styles.txt}>IPO Base</td>
+                  <td><a href="/app/backtest/ipo-base-breakout-research153">research/153</a></td>
+                  <td className={styles.muted}>31.0% CAGR / −20.9% DD, corr 0.16 to OA</td></tr>
+                <tr><td className={styles.txt}>The blend</td>
+                  <td><a href="/app/backtest/multi-system-blends-research154">research/154</a></td>
+                  <td className={styles.muted}>8,172 weight vectors on 360 paired paths</td></tr>
+              </tbody>
+            </table>
+          )}
       </div>
-
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Backtest evidence — simulated, and not a live record</div>
-        <table className={styles.tbl}>
-          <thead>
-            <tr><th className={styles.txt}>&nbsp;</th><th>True North</th><th>Open Alpha</th>
-              <th>50-50 blend</th></tr>
-          </thead>
-          <tbody>
-            <tr><td className={styles.txt}>Period</td>
-              <td>2005→2026</td><td>2020→2026</td><td>2006→2026</td></tr>
-            <tr><td className={styles.txt}>CAGR</td>
-              <td>31.8%</td><td>{pct(bs?.cagr_pct ?? null)}</td><td>33.0%</td></tr>
-            <tr><td className={styles.txt}>Max drawdown</td>
-              <td className={styles.neg}>−31.6%</td>
-              <td className={styles.neg}>{pct(bs?.max_dd_pct ?? null)}</td>
-              <td className={styles.neg}>−27.5%</td></tr>
-            <tr><td className={styles.txt}>Trades · win rate</td>
-              <td className={styles.muted}>—</td>
-              <td>{bs ? `${bs.n_trades} · ${bs.win_pct}%` : '—'}</td>
-              <td className={styles.muted}>—</td></tr>
-            <tr><td className={styles.txt}>Total return</td>
-              <td className={styles.muted}>—</td>
-              <td>{pct(bs?.ret_pct ?? null)}</td>
-              <td className={styles.muted}>—</td></tr>
-            <tr><td className={styles.txt}>Study</td>
-              <td><a className={styles.studyLink} href="/app/backtest/nifty250-momentum-video">research/75</a></td>
-              <td><a className={styles.studyLink} href="/app/backtest/bluesky-ath-breakout-research142">research/142</a></td>
-              <td className={styles.muted}>—</td></tr>
-          </tbody>
-        </table>
-        <p className={styles.note}>
-          <b>Open Alpha's {pct(bs?.ret_pct ?? null)} is a {bs ? '6.7' : ''}-year simulation, not
-          money made.</b> It used to sit in the header beside True North's live nineteen days,
-          where the eye read one row and saw one comparison. A total return only means something
-          next to the years it took, so it lives here with its period attached and never in a
-          tile of its own.
-        </p>
-      </div>
-
-      {combined ?? (
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>Combined performance — building</div>
-          <p className={styles.note}>
-            The blended curve appears once the two books share ≥25 overlapping trading days
-            ({win} so far — True North's own curve starts {tn?.inception ?? '10-Aug-2026'}).
-            The backtested blend (33.0% CAGR at −27.5% DD, 2006→2026) is on the{' '}
-            <a href="/app/backtest/bluesky-ath-breakout-research142">study page</a>, and the
-            live scoreboard above is what actually exists so far.
-          </p>
-        </div>
-      )}
-
-      <AllocationDesk />
-      <FundsPanel />
-      <DividendsCard />
     </div>
   );
 }

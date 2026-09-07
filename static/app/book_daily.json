@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-07T14:00:02",
+ "generated_at": "2026-09-07T14:20:02",
  "books": {
   "orb": {
    "days": [
@@ -10535,12 +10535,12 @@
    "days": [
     {
      "date": "2026-09-07",
-     "trades": 11,
+     "trades": 12,
      "wins": 5,
-     "losses": 6,
-     "pnl": -186.97,
-     "deployed": 265822.27,
-     "cum": -17769.3,
+     "losses": 7,
+     "pnl": -409.83,
+     "deployed": 290953.57,
+     "cum": -17992.15,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10663,6 +10663,17 @@
        "side": "SELL",
        "price": 4967.0094500000005,
        "qty": 4.921826096590535,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "M&M",
+       "pnl": -222.85,
+       "deployed": 25131.3,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 3157.95233,
+       "qty": 7.958099995414578,
        "reason": "PATTERN"
       }
      ]
@@ -13818,20 +13829,20 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24623.39,
+    "avg_trade": 24625.35,
     "days": 33,
-    "trades": 259,
+    "trades": 260,
     "wins": 91,
-    "win_rate": 35.1,
-    "net": -17769.27,
+    "win_rate": 35.0,
+    "net": -17992.13,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.51,
+    "t_stat": -1.53,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 259,
+    "sim_trades": 260,
     "first": "2026-07-23",
     "last": "2026-09-07"
    }

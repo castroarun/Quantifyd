@@ -44,6 +44,7 @@ const StockWings = lazy(() => import('./pages/StockWings'));
 const BreakoutPaper = lazy(() => import('./pages/BreakoutPaper'));
 const BlueskyPaper = lazy(() => import('./pages/BlueskyPaper'));
 const CapitalDesk = lazy(() => import('./pages/CapitalDesk'));
+const Portfolio = lazy(() => import('./pages/Portfolio'));
 const IpoPaper = lazy(() => import('./pages/IpoPaper'));
 const HaPaper = lazy(() => import('./pages/HaPaper'));
 const OrbPaper = lazy(() => import('./pages/OrbPaper'));
@@ -335,16 +336,6 @@ export default function App() {
         }
       />
       <Route
-        path="/momentum-paper"
-        element={
-          <Protected>
-            <AppLayout active="momentum-paper">
-              <MomentumPaper />
-            </AppLayout>
-          </Protected>
-        }
-      />
-      <Route
         path="/breakout-paper"
         element={
           <Protected>
@@ -354,39 +345,25 @@ export default function App() {
           </Protected>
         }
       />
-      <Route
-        path="/bluesky-paper"
-        element={
-          <Protected>
-            <AppLayout active="bluesky-paper">
-              <BlueskyPaper />
-            </AppLayout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/ipo-paper"
-        element={
-          <Protected>
-            <AppLayout active="ipo-paper">
-              <IpoPaper />
-            </AppLayout>
-          </Protected>
-        }
-      />
-      <Route
-        path="/capital"
-        element={
-          <Protected>
-            <AppLayout active="capital">
-              <CapitalDesk />
-            </AppLayout>
-          </Protected>
-        }
-      />
       {/* The page was called "Sleeves 50-50" until 05-Sep-2026. Any bookmark or link
           that still says /sleeves lands on the Capital Desk rather than a 404. */}
-      <Route path="/sleeves" element={<Navigate to="/capital" replace />} />
+      <Route path="/sleeves" element={<Navigate to="/portfolio?tab=cd" replace />} />
+      <Route
+        path="/portfolio"
+        element={
+          <Protected>
+            <AppLayout active="portfolio">
+              <Portfolio />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      {/* The books were four separate pages until 07-Sep-2026. They are four tabs of one
+          portfolio now, and every old link still resolves to the right tab. */}
+      <Route path="/momentum-paper" element={<Navigate to="/portfolio?tab=tn" replace />} />
+      <Route path="/bluesky-paper" element={<Navigate to="/portfolio?tab=oa" replace />} />
+      <Route path="/ipo-paper" element={<Navigate to="/portfolio?tab=ipo" replace />} />
+      <Route path="/capital" element={<Navigate to="/portfolio?tab=cd" replace />} />
       <Route
         path="/ha-paper"
         element={
