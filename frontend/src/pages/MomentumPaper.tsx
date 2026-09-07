@@ -149,7 +149,97 @@ export default function MomentumPaper() {
   }, []);
 
   if (err) return <div className={styles.root}><div className={styles.loading}>Error: {err}</div></div>;
-  if (!s) return <div className={styles.root}><div className={styles.loading}>Loading book…</div></div>;
+  /* FIRST PAINT WITHOUT THE API.
+     Baking the prices was only half the fix: the page still returned a spinner until
+     /api/momentum-paper/state resolved, and that call costs 0.6-3.5s because get_state()
+     does a live Kite quote plus a large pandas pivot on the request path. So the numbers
+     were fresh but you still waited seconds to see any of them.
+
+     The baked file arrives in ~2ms, and it already holds everything the top of the page
+     shows: holdings, prices, value, P&L, NAV. Render that at once and let the API fill in
+     the rest — gate, targets, closed trades, tax, hedge — when it lands. */
+  if (!s) {
+    if (!live) return <div className={styles.root}><div className={styles.loading}>Loading book…</div></div>;
+    const inv = live.value - live.pnl;
+    return (
+      <div className={styles.root}>
+        <div className={styles.headerRow}>
+          <div>
+            <h1 className={styles.title}>True North</h1>
+            <p className={styles.sub}>
+              Nifty-200 momentum · top-8 equal weight · NIFTYBEES 100-SMA gate ·
+              15-day-low Donchian stop
+            </p>
+          </div>
+          <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+            <LiveTick updated={live.updated} />
+          </span>
+        </div>
+
+        <div className={styles.bookSummary}>
+          <div className={styles.sumMain}>
+            <div className={styles.sumLabel}>Book value</div>
+            <div className={styles.sumHero}>
+              <Tick v={live.nav} render={(n) => inr(n ?? 0)} />
+            </div>
+            <div className={styles.sumSub}>
+              on <b>{inr(live.capital)}</b> of capital · stocks {lakh(live.value)} ·
+              liquid fund {lakh(live.swept)} · cash {lakh(live.cash)}
+            </div>
+            <div className={styles.sumStatus}>
+              <span><b>{live.n}</b> holdings</span>
+              <span>day P&L{' '}
+                <b className={live.pnl >= 0 ? styles.pos : styles.neg}>
+                  {live.pnl >= 0 ? '+' : ''}{inr(live.pnl)}</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Holdings — live marks</div>
+          <table className={styles.table}>
+            <thead><tr>
+              <th>Holding</th><th>Qty</th><th>Entry ₹</th><th>Now ₹</th>
+              <th>Today</th><th>Value</th><th>P&amp;L ₹</th><th>P&amp;L %</th>
+            </tr></thead>
+            <tbody>
+              {live.positions.map((h) => (
+                <tr key={h.symbol}>
+                  <td className={styles.sym}>{h.symbol}</td>
+                  <td>{h.qty}</td>
+                  <td>{h.entry_price}</td>
+                  <td><Tick v={h.ltp} render={(n) => String(n ?? '—')} /></td>
+                  <td className={(h.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>
+                    {h.day_move_pct == null ? '—'
+                      : (h.day_move_pct >= 0 ? '+' : '') + h.day_move_pct + '%'}</td>
+                  <td><Tick v={h.value} render={(n) => lakh(n ?? 0)} /></td>
+                  <td className={h.pnl >= 0 ? styles.pos : styles.neg} style={pnlTint(h.pnl_pct)}>
+                    <Tick v={h.pnl} render={(n) => ((n ?? 0) >= 0 ? '+' : '') + inr(n ?? 0)} /></td>
+                  <td className={(h.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}
+                      style={pnlTint(h.pnl_pct)}>{pct(h.pnl_pct)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ borderTop: '2px solid var(--hairline,rgba(0,0,0,0.14))', fontWeight: 700 }}>
+                <td>TOTAL ({live.n})</td><td /><td /><td /><td />
+                <td>{lakh(live.value)}</td>
+                <td className={live.pnl >= 0 ? styles.pos : styles.neg}>
+                  {live.pnl >= 0 ? '+' : ''}{inr(live.pnl)}</td>
+                <td className={live.pnl >= 0 ? styles.pos : styles.neg}>
+                  {pct(inv ? (live.pnl / inv) * 100 : 0)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <p className={styles.note}>
+            Live marks. The gate, target basket, closed trades, tax and hedge panels are
+            still loading from the book API — they take a few seconds because that endpoint
+            rebuilds a large price panel on every request.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const riskOn = s.gate === 'ON';
   const retPos = s.total_return_pct >= 0;
