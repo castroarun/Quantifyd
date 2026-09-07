@@ -1,12 +1,12 @@
 {
- "asof": "2026-09-04 16:20:17",
+ "asof": "2026-09-07 11:35:06",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 7,
+   "days_away": 4,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 70,
+   "days_away": 67,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 161,
+   "days_away": 158,
    "weekend_rolled": true
   }
  ],
@@ -32,16 +32,16 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-09-03",
+ "bhav_through": "2026-09-04",
  "realised": 131703.64278000002,
- "unrealised": 44021.25,
- "nav": 1375268.9144278744,
+ "unrealised": 27202.5,
+ "nav": 1358450.1644278744,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 0,
  "unrealised_plan": 0,
- "unrealised_off": 44021.25,
+ "unrealised_off": 27202.5,
  "nav_plan": 1331247.6644278744,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
@@ -72,11 +72,11 @@
    "gain": 1917.3
   }
  ],
- "capital_deployed": 560883.81,
- "capital_deployed_peak": 662751.81,
- "margin_asof": "2026-09-04 16:20",
- "running_pnl": 175724.89278000002,
- "running_pnl_pct": 31.329999127626806,
+ "capital_deployed": 536157.67,
+ "capital_deployed_peak": 655078.42,
+ "margin_asof": "2026-09-07 11:35",
+ "running_pnl": 158906.14278000002,
+ "running_pnl_pct": 29.637950116427508,
  "n_closed": 3,
  "n_open": 1,
  "win_rate": 100.0,
@@ -102,14 +102,14 @@
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 523.95,
-   "mark_date": "2026-09-04T15:35:00",
+   "mark_prem": 610.2,
+   "mark_date": "2026-09-07T11:34:00",
    "mark_src": "chain-1min",
-   "mtm_rs": 44021.25,
-   "mark_spot": 23897.7,
+   "mtm_rs": 27202.5,
+   "mark_spot": 23767.3,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 24,
+   "dte": 21,
    "curve": [
     {
      "d": "2026-08-17",
@@ -180,6 +180,11 @@
      "d": "2026-09-03",
      "prem": 574.65,
      "mtm": 34134.750000000015
+    },
+    {
+     "d": "2026-09-04",
+     "prem": 520.65,
+     "mtm": 44664.750000000015
     }
    ],
    "legs_entry": [
@@ -211,30 +216,30 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 109.9,
+     "price": 75.85,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": -452.3
+     "itm_by": -582.7
     },
     {
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 414.05,
+     "price": 534.35,
      "volume": 0,
      "oi": 0,
      "bid": null,
      "ask": null,
-     "itm_by": 452.3
+     "itm_by": 582.7
     }
    ],
-   "legs_asof": "2026-09-04T15:35:00",
+   "legs_asof": "2026-09-07T11:34:00",
    "legs_src": "chain 1-min",
-   "margin_real": 560883.81,
-   "margin_peak": 662751.81,
-   "mtm_pct": 7.84855066506555
+   "margin_real": 536157.67,
+   "margin_peak": 655078.42,
+   "mtm_pct": 5.073600830889913
   }
  ],
  "closed_trades": [
@@ -266,7 +271,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -11,
+   "dte": -14,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -346,7 +351,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -39,
+   "dte": -42,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -426,7 +431,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -67,
+   "dte": -70,
    "legs_entry": [
     {
      "side": "SHORT",

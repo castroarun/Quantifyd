@@ -683,3 +683,27 @@ Filled today by tag:
   BOV2f5Ocq2XeV3EwUp0Y        200
   BOV2fi7BOAiaivUU5cB7        200
 ```
+
+## 2026-09-07 11:00 IST — 8 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-07 11:00 IST
+9 broker legs · 8 alerts · 4 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds 200 that no book claims (no order tag)
+[ALERT] ORPHAN BSE26SEP3700CE: broker holds -200 that no book claims (no order tag)
+[ALERT] ORPHAN HAL26SEP4900CE: broker holds 300 that no book claims (no order tag)
+[ALERT] ORPHAN HAL26SEP5000CE: broker holds -300 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP15CE: broker holds 71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP17CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP18CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP20CE: broker holds 71475 that no book claims (no order tag)
+[INFO] MANUAL LIQUIDCASE: manual holding, -2590 — no book tracks it
+[WARN] NAKED BSE26SEP3700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED HAL26SEP5000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP17CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP18CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  untagged                   2590
+```

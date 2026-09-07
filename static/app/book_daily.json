@@ -1,8 +1,66 @@
 {
- "generated_at": "2026-09-04T15:45:03",
+ "generated_at": "2026-09-07T11:20:02",
  "books": {
   "orb": {
    "days": [
+    {
+     "date": "2026-09-07",
+     "trades": 3,
+     "wins": 2,
+     "losses": 1,
+     "pnl": 432.2,
+     "deployed": 44574.9,
+     "cum": -31698.73,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "TRENT",
+       "pnl": 164.5,
+       "deployed": 14163.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 5,
+       "entry_price": 2832.6,
+       "exit_price": 2799.7,
+       "entry_time": "2026-09-07T09:55:05.127855",
+       "exit_time": "2026-09-07T10:57:17.562959",
+       "exit_reason": "TARGET_HIT",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "GODREJPROP",
+       "pnl": 427.2,
+       "deployed": 15618.4,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 8,
+       "entry_price": 1952.3,
+       "exit_price": 1898.9,
+       "entry_time": "2026-09-07T09:55:05.127855",
+       "exit_time": "2026-09-07T11:18:47.598197",
+       "exit_reason": "TARGET_HIT",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "ADANIENT",
+       "pnl": -159.5,
+       "deployed": 14793.5,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 5,
+       "entry_price": 2958.7,
+       "exit_price": 2926.8,
+       "entry_time": "2026-09-07T10:00:05.105749",
+       "exit_time": "2026-09-07T10:27:47.503289",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "A"
+      }
+     ]
+    },
     {
      "date": "2026-09-04",
      "trades": 12,
@@ -2256,22 +2314,22 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 224724.98,
-    "days": 17,
-    "trades": 135,
-    "wins": 48,
-    "win_rate": 35.6,
-    "net": -32130.93,
+    "avg_trade": 220162.66,
+    "days": 18,
+    "trades": 138,
+    "wins": 50,
+    "win_rate": 36.2,
+    "net": -31698.73,
     "best_day": 3123.4,
     "worst_day": -13754.43,
-    "green_days": 7,
+    "green_days": 8,
     "costs_modelled": false,
-    "t_stat": -1.51,
+    "t_stat": -1.49,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 89,
+    "sim_trades": 92,
     "first": "2026-04-27",
-    "last": "2026-09-04"
+    "last": "2026-09-07"
    }
   },
   "n500m": {
@@ -3834,7 +3892,36 @@
    }
   },
   "pairs": {
-   "days": [],
+   "days": [
+    {
+     "date": "2026-09-04",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -28815.12,
+     "deployed": 0.0,
+     "cum": -28815.12,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "COFORGE-HCLTECH",
+       "pnl": -28815.12,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": -1,
+       "entry_date": "2026-08-20",
+       "days_held": 15,
+       "entry_z": 2.103102232624785,
+       "exit_z": 1.441559462943651,
+       "gross_pnl_inr": -28310.0,
+       "cost_inr": 505.12,
+       "exit_reason": "EXIT_TIME"
+      }
+     ]
+    }
+   ],
    "summary": {
     "capital": 1000000,
     "buying_power": null,
@@ -3842,21 +3929,21 @@
     "max_position": null,
     "busiest_day": null,
     "avg_trade": null,
-    "days": 0,
-    "trades": 0,
+    "days": 1,
+    "trades": 1,
     "wins": 0,
-    "win_rate": null,
-    "net": 0,
-    "best_day": null,
-    "worst_day": null,
+    "win_rate": 0.0,
+    "net": -28815.12,
+    "best_day": -28815.12,
+    "worst_day": -28815.12,
     "green_days": 0,
     "costs_modelled": true,
     "t_stat": null,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 0,
-    "first": null,
-    "last": null
+    "sim_trades": 1,
+    "first": "2026-09-04",
+    "last": "2026-09-04"
    }
   },
   "orb-index": {
@@ -10432,6 +10519,96 @@
   "ha-paper": {
    "days": [
     {
+     "date": "2026-09-07",
+     "trades": 7,
+     "wins": 5,
+     "losses": 2,
+     "pnl": 1105.66,
+     "deployed": 167260.28,
+     "cum": -16476.67,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "GODREJPROP",
+       "pnl": 149.84,
+       "deployed": 23677.33,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1963.4108,
+       "qty": 12.059284288052472,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "ICICIBANK",
+       "pnl": 253.5,
+       "deployed": 23794.91,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1431.0705500000001,
+       "qty": 16.627352347312385,
+       "reason": "RECONCILE"
+      },
+      {
+       "symbol": "IDFCFIRSTB",
+       "pnl": 507.84,
+       "deployed": 24417.48,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 86.014188,
+       "qty": 283.8773135870745,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "RELIANCE",
+       "pnl": 407.5,
+       "deployed": 24713.25,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1317.0047800000002,
+       "qty": 18.76474151076753,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "SHREECEM",
+       "pnl": -49.51,
+       "deployed": 23850.73,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 23727.8795,
+       "qty": 1.0051772820197609,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "TATACONSUM",
+       "pnl": -349.23,
+       "deployed": 22656.18,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1006.09808,
+       "qty": 22.518853281253648,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "ADANIENT",
+       "pnl": 185.71,
+       "deployed": 24150.4,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 2932.1201,
+       "qty": 8.236498273342477,
+       "reason": "PATTERN"
+      }
+     ]
+    },
+    {
      "date": "2026-09-04",
      "trades": 9,
      "wins": 1,
@@ -13582,26 +13759,51 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24643.7,
-    "days": 32,
-    "trades": 248,
-    "wins": 86,
-    "win_rate": 34.7,
-    "net": -17582.3,
+    "avg_trade": 24623.13,
+    "days": 33,
+    "trades": 255,
+    "wins": 91,
+    "win_rate": 35.7,
+    "net": -16476.64,
     "best_day": 7492.54,
     "worst_day": -6934.76,
-    "green_days": 9,
+    "green_days": 10,
     "costs_modelled": null,
-    "t_stat": -1.5,
+    "t_stat": -1.4,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 248,
+    "sim_trades": 255,
     "first": "2026-07-23",
-    "last": "2026-09-04"
+    "last": "2026-09-07"
    }
   },
   "ohol-paper": {
    "days": [
+    {
+     "date": "2026-09-07",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 12.5,
+     "deployed": 391674.96,
+     "cum": -10132.37,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "HDFCBANK",
+       "pnl": 12.5,
+       "deployed": 391674.96,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 712.136295,
+       "lots": 1,
+       "lot_size": 550,
+       "reason": "ST_FLIP"
+      }
+     ]
+    },
     {
      "date": "2026-09-04",
      "trades": 2,
@@ -14370,22 +14572,22 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1875374.94,
     "busiest_day": 4383202.38,
-    "avg_trade": 792111.03,
-    "days": 17,
-    "trades": 45,
-    "wins": 14,
-    "win_rate": 31.1,
-    "net": -10144.88,
+    "avg_trade": 783405.9,
+    "days": 18,
+    "trades": 46,
+    "wins": 15,
+    "win_rate": 32.6,
+    "net": -10132.38,
     "best_day": 21357.88,
     "worst_day": -6724.26,
-    "green_days": 3,
+    "green_days": 4,
     "costs_modelled": null,
     "t_stat": -0.33,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 45,
+    "sim_trades": 46,
     "first": "2026-08-07",
-    "last": "2026-09-04"
+    "last": "2026-09-07"
    }
   },
   "orb-paper": {

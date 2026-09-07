@@ -6,6 +6,7 @@ import LiveCurve from '../components/LiveCurve/LiveCurve';
 import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
+import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
 import BookActivity from '../components/BookActivity/BookActivity';
 import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
@@ -56,6 +57,12 @@ type State = {
 
 /* Heat tints — intensity scales with the number, so the eye lands on what matters.
    P&L: green/red, full strength at +/-10%. To-stop: red when a stop is imminent. */
+type LiveRow = { symbol: string; qty: number; entry_price: number; ltp: number;
+  prev_close: number | null; day_move_pct: number | null; value: number;
+  pnl: number; pnl_pct: number | null };
+type LiveFeed = { updated: string; positions: LiveRow[]; value: number; cash: number;
+  swept: number; nav: number; capital: number; pnl: number; pnl_pct: number; n: number };
+
 const pnlTint = (pctv: number | null | undefined): React.CSSProperties => {
   if (pctv == null || !isFinite(pctv)) return {};
   const t = Math.min(1, Math.abs(pctv) / 10);
@@ -106,13 +113,39 @@ function EquityCurve({ data }: { data: NavPt[] }) {
 
 export default function MomentumPaper() {
   const [s, setS] = useState<State | null>(null);
+  const [live, setLive] = useState<LiveFeed | null>(null);
+  /* Prefer the freshly baked mark for anything price-derived; fall back to whatever the
+     API returned. The API row is a minute old at best and can be several minutes old
+     when its pandas cache has been invalidated by the EOD refresh. */
+  const lm = new Map((live?.positions ?? []).map((r) => [r.symbol, r]));
+  const mark = (sym: string, key: 'ltp' | 'value' | 'pnl' | 'pnl_pct' | 'day_move_pct',
+                fallback: number | null | undefined) => {
+    const r = lm.get(sym);
+    const v = r ? (r as any)[key] : undefined;
+    return v == null ? fallback : (v as number);
+  };
   const [err, setErr] = useState<string | null>(null);
 
+  /* TWO FEEDS, ON PURPOSE.
+     `/api/momentum-paper/state` is the source of truth for everything, but get_state()
+     does a live Kite quote AND a ~1000x1600 pandas pivot on the request path — measured
+     0.58s then 3.57s back-to-back during market hours on 2026-09-07. Waiting on it means
+     the page is blank for seconds and its prices then sit still for a minute.
+
+     So the prices come from a cron-baked file the way Open Alpha's do (~3ms), polled
+     every 10s, while the API is polled once a minute for the rest. If the baked file is
+     missing or stale the page is exactly what it was before — the API alone. */
   const load = () => apiGet<State>('/api/momentum-paper/state').then(setS).catch((e) => setErr(String(e)));
+  const loadLive = () =>
+    fetch('/app/momentum_live.json?t=' + Date.now())
+      .then((x) => (x.ok ? x.json() : Promise.reject(new Error(String(x.status)))))
+      .then(setLive)
+      .catch(() => { /* display-only: never surface this, the API still drives the page */ });
   useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    load(); loadLive();
+    const a = setInterval(load, 60000);        // expensive: once a minute is plenty
+    const b = setInterval(loadLive, 10000);    // cheap static file: keep the prices moving
+    return () => { clearInterval(a); clearInterval(b); };
   }, []);
 
   if (err) return <div className={styles.root}><div className={styles.loading}>Error: {err}</div></div>;
@@ -126,6 +159,9 @@ export default function MomentumPaper() {
       
       <BacktestEvidence />
       <div className={styles.headerRow}>
+        <span style={{ order: 9, marginLeft: 'auto', alignSelf: 'center' }}>
+          <LiveTick updated={live?.updated} />
+        </span>
         <div>
           <h1 className={styles.title}>
             True North (Momentum-30) — {s.live_mode ? 'Live Book' : 'Paper Book'}
@@ -168,12 +204,19 @@ export default function MomentumPaper() {
                   <td>{h.weight}%</td>
                   <td className={styles.muted}>{fmtD(h.entry_date)}</td>
                   <td>{h.entry_price ?? '—'}</td>
-                  <td>{h.is_cash ? lakh(h.value) : h.price}</td>
-                  <td className={(h.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}>{h.is_cash || h.day_move_pct == null ? '\u2014' : (h.day_move_pct >= 0 ? '+' : '') + h.day_move_pct + '%'}</td>
-                  <td>{lakh(h.value)}</td>
-                  <td className={(h.pnl ?? 0) >= 0 ? styles.pos : styles.neg}
-                      style={h.is_cash ? {} : pnlTint(h.pnl_pct)}>
-                    {(h.pnl ?? 0) >= 0 ? '+' : ''}{inr(h.pnl ?? 0)}</td>
+                  <td>{h.is_cash ? lakh(h.value)
+                    : <Tick v={mark(h.symbol, 'ltp', h.price)}
+                            render={(n) => (n == null ? '\u2014' : String(n))} />}</td>
+                  <td className={(mark(h.symbol, 'day_move_pct', h.day_move_pct) ?? 0) >= 0 ? styles.pos : styles.neg}>
+                    {h.is_cash || mark(h.symbol, 'day_move_pct', h.day_move_pct) == null ? '\u2014'
+                      : ((mark(h.symbol, 'day_move_pct', h.day_move_pct) as number) >= 0 ? '+' : '')
+                        + mark(h.symbol, 'day_move_pct', h.day_move_pct) + '%'}</td>
+                  <td><Tick v={h.is_cash ? h.value : mark(h.symbol, 'value', h.value)}
+                            render={(n) => lakh(n ?? 0)} /></td>
+                  <td className={(mark(h.symbol, 'pnl', h.pnl) ?? 0) >= 0 ? styles.pos : styles.neg}
+                      style={h.is_cash ? {} : pnlTint(mark(h.symbol, 'pnl_pct', h.pnl_pct))}>
+                    <Tick v={h.is_cash ? h.pnl : mark(h.symbol, 'pnl', h.pnl)}
+                          render={(n) => ((n ?? 0) >= 0 ? '+' : '') + inr(n ?? 0)} /></td>
                   <td className={(h.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg}
                       style={h.is_cash ? {} : pnlTint(h.pnl_pct)}>
                     {h.is_cash ? '—' : pct(h.pnl_pct)}</td>

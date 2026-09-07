@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
+import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
 import type { HoldingsRecord } from '../api/types';
 
 /* OPEN ALPHA — the real-money book (/app/bluesky-paper).
@@ -163,7 +164,7 @@ export default function BlueskyPaper() {
         .then(setR)
         .catch((e) => setErr(String(e)));
     load();
-    const id = setInterval(load, 30000);   // marks refresh every minute in market hours
+    const id = setInterval(load, 10000);   // marks are baked every minute   // marks refresh every minute in market hours
     return () => clearInterval(id);
   }, []);
   if (err)
@@ -201,6 +202,9 @@ export default function BlueskyPaper() {
             <span className={`${styles.gateBadge} ${styles.on}`} style={{ marginLeft: 10 }}>
               <i className={styles.dot} />LIVE · real money
             </span>
+            <span style={{ marginLeft: 10, verticalAlign: 'middle' }}>
+              <LiveTick updated={r.updated} />
+            </span>
             {r.stale && (
               <span className={styles.gateBadge} style={{ marginLeft: 8 }}
                     title="the feed was rebuilt from state without live quotes">
@@ -225,7 +229,9 @@ export default function BlueskyPaper() {
       <div className={styles.bookSummary}>
         <div className={styles.sumMain}>
           <div className={styles.sumLabel}>Current value</div>
-          <div className={styles.sumHero}>{inr(r.nav)}</div>
+          <div className={styles.sumHero}>
+            <Tick v={r.nav} render={(n) => inr(n ?? 0)} />
+          </div>
           <div className={styles.sumSub}>
             on <b>{inr(capital)}</b> of capital{' '}
             <span style={{ color: tone(gain), fontWeight: 700 }}>
@@ -291,13 +297,14 @@ export default function BlueskyPaper() {
                 <td className={styles.sym}>{p.symbol}
                   <span className={styles.muted} style={{ fontSize: 11, marginLeft: 6 }}>{p.weight}%</span></td>
                 <td className={styles.muted}>{fmtD(p.entry_date)}</td>
-                <td>{p.buy}</td><td>{p.ltp ?? '—'}</td>
-                <td>{lakh(p.value)}</td>
+                <td>{p.buy}</td>
+                <td><Tick v={p.ltp} render={(n) => (n == null ? '—' : String(n))} /></td>
+                <td><Tick v={p.value} render={(n) => lakh(n ?? 0)} /></td>
                 <td className={(p.day_move_pct ?? 0) >= 0 ? styles.pos : styles.neg}
                     style={pnlTint(p.day_move_pct == null ? null : p.day_move_pct * 3)}>
                   {p.day_move_pct == null ? '—' : (p.day_move_pct >= 0 ? '+' : '') + p.day_move_pct + '%'}</td>
                 <td className={(p.pnl ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
-                  {(p.pnl ?? 0) >= 0 ? '+' : ''}{inr(p.pnl ?? 0)}</td>
+                  <Tick v={p.pnl} render={(n) => ((n ?? 0) >= 0 ? '+' : '') + inr(n ?? 0)} /></td>
                 <td className={(p.pnl_pct ?? 0) >= 0 ? styles.pos : styles.neg} style={pnlTint(p.pnl_pct)}>
                   {pct(p.pnl_pct)}</td>
                 <td>{p.days}</td>
