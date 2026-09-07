@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
-import styles from './BlueskyPaper.module.css';
+import styles from './MomentumPaper.module.css';
 import LiveTick from '../components/LiveTick/LiveTick';
 
 /* CAPITAL DESK (/app/capital) — the one page that owns every rupee in and out.
@@ -124,15 +124,15 @@ function AllocationPanel({ a }: { a: Allocation }) {
         goes to whichever book is furthest below its share.
         {a.ipo_status === 'paper' && ' IPO is on paper, so its share is earmarked in the liquid ETF.'}
       </div>
-      <table className={styles.tbl}>
+      <table className={styles.table}>
         <thead>
-          <tr><th className={styles.txt}>Book</th><th>Value</th><th>Now</th>
+          <tr><th className={styles.sym}>Book</th><th>Value</th><th>Now</th>
             <th>Target</th><th>Target ₹</th><th>Gap</th></tr>
         </thead>
         <tbody>
           {a.rows.map((r) => (
             <tr key={r.book}>
-              <td className={styles.txt}>{BOOK_LABEL[r.book] ?? r.book}</td>
+              <td className={styles.sym}>{BOOK_LABEL[r.book] ?? r.book}</td>
               <td>{rup(r.value)}</td>
               <td>{r.current_pct}%</td>
               <td className={styles.muted}>{r.target_pct}%</td>
@@ -143,7 +143,7 @@ function AllocationPanel({ a }: { a: Allocation }) {
             </tr>
           ))}
           <tr>
-            <td className={styles.txt}><b>Total</b></td>
+            <td className={styles.sym}><b>Total</b></td>
             <td><b>{rup(a.total)}</b></td>
             <td colSpan={4} className={styles.muted}>
               a positive gap is money the book still needs
@@ -475,7 +475,7 @@ function DividendsCard() {
           {showSim && (
             <div style={{ marginTop: 10 }}>
               <div style={{ overflowX: 'auto' }}>
-                <table className={styles.tbl}
+                <table className={styles.table}
                        style={{ fontSize: 12.5, fontVariantNumeric: 'tabular-nums', width: 'auto' }}>
                   <thead>
                     <tr>
@@ -576,17 +576,6 @@ type LiveIPO = { updated: string; mode: string; nav: number; capital: number; va
   cash: number; pnl: number; realized: number; gain: number; return_pct: number;
   slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
   pending: unknown[] };
-
-function Tile({ label, value, sub, tone }:
-  { label: string; value: string; sub?: string; tone?: 'pos' | 'neg' }) {
-  return (
-    <div className={styles.tile}>
-      <div>{label}</div>
-      <b className={tone === 'pos' ? styles.pos : tone === 'neg' ? styles.neg : undefined}>{value}</b>
-      {sub && <div className={styles.muted} style={{ fontSize: 11, marginTop: 2 }}>{sub}</div>}
-    </div>
-  );
-}
 
 /* Growth of 100 for each book and the portfolio, on the days they share. Books started
    on different dates, so the common window is the shortest of them — stated on the card
@@ -702,36 +691,99 @@ export default function CapitalDesk() {
   const portCap = capTN + capOA + capIPOreal;
   const gain = portNav - portCap;
   const dayPnl = (tnLive?.pnl ?? 0) + (oa?.pnl ?? 0) + (ipoLive ? (ipo?.pnl ?? 0) : 0);
+  /* Same three colours the books use for their own allocation bars, so a segment means
+     the same thing wherever it appears. */
+  const segs = [
+    { k: 'True North', v: navTN, c: '#2563EB' },
+    { k: 'Open Alpha', v: navOA, c: '#0891B2' },
+    ...(ipoLive ? [{ k: 'IPO Base', v: navIPO, c: '#D946A0' }] : []),
+  ].filter((x) => x.v > 0);
+  const segTotal = segs.reduce((a, x) => a + x.v, 0);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.head}>
+    <div className={styles.root}>
+      <div className={styles.studyBar}>
+        <span className={styles.studyBarLabel}>The desk</span>
+        <a className={styles.studyLink} href="/app/strategies">Strategies register</a>
+        <a className={styles.studyLink} href="/app/holdings">Broker holdings</a>
+      </div>
+
+      <div className={styles.headerRow}>
         <div>
-          <h1>Capital Desk</h1>
-          <div className={styles.sub}>
-            Every rupee in and out, and the target it is working toward · live book values
-          </div>
+          <h1 className={styles.title}>Capital Desk</h1>
+          <p className={styles.sub}>
+            Every rupee in and out, and the target it is working toward · live book values ·
+            True North is the base and is never sold to rebalance
+          </p>
         </div>
         <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
           <LiveTick updated={tnLive?.updated || oa?.updated} />
         </span>
       </div>
 
-      <div className={styles.tiles}>
-        <Tile label="Portfolio NAV" value={rup(portNav)}
-              sub={`on ${rup(portCap)} of capital`} />
-        <Tile label="Total return" value={`${gain >= 0 ? '+' : '−'}${rup(Math.abs(gain)).slice(1)}`}
-              sub={portCap ? pct((gain / portCap) * 100) : '—'}
-              tone={gain >= 0 ? 'pos' : 'neg'} />
-        <Tile label="Open P&L today" value={`${dayPnl >= 0 ? '+' : '−'}${rup(Math.abs(dayPnl)).slice(1)}`}
-              sub="unrealised, across the live books" tone={dayPnl >= 0 ? 'pos' : 'neg'} />
-        <Tile label="True North" value={rup(navTN)}
-              sub={tnLive ? `${tnLive.n} holdings · liquid ${rup(tnLive.swept + tnLive.cash)}` : '—'} />
-        <Tile label="Open Alpha" value={rup(navOA)}
-              sub={oa ? `${oa.positions?.length ?? 0} holdings · REAL money` : '—'} />
-        <Tile label="IPO Base" value={ipoLive ? rup(navIPO) : 'on paper'}
-              sub={ipo ? `${ipo.slots_used}/${ipo.slots} slots · ${ipo.pending?.length ?? 0} armed`
-                       : 'not started'} />
+      <div className={styles.bookSummary}>
+        <div className={styles.sumMain}>
+          <div className={styles.sumLabel}>Portfolio value</div>
+          <div className={styles.sumHero}>{rup(portNav)}</div>
+          <div className={styles.sumSub}>
+            on <b>{rup(portCap)}</b> of capital{' '}
+            <span className={gain >= 0 ? styles.pos : styles.neg} style={{ fontWeight: 700 }}>
+              {gain >= 0 ? '+' : '−'}{rup(Math.abs(gain)).slice(1)}
+              {portCap ? ' · ' + pct((gain / portCap) * 100) : ''}
+            </span>
+          </div>
+          <div className={styles.barWrap} role="img" aria-label="allocation by book">
+            {segs.map((x) => (
+              <div key={x.k} className={styles.barSeg}
+                   style={{ width: `${(x.v / (segTotal || 1)) * 100}%`, background: x.c }} />
+            ))}
+          </div>
+          <div className={styles.legend}>
+            {segs.map((x) => (
+              <span key={x.k} className={styles.legendItem}>
+                <i className={styles.swatch} style={{ background: x.c }} />
+                {x.k} <b>{rup(x.v)}</b>
+                <span className={styles.legendPct}>
+                  {((x.v / (segTotal || 1)) * 100).toFixed(0)}%
+                </span>
+              </span>
+            ))}
+          </div>
+          <div className={styles.sumStatus}>
+            <span><b>{tnLive?.n ?? 0}</b> True North holdings</span>
+            <span><b>{oa?.positions?.length ?? 0}</b> Open Alpha holdings</span>
+            <span>IPO <b>{ipoLive ? 'live' : 'on paper'}</b>
+              {ipo ? ` · ${ipo.slots_used}/${ipo.slots} slots · ${ipo.pending?.length ?? 0} armed` : ''}
+            </span>
+          </div>
+        </div>
+        <div className={styles.sumPnl}>
+          <div className={styles.sumLabel}>Profit &amp; loss</div>
+          <div className={styles.pnlRow}>
+            <span>Open today</span>
+            <b className={dayPnl >= 0 ? styles.pos : styles.neg}>
+              {dayPnl >= 0 ? '+' : '−'}{rup(Math.abs(dayPnl)).slice(1)}</b>
+          </div>
+          <div className={styles.pnlRow}>
+            <span>True North</span>
+            <b>{rup(navTN)}</b>
+          </div>
+          <div className={styles.pnlRow}>
+            <span>Open Alpha</span>
+            <b>{rup(navOA)}</b>
+          </div>
+          <div className={styles.pnlRow}>
+            <span>IPO Base</span>
+            <b className={ipoLive ? undefined : styles.muted}>
+              {ipoLive ? rup(navIPO) : 'on paper'}</b>
+          </div>
+          <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
+            <span>Total return</span>
+            <b className={gain >= 0 ? styles.pos : styles.neg}>
+              {gain >= 0 ? '+' : '−'}{rup(Math.abs(gain)).slice(1)}
+              {portCap ? ' · ' + pct((gain / portCap) * 100) : ''}</b>
+          </div>
+        </div>
       </div>
 
       <AllocationDesk />
@@ -755,19 +807,19 @@ export default function CapitalDesk() {
               Everything above is live. The studies behind these books are one click away.
             </p>
           : (
-            <table className={styles.tbl}>
-              <thead><tr><th className={styles.txt}>Book</th><th>Study</th><th>Headline</th></tr></thead>
+            <table className={styles.table}>
+              <thead><tr><th className={styles.sym}>Book</th><th>Study</th><th>Headline</th></tr></thead>
               <tbody>
-                <tr><td className={styles.txt}>True North</td>
+                <tr><td className={styles.sym}>True North</td>
                   <td><a href="/app/backtest/momentum30-etf-subselection-research62">research/62</a></td>
                   <td className={styles.muted}>Nifty-200 momentum, top-8, 100-SMA gate</td></tr>
-                <tr><td className={styles.txt}>Open Alpha</td>
+                <tr><td className={styles.sym}>Open Alpha</td>
                   <td><a href="/app/backtest/bluesky-ath-breakout-research142">research/142</a></td>
                   <td className={styles.muted}>30.4% CAGR / −31.5% DD, 20-year ensemble</td></tr>
-                <tr><td className={styles.txt}>IPO Base</td>
+                <tr><td className={styles.sym}>IPO Base</td>
                   <td><a href="/app/backtest/ipo-base-breakout-research153">research/153</a></td>
                   <td className={styles.muted}>31.0% CAGR / −20.9% DD, corr 0.16 to OA</td></tr>
-                <tr><td className={styles.txt}>The blend</td>
+                <tr><td className={styles.sym}>The blend</td>
                   <td><a href="/app/backtest/multi-system-blends-research154">research/154</a></td>
                   <td className={styles.muted}>8,172 weight vectors on 360 paired paths</td></tr>
               </tbody>
