@@ -1,75 +1,91 @@
 {
- "generated_at": "2026-09-07T11:00:02",
+ "generated_at": "2026-09-07T14:00:02",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 87.15,
-   "pnl": -3440.0,
+   "ltp": 95.4,
+   "pnl": -1790.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "BSE26SEP3700CE": {
    "qty": -200,
    "avg": 42.25,
-   "ltp": 31.4,
-   "pnl": 2170.0,
+   "ltp": 35.3,
+   "pnl": 1390.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 119.0,
-   "pnl": -4192.5,
+   "ltp": 109.8,
+   "pnl": -6952.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 78.4,
-   "pnl": 4080.0,
+   "ltp": 72.3,
+   "pnl": 5910.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 1.0,
-   "pnl": 32163.8,
+   "ltp": 1.1,
+   "pnl": 39311.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.25,
-   "pnl": -9291.8,
+   "ltp": 0.27,
+   "pnl": -10721.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.13,
-   "pnl": -4288.5,
+   "ltp": 0.15,
+   "pnl": -5718.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP20CE": {
    "qty": 71475,
    "avg": 0.04,
-   "ltp": 0.05,
-   "pnl": 714.8,
+   "ltp": 0.06,
+   "pnl": 1429.5,
    "product": "NRML",
    "exchange": "NFO"
   },
+  "DYCL": {
+   "qty": -19,
+   "avg": 459.57894736842104,
+   "ltp": 462.9,
+   "pnl": -63.1,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
   "LIQUIDCASE": {
-   "qty": -2590,
-   "avg": 115.8,
+   "qty": -6907,
+   "avg": 115.80625018097582,
    "ltp": 115.8,
-   "pnl": 0.0,
+   "pnl": 43.2,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "SMSPHARMA": {
+   "qty": 69,
+   "avg": 404.5,
+   "ltp": 401.05,
+   "pnl": -238.0,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -143,10 +159,26 @@
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "LIQUIDCASE",
-   "broker_qty": -2590,
+   "symbol": "DYCL",
+   "broker_qty": -19,
    "app_qty": 0,
-   "detail": "manual holding, -2590 \u2014 no book tracks it"
+   "detail": "manual holding, -19 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "LIQUIDCASE",
+   "broker_qty": -6907,
+   "app_qty": 0,
+   "detail": "manual holding, -6907 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "SMSPHARMA",
+   "broker_qty": 69,
+   "app_qty": 0,
+   "detail": "manual holding, 69 \u2014 no book tracks it"
   },
   {
    "level": "WARN",
@@ -182,9 +214,9 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 2590
+  "untagged": 6995
  },
  "alerts": 8,
  "warns": 4,
- "infos": 1
+ "infos": 3
 }

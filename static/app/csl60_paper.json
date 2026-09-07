@@ -10,8 +10,57 @@
  "rules": "expiry-day only - sell ATM straddle 09:16 - per-leg SL 1.60x - trail-to-BE after first stop - square off 15:15",
  "study": "/app/straddle-study",
  "today": "2026-09-07",
- "today_legs": [],
+ "today_legs": [
+  {
+   "trade_date": "2026-09-07",
+   "leg": "CE",
+   "strike": 23850.0,
+   "qty": 650,
+   "entry": 71.35,
+   "entry_ts": "09:16",
+   "sl_level": 114.16,
+   "exit": null,
+   "exit_ts": null,
+   "exit_reason": null,
+   "status": "OPEN",
+   "ltp": 62.25,
+   "ltp_ts": "14:05",
+   "pnl_gross": 5914.999999999996,
+   "book": "dte1"
+  },
+  {
+   "trade_date": "2026-09-07",
+   "leg": "PE",
+   "strike": 23850.0,
+   "qty": 650,
+   "entry": 70.1,
+   "entry_ts": "09:16",
+   "sl_level": 112.16,
+   "exit": null,
+   "exit_ts": null,
+   "exit_reason": null,
+   "status": "OPEN",
+   "ltp": 71.5,
+   "ltp_ts": "14:05",
+   "pnl_gross": -910.0000000000036,
+   "book": "dte1"
+  }
+ ],
  "days": [
+  {
+   "trade_date": "2026-06-08",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 23100.0,
+   "entry_spot": 23099.75,
+   "gross": 40560.0,
+   "turnover": 297180.0,
+   "net": 38726.64,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:08:32",
+   "book": "dte1"
+  },
   {
    "trade_date": "2026-06-16",
    "status": "CLOSED",
@@ -23,7 +72,22 @@
    "net": 12934.24,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-06-22",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24100.0,
+   "entry_spot": 24098.25,
+   "gross": 24895.0,
+   "turnover": 194805.0,
+   "net": 23665.65,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:08:49",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-06-23",
@@ -36,7 +100,22 @@
    "net": -20241.93,
    "n_sl": 2,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-06-29",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24100.0,
+   "entry_spot": 24090.95,
+   "gross": 2795.0,
+   "turnover": 228605.0,
+   "net": 1366.23,
+   "n_sl": 1,
+   "note": "",
+   "updated_at": "2026-09-07T12:08:58",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-06-30",
@@ -49,7 +128,22 @@
    "net": -28170.5,
    "n_sl": 2,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-07-06",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24350.0,
+   "entry_spot": 24335.35,
+   "gross": 9587.5,
+   "turnover": 192497.5,
+   "net": 8371.76,
+   "n_sl": 1,
+   "note": "",
+   "updated_at": "2026-09-07T12:09:13",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-07-07",
@@ -62,7 +156,22 @@
    "net": 31656.56,
    "n_sl": 0,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-07-13",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24000.0,
+   "entry_spot": 24020.9,
+   "gross": 3477.5,
+   "turnover": 232602.5,
+   "net": 2025.15,
+   "n_sl": 1,
+   "note": "",
+   "updated_at": "2026-09-07T12:09:28",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-07-14",
@@ -75,7 +184,22 @@
    "net": 7004.57,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-07-20",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24250.0,
+   "entry_spot": 24251.25,
+   "gross": 33312.5,
+   "turnover": 224932.5,
+   "net": 31905.4,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:09:41",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-07-21",
@@ -88,7 +212,22 @@
    "net": 7603.77,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-07-27",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 23950.0,
+   "entry_spot": 23941.05,
+   "gross": 17972.5,
+   "turnover": 200037.5,
+   "net": 16712.28,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:09:50",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-07-28",
@@ -101,7 +240,22 @@
    "net": 33230.56,
    "n_sl": 0,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-08-03",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24550.0,
+   "entry_spot": 24553.8,
+   "gross": 9977.5,
+   "turnover": 167277.5,
+   "net": 8910.56,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:10:00",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-08-04",
@@ -114,7 +268,22 @@
    "net": -11220.44,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-08-10",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24550.0,
+   "entry_spot": 24566.95,
+   "gross": 32240.0,
+   "turnover": 240110.0,
+   "net": 30743.35,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T12:10:19",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-08-11",
@@ -127,7 +296,22 @@
    "net": 2552.07,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-08-17",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24300.0,
+   "entry_spot": 24307.95,
+   "gross": -41145.0,
+   "turnover": 216645.0,
+   "net": -42503.21,
+   "n_sl": 2,
+   "note": "",
+   "updated_at": "2026-09-07T12:11:30",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-08-18",
@@ -140,7 +324,22 @@
    "net": -948.04,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-08-24",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24300.0,
+   "entry_spot": 24297.35,
+   "gross": 12512.5,
+   "turnover": 149792.5,
+   "net": 11548.72,
+   "n_sl": 1,
+   "note": "",
+   "updated_at": "2026-09-07T12:12:20",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-08-25",
@@ -153,7 +352,22 @@
    "net": 10885.89,
    "n_sl": 1,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-08-31",
+   "status": "CLOSED",
+   "source": "replay",
+   "atm_strike": 24050.0,
+   "entry_spot": 24046.75,
+   "gross": -23692.5,
+   "turnover": 213622.5,
+   "net": -25032.87,
+   "n_sl": 1,
+   "note": "",
+   "updated_at": "2026-09-07T12:13:03",
+   "book": "dte1"
   },
   {
    "trade_date": "2026-09-01",
@@ -166,10 +380,31 @@
    "net": -21171.1,
    "n_sl": 2,
    "note": "",
-   "updated_at": "2026-09-07T11:39:33"
+   "updated_at": "2026-09-07T11:39:33",
+   "book": "dte0"
+  },
+  {
+   "trade_date": "2026-09-07",
+   "status": "OPEN",
+   "source": "live",
+   "atm_strike": 23850.0,
+   "entry_spot": 23838.4,
+   "gross": 5005.0,
+   "turnover": 178880.0,
+   "net": 3869.61,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-07T14:06:02",
+   "book": "dte1"
   }
  ],
  "n_days": 12,
  "cum_net": 24115.65,
- "generated": "2026-09-07T11:39:33"
+ "shadow": {
+  "book": "dte1",
+  "n_days": 13,
+  "cum_net": 110309.27,
+  "note": "DTE-1 shadow - study REJECTED this DTE; forward test only"
+ },
+ "generated": "2026-09-07T14:06:02"
 }

@@ -621,6 +621,66 @@ def login_required(f):
 # =============================================================================
 from flask import send_from_directory
 
+# ── wire-level cost of every page: compression + asset caching (2026-09-07) ──
+#
+# Gunicorn serves this app directly with no nginx in front, so nothing was
+# compressing or cache-tagging responses. Measured on 07-Sep: the SPA bundle went
+# over the wire as 1,915,715 bytes of uncompressed JavaScript with
+# `Cache-Control: no-cache`, so every single page load re-downloaded 1.9 MB — plus
+# 386 KB of book_daily.json and 249 KB of momentum_ohlc.json on the True North page,
+# about 2.6 MB per visit. That, not the API, is what made pages feel slow: the API
+# had already been taken off the render path.
+#
+# Two fixes, both narrow:
+#   1. gzip text responses when the client asks for it. The build reports the bundle
+#      compresses to ~590 KB, a 3.2x saving.
+#   2. Vite fingerprints asset filenames (index-DH8GA6b9.js), so those bytes can never
+#      change under a given name — they are safe to cache immutably for a year.
+#      index.html itself stays no-cache, which is what makes a new deploy visible.
+#
+# Deliberately NOT compressed: streaming responses (the SSE endpoints set
+# X-Accel-Buffering and must not be buffered), anything already encoded, and small
+# payloads where the CPU is not worth it.
+import gzip as _gzip
+
+_COMPRESSIBLE = ('text/', 'application/json', 'application/javascript',
+                 'text/javascript', 'application/xml', 'image/svg+xml')
+_MIN_GZIP_BYTES = 1024
+
+
+@app.after_request
+def _compress_and_cache(resp):
+    try:
+        path = request.path or ''
+        # Fingerprinted assets never change under their name: cache hard.
+        if '/assets/' in path and any(path.endswith(x) for x in ('.js', '.css', '.woff2', '.woff')):
+            resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+
+        if resp.direct_passthrough or resp.is_streamed:
+            return resp                        # never buffer a stream to compress it
+        if resp.headers.get('Content-Encoding'):
+            return resp
+        if 'gzip' not in (request.headers.get('Accept-Encoding') or '').lower():
+            return resp
+        ctype = (resp.headers.get('Content-Type') or '').lower()
+        if not any(ctype.startswith(c) or c in ctype for c in _COMPRESSIBLE):
+            return resp
+        data = resp.get_data()
+        if len(data) < _MIN_GZIP_BYTES:
+            return resp
+        packed = _gzip.compress(data, 6)
+        if len(packed) >= len(data):
+            return resp                        # already dense; sending it would cost more
+        resp.set_data(packed)
+        resp.headers['Content-Encoding'] = 'gzip'
+        resp.headers['Content-Length'] = str(len(packed))
+        resp.headers.add('Vary', 'Accept-Encoding')
+    except Exception:
+        # A response that fails to compress must still be delivered uncompressed.
+        return resp
+    return resp
+
+
 @app.route('/app')
 @app.route('/app/')
 @app.route('/app/<path:subpath>')

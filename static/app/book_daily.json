@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-09-07T11:40:02",
+ "generated_at": "2026-09-07T14:00:02",
  "books": {
   "orb": {
    "days": [
     {
      "date": "2026-09-07",
-     "trades": 3,
+     "trades": 4,
      "wins": 2,
-     "losses": 1,
-     "pnl": 432.2,
-     "deployed": 44574.9,
-     "cum": -31698.73,
+     "losses": 2,
+     "pnl": 291.2,
+     "deployed": 61202.9,
+     "cum": -31839.73,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -58,6 +58,21 @@
        "exit_time": "2026-09-07T10:27:47.503289",
        "exit_reason": "SL_HIT",
        "conviction_grade": "A"
+      },
+      {
+       "symbol": "GRASIM",
+       "pnl": -141.0,
+       "deployed": 16628.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 5,
+       "entry_price": 3325.6,
+       "exit_price": 3297.4,
+       "entry_time": "2026-09-07T12:10:05.282050",
+       "exit_time": "2026-09-07T13:01:17.537808",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "C"
       }
      ]
     },
@@ -2314,12 +2329,12 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 220162.66,
+    "avg_trade": 218698.38,
     "days": 18,
-    "trades": 138,
+    "trades": 139,
     "wins": 50,
-    "win_rate": 36.2,
-    "net": -31698.73,
+    "win_rate": 36.0,
+    "net": -31839.73,
     "best_day": 3123.4,
     "worst_day": -13754.43,
     "green_days": 8,
@@ -2327,7 +2342,7 @@
     "t_stat": -1.49,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 92,
+    "sim_trades": 93,
     "first": "2026-04-27",
     "last": "2026-09-07"
    }
@@ -10520,12 +10535,12 @@
    "days": [
     {
      "date": "2026-09-07",
-     "trades": 7,
+     "trades": 11,
      "wins": 5,
-     "losses": 2,
-     "pnl": 1105.66,
-     "deployed": 167260.28,
-     "cum": -16476.67,
+     "losses": 6,
+     "pnl": -186.97,
+     "deployed": 265822.27,
+     "cum": -17769.3,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10604,6 +10619,50 @@
        "side": "SELL",
        "price": 2932.1201,
        "qty": 8.236498273342477,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "AXISBANK",
+       "pnl": -100.12,
+       "deployed": 24502.07,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1262.6211,
+       "qty": 19.40571573214771,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "BAJFINANCE",
+       "pnl": -7.85,
+       "deployed": 24806.18,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1057.3826900000001,
+       "qty": 23.45998604434182,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "HINDALCO",
+       "pnl": -864.75,
+       "deployed": 24806.99,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1001.49946,
+       "qty": 24.769844115759078,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "TITAN",
+       "pnl": -319.92,
+       "deployed": 24446.76,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 4967.0094500000005,
+       "qty": 4.921826096590535,
        "reason": "PATTERN"
       }
      ]
@@ -13759,20 +13818,20 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24623.13,
+    "avg_trade": 24623.39,
     "days": 33,
-    "trades": 255,
+    "trades": 259,
     "wins": 91,
-    "win_rate": 35.7,
-    "net": -16476.64,
+    "win_rate": 35.1,
+    "net": -17769.27,
     "best_day": 7492.54,
     "worst_day": -6934.76,
-    "green_days": 10,
+    "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.4,
+    "t_stat": -1.51,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 255,
+    "sim_trades": 259,
     "first": "2026-07-23",
     "last": "2026-09-07"
    }
@@ -15586,10 +15645,59 @@
   "mst": {
    "days": [
     {
-     "date": "2026-09-03",
-     "trades": 10,
+     "date": "2026-09-07",
+     "trades": 2,
      "wins": 0,
-     "losses": 10,
+     "losses": 2,
+     "pnl": 0.0,
+     "deployed": 0.0,
+     "cum": 0.0,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "NIFTY26SEP23750PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "leg_role": "put_long",
+       "strike": 23750,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-07T10:20:17.696366",
+       "exit_time": "2026-09-07T11:50:20.335720",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23550PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "leg_role": "put_short",
+       "strike": 23550,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-07T10:20:17.913181",
+       "exit_time": "2026-09-07T11:50:20.394734",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      }
+     ]
+    },
+    {
+     "date": "2026-09-03",
+     "trades": 14,
+     "wins": 0,
+     "losses": 14,
      "pnl": 0.0,
      "deployed": 0.0,
      "cum": 0.0,
@@ -15773,6 +15881,78 @@
        "exit_price": 0.0,
        "entry_time": "2026-09-03T14:20:14.756926",
        "exit_time": "2026-09-03T15:20:14.524452",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23900PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "leg_role": "reset_long_a",
+       "strike": 23900,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T15:20:14.639767",
+       "exit_time": "2026-09-07T11:50:20.222052",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23850PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "leg_role": "reset_short_a",
+       "strike": 23850,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T15:20:14.671749",
+       "exit_time": "2026-09-07T11:50:20.277085",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23800PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "leg_role": "reset_short_b",
+       "strike": 23800,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T15:20:14.713485",
+       "exit_time": "2026-09-07T11:50:20.293300",
+       "exit_reason": "credit_too_low",
+       "week_label": "2026-09-15"
+      },
+      {
+       "symbol": "NIFTY26SEP23700PE",
+       "pnl": 0.0,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "leg_role": "reset_long_b",
+       "strike": 23700,
+       "option_type": "PE",
+       "qty": 65,
+       "entry_price": 0.0,
+       "exit_price": 0.0,
+       "entry_time": "2026-09-03T15:20:14.772162",
+       "exit_time": "2026-09-07T11:50:20.311160",
        "exit_reason": "credit_too_low",
        "week_label": "2026-09-15"
       }
@@ -15979,8 +16159,8 @@
     "max_position": 17342.0,
     "busiest_day": 28629.25,
     "avg_trade": 14314.62,
-    "days": 2,
-    "trades": 20,
+    "days": 3,
+    "trades": 26,
     "wins": 0,
     "win_rate": 0.0,
     "net": 0.0,
@@ -15991,9 +16171,9 @@
     "t_stat": null,
     "top3_share": null,
     "broker_trades": 2,
-    "sim_trades": 18,
+    "sim_trades": 24,
     "first": "2026-05-07",
-    "last": "2026-09-03"
+    "last": "2026-09-07"
    }
   }
  }
