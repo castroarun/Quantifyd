@@ -404,8 +404,20 @@ def get_holdings() -> List[Dict[str, Any]]:
         total_invested = 0
 
         for h in holdings:
-            invested = h.get("quantity", 0) * h.get("average_price", 0)
-            current = h.get("quantity", 0) * h.get("last_price", 0)
+            # Kite splits a holding into buckets: `quantity` (settled CNC),
+            # `t1_quantity` (bought, not yet settled) and an `mtf` dict for
+            # margin-funded shares (the "M: n" tag in Kite). Displayed
+            # invested/current must cover ALL of them or MTF names (e.g.
+            # MANORAMA 47 + M:134) show a fraction of the real position.
+            cnc_qty = int(h.get("quantity") or 0) + int(h.get("t1_quantity") or 0)
+            avg = float(h.get("average_price") or 0)
+            mtf = h.get("mtf") or {}
+            mtf_qty = int(mtf.get("quantity") or 0)
+            mtf_avg = float(mtf.get("average_price") or 0) or avg
+            qty = cnc_qty + mtf_qty
+            invested = cnc_qty * avg + mtf_qty * mtf_avg
+            current = qty * (h.get("last_price") or 0)
+            blended_avg = (invested / qty) if qty > 0 else avg
             pnl = current - invested
             pnl_pct = (pnl / invested * 100) if invested > 0 else 0
 
@@ -415,8 +427,9 @@ def get_holdings() -> List[Dict[str, Any]]:
             processed.append({
                 "symbol": symbol,
                 "name": STOCK_NAMES.get(symbol, symbol),  # Use proper company name
-                "quantity": h.get("quantity", 0),
-                "average_price": h.get("average_price", 0),
+                "quantity": qty,
+                "mtf_quantity": mtf_qty,
+                "average_price": round(blended_avg, 2),
                 "last_price": h.get("last_price", 0),
                 "invested": invested,
                 "current": current,
