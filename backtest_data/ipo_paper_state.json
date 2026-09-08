@@ -31,5 +31,15 @@
    "pivot": 133.17,
    "listed": "2026-03-13"
   }
+ ],
+ "failed_orders": [
+  {
+   "ts": "2026-09-08 12:02:00.860116",
+   "book": "ipo-base",
+   "symbol": "KISSHT",
+   "qty": 132,
+   "reason": "entry not placed",
+   "detail": "per second exceeded"
+  }
  ]
 }

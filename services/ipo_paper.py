@@ -342,7 +342,8 @@ def write_ui(st, wide, asof, log, dry=False):
               slots=SLOTS, slots_used=len(rows),
               pending=st.get('pending', []), navcurve=st.get('nav', []),
               trades=st.get('trades', [])[-100:], data_events=st.get('data_events', [])[-20:],
-              started=st.get('started'), log=log)
+              started=st.get('started'), log=log,
+              failed_orders=st.get('failed_orders', []))
     if dry:
         print(json.dumps({k: ui[k] for k in ('asof', 'mode', 'nav', 'cash', 'slots_used')}, indent=1))
         return ui

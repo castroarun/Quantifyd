@@ -52,6 +52,8 @@ type Pend = { symbol: string; pivot: number; close: number; depth_pct: number;
 type Trade = { symbol: string; qty: number; buy: number; sell: number; entry_date: string;
   exit_date: string; reason: string; net_pnl: number; pnl_pct: number };
 type Ev = { d: string; symbol: string; prev: number; px: number; note: string };
+type FailedOrder = { ts: string; book: string; symbol: string; qty: number;
+  reason: string; detail?: string };
 type Feed = {
   updated: string; asof: string; mode: 'paper' | 'live';
   positions: Pos[]; capital: number; cash: number; value: number; nav: number;
@@ -59,6 +61,7 @@ type Feed = {
   slots: number; slots_used: number; pending: Pend[];
   navcurve: { d: string; nav: number }[]; trades: Trade[]; data_events: Ev[];
   started: string; log: string[];
+  failed_orders?: FailedOrder[];
 };
 
 function BacktestEvidence() {
@@ -152,6 +155,34 @@ export default function IpoPaper() {
   return (
     <div className={styles.root}>
       <BacktestEvidence />
+      {(r.failed_orders ?? []).length > 0 && (
+        <div style={{
+          border: '1px solid var(--accent-neg,#A32D2D)', borderLeftWidth: 4,
+          borderRadius: 7, padding: '11px 14px', marginBottom: 14,
+          background: 'var(--surface,#fff)',
+        }}>
+          <b style={{ color: 'var(--accent-neg,#A32D2D)' }}>
+            {(r.failed_orders ?? []).length} order
+            {(r.failed_orders ?? []).length === 1 ? '' : 's'} did NOT go through
+          </b>
+          <table className={styles.table} style={{ marginTop: 6 }}>
+            <tbody>
+              {(r.failed_orders ?? []).map((f, i) => (
+                <tr key={i}>
+                  <td className={styles.sym}>{f.symbol}</td>
+                  <td>x{f.qty}</td>
+                  <td className={styles.neg}>{f.reason}</td>
+                  <td className={styles.muted}>{f.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className={styles.note}>
+            These trades are not in the account, and the book does not hold them. Email and
+            WhatsApp were sent when this happened; the banner clears on the next clean run.
+          </p>
+        </div>
+      )}
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>

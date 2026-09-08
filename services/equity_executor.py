@@ -58,7 +58,8 @@ OA_SLOTS = 16
 IPO_SIZE_PCT = 0.1875
 MIN_ORDER = 2_000.0          # below this the brokerage/rounding is not worth an order
 TICK = 0.05                  # fallback only; real ticks come from the instrument dump
-ORDER_GAP = 0.45             # seconds between orders; the broker throttles per second
+ORDER_GAP = 0.60             # minimum gap between ANY two orders
+RETRY_BACKOFF = 1.5          # grows per attempt when the broker says slow down
 
 
 def ist():
@@ -161,6 +162,95 @@ def save_json(path, obj):
     os.replace(tmp, path)
 
 
+FAILURES = ROOT / 'backtest_data' / 'executor_failures.json'
+_FAILED = []          # collected across both books, reported once at the end
+
+
+def note_failure(book, symbol, qty, reason, detail=''):
+    """Record a rejected or unplaced order.
+
+    On 08-Sep nine of sixteen orders were rejected and the only trace was a line in a log
+    file nobody reads. Three were on the wrong tick and six were throttled, including the
+    day's only entry signal. A book that quietly fails to place its trades looks exactly
+    like a book with nothing to do.
+    """
+    _FAILED.append(dict(ts=str(datetime.now()), book=book, symbol=symbol,
+                        qty=qty, reason=reason, detail=detail[:300]))
+
+
+def flush_failures(arm):
+    """Persist, alert, and push onto the book feeds so the pages show it."""
+    if not _FAILED:
+        # a clean run clears yesterday's banner rather than leaving a stale warning
+        if arm:
+            save_json(FAILURES, dict(d=str(date.today()), items=[]))
+        return
+    save_json(FAILURES, dict(d=str(date.today()), items=_FAILED))
+    lines = ['%s %s x%s — %s' % (f['book'], f['symbol'], f['qty'], f['reason'])
+             for f in _FAILED]
+    body = chr(10).join(lines)
+    title = '%d order%s did NOT go through' % (len(_FAILED), '' if len(_FAILED) == 1 else 's')
+    alert(title, body)
+    try:
+        sys.path.insert(0, str(ROOT))
+        from services.dividend_notify import send_email, send_whatsapp
+        html = ('<h3>%s</h3><p>Quantifyd executor, %s IST</p><ul>%s</ul>'
+                '<p>These trades are NOT in the account. The book will not hold them '
+                'unless they are placed.</p>'
+                % (title, ist().strftime('%d-%b-%Y %H:%M'),
+                   ''.join('<li>%s</li>' % l for l in lines)))
+        print('  email:', send_email('Quantifyd: ' + title, html))
+        print('  whatsapp:', send_whatsapp('Quantifyd - ' + title + chr(10) + body))
+    except Exception as e:
+        print('  notification failed:', e)
+    # surface on the book pages: each feed carries what failed for that book
+    for state_path, book in ((OA_STATE, 'open-alpha'), (IPO_STATE, 'ipo-base')):
+        mine = [f for f in _FAILED if f['book'] == book]
+        if not mine or not state_path.exists():
+            continue
+        try:
+            st = json.load(open(state_path))
+            st['failed_orders'] = mine
+            save_json(state_path, st)
+        except Exception as e:
+            print('  could not write failures to %s: %s' % (book, e))
+
+
+_LAST_ORDER = [0.0]
+
+
+def send_order(k, **kw):
+    """EVERY order in this file goes through here. Returns (order_id, error).
+
+    Pacing was first written inside the Open Alpha helper, which left the IPO leg
+    calling place_order directly with no spacing and no retry — and the IPO entry was
+    exactly what the broker rejected on 08-Sep with "Maximum allowed order requests per
+    second exceeded". Scattered pacing is pacing that a new code path will forget, so
+    there is now one gate and no way around it.
+
+    Two mechanisms, because they solve different problems: the throttle spaces orders so
+    the limit is not hit, and the backoff recovers when something else in the account has
+    already consumed the quota.
+    """
+    for attempt in range(5):
+        wait = ORDER_GAP - (time.monotonic() - _LAST_ORDER[0])
+        if wait > 0:
+            time.sleep(wait)
+        _LAST_ORDER[0] = time.monotonic()
+        try:
+            return k.place_order(**kw), None
+        except Exception as e:
+            msg = str(e)
+            throttled = 'per second' in msg.lower() or 'too many' in msg.lower()
+            if throttled and attempt < 4:
+                back = RETRY_BACKOFF * (attempt + 1)
+                print('    throttled, retrying in %.1fs (attempt %d)' % (back, attempt + 2))
+                time.sleep(back)
+                continue
+            return None, msg
+    return None, 'still throttled after retries'
+
+
 def place(k, symbol, qty, ltp, arm, tag):
     """A marketable LIMIT buy, CNC, paced and retried.
 
@@ -172,20 +262,10 @@ def place(k, symbol, qty, ltp, arm, tag):
     limit = tick_round(ltp * 1.005, up=True, symbol=symbol)
     if not arm:
         return None, limit, 'DRY'
-    for attempt in range(4):
-        try:
-            oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=symbol,
-                                transaction_type='BUY', quantity=int(qty), product='CNC',
-                                order_type='LIMIT', price=limit, validity='DAY', tag=tag[:20])
-            time.sleep(ORDER_GAP)
-            return oid, limit, 'PLACED'
-        except Exception as e:
-            msg = str(e)
-            if 'per second' in msg.lower() and attempt < 3:
-                time.sleep(1.2 * (attempt + 1))
-                continue
-            return None, limit, f'FAILED: {msg}'
-    return None, limit, 'FAILED: throttled'
+    oid, err = send_order(k, variety='regular', exchange='NSE', tradingsymbol=symbol,
+                          transaction_type='BUY', quantity=int(qty), product='CNC',
+                          order_type='LIMIT', price=limit, validity='DAY', tag=tag[:20])
+    return (oid, limit, 'PLACED') if oid else (None, limit, f'FAILED: {err}')
 
 
 
@@ -236,6 +316,8 @@ def deploy_open_alpha(arm, led):
         if spend + cost > cash:
             continue
         oid, limit, note = place(k, s, qty, px, arm, 'OA-TOPUP')
+        if arm and not oid:
+            note_failure('open-alpha', s, qty, 'not placed', note)
         spend += cost
         orders.append(dict(symbol=s, qty=qty, ltp=px, limit=limit, cost=round(cost),
                            order_id=oid, note=note))
@@ -302,6 +384,8 @@ def deploy_ipo(arm, led):
         qty = int(size // fill_ref)
         if qty < 1 or qty * fill_ref > cash:
             print(f'  {s}: cash short for a slot, skipped')
+            note_failure('ipo-base', s, qty, 'skipped: not enough cash for a slot',
+                         'needs Rs %.0f, book has Rs %.0f' % (qty * fill_ref, cash))
             continue
         trig = tick_round(pivot, up=True, symbol=s)
         limit = tick_round(fill_ref * 1.005, up=True, symbol=s)
@@ -313,17 +397,19 @@ def deploy_ipo(arm, led):
             continue
         try:
             if breached:
-                oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=s,
-                                    transaction_type='BUY', quantity=qty, product='CNC',
-                                    order_type='LIMIT', price=limit, validity='DAY',
-                                    tag='IPO-ENTRY')
+                oid, err = send_order(k, variety='regular', exchange='NSE', tradingsymbol=s,
+                                      transaction_type='BUY', quantity=qty, product='CNC',
+                                      order_type='LIMIT', price=limit, validity='DAY',
+                                      tag='IPO-ENTRY')
                 how = f'LIMIT {limit} (pivot {pivot} already through at {ltp})'
             else:
-                oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=s,
-                                    transaction_type='BUY', quantity=qty, product='CNC',
-                                    order_type='SL', trigger_price=trig, price=limit,
-                                    validity='DAY', tag='IPO-ENTRY')
+                oid, err = send_order(k, variety='regular', exchange='NSE', tradingsymbol=s,
+                                      transaction_type='BUY', quantity=qty, product='CNC',
+                                      order_type='SL', trigger_price=trig, price=limit,
+                                      validity='DAY', tag='IPO-ENTRY')
                 how = f'SL BUY trigger {trig} limit {limit}'
+            if not oid:
+                raise RuntimeError(err)
             print(f'  PLACED  {s:<12} x{qty:<5} {how}  id {oid}')
             record(led, 'ipo-base', s, 'entry',
                    dict(order_id=oid, qty=qty, pivot=pivot, ltp_at_order=ltp,
@@ -337,7 +423,7 @@ def deploy_ipo(arm, led):
                   f'({slip:+.2f}% vs pivot).', 'low')
         except Exception as e:
             print(f'  FAILED  {s}: {e}')
-            alert(f'IPO order FAILED: {s}', str(e))
+            note_failure('ipo-base', s, qty, 'entry not placed', str(e))
     if not arm:
         print('  (dry run — nothing was sent)')
     else:
@@ -378,7 +464,8 @@ def main():
             deploy_open_alpha(arm, led)
         except Exception as e:
             print('open-alpha failed:', e)
-            alert('Executor failed: open-alpha', str(e))
+            note_failure('open-alpha', '-', 0, 'the whole leg failed', str(e))
+    flush_failures(arm)
 
 
 if __name__ == '__main__':

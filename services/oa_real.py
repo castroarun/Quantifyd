@@ -341,7 +341,8 @@ def mark():
               return_pct=round(100 * gain / capital, 2) if capital else 0,
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
-              note=st['note'], trades=st.get('trades', []))
+              note=st['note'], trades=st.get('trades', []),
+              failed_orders=st.get('failed_orders', []))
     tmp = UI.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
     os.replace(tmp, UI)
@@ -405,7 +406,8 @@ def ui_only():
               return_pct=round(100 * gain / capital, 2) if capital else 0,
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
-              note=st['note'], trades=st.get('trades', []))
+              note=st['note'], trades=st.get('trades', []),
+              failed_orders=st.get('failed_orders', []))
     tmp = UI.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
     os.replace(tmp, UI)

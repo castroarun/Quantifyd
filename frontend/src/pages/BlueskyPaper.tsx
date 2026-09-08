@@ -108,6 +108,8 @@ type RealPos = {
 };
 type RealTrade = { symbol?: string; qty?: number; buy?: number; sell?: number;
   entry_date?: string; exit_date?: string; net_pnl?: number; pnl_pct?: number; reason?: string };
+type FailedOrder = { ts: string; book: string; symbol: string; qty: number;
+  reason: string; detail?: string };
 type RealFeed = { updated: string; positions: RealPos[]; invested: number; value: number;
   cash: number; nav: number; pnl: number; realized: number; pnl_pct: number;
   inception: string; navcurve: { d: string; nav: number }[]; note: string;
@@ -116,7 +118,9 @@ type RealFeed = { updated: string; positions: RealPos[]; invested: number; value
      previous build is still valid until the next cron mark — the page must not blank
      out in between, so every read falls back. */
   capital?: number; gain?: number; return_pct?: number; stale?: boolean;
-  flows?: { ts: string; kind: string; amount: number; via?: string }[] };
+  flows?: { ts: string; kind: string; amount: number; via?: string }[];
+  failed_orders?: FailedOrder[];
+};
 
 /* CAGR and the worst drawdown, from the book's own nav curve. Returns nulls rather than
    zeros while the curve is too short to mean anything — the book is days old, and a
@@ -220,6 +224,34 @@ export default function BlueskyPaper() {
         </div>
       </div>
 
+      {(r.failed_orders ?? []).length > 0 && (
+        <div style={{
+          border: '1px solid var(--accent-neg,#A32D2D)', borderLeftWidth: 4,
+          borderRadius: 7, padding: '11px 14px', marginBottom: 14,
+          background: 'var(--surface,#fff)',
+        }}>
+          <b style={{ color: 'var(--accent-neg,#A32D2D)' }}>
+            {(r.failed_orders ?? []).length} order
+            {(r.failed_orders ?? []).length === 1 ? '' : 's'} did NOT go through
+          </b>
+          <table className={styles.table} style={{ marginTop: 6 }}>
+            <tbody>
+              {(r.failed_orders ?? []).map((f, i) => (
+                <tr key={i}>
+                  <td className={styles.sym}>{f.symbol}</td>
+                  <td>x{f.qty}</td>
+                  <td className={styles.neg}>{f.reason}</td>
+                  <td className={styles.muted}>{f.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className={styles.note}>
+            These trades are not in the account, and the book does not hold them. Email and
+            WhatsApp were sent when this happened; the banner clears on the next clean run.
+          </p>
+        </div>
+      )}
       <div className={styles.studyBar}>
         <span className={styles.studyBarLabel}>Money in and out</span>
         <a className={styles.studyLink} href="/app/capital">Capital Desk →</a>

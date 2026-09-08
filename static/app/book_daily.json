@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-08T11:40:02",
+ "generated_at": "2026-09-08T12:00:01",
  "books": {
   "orb": {
    "days": [
@@ -14058,12 +14058,12 @@
    "days": [
     {
      "date": "2026-09-08",
-     "trades": 2,
-     "wins": 0,
+     "trades": 3,
+     "wins": 1,
      "losses": 2,
-     "pnl": -9299.32,
-     "deployed": 1128518.45,
-     "cum": -19431.69,
+     "pnl": -7458.98,
+     "deployed": 2393697.89,
+     "cum": -17591.35,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -14089,6 +14089,18 @@
        "price": 399.01966999999996,
        "lots": 1,
        "lot_size": 1200,
+       "reason": "ST_FLIP"
+      },
+      {
+       "symbol": "MARUTI",
+       "pnl": 1840.34,
+       "deployed": 1265179.44,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "price": 12651.794399999999,
+       "lots": 1,
+       "lot_size": 100,
        "reason": "ST_FLIP"
       }
      ]
@@ -14886,20 +14898,20 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1875374.94,
     "busiest_day": 4383202.38,
-    "avg_trade": 774274.79,
+    "avg_trade": 784293.25,
     "days": 19,
-    "trades": 48,
-    "wins": 15,
-    "win_rate": 31.2,
-    "net": -19431.7,
+    "trades": 49,
+    "wins": 16,
+    "win_rate": 32.7,
+    "net": -17591.36,
     "best_day": 21357.88,
-    "worst_day": -9299.32,
+    "worst_day": -7458.98,
     "green_days": 4,
     "costs_modelled": null,
-    "t_stat": -0.62,
+    "t_stat": -0.56,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 48,
+    "sim_trades": 49,
     "first": "2026-08-07",
     "last": "2026-09-08"
    }
