@@ -2,6 +2,71 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-09-08 — Momentum Portfolio (mpf): one summary panel across all three books — SHIPPED, one restart owed
+
+**"mpf"** is Arun's shorthand for the Momentum Portfolio: the `/app/portfolio` tab group —
+True North (`momentum-3l`), Open Alpha (`oa-real`), IPO Base (`ipo-paper`) and the Capital
+Desk. A change to one book page's panel, holdings, charts or record strip is a change to
+all of them.
+
+### ✅ Done and live (frontend, commit `59111294`, no restart needed)
+
+New shared `frontend/src/components/BookPanel/` (`BookPanel.tsx` + `BookCurve.tsx`) now
+renders the summary on all three book pages, replacing three near-copies that had already
+drifted apart on date format, timestamp placement and whether the return was shown at all.
+
+- return sits **beside** the value; second line keeps only capital and inception
+- freshness (`live · Ns ago · updated dd-Mon-yyyy HH:MM IST`) in the panel's top-right
+- **one chevron** at the foot of the status line opens the book record + the curve vs
+  Nifty 50. Closed it costs nothing. The standalone curve card is gone from all three pages
+- holdings collapsible; on OA the charts moved to sit directly under the holdings
+- `manual-assisted exits` → **order health** (`all orders filled` / `N orders unfilled`,
+  red), read from each book's `failed_orders` ledger — the same one that raises the email
+  and WhatsApp alert
+- dates dd-Mon-yyyy everywhere (IPO Base had been rendering `8 Sep`)
+
+### ⏳ PENDING — the 15:40 restart (armed 13:50, PID 2193127)
+
+`services/book_liveness.py` is edited on disk but the running gunicorn has not loaded it.
+`scripts/deferred_restart.sh` is armed and re-checks the clock at wake time.
+
+**After the restart, verify:**
+
+```bash
+curl -s http://127.0.0.1:5000/api/books/liveness | python3 -c "import json,sys; b=json.load(sys.stdin)['books']; print(len(b), 'books'); print({k:b[k]['open_positions'] for k in ('oa-real','ipo-paper')})"
+# expect: 18 books, {'oa-real': 16, 'ipo-paper': 1}
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5000/api/books/oa-real/benchmarks    # expect 200 (404 before)
+```
+
+Then open `/app/portfolio`, expand the chevron on each of the three tabs and confirm the
+record line appears on Open Alpha and IPO Base (both will honestly read
+"holding N — nothing closed yet"; neither has a closed trade).
+
+**If the restart did not fire:** `cat /tmp/deferred_restart.log`, then
+`sudo systemctl restart quantifyd` yourself once `TZ=Asia/Kolkata date` is past 15:40.
+
+**Rollback:** backups of every file touched are in `/tmp/mpf/*.bak`;
+`git revert 59111294` undoes the whole change.
+
+### Notes worth keeping
+
+- OA and IPO keep trades in **JSON state**, not SQLite, which is why they were never in
+  `/api/books/liveness`. `JSON_BOOKS` in `book_liveness.py` now reads them.
+- `/api/books/<id>/benchmarks` replaces the book-specific
+  `/api/momentum-paper/benchmarks` for new work; the old route still serves True North.
+- The curve is **time-weighted with flows backed out** — OA went 0 → ₹6.18L of capital in
+  four days, which on raw NAV reads as a vertical climb where the book had done nothing.
+- Both books' curves are near-empty today (OA 2 points, IPO 0). The component says so
+  rather than drawing a two-point "record".
+
+### ⏳ Still open on the mpf pages
+
+- **Capital Desk** has not been moved onto `BookPanel` — it is not a book, but its metrics
+  box should still speak the same language.
+- The panel's `extraSub` (CAGR / worst drawdown) differs per book because each page
+  computes it differently; worth folding into the shared component.
+
+
 ## ✅ 2026-09-07 — research/156 sector trend: NO EDGE (rotation) / NO ADDED VALUE (sector filter)
 
 Full verdict: `research/156_sector_rotation/results/RESULTS.md` · study page
