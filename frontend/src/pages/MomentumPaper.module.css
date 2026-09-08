@@ -310,3 +310,42 @@ button.curveKeyOn { opacity: 1; }
   color: var(--accent-warn, #B45309);
   background: var(--status-warning-soft, rgba(180, 83, 9, 0.10));
 }
+
+/* ── Where the money sits: a ring for composition, bars for signed P&L ─────────────── */
+.moneyGrid { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 760px) { .moneyGrid { grid-template-columns: 1.05fr 1fr; } }
+.moneySplit { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.moneyKeys { display: flex; flex-direction: column; gap: 9px; min-width: 200px; flex: 1; }
+.moneyKey {
+  display: flex; align-items: baseline; gap: 8px; font-size: 12.5px;
+  color: var(--ink-secondary, #5F5E5A); font-variant-numeric: tabular-nums;
+}
+.moneyKey i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.moneyKeyName { flex: 1; }
+.moneyKey b { color: var(--ink, #1B1B1A); font-weight: 600; }
+.moneySub {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-muted, #888780); margin-bottom: 10px;
+}
+.moneyPnl { border-left: 1px solid var(--hairline-soft, rgba(0,0,0,0.06)); padding-left: 20px; }
+@media (max-width: 759px) {
+  .moneyPnl { border-left: 0; border-top: 1px solid var(--hairline-soft, rgba(0,0,0,0.06));
+              padding: 14px 0 0; }
+}
+.pnlBarRow {
+  display: flex; align-items: center; gap: 10px; padding: 5px 0;
+  font-size: 12.5px; color: var(--ink-secondary, #5F5E5A);
+  font-variant-numeric: tabular-nums;
+}
+.pnlBarName { width: 84px; flex: none; }
+.pnlBarTrack { position: relative; flex: 1; height: 12px; min-width: 80px; }
+.pnlBarTrack i { position: absolute; top: 0; height: 100%; border-radius: 2px; }
+.pnlBarZero {
+  left: 50%; width: 1px !important; border-radius: 0 !important;
+  background: var(--hairline, rgba(0,0,0,0.10));
+}
+.pnlBarRow b { width: 92px; text-align: right; flex: none; font-weight: 600; }
+.pnlBarTotal {
+  border-top: 1px solid var(--hairline, rgba(0,0,0,0.10));
+  margin-top: 4px; padding-top: 8px; font-size: 13.5px; color: var(--ink, #1B1B1A);
+}

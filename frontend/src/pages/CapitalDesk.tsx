@@ -650,6 +650,138 @@ type LiveIPO = { updated: string; mode: string; nav: number; capital: number; va
   slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
   pending: unknown[] };
 
+/* WHERE THE MONEY SITS — the cut the page did not already have.
+ *
+ * The bar in the panel above splits the portfolio BY BOOK. This splits it by what the
+ * money is actually doing: at work in stocks, parked in the liquid fund earning ~5%, or
+ * sitting free. Same rupees, different question - "am I deployed?" rather than "who holds
+ * what" - so the two are not the same picture twice.
+ *
+ * P&L IS DELIBERATELY NOT A DONUT. A ring divides a whole into parts, and P&L has no
+ * whole: True North can be down while Open Alpha is up, and a pie of mixed signs is
+ * meaningless - the slices would not sum to the total and a bigger loss would draw as a
+ * bigger share of "profit". It is drawn as bars from a shared zero instead, which is what
+ * a signed quantity needs.
+ */
+function Donut({ segs, size = 132, thickness = 20, centre, sub }:
+  { segs: { k: string; v: number; c: string }[]; size?: number; thickness?: number;
+    centre: string; sub: string }) {
+  const total = segs.reduce((a, x) => a + x.v, 0);
+  const r = (size - thickness) / 2;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img"
+         aria-label={segs.map((s) => `${s.k} ${Math.round((s.v / (total || 1)) * 100)}%`).join(', ')}>
+      <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={thickness}
+                stroke="var(--hairline-soft,rgba(0,0,0,0.06))" />
+        {segs.map((s) => {
+          const frac = total ? s.v / total : 0;
+          const el = (
+            <circle key={s.k} cx={size / 2} cy={size / 2} r={r} fill="none"
+                    strokeWidth={thickness} stroke={s.c}
+                    strokeDasharray={`${circ * frac} ${circ * (1 - frac)}`}
+                    strokeDashoffset={-circ * offset} />
+          );
+          offset += frac;
+          return el;
+        })}
+      </g>
+      <text x={size / 2} y={size / 2 - 1} textAnchor="middle" fontSize={21} fontWeight={700}
+            fill="var(--ink,#1B1B1A)">{centre}</text>
+      <text x={size / 2} y={size / 2 + 15} textAnchor="middle" fontSize={9.5}
+            fill="var(--ink-muted,#888780)">{sub}</text>
+    </svg>
+  );
+}
+
+function MoneyCard({ tnLive, oa, ipo, ipoLive }:
+  { tnLive: LiveTN | null; oa: LiveOA | null; ipo: LiveIPO | null; ipoLive: boolean }) {
+  /* IPO Base on paper runs a notional Rs10L that is not the portfolio's money, so it is
+     counted only once it is live - the same rule the totals above use. */
+  const stocks = (tnLive?.value ?? 0) + (oa?.value ?? 0) + (ipoLive ? (ipo?.value ?? 0) : 0);
+  const parked = tnLive?.swept ?? 0;
+  const free = (tnLive?.cash ?? 0) + (oa?.cash ?? 0) + (ipoLive ? (ipo?.cash ?? 0) : 0);
+  const total = stocks + parked + free;
+  if (total <= 0) return null;
+
+  const where = [
+    { k: 'At work in stocks', v: stocks, c: '#2563EB' },
+    { k: 'Liquid fund', v: parked, c: '#0891B2' },
+    { k: 'Free cash', v: free, c: 'var(--ink-faint,#B4B2A9)' },
+  ].filter((x) => x.v > 0);
+
+  const books = [
+    { k: 'True North', v: (tnLive?.nav ?? 0) - (tnLive?.capital ?? 0), c: '#0F6E56' },
+    { k: 'Open Alpha', v: oa?.gain ?? 0, c: '#A21CAF' },
+    ...(ipoLive ? [{ k: 'IPO Base', v: ipo?.gain ?? 0, c: '#0E7490' }] : []),
+  ];
+  const worst = Math.max(1, ...books.map((b) => Math.abs(b.v)));
+  const net = books.reduce((a, b) => a + b.v, 0);
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>
+        Where the money sits
+        <span className={styles.cardCount}>
+          by what it is doing, not by which book holds it
+        </span>
+      </div>
+
+      <div className={styles.moneyGrid}>
+        <div className={styles.moneySplit}>
+          <Donut segs={where} centre={`${Math.round((stocks / total) * 100)}%`} sub="at work" />
+          <div className={styles.moneyKeys}>
+            {where.map((x) => (
+              <div key={x.k} className={styles.moneyKey}>
+                <i style={{ background: x.c }} />
+                <span className={styles.moneyKeyName}>{x.k}</span>
+                <b>{rup(x.v)}</b>
+                <span className={styles.muted}>{((x.v / total) * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.moneyPnl}>
+          <div className={styles.moneySub}>Profit and loss, by book</div>
+          {books.map((b) => (
+            <div key={b.k} className={styles.pnlBarRow}>
+              <span className={styles.pnlBarName}>{b.k}</span>
+              <span className={styles.pnlBarTrack}>
+                {/* both halves of a shared zero, so a loss reads as a loss */}
+                <i className={styles.pnlBarZero} />
+                <i style={{
+                  background: b.v >= 0 ? 'var(--accent-pos,#0F6E56)' : 'var(--accent-neg,#A32D2D)',
+                  width: `${(Math.abs(b.v) / worst) * 50}%`,
+                  left: b.v >= 0 ? '50%' : undefined,
+                  right: b.v < 0 ? '50%' : undefined,
+                }} />
+              </span>
+              <b className={b.v >= 0 ? styles.pos : styles.neg}>
+                {b.v >= 0 ? '+' : '−'}{rup(Math.abs(b.v)).slice(1)}
+              </b>
+            </div>
+          ))}
+          <div className={`${styles.pnlBarRow} ${styles.pnlBarTotal}`}>
+            <span className={styles.pnlBarName}>Together</span>
+            <span className={styles.pnlBarTrack} />
+            <b className={net >= 0 ? styles.pos : styles.neg}>
+              {net >= 0 ? '+' : '−'}{rup(Math.abs(net)).slice(1)}
+            </b>
+          </div>
+          <p className={styles.note} style={{ marginTop: 8 }}>
+            Drawn as bars from a shared zero rather than a ring: one book can be down while
+            another is up, and a ring divides a whole into parts that a signed quantity has
+            not got.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* WHAT HAPPENS NEXT — the desk's answer to "should I be doing something?"
  *
  * The page showed the portfolio's state but never its next move, so the only way to know
@@ -907,6 +1039,8 @@ export default function CapitalDesk() {
         </div>
       )}
       </div>
+
+      <MoneyCard tnLive={tnLive} oa={oa} ipo={ipo} ipoLive={ipoLive} />
 
       <NextUp />
 
