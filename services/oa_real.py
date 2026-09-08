@@ -46,6 +46,8 @@ LOCK = ROOT / 'backtest_data' / 'oa_real_state.lock'
 UI = ROOT / 'static' / 'app' / 'oa_real.json'
 FEED = Path('/tmp/nas_alert_feed.log')
 STOP_PCT = 0.08
+OA_TAG = 'OA-TOPUP'          # only orders carrying this tag belong to this book
+SEEN_ORDERS = ROOT / 'backtest_data' / 'oa_applied_orders.json'
 TRAIL_N = 15
 MAX_FLOW = 10_000_000
 SYMS16 = ['INDSWFTLAB', 'SETL', 'WELCORP', 'SHILPAMED', 'KMEW', 'SBCL', 'IOLCP',
@@ -411,6 +413,94 @@ def ui_only():
           f'prices as of {prev_updated or "entry"}')
 
 
+def reconcile(dry=True):
+    """Apply THIS BOOK'S OWN completed orders to the book. Never absolute holdings.
+
+    THE INCIDENT THIS EXISTS TO PREVENT (08-Sep-2026). The first version of this matched
+    the book's positions against broker holdings BY SYMBOL and overwrote quantity and
+    average price from them. The account is shared: it carries 54 equity names worth
+    about Rs 1.89 crore across personal holdings and other books. So the book was handed
+    KMEW 481 @ 1427.92 in place of its own 9 @ 3037.64, and INOXINDIA 132 in place of 12.
+    Book value leapt to Rs 21.1 lakh with Rs 7.6 lakh of invented profit. State was
+    restored from the last commit.
+
+    A book in a shared account may only ever count what IT bought. So this reads the
+    order book, keeps only COMPLETE CNC buys carrying this book's own tag, and applies
+    them as INCREMENTS. An untagged order, or one placed by hand, is ignored by design:
+    the cost of missing a fill is a stale book that a human notices, while the cost of
+    claiming someone else's shares is a book that lies about how much money exists.
+    """
+    kite = _kite()
+    seen = json.load(open(SEEN_ORDERS)) if SEEN_ORDERS.exists() else {}
+    adds = {}
+    for o in kite.orders():
+        oid = str(o.get('order_id'))
+        if (o.get('status') != 'COMPLETE' or o.get('transaction_type') != 'BUY'
+                or o.get('product') != 'CNC' or not o.get('filled_quantity')):
+            continue
+        if (o.get('tag') or '') != OA_TAG:          # not this book's order
+            continue
+        if oid in seen:                             # already applied on an earlier run
+            continue
+        s = o['tradingsymbol']
+        q, px = int(o['filled_quantity']), float(o['average_price'])
+        pq, pv = adds.get(s, (0, 0.0))
+        adds[s] = (pq + q, pv + q * px)
+        seen[oid] = dict(ts=str(datetime.now()), symbol=s, qty=q, price=px)
+
+    if not adds:
+        print('reconcile: no new tagged fills')
+        if not dry:
+            mark()
+        return
+
+    lines, spend = [], 0.0
+    for s, (q, val) in adds.items():
+        lines.append('%s +%d @%.2f = Rs %s' % (s, q, val / q, format(round(val), ',')))
+        spend += val
+    print('reconcile would apply:' if dry else 'reconcile applying:')
+    for l in lines:
+        print('   ', l)
+    print('    total Rs %s' % format(round(spend), ','))
+    if dry:
+        print('  (dry run - pass dry=False to write)')
+        return
+
+    if not acquire_lock():
+        print('reconcile: book busy, skipping')
+        return
+    try:
+        st = load_state()
+        if spend > float(st['cash']) + 1:
+            _alert('OA reconcile refused',
+                   'Tagged fills cost Rs %s but the book only holds Rs %s in cash. '
+                   'Nothing applied - check for a missed deposit.'
+                   % (format(round(spend), ','), format(round(st['cash']), ',')))
+            print('REFUSED: fills exceed book cash')
+            return
+        by_sym = {p['symbol']: p for p in st['positions']}
+        for s, (q, val) in adds.items():
+            avg = val / q
+            if s in by_sym:
+                p = by_sym[s]
+                nq = p['qty'] + q
+                p['buy'] = round((p['qty'] * p['buy'] + val) / nq, 2)
+                p['qty'] = nq
+                p['stop'] = round(p['buy'] * (1 - STOP_PCT), 2)
+            else:
+                st['positions'].append(dict(symbol=s, qty=q, buy=round(avg, 2),
+                                            entry_date=str(date.today()),
+                                            stop=round(avg * (1 - STOP_PCT), 2), src='executor'))
+        st['cash'] = round(max(0.0, float(st['cash']) - spend), 2)
+        save_state(st)
+        json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
+    finally:
+        release_lock()
+    _alert('Open Alpha: fills applied', '; '.join(lines), 'low')
+    print('applied; cash now Rs %s' % format(round(st['cash']), ','))
+    mark()
+
+
 def check():
     """15:18 close-proxy rule check. Alert-only."""
     kite = _kite()
@@ -440,5 +530,6 @@ def check():
 
 
 if __name__ == '__main__':
-    _modes = {'seed': seed, 'mark': mark, 'check': check, 'ui-only': ui_only}
+    _modes = {'seed': seed, 'mark': mark, 'check': check, 'ui-only': ui_only,
+              'reconcile': lambda: reconcile(dry='--arm' not in sys.argv)}
     _modes[sys.argv[1] if len(sys.argv) > 1 else 'mark']()

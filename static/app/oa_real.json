@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-07 18:46:02.840089",
+ "updated": "2026-09-08 07:48:12.297949",
  "positions": [
   {
    "symbol": "INDSWFTLAB",
@@ -9,15 +9,15 @@
    "stop": 327.09,
    "src": "real",
    "ltp": 368.7,
-   "days": 3,
-   "day_move_pct": 3.58,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 29496,
    "pnl": 1054,
    "pnl_pct": 3.7,
    "trail": 352.75,
    "to_stop_pct": 12.7,
    "to_trail_pct": 4.5,
-   "weight": 6.6
+   "weight": 1.4
   },
   {
    "symbol": "SETL",
@@ -27,15 +27,15 @@
    "stop": 376.1,
    "src": "real",
    "ltp": 388.55,
-   "days": 3,
-   "day_move_pct": -4.99,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 26810,
    "pnl": -1397,
    "pnl_pct": -4.95,
    "trail": 352.64,
    "to_stop_pct": 3.3,
    "to_trail_pct": 10.2,
-   "weight": 6.0
+   "weight": 1.3
   },
   {
    "symbol": "WELCORP",
@@ -45,15 +45,15 @@
    "stop": 2389.33,
    "src": "real",
    "ltp": 2597.9,
-   "days": 3,
-   "day_move_pct": 0.28,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 25979,
    "pnl": 8,
    "pnl_pct": 0.03,
    "trail": 2399.7,
    "to_stop_pct": 8.7,
    "to_trail_pct": 8.3,
-   "weight": 5.8
+   "weight": 1.2
   },
   {
    "symbol": "SHILPAMED",
@@ -63,33 +63,33 @@
    "stop": 888.31,
    "src": "real",
    "ltp": 939.5,
-   "days": 3,
-   "day_move_pct": -2.56,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 27246,
    "pnl": -755,
    "pnl_pct": -2.7,
    "trail": 893.12,
    "to_stop_pct": 5.8,
    "to_trail_pct": 5.2,
-   "weight": 6.1
+   "weight": 1.3
   },
   {
    "symbol": "KMEW",
-   "qty": 9,
-   "buy": 3037.64,
+   "qty": 481,
+   "buy": 1427.92,
    "entry_date": "2026-09-04",
-   "stop": 2794.63,
+   "stop": 1313.68,
    "src": "real",
    "ltp": 2961.6,
-   "days": 3,
-   "day_move_pct": -2.37,
-   "value": 26654,
-   "pnl": -684,
-   "pnl_pct": -2.5,
+   "days": 4,
+   "day_move_pct": 0.0,
+   "value": 1424530,
+   "pnl": 737700,
+   "pnl_pct": 107.41,
    "trail": 2885.85,
-   "to_stop_pct": 6.0,
+   "to_stop_pct": 125.4,
    "to_trail_pct": 2.6,
-   "weight": 6.0
+   "weight": 67.4
   },
   {
    "symbol": "SBCL",
@@ -99,15 +99,15 @@
    "stop": 1027.55,
    "src": "real",
    "ltp": 1092.1,
-   "days": 3,
-   "day_move_pct": -2.59,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 27302,
    "pnl": -620,
    "pnl_pct": -2.22,
    "trail": 1056.42,
    "to_stop_pct": 6.3,
    "to_trail_pct": 3.4,
-   "weight": 6.1
+   "weight": 1.3
   },
   {
    "symbol": "IOLCP",
@@ -117,15 +117,15 @@
    "stop": 183.73,
    "src": "real",
    "ltp": 213.04,
-   "days": 3,
-   "day_move_pct": 6.55,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 30252,
    "pnl": 1893,
    "pnl_pct": 6.67,
    "trail": 186.84,
    "to_stop_pct": 16.0,
    "to_trail_pct": 14.0,
-   "weight": 6.8
+   "weight": 1.4
   },
   {
    "symbol": "SPORTKING",
@@ -135,15 +135,15 @@
    "stop": 210.98,
    "src": "real",
    "ltp": 221.85,
-   "days": 3,
-   "day_move_pct": -3.22,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 27509,
    "pnl": -928,
    "pnl_pct": -3.26,
    "trail": 222.51,
    "to_stop_pct": 5.2,
    "to_trail_pct": -0.3,
-   "weight": 6.2
+   "weight": 1.3
   },
   {
    "symbol": "IRISDOREME",
@@ -153,33 +153,33 @@
    "stop": 57.9,
    "src": "real",
    "ltp": 62.15,
-   "days": 3,
-   "day_move_pct": -2.25,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 28092,
    "pnl": -357,
    "pnl_pct": -1.26,
    "trail": 59.07,
    "to_stop_pct": 7.3,
    "to_trail_pct": 5.2,
-   "weight": 6.3
+   "weight": 1.3
   },
   {
    "symbol": "INOXINDIA",
-   "qty": 12,
-   "buy": 2252.0,
+   "qty": 132,
+   "buy": 2043.61,
    "entry_date": "2026-09-04",
-   "stop": 2071.84,
+   "stop": 1880.12,
    "src": "real",
    "ltp": 2231.4,
-   "days": 3,
-   "day_move_pct": -0.73,
-   "value": 26777,
-   "pnl": -247,
-   "pnl_pct": -0.91,
+   "days": 4,
+   "day_move_pct": 0.0,
+   "value": 294545,
+   "pnl": 24788,
+   "pnl_pct": 9.19,
    "trail": 2076.79,
-   "to_stop_pct": 7.7,
+   "to_stop_pct": 18.7,
    "to_trail_pct": 7.4,
-   "weight": 6.0
+   "weight": 13.9
   },
   {
    "symbol": "MANINDS",
@@ -189,15 +189,15 @@
    "stop": 729.1,
    "src": "real",
    "ltp": 819.4,
-   "days": 3,
-   "day_move_pct": 3.91,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 28679,
    "pnl": 941,
    "pnl_pct": 3.39,
    "trail": 745.84,
    "to_stop_pct": 12.4,
    "to_trail_pct": 9.9,
-   "weight": 6.4
+   "weight": 1.4
   },
   {
    "symbol": "SSWL",
@@ -207,15 +207,15 @@
    "stop": 327.67,
    "src": "real",
    "ltp": 371.3,
-   "days": 3,
-   "day_move_pct": 2.61,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 29704,
    "pnl": 1210,
    "pnl_pct": 4.25,
    "trail": 323.75,
    "to_stop_pct": 13.3,
    "to_trail_pct": 14.7,
-   "weight": 6.7
+   "weight": 1.4
   },
   {
    "symbol": "ENTERO",
@@ -225,15 +225,15 @@
    "stop": 1686.61,
    "src": "real",
    "ltp": 1898.4,
-   "days": 3,
-   "day_move_pct": 3.87,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 28476,
    "pnl": 977,
    "pnl_pct": 3.55,
    "trail": 1697.73,
    "to_stop_pct": 12.6,
    "to_trail_pct": 11.8,
-   "weight": 6.4
+   "weight": 1.3
   },
   {
    "symbol": "NITINSPIN",
@@ -243,15 +243,15 @@
    "stop": 590.55,
    "src": "real",
    "ltp": 627.45,
-   "days": 3,
-   "day_move_pct": -1.82,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 27608,
    "pnl": -636,
    "pnl_pct": -2.25,
    "trail": 616.82,
    "to_stop_pct": 6.2,
    "to_trail_pct": 1.7,
-   "weight": 6.2
+   "weight": 1.3
   },
   {
    "symbol": "TMB",
@@ -261,15 +261,15 @@
    "stop": 858.01,
    "src": "real",
    "ltp": 936.45,
-   "days": 3,
-   "day_move_pct": 0.43,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 28094,
    "pnl": 115,
    "pnl_pct": 0.41,
    "trail": 900.31,
    "to_stop_pct": 9.1,
    "to_trail_pct": 4.0,
-   "weight": 6.3
+   "weight": 1.3
   },
   {
    "symbol": "KTKBANK",
@@ -279,27 +279,27 @@
    "stop": 313.08,
    "src": "real",
    "ltp": 333.6,
-   "days": 3,
-   "day_move_pct": -1.91,
+   "days": 4,
+   "day_move_pct": 0.0,
    "value": 27689,
    "pnl": -556,
    "pnl_pct": -1.97,
    "trail": 333.01,
    "to_stop_pct": 6.6,
    "to_trail_pct": 0.2,
-   "weight": 6.2
+   "weight": 1.3
   }
  ],
- "invested": 446349,
- "capital": 446349,
- "value": 446366,
+ "invested": 1348572,
+ "capital": 617638,
+ "value": 2112009,
  "cash": 0,
- "nav": 446366,
- "pnl": 17,
+ "nav": 2112009,
+ "pnl": 763437,
  "realized": 0,
- "gain": 17,
- "pnl_pct": 0.0,
- "return_pct": 0.0,
+ "gain": 1494372,
+ "pnl_pct": 56.61,
+ "return_pct": 241.95,
  "inception": "04-Sep-2026",
  "navcurve": [
   {
@@ -319,6 +319,13 @@
    "amount": 446348.68,
    "via": "seed 04-Sep-2026 (backfilled by the D1 migration)",
    "positions_touched": true
+  },
+  {
+   "ts": "2026-09-08 07:36:32.467643",
+   "kind": "deposit",
+   "amount": 171289.0,
+   "via": "capital desk",
+   "positions_touched": false
   }
  ],
  "note": "Seeded 04-Sep-2026 from Arun-executed CNC fills (top-16 by RS of the day's 21 triggered candidates). LIQUIDCASE 1757u sold to fund. Deliberate override of the Dec-5 soak gate. Exits manual-assisted: 15:18 checker alerts; no automated selling yet.",
