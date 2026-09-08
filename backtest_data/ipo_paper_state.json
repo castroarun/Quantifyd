@@ -1,19 +1,9 @@
 {
  "book": "IPO-BASE",
- "mode": "paper",
- "capital": 1000000.0,
- "cash": 812038.2675000001,
- "positions": [
-  {
-   "symbol": "MARSONS",
-   "qty": 1345,
-   "buy": 139.4,
-   "entry_date": "2026-09-07",
-   "stop": 128.25,
-   "pivot": 133.17,
-   "listed": "2026-03-13"
-  }
- ],
+ "mode": "live",
+ "capital": 228711.0,
+ "cash": 228711.0,
+ "positions": [],
  "pending": [
   {
    "symbol": "KISSHT",
@@ -25,19 +15,21 @@
    "age_days": 122
   }
  ],
- "nav": [
-  {
-   "d": "2026-09-04",
-   "nav": 1000000
-  },
-  {
-   "d": "2026-09-07",
-   "nav": 985274
-  }
- ],
+ "nav": [],
  "trades": [],
  "missed": [],
  "data_events": [],
- "started": "2026-09-06",
- "last_run": "2026-09-07 18:45:03.398037"
+ "started": "2026-09-08",
+ "last_run": "2026-09-07 18:45:03.398037",
+ "discarded_on_arming": [
+  {
+   "symbol": "MARSONS",
+   "qty": 1345,
+   "buy": 139.4,
+   "entry_date": "2026-09-07",
+   "stop": 128.25,
+   "pivot": 133.17,
+   "listed": "2026-03-13"
+  }
+ ]
 }

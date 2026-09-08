@@ -343,6 +343,55 @@ def write_ui(st, wide, asof, log, dry=False):
 
 
 # ───────────────────────── engine ─────────────────────────
+def arm():
+    """Take the book live NOW, without running a scan.
+
+    The full cycle refuses to run before 15:35 on a weekday, because scanning on partial
+    candles would arm tomorrow buy-stops off a half-formed bar. But ARMING is not a scan:
+    it is a state transition, and it has to be possible between sessions — otherwise a
+    deposit made at 07:36 cannot trade until the following day.
+
+    Paper positions are discarded (they were bought with notional money and are not in
+    the account). The PENDING BUY-STOP IS KEPT: the signal came from a completed close
+    and is just as valid for real money; only its size changes, and the executor computes
+    that from live equity when it places the order.
+    """
+    mode, cap = book_mode()
+    if mode != 'live':
+        print('allocation says the sleeve is still on paper - nothing to arm')
+        return
+    if not acquire_lock():
+        print('book busy')
+        return
+    try:
+        st = load_state()
+        if st.get('mode') == 'live':
+            print('already live; capital Rs %s cash Rs %s'
+                  % (format(round(st['capital']), ','), format(round(st['cash']), ',')))
+            return
+        ghosts = [dict(x) for x in st.get('positions', [])]
+        kept = list(st.get('pending', []))
+        st['positions'] = []
+        st.setdefault('discarded_on_arming', []).extend(ghosts)
+        st['mode'] = 'live'
+        st['capital'] = cap
+        st['cash'] = cap
+        st['pending'] = kept
+        st['nav'] = []
+        st['started'] = str(date.today())
+        save_state(st)
+    finally:
+        release_lock()
+    if ghosts:
+        names = '; '.join('%s x%d @%.2f' % (g['symbol'], g['qty'], g['buy']) for g in ghosts)
+        print('discarded paper positions: %s' % names)
+        _alert('IPO is LIVE - paper positions discarded',
+               'You do NOT own these, they were paper fills: %s. The book restarts flat on '
+               'Rs %s of real capital.' % (names, format(round(cap), ',')))
+    print('ARMED live on Rs %s; buy-stops carried: %s'
+          % (format(round(cap), ','), [(c['symbol'], c['pivot']) for c in kept] or 'none'))
+
+
 def main():
     dry = '--dry' in sys.argv
     ui_only = '--ui-only' in sys.argv
@@ -557,4 +606,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if '--arm-now' in sys.argv:
+        arm()
+    else:
+        main()

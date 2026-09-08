@@ -248,28 +248,55 @@ def deploy_ipo(arm, led):
         if already_done(led, 'ipo-base', s, 'entry'):
             print(f'  {s}: order already placed today, skipped')
             continue
+        # A BREACHED PIVOT IS NOT A STOP ORDER. Kite rejects a buy stop-loss whose
+        # trigger sits below the last price, and by 09:20 a pivot may already be through
+        # — KISSHT was at 320.95 against a 313.60 pivot on 08-Sep. The spec fills at
+        # max(pivot, open), so a pivot already cleared means buy now at the market rather
+        # than arm a stop that can never be accepted.
+        try:
+            ltp = k.ltp(['NSE:' + s])['NSE:' + s]['last_price']
+        except Exception as e:
+            print(f'  {s}: no quote ({e}), skipped')
+            continue
+        breached = ltp >= pivot
+        fill_ref = max(pivot, ltp) if breached else pivot
         size = min(IPO_SIZE_PCT, 0.30) * equity
-        qty = int(size // pivot)
-        if qty < 1 or qty * pivot > cash:
+        qty = int(size // fill_ref)
+        if qty < 1 or qty * fill_ref > cash:
             print(f'  {s}: cash short for a slot, skipped')
             continue
         trig = tick_round(pivot, up=True)
-        limit = tick_round(pivot * 1.005, up=True)
+        limit = tick_round(fill_ref * 1.005, up=True)
+        slip = (ltp / pivot - 1) * 100
         if not arm:
-            print(f'  would arm  {s:<12} x{qty:<5} SL BUY trigger {trig} limit {limit}')
+            how = (f'MARKET (pivot already through: last {ltp}, +{slip:.2f}% over pivot)'
+                   if breached else f'SL BUY trigger {trig}')
+            print(f'  would place {s:<12} x{qty:<5} {how} limit {limit}')
             continue
         try:
-            oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=s,
-                                transaction_type='BUY', quantity=qty, product='CNC',
-                                order_type='SL', trigger_price=trig, price=limit,
-                                validity='DAY', tag='IPO-ENTRY')
-            print(f'  PLACED  {s:<12} x{qty:<5} SL BUY trigger {trig} limit {limit}  id {oid}')
+            if breached:
+                oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=s,
+                                    transaction_type='BUY', quantity=qty, product='CNC',
+                                    order_type='LIMIT', price=limit, validity='DAY',
+                                    tag='IPO-ENTRY')
+                how = f'LIMIT {limit} (pivot {pivot} already through at {ltp})'
+            else:
+                oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=s,
+                                    transaction_type='BUY', quantity=qty, product='CNC',
+                                    order_type='SL', trigger_price=trig, price=limit,
+                                    validity='DAY', tag='IPO-ENTRY')
+                how = f'SL BUY trigger {trig} limit {limit}'
+            print(f'  PLACED  {s:<12} x{qty:<5} {how}  id {oid}')
             record(led, 'ipo-base', s, 'entry',
-                   dict(order_id=oid, qty=qty, trigger=trig, limit=limit, ts=str(datetime.now())))
+                   dict(order_id=oid, qty=qty, pivot=pivot, ltp_at_order=ltp,
+                        slip_pct=round(slip, 2), breached=breached,
+                        limit=limit, ts=str(datetime.now())))
             placed += 1
-            alert(f'IPO entry order placed: {s}',
-                  f'BUY {s} x{qty} stop-limit, trigger {trig}, limit {limit} (pivot {pivot}).',
-                  'low')
+            # Fill quality is the soak's pass criterion, so it is recorded per order
+            # rather than reconstructed later.
+            alert(f'IPO entry placed: {s}',
+                  f'BUY {s} x{qty} {how}. Pivot {pivot}, last {ltp} '
+                  f'({slip:+.2f}% vs pivot).', 'low')
         except Exception as e:
             print(f'  FAILED  {s}: {e}')
             alert(f'IPO order FAILED: {s}', str(e))
