@@ -79,7 +79,8 @@ function Spark({ series }: { series: Array<{ d: string; c: number }> }) {
   );
 }
 
-export default function BookActivity({ bookId }: { bookId: string }) {
+export default function BookActivity({ bookId, inline = false }:
+  { bookId: string; inline?: boolean }) {
   const [rec, setRec] = useState<BookLivenessRecord | null>(null);
 
   useEffect(() => {
@@ -93,10 +94,11 @@ export default function BookActivity({ bookId }: { bookId: string }) {
   }, [bookId]);
 
   if (!rec) return null;
+  const strip = inline ? `${styles.strip} ${styles.stripInline}` : styles.strip;
 
   if (!rec.trades) {
     return (
-      <div className={styles.strip}>
+      <div className={strip}>
         <span className={styles.label}>Book record</span>
         <span className={styles.quiet}>
           {(rec?.open_positions ?? 0) > 0
@@ -112,7 +114,7 @@ export default function BookActivity({ bookId }: { bookId: string }) {
   const idleCls = d != null && d >= 30 ? styles.stale : d != null && d >= 7 ? styles.warn : '';
 
   return (
-    <div className={styles.strip}>
+    <div className={strip}>
       <span className={styles.label}>Book record</span>
       <span className={styles.item}>
         <b>{rec.trades}</b> trades
@@ -140,7 +142,7 @@ export default function BookActivity({ bookId }: { bookId: string }) {
           <b>{rec.win_rate.toFixed(0)}%</b> wins
         </span>
       )}
-      <Spark series={rec.series} />
+      {!inline && <Spark series={rec.series} />}
     </div>
   );
 }

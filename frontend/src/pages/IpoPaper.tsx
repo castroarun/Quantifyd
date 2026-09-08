@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
+import BookPanel from '../components/BookPanel/BookPanel';
 import type { HoldingsRecord } from '../api/types';
 
 /* IPO BASE (/app/ipo-paper) — research/153's adopted spec, run forward on real prices.
@@ -25,8 +26,8 @@ const pct = (n: number | null | undefined) =>
 const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fmtD = (s: string | null | undefined) => {
   if (!s) return '—';
-  const d = new Date(s.slice(0, 10));
-  return isNaN(+d) ? s.slice(0, 10) : `${d.getDate()} ${MONS[d.getMonth()]}`;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  return m ? `${m[3]}-${MONS[parseInt(m[2], 10) - 1]}-${m[1]}` : s.slice(0, 10);
 };
 const pnlTint = (p: number | null | undefined): React.CSSProperties => {
   if (p == null) return {};
@@ -102,31 +103,8 @@ function BacktestEvidence() {
   );
 }
 
-function CurveCard({ nc }: { nc: { d: string; nav: number }[] }) {
-  if (!nc || nc.length < 2)
-    return (
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Equity curve</div>
-        <p className={styles.note}>One point so far — the curve builds a point per close.</p>
-      </div>
-    );
-  const v = nc.map((x) => x.nav);
-  const min = Math.min(...v), max = Math.max(...v), span = max - min || 1;
-  const W = 720, H = 160;
-  const pts = nc.map((x, k) =>
-    `${(k / (nc.length - 1)) * W},${H - 14 - ((x.nav - min) / span) * (H - 28)}`).join(' ');
-  return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>Equity curve — since {fmtD(nc[0].d)}</div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }} role="img"
-           aria-label="IPO base equity curve">
-        <polyline points={pts} fill="none" stroke="var(--accent-pos,#0F6E56)" strokeWidth="2" />
-      </svg>
-    </div>
-  );
-}
-
 export default function IpoPaper() {
+  const [showHoldings, setShowHoldings] = useState(true);
   const [r, setR] = useState<Feed | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -203,58 +181,37 @@ export default function IpoPaper() {
         </div>
       </div>
 
-      <div className={styles.bookSummary}>
-        <div className={styles.sumMain}>
-          <div className={styles.sumLabel}>Book value</div>
-          <div className={styles.sumHero}>{inr(r.nav)}</div>
-          <div className={styles.sumSub}>
-            on <b>{inr(r.capital)}</b> of {live ? 'capital' : 'notional capital'}{' '}
-            <span style={{ color: tone(r.gain), fontWeight: 700 }}>
-              {r.gain >= 0 ? '+' : '−'}{inr(Math.abs(r.gain))} · {pct(r.return_pct)}
-            </span>{' '}· since {fmtD(r.started)}
-          </div>
-          <div className={styles.sumSub}>
-            marks {fmtD(r.asof)} close · updated {fmtD(r.updated)} {r.updated?.slice(11, 16)} IST
-          </div>
-          <div className={styles.barWrap} role="img"
-               aria-label={segs.map((x) => `${x.k} ${Math.round((x.v / total) * 100)}%`).join(', ')}>
-            {segs.map((x) => (
-              <div key={x.k} className={styles.barSeg}
-                   style={{ width: `${(x.v / total) * 100}%`, background: x.c }} />
-            ))}
-          </div>
-          <div className={styles.legend}>
-            {segs.map((x) => (
-              <span key={x.k} className={styles.legendItem}>
-                <i className={styles.swatch} style={{ background: x.c }} />
-                {x.k} <b>{lakh(x.v)}</b>
-                <span className={styles.legendPct}>{((x.v / total) * 100).toFixed(0)}%</span>
+      <BookPanel
+        label="Book value"
+        hero={inr(r.nav)}
+        gain={r.gain}
+        returnPct={r.return_pct}
+        capital={r.capital}
+        capitalWord={live ? 'of capital' : 'of notional capital'}
+        inception={r.started}
+        extraSub={r.asof ? <> · marks {fmtD(r.asof)} close</> : null}
+        updated={r.updated}
+        tickLabel="marks"
+        segs={segs}
+        pnl={[{ k: 'Unrealised', v: r.pnl },
+              { k: 'Realised (net)', v: r.realized },
+              { k: 'Costs & fees', v: r.gain - (r.pnl + r.realized) }]}
+        bookId="ipo-paper"
+        curveUrl="/api/books/ipo-paper/benchmarks"
+        curveLabel="IPO Base"
+        storageKey="ipo-paper"
+        status={<>
+          <span><b>{r.slots_used}</b> / {r.slots} slots</span>
+          <span><b>{r.invested_pct}%</b> deployed</span>
+          <span>no market gate</span>
+          <span><b>{r.pending.length}</b> buy-stop{r.pending.length === 1 ? '' : 's'} armed</span>
+          {(r.failed_orders ?? []).length > 0
+            ? <span className={styles.neg}>
+                <b>{(r.failed_orders ?? []).length}</b> order{(r.failed_orders ?? []).length === 1 ? '' : 's'} unfilled
               </span>
-            ))}
-          </div>
-          <div className={styles.sumStatus}>
-            <span><b>{r.slots_used}</b> / {r.slots} slots</span>
-            <span><b>{r.invested_pct}%</b> deployed</span>
-            <span>no market gate</span>
-            <span>{r.pending.length} buy-stop{r.pending.length === 1 ? '' : 's'} armed</span>
-          </div>
-        </div>
-        <div className={styles.sumPnl}>
-          <div className={styles.sumLabel}>Profit &amp; loss</div>
-          {[{ k: 'Unrealised', v: r.pnl }, { k: 'Realised (net)', v: r.realized },
-            { k: 'Costs & fees', v: r.gain - (r.pnl + r.realized) }].map((x) => (
-            <div key={x.k} className={styles.pnlRow}>
-              <span>{x.k}</span>
-              <b style={{ color: tone(x.v) }}>{x.v >= 0 ? '+' : '−'}{inr(Math.abs(x.v))}</b>
-            </div>
-          ))}
-          <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
-            <span>Total return</span>
-            <b style={{ color: tone(r.gain) }}>
-              {r.gain >= 0 ? '+' : '−'}{inr(Math.abs(r.gain))} · {pct(r.return_pct)}</b>
-          </div>
-        </div>
-      </div>
+            : <span><b>all</b> orders filled</span>}
+        </>}
+      />
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>
@@ -293,7 +250,15 @@ export default function IpoPaper() {
 
       {r.positions.length > 0 && (
         <div className={styles.card}>
-          <div className={styles.cardTitle}>Holdings</div>
+          <button type="button" className={`${styles.cardTitle} ${styles.cardTitleTog}`}
+                  aria-expanded={showHoldings} onClick={() => setShowHoldings((v) => !v)}>
+            Holdings
+            <span className={styles.cardCount}>
+              {r.positions.length} position{r.positions.length === 1 ? '' : 's'}
+            </span>
+            <span className={styles.caret} aria-hidden="true">{'\u25be'}</span>
+          </button>
+          {showHoldings && (
           <div style={{ overflowX: 'auto' }}>
             <table className={styles.table}>
               <thead><tr>
@@ -329,6 +294,7 @@ export default function IpoPaper() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
@@ -348,7 +314,6 @@ export default function IpoPaper() {
         </div>
       )}
 
-      <CurveCard nc={r.navcurve} />
 
       <div className={styles.card}>
         <div className={styles.cardTitle}>Closed trades</div>

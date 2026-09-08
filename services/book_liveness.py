@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -63,6 +64,40 @@ SQLITE_SOURCES: Dict[str, List[tuple]] = {
 JSON_SOURCES = {
     'nwv': 'nwv_trade_paper.json',
 }
+
+# Books that keep positions and closed trades in a JSON state file rather than SQLite.
+# Both write the same trade record: symbol/qty/buy/sell/entry_date/exit_date/net_pnl.
+JSON_BOOKS: Dict[str, str] = {
+    'oa-real':   'oa_real_state.json',
+    'ipo-paper': 'ipo_paper_state.json',
+}
+
+
+def _read_json_book(book_id: str):
+    """-> (closed rows [(date, pnl)], open_count, last_entry_date)."""
+    fname = JSON_BOOKS.get(book_id)
+    if not fname:
+        return [], 0, None
+    path = BD / fname
+    if not path.exists():
+        return [], 0, None
+    try:
+        st = json.loads(path.read_text(encoding='utf-8'))
+    except Exception as e:
+        logger.debug('[liveness] %s unreadable: %s', fname, e)
+        return [], 0, None
+    rows = []
+    for tr in (st.get('trades') or []):
+        d = (tr.get('exit_date') or tr.get('entry_date') or '')[:10]
+        if not d:
+            continue
+        try:
+            rows.append((d, float(tr.get('net_pnl') or 0)))
+        except (TypeError, ValueError):
+            continue
+    pos = st.get('positions') or []
+    last_entry = max((p.get('entry_date') or '')[:10] for p in pos) if pos else None
+    return rows, len(pos), (last_entry or None)
 
 
 def _cols(conn: sqlite3.Connection, table: str) -> List[str]:
@@ -226,7 +261,88 @@ def compute_liveness() -> Dict[str, Any]:
             rows.extend(_read_sqlite(spec))
         books[book_id] = _summarise(rows, today, *_read_open(book_id))
     books['nwv'] = _summarise(_read_nwv(), today)
+    for book_id in JSON_BOOKS:
+        rows, n_open, last_entry = _read_json_book(book_id)
+        books[book_id] = _summarise(rows, today, n_open, last_entry)
     return {'generated_at': today.isoformat(timespec='seconds'), 'books': books}
+
+
+_ISO_DAY = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
+
+def _chain(points):
+    """Time-weighted cumulative return from [{d, nav, capital?}].
+
+    Each day's return is measured against the previous day's NAV with that day's capital
+    change backed out, then chained. A deposit therefore moves the line by zero, which is
+    the whole point of comparing a funded book to an index.
+    """
+    out, cum = [], 1.0
+    prev_nav, prev_cap = None, None
+    for pt in points:
+        raw = pt.get('d')
+        if not isinstance(raw, str) or not _ISO_DAY.match(raw[:10]):
+            continue                       # no usable date: never let it become the base
+        d = raw[:10]
+        try:
+            nav = float(pt.get('nav') or 0)
+        except (TypeError, ValueError):
+            continue
+        if nav <= 0:
+            continue
+        cap = pt.get('capital')
+        cap = float(cap) if cap not in (None, '') else None
+        if prev_nav:
+            flow = (cap - prev_cap) if (cap is not None and prev_cap is not None) else 0.0
+            cum *= (1.0 + (((nav - flow) / prev_nav) - 1.0))
+        out.append({'d': d, 'r': round((cum - 1.0) * 100, 4), 'nav': round(nav)})
+        prev_nav = nav
+        prev_cap = cap if cap is not None else prev_cap
+    return out
+
+
+def _book_curve(book_id: str):
+    """-> (inception, [{d, r, nav}]) for any book the portfolio can chart."""
+    if book_id == 'momentum-3l':
+        from services import momentum_paper as mp
+        return (mp._get('inception') or '')[:10], mp.book_curve()
+    fname = JSON_BOOKS.get(book_id)
+    if not fname:
+        return None, []
+    path = BD / fname
+    if not path.exists():
+        return None, []
+    try:
+        st = json.loads(path.read_text(encoding='utf-8'))
+    except Exception as e:
+        logger.debug('[curve] %s unreadable: %s', fname, e)
+        return None, []
+    pts = st.get('navcurve') or st.get('nav') or []
+    inception = (st.get('inception') or st.get('started') or
+                 (pts[0].get('d') if pts else None))
+    return (str(inception)[:10] if inception else None), _chain(pts)
+
+
+@book_liveness_bp.route('/<book_id>/benchmarks', methods=['GET'])
+def api_book_benchmarks(book_id):
+    """This book's time-weighted curve plus the comparison indices.
+
+    The index series comes from momentum_paper.benchmark_series(), which caches for an
+    hour against daily bars that only change after the close.
+    """
+    try:
+        inception, curve = _book_curve(book_id)
+        series = {}
+        if curve:
+            try:
+                from services import momentum_paper as mp
+                series = mp.benchmark_series(curve[0]['d']) or {}
+            except Exception as e:                      # a missing index must not 500 the page
+                logger.warning('[curve] benchmark series failed for %s: %s', book_id, e)
+        return jsonify({'inception': inception, 'book': curve, 'series': series})
+    except Exception as e:
+        logger.error('[curve] failed for %s: %s', book_id, e, exc_info=True)
+        return jsonify({'error': str(e), 'book': [], 'series': {}}), 500
 
 
 @book_liveness_bp.route('/liveness', methods=['GET'])

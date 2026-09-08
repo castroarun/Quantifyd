@@ -2,12 +2,11 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { apiGet, apiPost } from '../api/client';
 import BacktestCharts from '../components/BacktestCurve/BacktestCharts';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
-import LiveCurve from '../components/LiveCurve/LiveCurve';
 import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
-import BookActivity from '../components/BookActivity/BookActivity';
+import BookPanel from '../components/BookPanel/BookPanel';
 import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
@@ -118,6 +117,7 @@ export default function MomentumPaper() {
      API returned. The API row is a minute old at best and can be several minutes old
      when its pandas cache has been invalidated by the EOD refresh. */
   const lm = new Map((live?.positions ?? []).map((r) => [r.symbol, r]));
+  const [showHoldings, setShowHoldings] = useState(true);
   const mark = (sym: string, key: 'ltp' | 'value' | 'pnl' | 'pnl_pct' | 'day_move_pct',
                 fallback: number | null | undefined) => {
     const r = lm.get(sym);
@@ -249,9 +249,6 @@ export default function MomentumPaper() {
       
       <BacktestEvidence />
       <div className={styles.headerRow}>
-        <span style={{ order: 9, marginLeft: 'auto', alignSelf: 'center' }}>
-          <LiveTick updated={live?.updated} />
-        </span>
         <div>
           <h1 className={styles.title}>
             True North (Momentum-30) — {s.live_mode ? 'Live Book' : 'Paper Book'}
@@ -259,7 +256,6 @@ export default function MomentumPaper() {
           <p className={styles.sub}>
             <b>Universe = the Nifty 200</b> (200 largest NSE stocks by market cap) → <b>ranked by momentum</b> → <b>hold the top 8</b>.
             {lakh(s.capital)} {s.live_mode ? 'LIVE (real money, shared account)' : 'paper'} (research/62 winner)
-            {s.inception ? ` · since ${s.inception}` : ''} · data as-of {s.data_asof || '—'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -272,13 +268,19 @@ export default function MomentumPaper() {
           </div>
         </div>
       </div>
-      <BookActivity bookId="momentum-3l" />
-
-      <BookSummary s={s} />
+      <BookSummary s={s} updatedAt={live?.updated} />
 
       {s.holdings.length > 0 && (
         <div className={styles.card}>
-          <div className={styles.cardTitle}>Holdings</div>
+          <button type="button" className={`${styles.cardTitle} ${styles.cardTitleTog}`}
+                  aria-expanded={showHoldings} onClick={() => setShowHoldings((v) => !v)}>
+            Holdings
+            <span className={styles.cardCount}>
+              {s.holdings.length} line{s.holdings.length === 1 ? '' : 's'}
+            </span>
+            <span className={styles.caret} aria-hidden="true">{'\u25be'}</span>
+          </button>
+          {showHoldings && (
           <table className={styles.table}>
             <thead><tr>
               <th>Holding</th><th>Wt</th><th>Entry</th><th>Entry ₹</th><th>Now ₹</th><th>Today</th>
@@ -344,6 +346,7 @@ export default function MomentumPaper() {
               })()}
             </tfoot>
           </table>
+          )}
         </div>
       )}
 
@@ -419,9 +422,6 @@ export default function MomentumPaper() {
         <BacktestCharts />
         <p className={styles.note}>Pick a year (or drag on the chart) to zoom — both lines restart at ₹20L on the selected date, so you can read the *relative* race over any window (e.g. select <b>2018</b> to see the gate sit in cash while the index runs). Equity on top (log scale), drawdown below. This is the validated history; the live book below tracks it forward.</p>
       </div>
-
-      {/* Live P&L vs Nifty 50 */}
-      <LivePnL s={s} />
 
 
       {/* Target basket — what it will buy at the next risk-on month-end */}
@@ -543,7 +543,7 @@ const fmtD = (x?: string | null) => {
 
 /** Headline block. Hierarchy, not a row of equal tiles: what the book is worth, where that value
  *  sits, then the P&L parts before the total they add up to. */
-function BookSummary({ s }: { s: State }) {
+function BookSummary({ s, updatedAt }: { s: State; updatedAt?: string | null }) {
   const gain = s.nav - s.capital;
   // CAGR / max-drawdown subline (display-only) from the book's own nav curve —
   // same headline language as the Open Alpha page (Arun, 02-Sep-2026).
@@ -583,67 +583,35 @@ function BookSummary({ s }: { s: State }) {
     : s.gate_gap_pct < 2 ? 'var(--status-warning,#C97B20)' : 'var(--accent-pos,#0F6E56)';
 
   return (
-    <div className={styles.bookSummary}>
-      <div className={styles.sumMain}>
-        <div className={styles.sumLabel}>Current value</div>
-        <div className={styles.sumHero}>{inr(s.nav)}</div>
-        <div className={styles.sumSub}>
-          on <b>{inr(s.capital)}</b> invested{' '}
-          <span style={{ color: tone(gain), fontWeight: 700 }}>
-            {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(s.total_return_pct)}
-          </span>
-          {s.inception ? ` · since ${s.inception}` : ''}
-        </div>
-        {cagr != null && (
-          <div className={styles.sumSub}>
-            CAGR {cagr == null ? '\u2014 (too early to annualize)' : pct(cagr)}{cagr != null && yrsSpan < 1 ? ' (annualized — early days)' : ''} · max drawdown {pct(mdd)} · updated {fmtD(s.data_asof) || '—'}
-          </div>
-        )}
-
-        <div className={styles.barWrap} role="img"
-             aria-label={segs.map((x) => `${x.k} ${Math.round((x.v / total) * 100)}%`).join(', ')}>
-          {segs.map((x) => (
-            <div key={x.k} className={styles.barSeg}
-                 style={{ width: `${(x.v / total) * 100}%`, background: x.c }} />
-          ))}
-        </div>
-        <div className={styles.legend}>
-          {segs.map((x) => (
-            <span key={x.k} className={styles.legendItem}>
-              <i className={styles.swatch} style={{ background: x.c }} />
-              {x.k} <b>{lakh(x.v)}</b>
-              <span className={styles.legendPct}>{((x.v / total) * 100).toFixed(0)}%</span>
-            </span>
-          ))}
-        </div>
-        <div className={styles.sumStatus}>
-          <span><b>{s.n_holdings}</b> holdings</span>
-          <span><b>{s.invested_pct.toFixed(0)}%</b> deployed</span>
-          <span>gate{' '}
-            <b style={{ color: gapTone }}>
-              {s.gate_gap_pct == null ? '—' : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
-            </b>{' '}vs 100-DMA
-          </span>
-          <span><b>{s.days_to_rebalance}d</b> to rebalance</span>
-        </div>
-      </div>
-
-      <div className={styles.sumPnl}>
-        <div className={styles.sumLabel}>Profit &amp; loss</div>
-        {rows.map((r) => (
-          <div key={r.k} className={styles.pnlRow} title={r.hint}>
-            <span>{r.k}</span>
-            <b style={{ color: tone(r.v) }}>{r.v >= 0 ? '+' : '−'}{inr(Math.abs(r.v))}</b>
-          </div>
-        ))}
-        <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
-          <span>Total return</span>
-          <b style={{ color: tone(gain) }}>
-            {gain >= 0 ? '+' : '−'}{inr(Math.abs(gain))} · {pct(s.total_return_pct)}
-          </b>
-        </div>
-      </div>
-    </div>
+    <BookPanel
+      hero={inr(s.nav)}
+      gain={gain}
+      returnPct={s.total_return_pct}
+      capital={s.capital}
+      capitalWord="invested"
+      inception={s.inception}
+      extraSub={cagr != null ? (
+        <> · CAGR <b>{pct(cagr)}</b>{yrsSpan < 1 ? ' (annualized — early days)' : ''}
+          {' '}· max drawdown <b>{pct(mdd)}</b></>
+      ) : null}
+      updated={updatedAt ?? null}
+      segs={segs}
+      pnl={rows}
+      bookId="momentum-3l"
+      curveUrl="/api/momentum-paper/benchmarks"
+      curveLabel="Momentum-30"
+      storageKey="momentum-3l"
+      status={<>
+        <span><b>{s.n_holdings}</b> holdings</span>
+        <span><b>{s.invested_pct.toFixed(0)}%</b> deployed</span>
+        <span>gate{' '}
+          <b style={{ color: gapTone }}>
+            {s.gate_gap_pct == null ? '—' : (s.gate_gap_pct >= 0 ? '+' : '') + s.gate_gap_pct.toFixed(2) + '%'}
+          </b>{' '}vs 100-DMA
+        </span>
+        <span><b>{s.days_to_rebalance}d</b> to rebalance</span>
+      </>}
+    />
   );
 }
 
@@ -700,20 +668,6 @@ function BacktestEvidence() {
         </div>
       )}
       </>)}
-    </div>
-  );
-}
-
-function LivePnL({ s }: { s: State }) {
-  return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>
-        P&amp;L since go-live — book vs market indices
-        <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--ink-muted,#888)', marginLeft: 8 }}>
-          percent return, deposits excluded{s.inception ? ` · live since ${s.inception}` : ''}
-        </span>
-      </div>
-      <LiveCurve />
     </div>
   );
 }

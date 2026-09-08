@@ -213,3 +213,91 @@
 .rulesTable th:nth-child(2), .rulesTable td:nth-child(2) { width: 30%; }
 .rulesTable th:nth-child(3), .rulesTable td:nth-child(3) { width: 54%; }
 .rulesTable td { vertical-align: top; }
+
+
+/* ── BookPanel: shared by True North, Open Alpha and IPO Base (08-Sep-2026) ──────────
+   The panel is the page's answer to "what is this book worth and what did it cost".
+   Everything below is either that answer or the one control that reveals the record. */
+.sumWrap { margin-bottom: 16px; }
+.sumWrap .bookSummary { margin-bottom: 0; }
+/* open, the panel and what it reveals read as one object */
+.sumWrapOpen .bookSummary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+/* label left, freshness right — the top-right of the value column was dead space, and a
+   timestamp there stops competing with the headline figure */
+.sumHead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+}
+.sumStamp {
+  display: inline-flex; align-items: baseline; gap: 9px;
+  font-size: 10.5px; color: var(--ink-muted, #888780); white-space: nowrap;
+}
+
+/* the return sits BESIDE the value: the first line carries both halves of the question */
+.sumHeroLine { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
+.sumDelta { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* the only thing a closed panel spends on what is underneath it */
+.sumTog {
+  margin: 0 0 0 auto; padding: 0 2px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 17px; line-height: 1; align-self: center;
+  color: var(--ink-muted, #888780);
+  transition: transform 0.18s ease, color 0.14s ease;
+}
+.sumTog:hover { color: var(--ink, #1B1B1A); }
+.sumTog:focus-visible { outline: 2px solid var(--brand-navy, #2563EB); outline-offset: 3px; border-radius: 4px; }
+.sumWrapOpen .sumTog { transform: rotate(180deg); }
+
+.sumReveal {
+  border: 0.5px solid var(--hairline, rgba(0,0,0,0.10)); border-top: 0;
+  border-radius: 0 0 var(--radius-card, 10px) var(--radius-card, 10px);
+  background: var(--surface, #fff); padding: 0 16px 13px;
+}
+
+/* ── the curve, inside the reveal ────────────────────────────────────────────────── */
+.curveBox { padding-top: 12px; }
+.curveHead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.curveTitle { font-size: 12.5px; font-weight: 600; color: var(--ink, #1B1B1A); }
+.curveChips { display: flex; gap: 5px; }
+.curveChip {
+  cursor: pointer; background: transparent; font-family: inherit; font-size: 10.5px;
+  padding: 2px 9px; border-radius: 999px; color: var(--ink-secondary, #5F5E5A);
+  border: 1px solid var(--hairline, rgba(0,0,0,0.10));
+}
+.curveChipOn { background: var(--ink, #1B1B1A); color: var(--surface, #fff); border-color: var(--ink, #1B1B1A); }
+.curveSvg { display: block; margin-top: 9px; overflow: visible; }
+.curveLegend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 9px; font-size: 11.5px; }
+.curveKey {
+  display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0;
+  background: none; font: inherit; color: var(--ink-secondary, #5F5E5A);
+  font-variant-numeric: tabular-nums;
+}
+button.curveKey { cursor: pointer; opacity: 0.4; }
+button.curveKey:disabled { cursor: default; opacity: 0.25; }
+button.curveKeyOn { opacity: 1; }
+.curveKey i { width: 14px; height: 2.5px; border-radius: 2px; display: inline-block; }
+.curveKey b { font-weight: 600; color: var(--ink, #1B1B1A); }
+.curveFoot {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--hairline-soft, rgba(0,0,0,0.06));
+  font-size: 11px; color: var(--ink-secondary, #5F5E5A);
+}
+
+/* ── holdings, collapsible ───────────────────────────────────────────────────────── */
+.cardTitleTog {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  text-align: left; color: inherit;
+}
+.cardTitleTog:focus-visible { outline: 2px solid var(--brand-navy, #2563EB); outline-offset: 3px; border-radius: 4px; }
+.cardTitleTog .caret {
+  margin-left: auto; font-size: 15px; color: var(--ink-muted, #888780);
+  transition: transform 0.18s ease;
+}
+.cardTitleTog[aria-expanded="false"] .caret { transform: rotate(-90deg); }
+.cardCount { font-size: 11.5px; font-weight: 400; color: var(--ink-muted, #888780); }
