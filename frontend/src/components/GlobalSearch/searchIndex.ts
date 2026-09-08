@@ -73,7 +73,8 @@ const PAGES: PageDef[] = [
   // Holdings
   { to: '/holdings', label: 'Holdings', section: 'Holdings', keywords: 'portfolio stocks positions zerodha' },
   { to: '/holdings/history', label: 'Holdings history', section: 'Holdings', keywords: 'past holdings snapshots' },
-  { to: '/momentum-paper', label: 'True North LIVE', section: 'Holdings', keywords: 'momentum book true north' },
+  { to: '/portfolio', label: 'Momentum Portfolio', section: 'Holdings', keywords: 'momentum portfolio books sleeves true north open alpha ipo capital' },
+  { to: '/portfolio?tab=tn', label: 'True North LIVE', section: 'Holdings', keywords: 'momentum book true north' },
   { to: '/bluesky-paper', label: 'Open Alpha', section: 'Holdings', keywords: 'bluesky ath breakout open alpha' },
   { to: '/sleeves', label: 'Sleeves 50-50', section: 'Holdings', keywords: 'blend allocation sleeves' },
   // Options

@@ -388,7 +388,7 @@ export default function Sidebar({ active, userName = 'Trader', mobileOpen, onNav
           <NavItem
             to="/portfolio"
             icon={<IconBarChart />}
-            label="Portfolio"
+            label="Momentum Portfolio"
             active={active === 'portfolio'}
             collapsed={collapsedEff}
           />
