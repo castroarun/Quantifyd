@@ -125,6 +125,37 @@ def _alert(title, body, urgency='critical'):
 
 
 # ───────────────────────── state ─────────────────────────
+def broker_cnc():
+    """{symbol: (qty, avg_price)} the account actually holds, delivery only.
+
+    Holdings plus today's completed CNC buys, because a stock bought this morning is not
+    in holdings until settlement but IS owned.
+    """
+    try:
+        from kiteconnect import KiteConnect
+        api_key = [l.split('=', 1)[1].strip() for l in open(ROOT / '.env')
+                   if l.startswith('KITE_API_KEY')][0]
+        tok = json.load(open(ROOT / 'backtest_data' / 'access_token.json'))
+        k = KiteConnect(api_key=api_key)
+        k.set_access_token(tok.get('access_token') or tok.get('token'))
+        out = {}
+        for h in k.holdings():
+            q = (h.get('quantity') or 0) + (h.get('t1_quantity') or 0)
+            if q > 0:
+                out[h['tradingsymbol']] = (q, float(h.get('average_price') or 0))
+        for o in k.orders():
+            if (o.get('status') == 'COMPLETE' and o.get('transaction_type') == 'BUY'
+                    and o.get('product') == 'CNC' and o.get('filled_quantity')):
+                s = o['tradingsymbol']
+                pq, pa = out.get(s, (0, 0.0))
+                nq = pq + o['filled_quantity']
+                out[s] = (nq, ((pq * pa) + o['filled_quantity'] * float(o['average_price'])) / nq)
+        return out
+    except Exception as e:
+        print('broker read failed:', e)
+        return None
+
+
 def book_mode():
     """('paper'|'live', capital). Live capital is whatever the Capital Desk has funded."""
     try:
@@ -326,12 +357,35 @@ def main():
         st = load_state()
         mode, cap = book_mode()
         if mode != st.get('mode'):
-            # the Capital Desk armed (or un-armed) the sleeve since the last run
+            was = st.get('mode')
+            if was == 'paper' and mode == 'live':
+                # GOING LIVE RESETS THE BOOK. Paper positions were bought with notional
+                # money and are not in the account; carrying them across would put
+                # holdings nobody owns onto a real-money book. Start from the broker.
+                ghosts = [dict(p) for p in st.get('positions', [])]
+                st['positions'] = []
+                st['pending'] = []
+                st.setdefault('discarded_on_arming', []).extend(ghosts)
+                st['cash'] = cap
+                st['capital'] = cap
+                st['started'] = str(date.today())
+                st['nav'] = []
+                if ghosts:
+                    names = ', '.join('%s x%d @%.2f' % (g['symbol'], g['qty'], g['buy'])
+                                      for g in ghosts)
+                    _alert('IPO went LIVE — paper positions discarded',
+                           f'You do NOT own these; they were paper fills: {names}. '
+                           f'The book restarts flat on Rs {cap:,.0f} of real capital.')
+                    print(f'ARMED: discarded {len(ghosts)} paper positions ({names})')
+                else:
+                    _alert('IPO went LIVE', f'Flat, on Rs {cap:,.0f} of real capital.', 'low')
+            else:
+                delta = cap - float(st['capital'])
+                st['capital'] = cap
+                st['cash'] = float(st['cash']) + delta
+                _alert('IPO book mode change',
+                       f'now {mode.upper()} with capital Rs {cap:,.0f}', 'low')
             st['mode'] = mode
-            delta = cap - float(st['capital'])
-            st['capital'] = cap
-            st['cash'] = float(st['cash']) + delta
-            _alert('IPO book mode change', f'now {mode.upper()} with capital Rs {cap:,.0f}', 'low')
         loaded = load_wide()
         if loaded is None:
             print('no symbols inside the age band today')
@@ -397,37 +451,77 @@ def main():
         st['positions'] = keep
 
         # ---- 2. fills from YESTERDAY's pending buy-stops ----
+        # LIVE: reconcile against the account. The book records a position only when the
+        # broker actually holds it, at the broker's own quantity and average price. It
+        # never books a fill it merely hoped for.
         still = []
-        for cand in st.get('pending', []):
-            s = cand['symbol']
-            if s not in close.columns or asof not in wide['open'].index:
-                st.setdefault('missed', []).append(dict(**cand, why='no bar'))
-                continue
-            op = wide['open'][s].loc[asof]
-            px_today = close[s].loc[asof]
-            if not np.isfinite(op) or not np.isfinite(px_today):
-                st.setdefault('missed', []).append(dict(**cand, why='no price'))
-                continue
-            if len(st['positions']) >= SLOTS:
-                st.setdefault('missed', []).append(dict(**cand, why='no slot'))
-                continue
-            fill = max(float(cand['pivot']), float(op))     # buy-stop AT the pivot
-            nav_now = st['cash'] + sum(p['qty'] * p['buy'] for p in st['positions'])
-            size = min(SIZE_PCT, 0.30) * nav_now
-            qty = int(size / fill)
-            if qty < 1 or qty * fill * (1 + COST) > st['cash']:
-                st.setdefault('missed', []).append(dict(**cand, why='cash short'))
-                continue
-            st['cash'] -= qty * fill * (1 + COST)
-            st['positions'].append(dict(symbol=s, qty=qty, buy=round(fill, 2),
-                                        entry_date=str(asof)[:10],
-                                        stop=round(fill * (1 - STOP), 2),
-                                        pivot=cand['pivot'], listed=cand.get('listed')))
-            log.append(f'FILL {s} x{qty} @{fill:.2f} (pivot {cand["pivot"]})')
-            _alert(f'IPO ENTRY: {s}',
-                   f'BUY {s} x{qty} at {fill:.2f} (buy-stop at pivot {cand["pivot"]}). '
-                   f'{"Place it" if st.get("mode") == "live" else "Paper book: no order needed"}.',
-                   'low')
+        if st.get('mode') == 'live':
+            held = broker_cnc()
+            if held is None:
+                log.append('broker unreachable — pending buy-stops carried, nothing booked')
+                _alert('IPO reconcile failed',
+                       'Could not read holdings; no fills booked. Pending orders carried.', 'low')
+                still = list(st.get('pending', []))
+            else:
+                owned = {p['symbol'] for p in st['positions']}
+                for cand in st.get('pending', []):
+                    s = cand['symbol']
+                    if s in owned:
+                        continue
+                    if s not in held:
+                        # not in the account: either it never triggered, or it was not
+                        # placed. Either way there is nothing to book.
+                        st.setdefault('missed', []).append(
+                            dict(**cand, why='not held at the broker', d=str(asof)[:10]))
+                        log.append(f'NO FILL {s} (not in the account)')
+                        continue
+                    qty, avg = held[s]
+                    cost = qty * avg
+                    if cost > float(st['cash']) + 1:
+                        log.append(f'{s} held x{qty} @{avg:.2f} costs more than book cash '
+                                   f'({st["cash"]:,.0f}) — booking at cash, CHECK THIS')
+                        _alert(f'IPO reconcile mismatch: {s}',
+                               f'Broker shows x{qty} @{avg:.2f} = Rs {cost:,.0f} but the book '
+                               f'only had Rs {st["cash"]:,.0f}. Verify the position is this '
+                               f'book\'s and not another.')
+                    st['cash'] = max(0.0, float(st['cash']) - cost)
+                    st['positions'].append(dict(
+                        symbol=s, qty=int(qty), buy=round(float(avg), 2),
+                        entry_date=str(asof)[:10], stop=round(float(avg) * (1 - STOP), 2),
+                        pivot=cand['pivot'], listed=cand.get('listed'), src='broker'))
+                    log.append(f'CONFIRMED {s} x{qty} @{avg:.2f} (from the account)')
+            st['pending'] = still
+        else:
+          for cand in st.get('pending', []):
+              s = cand['symbol']
+              if s not in close.columns or asof not in wide['open'].index:
+                  st.setdefault('missed', []).append(dict(**cand, why='no bar'))
+                  continue
+              op = wide['open'][s].loc[asof]
+              px_today = close[s].loc[asof]
+              if not np.isfinite(op) or not np.isfinite(px_today):
+                  st.setdefault('missed', []).append(dict(**cand, why='no price'))
+                  continue
+              if len(st['positions']) >= SLOTS:
+                  st.setdefault('missed', []).append(dict(**cand, why='no slot'))
+                  continue
+              fill = max(float(cand['pivot']), float(op))     # buy-stop AT the pivot
+              nav_now = st['cash'] + sum(p['qty'] * p['buy'] for p in st['positions'])
+              size = min(SIZE_PCT, 0.30) * nav_now
+              qty = int(size / fill)
+              if qty < 1 or qty * fill * (1 + COST) > st['cash']:
+                  st.setdefault('missed', []).append(dict(**cand, why='cash short'))
+                  continue
+              st['cash'] -= qty * fill * (1 + COST)
+              st['positions'].append(dict(symbol=s, qty=qty, buy=round(fill, 2),
+                                          entry_date=str(asof)[:10],
+                                          stop=round(fill * (1 - STOP), 2),
+                                          pivot=cand['pivot'], listed=cand.get('listed')))
+              log.append(f'FILL {s} x{qty} @{fill:.2f} (pivot {cand["pivot"]})')
+              _alert(f'IPO ENTRY: {s}',
+                     f'BUY {s} x{qty} at {fill:.2f} (buy-stop at pivot {cand["pivot"]}). '
+                     f'{"Place it" if st.get("mode") == "live" else "Paper book: no order needed"}.',
+                     'low')
         st['pending'] = still
 
         # ---- 3. scan today for TOMORROW's buy-stops ----
