@@ -117,6 +117,25 @@ export default function Holdings() {
   const [funds, setFunds] = useState<{ available: number; cash: number; live_balance: number } | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [reload, setReload] = useState(0);
+  /* 22 of the 54 names in this account are held BY the books, and each has its own tab
+     with its entry, stop and trail drawn on it. Repeating them here buries the holdings
+     that have no other home, so the charts default to everything the books do not cover.
+     The set is read from the book feeds rather than hard-coded, so it follows the books
+     as they trade. */
+  const [chartScope, setChartScope] = useState<'unbooked' | 'all'>('unbooked');
+  const [bookSyms, setBookSyms] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const feeds = ['/app/momentum_live.json', '/app/oa_real.json', '/app/ipo_paper.json'];
+    Promise.all(feeds.map((u) =>
+      fetch(u + '?t=' + Date.now()).then((r) => (r.ok ? r.json() : null)).catch(() => null)))
+      .then((all) => {
+        const s = new Set<string>();
+        for (const f of all)
+          for (const p of (f?.positions ?? []))
+            if (p?.symbol) s.add(String(p.symbol));
+        setBookSyms(s);
+      });
+  }, [reload]);
 
   // "Connect Stanly's account" — server-side TOTP re-login (the browser OAuth flow can't
   // return to the app over plain http), then refetch the digest.
@@ -182,6 +201,11 @@ export default function Holdings() {
   if (!data) return null;
 
   const { summary, movers_today, movers_weekly, extremes, events, next_event, holdings } = data;
+  /* Charts default to holdings the books do not already show on their own tabs. If the
+     book feeds have not loaded yet the set is empty, so nothing is hidden by accident. */
+  const chartHoldings = chartScope === 'all' || bookSyms.size === 0
+    ? holdings
+    : holdings.filter((h) => !bookSyms.has(h.tradingsymbol));
 
   return (
     <div className={`${styles.root} ${tab === 'charts' ? chartStyles.wide : ''}`}>
@@ -239,8 +263,28 @@ export default function Holdings() {
       {tab === 'charts' ? (
         <>
         <ChartsSummary summary={summary} funds={funds} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                      margin: '0 0 12px' }}>
+          <span style={{ fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase',
+                         color: 'var(--ink-muted,#8a8a85)', fontWeight: 600 }}>Charts</span>
+          {([['unbooked', 'Not in the books'], ['all', 'All holdings']] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setChartScope(k)}
+              style={{
+                cursor: 'pointer', font: '500 12px inherit', padding: '4px 11px',
+                borderRadius: 99, whiteSpace: 'nowrap',
+                border: '1px solid ' + (chartScope === k ? 'transparent' : 'var(--hairline,rgba(0,0,0,0.16))'),
+                background: chartScope === k ? 'var(--ink,#1B1B1A)' : 'transparent',
+                color: chartScope === k ? 'var(--surface,#fff)' : 'var(--ink-muted,#8a8a85)',
+              }}>{label}</button>
+          ))}
+          <span style={{ fontSize: 11.5, color: 'var(--ink-muted,#8a8a85)' }}>
+            {chartScope === 'unbooked'
+              ? `${chartHoldings.length} shown · ${bookSyms.size} held by the books are on their own tabs`
+              : `${chartHoldings.length} shown · including ${bookSyms.size} the books hold`}
+          </span>
+        </div>
         <HoldingsCharts
-          holdings={holdings}
+          holdings={chartHoldings}
           account={account}
           ohlcUrl={account === 'dad' ? '/static/dad_holdings_ohlc.json' : undefined}
           ohlcUrls={account === 'both' ? ['/static/holdings_ohlc.json', '/static/dad_holdings_ohlc.json'] : undefined}
