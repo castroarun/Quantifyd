@@ -1,19 +1,19 @@
 {
- "updated": "2026-09-07 18:40:45.235064",
- "nav": 1033504.0,
+ "updated": "2026-09-08 18:41:00.883274",
+ "nav": 1038402.0,
  "capital": 274067.0,
  "cash": 5000.0,
- "swept_value": 121701.0,
+ "swept_value": 121715.0,
  "sweep_units": 112.8,
- "invested_pct": 87.7,
- "unrealized": 80365.0,
- "ret_pct": 277.1,
+ "invested_pct": 87.8,
+ "unrealized": 85249.0,
+ "ret_pct": 278.89,
  "cagr_pct": 22.0,
  "max_dd_pct": -22.36,
  "gate_weak": true,
- "gate_nb": 271.4,
- "gate_sma": 278.91,
- "gate_gap_pct": -2.69,
+ "gate_nb": 270.1,
+ "gate_sma": 278.8,
+ "gate_gap_pct": -3.12,
  "positions": [
   {
    "symbol": "BLISSGVS",
@@ -27,12 +27,12 @@
    "value": 38842.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 158,
+   "days": 159,
    "stop": 212.7,
    "to_stop_pct": null,
    "trail": null,
    "to_trail_pct": null,
-   "weight": 3.8
+   "weight": 3.7
   },
   {
    "symbol": "MTARTECH",
@@ -46,7 +46,7 @@
    "value": 38068.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 153,
+   "days": 154,
    "stop": 3502.26,
    "to_stop_pct": null,
    "trail": null,
@@ -65,7 +65,7 @@
    "value": 40261.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 152,
+   "days": 153,
    "stop": 227.24,
    "to_stop_pct": null,
    "trail": null,
@@ -84,7 +84,7 @@
    "value": 39462.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 117,
+   "days": 118,
    "stop": 6050.84,
    "to_stop_pct": null,
    "trail": null,
@@ -103,12 +103,12 @@
    "value": 44005.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 117,
+   "days": 118,
    "stop": 254.62,
    "to_stop_pct": null,
    "trail": null,
    "to_trail_pct": null,
-   "weight": 4.3
+   "weight": 4.2
   },
   {
    "symbol": "TFCILTD",
@@ -117,17 +117,17 @@
    "entry_date": "2026-07-17",
    "pivot": 83.8,
    "src": "backtest",
-   "ltp": 140.0,
-   "day_move_pct": -2.28,
-   "value": 83160.0,
-   "pnl": 32403.0,
-   "pnl_pct": 63.8,
-   "days": 52,
+   "ltp": 141.0,
+   "day_move_pct": 0.07,
+   "value": 83754.0,
+   "pnl": 32997.0,
+   "pnl_pct": 65.0,
+   "days": 53,
    "stop": 78.61,
-   "to_stop_pct": 78.1,
-   "trail": 137.73,
-   "to_trail_pct": 1.7,
-   "weight": 8.0
+   "to_stop_pct": 79.4,
+   "trail": 138.94,
+   "to_trail_pct": 1.5,
+   "weight": 8.1
   },
   {
    "symbol": "WELCORP",
@@ -137,15 +137,15 @@
    "pivot": 1848.5,
    "src": "backtest",
    "ltp": 2600.0,
-   "day_move_pct": 0.36,
+   "day_move_pct": 0.08,
    "value": 72800.0,
    "pnl": 21042.0,
    "pnl_pct": 40.7,
-   "days": 26,
+   "days": 27,
    "stop": 1700.62,
    "to_stop_pct": 52.9,
-   "trail": 2354.71,
-   "to_trail_pct": 10.4,
+   "trail": 2399.7,
+   "to_trail_pct": 8.3,
    "weight": 7.0
   },
   {
@@ -155,16 +155,16 @@
    "entry_date": "2026-08-19",
    "pivot": 313.25,
    "src": "backtest",
-   "ltp": 333.3,
-   "day_move_pct": -2.0,
-   "value": 57994.0,
-   "pnl": 3489.0,
-   "pnl_pct": 6.4,
-   "days": 19,
+   "ltp": 334.5,
+   "day_move_pct": 0.27,
+   "value": 58203.0,
+   "pnl": 3698.0,
+   "pnl_pct": 6.8,
+   "days": 20,
    "stop": 288.19,
-   "to_stop_pct": 15.7,
-   "trail": 331.48,
-   "to_trail_pct": 0.6,
+   "to_stop_pct": 16.1,
+   "trail": 333.09,
+   "to_trail_pct": 0.4,
    "weight": 5.6
   },
   {
@@ -174,16 +174,16 @@
    "entry_date": "2026-08-25",
    "pivot": 132.76,
    "src": "backtest",
-   "ltp": 140.0,
-   "day_move_pct": -2.28,
-   "value": 57960.0,
-   "pnl": 2997.0,
-   "pnl_pct": 5.5,
-   "days": 13,
+   "ltp": 141.0,
+   "day_move_pct": 0.07,
+   "value": 58374.0,
+   "pnl": 3411.0,
+   "pnl_pct": 6.2,
+   "days": 14,
    "stop": 122.14,
-   "to_stop_pct": 14.6,
-   "trail": 137.73,
-   "to_trail_pct": 1.7,
+   "to_stop_pct": 15.4,
+   "trail": 138.94,
+   "to_trail_pct": 1.5,
    "weight": 5.6
   },
   {
@@ -193,16 +193,16 @@
    "entry_date": "2026-08-26",
    "pivot": 893.65,
    "src": "backtest",
-   "ltp": 934.85,
-   "day_move_pct": 0.26,
-   "value": 57026.0,
-   "pnl": 2513.0,
-   "pnl_pct": 4.6,
-   "days": 12,
+   "ltp": 929.9,
+   "day_move_pct": -0.7,
+   "value": 56724.0,
+   "pnl": 2211.0,
+   "pnl_pct": 4.1,
+   "days": 13,
    "stop": 822.16,
-   "to_stop_pct": 13.7,
-   "trail": 894.35,
-   "to_trail_pct": 4.5,
+   "to_stop_pct": 13.1,
+   "trail": 899.98,
+   "to_trail_pct": 3.3,
    "weight": 5.5
   },
   {
@@ -212,17 +212,17 @@
    "entry_date": "2026-08-26",
    "pivot": 270.23,
    "src": "backtest",
-   "ltp": 305.0,
-   "day_move_pct": 0.08,
-   "value": 62525.0,
-   "pnl": 7128.0,
-   "pnl_pct": 12.9,
-   "days": 12,
+   "ltp": 297.8,
+   "day_move_pct": -2.82,
+   "value": 61049.0,
+   "pnl": 5652.0,
+   "pnl_pct": 10.2,
+   "days": 13,
    "stop": 248.61,
-   "to_stop_pct": 22.7,
-   "trail": 281.12,
-   "to_trail_pct": 8.5,
-   "weight": 6.0
+   "to_stop_pct": 19.8,
+   "trail": 284.33,
+   "to_trail_pct": 4.7,
+   "weight": 5.9
   },
   {
    "symbol": "UNIPARTS",
@@ -231,17 +231,17 @@
    "entry_date": "2026-08-28",
    "pivot": 825.85,
    "src": "backtest",
-   "ltp": 903.95,
-   "day_move_pct": 3.42,
-   "value": 60565.0,
-   "pnl": 5233.0,
-   "pnl_pct": 9.5,
-   "days": 10,
+   "ltp": 894.4,
+   "day_move_pct": -0.85,
+   "value": 59925.0,
+   "pnl": 4593.0,
+   "pnl_pct": 8.3,
+   "days": 11,
    "stop": 759.78,
-   "to_stop_pct": 19.0,
-   "trail": 850.11,
-   "to_trail_pct": 6.3,
-   "weight": 5.9
+   "to_stop_pct": 17.7,
+   "trail": 854.55,
+   "to_trail_pct": 4.7,
+   "weight": 5.8
   },
   {
    "symbol": "RISHABH",
@@ -250,17 +250,17 @@
    "entry_date": "2026-09-02",
    "pivot": 705.45,
    "src": "backtest",
-   "ltp": 812.0,
-   "day_move_pct": 9.96,
-   "value": 64960.0,
-   "pnl": 8524.0,
-   "pnl_pct": 15.1,
-   "days": 5,
+   "ltp": 810.0,
+   "day_move_pct": 0.01,
+   "value": 64800.0,
+   "pnl": 8364.0,
+   "pnl_pct": 14.8,
+   "days": 6,
    "stop": 649.01,
-   "to_stop_pct": 25.1,
-   "trail": 706.98,
-   "to_trail_pct": 14.9,
-   "weight": 6.3
+   "to_stop_pct": 24.8,
+   "trail": 716.46,
+   "to_trail_pct": 13.1,
+   "weight": 6.2
   },
   {
    "symbol": "INDSWFTLAB",
@@ -269,17 +269,17 @@
    "entry_date": "2026-09-04",
    "pivot": 368.15,
    "src": "live",
-   "ltp": 368.85,
-   "day_move_pct": 3.62,
-   "value": 63442.0,
-   "pnl": -731.0,
-   "pnl_pct": -1.1,
-   "days": 3,
+   "ltp": 389.0,
+   "day_move_pct": 5.51,
+   "value": 66908.0,
+   "pnl": 2735.0,
+   "pnl_pct": 4.3,
+   "days": 4,
    "stop": 343.25,
-   "to_stop_pct": 7.5,
-   "trail": 351.3,
-   "to_trail_pct": 5.0,
-   "weight": 6.1
+   "to_stop_pct": 13.3,
+   "trail": 354.1,
+   "to_trail_pct": 9.9,
+   "weight": 6.4
   },
   {
    "symbol": "SETL",
@@ -288,17 +288,17 @@
    "entry_date": "2026-09-04",
    "pivot": 387.05,
    "src": "live",
-   "ltp": 388.55,
-   "day_move_pct": -4.99,
-   "value": 63334.0,
-   "pnl": -1051.0,
-   "pnl_pct": -1.6,
-   "days": 3,
+   "ltp": 405.6,
+   "day_move_pct": 4.39,
+   "value": 66113.0,
+   "pnl": 1728.0,
+   "pnl_pct": 2.7,
+   "days": 4,
    "stop": 363.4,
-   "to_stop_pct": 6.9,
-   "trail": 347.33,
-   "to_trail_pct": 11.9,
-   "weight": 6.1
+   "to_stop_pct": 11.6,
+   "trail": 353.78,
+   "to_trail_pct": 14.6,
+   "weight": 6.4
   },
   {
    "symbol": "WELCORP",
@@ -308,15 +308,15 @@
    "pivot": 2553.6,
    "src": "live",
    "ltp": 2600.0,
-   "day_move_pct": 0.36,
+   "day_move_pct": 0.08,
    "value": 62400.0,
    "pnl": -1181.0,
    "pnl_pct": -1.9,
-   "days": 3,
+   "days": 4,
    "stop": 2437.26,
    "to_stop_pct": 6.7,
-   "trail": 2354.71,
-   "to_trail_pct": 10.4,
+   "trail": 2399.7,
+   "to_trail_pct": 8.3,
    "weight": 6.0
   },
   {
@@ -327,125 +327,161 @@
    "entry_date": null,
    "pivot": null,
    "src": "sweep",
-   "ltp": 1078.49,
-   "value": 121701.0,
-   "pnl": 54.0,
+   "ltp": 1078.61,
+   "value": 121715.0,
+   "pnl": 68.0,
    "pnl_pct": null,
    "days": null,
    "stop": null,
    "to_stop_pct": null,
    "trail": null,
    "to_trail_pct": null,
-   "weight": 11.8
+   "weight": 11.7
   }
  ],
  "pending": [
   {
-   "symbol": "AEROENTER",
-   "pivot": 146.29,
-   "rs": 90.6,
-   "signal_date": "2026-09-07"
+   "symbol": "ANTHEM",
+   "pivot": 950.7,
+   "rs": 72.2,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "AEROFLEX",
-   "pivot": 552.05,
-   "rs": 98.5,
-   "signal_date": "2026-09-07"
+   "symbol": "ASIANENE",
+   "pivot": 523.0,
+   "rs": 88.3,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "ARTEMISMED",
-   "pivot": 339.89,
-   "rs": 78.7,
-   "signal_date": "2026-09-07"
+   "symbol": "BODALCHEM",
+   "pivot": 178.6,
+   "rs": 99.6,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "CENTUM",
-   "pivot": 3861.2,
-   "rs": 76.6,
-   "signal_date": "2026-09-07"
+   "symbol": "CHENNPETRO",
+   "pivot": 1452.2,
+   "rs": 85.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "ENTERO",
-   "pivot": 1848.0,
-   "rs": 92.3,
-   "signal_date": "2026-09-07"
+   "symbol": "CYIENTDLM",
+   "pivot": 869.8,
+   "rs": 98.0,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DATAPATTNS",
+   "pivot": 4866.2,
+   "rs": 79.5,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DEEPINDS",
+   "pivot": 786.45,
+   "rs": 92.4,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DIVISLAB",
+   "pivot": 9467.0,
+   "rs": 84.2,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "INDSWFTLAB",
+   "pivot": 372.7,
+   "rs": 99.7,
+   "signal_date": "2026-09-08"
   },
   {
    "symbol": "KABRAEXTRU",
    "pivot": 635.75,
-   "rs": 99.0,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "KRN",
-   "pivot": 1609.7,
-   "rs": 91.5,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "MANINDS",
-   "pivot": 793.4,
-   "rs": 93.9,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "MOREPENLAB",
-   "pivot": 117.45,
    "rs": 99.3,
-   "signal_date": "2026-09-07"
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "REDINGTON",
-   "pivot": 372.45,
-   "rs": 87.1,
-   "signal_date": "2026-09-07"
+   "symbol": "LAURUSLABS",
+   "pivot": 1938.5,
+   "rs": 92.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "RISHABH",
-   "pivot": 746.0,
-   "rs": 91.8,
-   "signal_date": "2026-09-07"
+   "symbol": "MON100",
+   "pivot": 342.55,
+   "rs": 77.3,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NAVINFLUOR",
+   "pivot": 8697.0,
+   "rs": 85.0,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NEULANDLAB",
+   "pivot": 23650.0,
+   "rs": 87.5,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NITINSPIN",
+   "pivot": 640.25,
+   "rs": 89.6,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NRBBEARING",
+   "pivot": 486.1,
+   "rs": 85.8,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "QPOWER",
+   "pivot": 1495.3,
+   "rs": 92.3,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "ROSSTECH",
+   "pivot": 1150.5,
+   "rs": 80.0,
+   "signal_date": "2026-09-08"
   },
   {
    "symbol": "SAILIFE",
    "pivot": 1587.0,
-   "rs": 90.3,
-   "signal_date": "2026-09-07"
+   "rs": 89.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "SOLARINDS",
-   "pivot": 21500.0,
-   "rs": 82.0,
-   "signal_date": "2026-09-07"
+   "symbol": "SANSERA",
+   "pivot": 4018.0,
+   "rs": 96.3,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "SYRMA",
-   "pivot": 1516.4,
-   "rs": 90.7,
-   "signal_date": "2026-09-07"
+   "symbol": "SHANTIGEAR",
+   "pivot": 685.05,
+   "rs": 79.1,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "UNIPARTS",
-   "pivot": 901.15,
-   "rs": 94.3,
-   "signal_date": "2026-09-07"
+   "symbol": "UNIMECH",
+   "pivot": 1522.6,
+   "rs": 85.6,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "WINDLAS",
-   "pivot": 1137.06,
-   "rs": 79.5,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "WOCKPHARMA",
-   "pivot": 2152.9,
-   "rs": 77.8,
-   "signal_date": "2026-09-07"
+   "symbol": "WHEELS",
+   "pivot": 1786.0,
+   "rs": 94.4,
+   "signal_date": "2026-09-08"
   }
  ],
  "provenance": "History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-15 SMA, -8% stop, 16 slots @6.25%, NO gate; median seed 8, 2020-01-01 -> 2026-09-03, 1718 trades); LIVE paper from 2026-09-02, re-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 gate refuted + was NaN-dead since Apr-26; 16 slots halves path dependence). Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased to the momentum book NAV so the two sleeves stay equal-sized.",
  "n_live_trades": 1,
- "interest_earned": 54.0,
+ "interest_earned": 68.0,
  "cash_yield_pct": 5.2,
  "trades": [
   {
@@ -1333,11 +1369,6 @@
  "n_trades": 1719,
  "win_pct": 48.9,
  "nav_curve": [
-  {
-   "date": "2023-08-30",
-   "nav": 253754.0,
-   "bench": 213.54
-  },
   {
    "date": "2023-08-31",
    "nav": 259884.0,
@@ -5081,129 +5112,15 @@
   {
    "date": "2026-09-07",
    "nav": 1033504.0,
-   "bench": 271.4
+   "bench": 271.21
+  },
+  {
+   "date": "2026-09-08",
+   "nav": 1038402.0,
+   "bench": 270.1
   }
  ],
  "missed_tail": [
-  {
-   "symbol": "NITINSPIN",
-   "pivot": 630.75,
-   "rs": 90.9,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "TMB",
-   "pivot": 932.6,
-   "rs": 90.7,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "KTKBANK",
-   "pivot": 337.0,
-   "rs": 90.6,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "DEEPINDS",
-   "pivot": 717.95,
-   "rs": 88.6,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "REDINGTON",
-   "pivot": 366.0,
-   "rs": 87.6,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "NAVINFLUOR",
-   "pivot": 8675.5,
-   "rs": 84.7,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "PTCIL",
-   "pivot": 22755.0,
-   "rs": 78.7,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "MANORAMA",
-   "pivot": 1958.7,
-   "rs": 77.3,
-   "signal_date": "2026-09-03",
-   "why": "book_full"
-  },
-  {
-   "symbol": "BLISSGVS-BE",
-   "pivot": 648.65,
-   "rs": 99.8,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "RATNAVEER",
-   "pivot": 306.02,
-   "rs": 95.9,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "INOXINDIA",
-   "pivot": 2177.9,
-   "rs": 93.6,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "FCL",
-   "pivot": 50.79,
-   "rs": 93.5,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "QPOWER",
-   "pivot": 1488.0,
-   "rs": 91.6,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "CHENNPETRO",
-   "pivot": 1444.1,
-   "rs": 90.1,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "SBC",
-   "pivot": 44.09,
-   "rs": 89.0,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "WELSPUNLIV",
-   "pivot": 207.26,
-   "rs": 88.6,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
-  {
-   "symbol": "SMLMAH",
-   "pivot": 5808.0,
-   "rs": 87.4,
-   "signal_date": "2026-09-04",
-   "why": "book_full"
-  },
   {
    "symbol": "CRAFTSMAN",
    "pivot": 11253.0,
@@ -5224,12 +5141,131 @@
    "rs": 79.7,
    "signal_date": "2026-09-04",
    "why": "book_full"
+  },
+  {
+   "symbol": "MOREPENLAB",
+   "pivot": 117.45,
+   "rs": 99.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KABRAEXTRU",
+   "pivot": 635.75,
+   "rs": 99.0,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "AEROFLEX",
+   "pivot": 552.05,
+   "rs": 98.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "UNIPARTS",
+   "pivot": 901.15,
+   "rs": 94.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "MANINDS",
+   "pivot": 793.4,
+   "rs": 93.9,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ENTERO",
+   "pivot": 1848.0,
+   "rs": 92.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "RISHABH",
+   "pivot": 746.0,
+   "rs": 91.8,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KRN",
+   "pivot": 1609.7,
+   "rs": 91.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SYRMA",
+   "pivot": 1516.4,
+   "rs": 90.7,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "AEROENTER",
+   "pivot": 146.29,
+   "rs": 90.6,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SAILIFE",
+   "pivot": 1587.0,
+   "rs": 90.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "REDINGTON",
+   "pivot": 372.45,
+   "rs": 87.1,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SOLARINDS",
+   "pivot": 21500.0,
+   "rs": 82.0,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "WINDLAS",
+   "pivot": 1137.06,
+   "rs": 79.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ARTEMISMED",
+   "pivot": 339.89,
+   "rs": 78.7,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "WOCKPHARMA",
+   "pivot": 2152.9,
+   "rs": 77.8,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "CENTUM",
+   "pivot": 3861.2,
+   "rs": 76.6,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
   }
  ],
  "spec": "trail-15 SMA; -8% stop; 16 slots @6.25%; NO gate (retired 03-Sep-2026); no mcap floor; 25bps",
  "study": "/app/backtest/bluesky-ath-breakout-research142",
  "log": [
-  "SCAN 17 new signals (gate retired \u2014 info-only: weak)",
-  "SWEEP Rs 121,701 -> 112.844 CASHIETF @ 1078.49"
+  "SCAN 23 new signals (gate retired \u2014 info-only: weak)",
+  "SWEEP Rs 121,715 -> 112.844 CASHIETF @ 1078.61"
  ]
 }

@@ -149,106 +149,142 @@
  ],
  "pending": [
   {
-   "symbol": "AEROENTER",
-   "pivot": 146.29,
-   "rs": 90.6,
-   "signal_date": "2026-09-07"
+   "symbol": "ANTHEM",
+   "pivot": 950.7,
+   "rs": 72.2,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "AEROFLEX",
-   "pivot": 552.05,
-   "rs": 98.5,
-   "signal_date": "2026-09-07"
+   "symbol": "ASIANENE",
+   "pivot": 523.0,
+   "rs": 88.3,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "ARTEMISMED",
-   "pivot": 339.89,
-   "rs": 78.7,
-   "signal_date": "2026-09-07"
+   "symbol": "BODALCHEM",
+   "pivot": 178.6,
+   "rs": 99.6,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "CENTUM",
-   "pivot": 3861.2,
-   "rs": 76.6,
-   "signal_date": "2026-09-07"
+   "symbol": "CHENNPETRO",
+   "pivot": 1452.2,
+   "rs": 85.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "ENTERO",
-   "pivot": 1848.0,
-   "rs": 92.3,
-   "signal_date": "2026-09-07"
+   "symbol": "CYIENTDLM",
+   "pivot": 869.8,
+   "rs": 98.0,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DATAPATTNS",
+   "pivot": 4866.2,
+   "rs": 79.5,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DEEPINDS",
+   "pivot": 786.45,
+   "rs": 92.4,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "DIVISLAB",
+   "pivot": 9467.0,
+   "rs": 84.2,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "INDSWFTLAB",
+   "pivot": 372.7,
+   "rs": 99.7,
+   "signal_date": "2026-09-08"
   },
   {
    "symbol": "KABRAEXTRU",
    "pivot": 635.75,
-   "rs": 99.0,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "KRN",
-   "pivot": 1609.7,
-   "rs": 91.5,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "MANINDS",
-   "pivot": 793.4,
-   "rs": 93.9,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "MOREPENLAB",
-   "pivot": 117.45,
    "rs": 99.3,
-   "signal_date": "2026-09-07"
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "REDINGTON",
-   "pivot": 372.45,
-   "rs": 87.1,
-   "signal_date": "2026-09-07"
+   "symbol": "LAURUSLABS",
+   "pivot": 1938.5,
+   "rs": 92.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "RISHABH",
-   "pivot": 746.0,
-   "rs": 91.8,
-   "signal_date": "2026-09-07"
+   "symbol": "MON100",
+   "pivot": 342.55,
+   "rs": 77.3,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NAVINFLUOR",
+   "pivot": 8697.0,
+   "rs": 85.0,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NEULANDLAB",
+   "pivot": 23650.0,
+   "rs": 87.5,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NITINSPIN",
+   "pivot": 640.25,
+   "rs": 89.6,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "NRBBEARING",
+   "pivot": 486.1,
+   "rs": 85.8,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "QPOWER",
+   "pivot": 1495.3,
+   "rs": 92.3,
+   "signal_date": "2026-09-08"
+  },
+  {
+   "symbol": "ROSSTECH",
+   "pivot": 1150.5,
+   "rs": 80.0,
+   "signal_date": "2026-09-08"
   },
   {
    "symbol": "SAILIFE",
    "pivot": 1587.0,
-   "rs": 90.3,
-   "signal_date": "2026-09-07"
+   "rs": 89.9,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "SOLARINDS",
-   "pivot": 21500.0,
-   "rs": 82.0,
-   "signal_date": "2026-09-07"
+   "symbol": "SANSERA",
+   "pivot": 4018.0,
+   "rs": 96.3,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "SYRMA",
-   "pivot": 1516.4,
-   "rs": 90.7,
-   "signal_date": "2026-09-07"
+   "symbol": "SHANTIGEAR",
+   "pivot": 685.05,
+   "rs": 79.1,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "UNIPARTS",
-   "pivot": 901.15,
-   "rs": 94.3,
-   "signal_date": "2026-09-07"
+   "symbol": "UNIMECH",
+   "pivot": 1522.6,
+   "rs": 85.6,
+   "signal_date": "2026-09-08"
   },
   {
-   "symbol": "WINDLAS",
-   "pivot": 1137.06,
-   "rs": 79.5,
-   "signal_date": "2026-09-07"
-  },
-  {
-   "symbol": "WOCKPHARMA",
-   "pivot": 2152.9,
-   "rs": 77.8,
-   "signal_date": "2026-09-07"
+   "symbol": "WHEELS",
+   "pivot": 1786.0,
+   "rs": 94.4,
+   "signal_date": "2026-09-08"
   }
  ],
  "nav": [
@@ -6895,6 +6931,10 @@
   {
    "date": "2026-09-07",
    "nav": 1033504.0
+  },
+  {
+   "date": "2026-09-08",
+   "nav": 1038402.0
   }
  ],
  "trades": [
@@ -26019,11 +26059,130 @@
    "rs": 79.7,
    "signal_date": "2026-09-04",
    "why": "book_full"
+  },
+  {
+   "symbol": "MOREPENLAB",
+   "pivot": 117.45,
+   "rs": 99.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KABRAEXTRU",
+   "pivot": 635.75,
+   "rs": 99.0,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "AEROFLEX",
+   "pivot": 552.05,
+   "rs": 98.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "UNIPARTS",
+   "pivot": 901.15,
+   "rs": 94.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "MANINDS",
+   "pivot": 793.4,
+   "rs": 93.9,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ENTERO",
+   "pivot": 1848.0,
+   "rs": 92.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "RISHABH",
+   "pivot": 746.0,
+   "rs": 91.8,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "KRN",
+   "pivot": 1609.7,
+   "rs": 91.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SYRMA",
+   "pivot": 1516.4,
+   "rs": 90.7,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "AEROENTER",
+   "pivot": 146.29,
+   "rs": 90.6,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SAILIFE",
+   "pivot": 1587.0,
+   "rs": 90.3,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "REDINGTON",
+   "pivot": 372.45,
+   "rs": 87.1,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "SOLARINDS",
+   "pivot": 21500.0,
+   "rs": 82.0,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "WINDLAS",
+   "pivot": 1137.06,
+   "rs": 79.5,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ARTEMISMED",
+   "pivot": 339.89,
+   "rs": 78.7,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "WOCKPHARMA",
+   "pivot": 2152.9,
+   "rs": 77.8,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
+  },
+  {
+   "symbol": "CENTUM",
+   "pivot": 3861.2,
+   "rs": 76.6,
+   "signal_date": "2026-09-07",
+   "why": "book_full"
   }
  ],
  "started": "2020-01-01",
  "seeded_from": "History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-15 SMA, -8% stop, 16 slots @6.25%, NO gate; median seed 8, 2020-01-01 -> 2026-09-03, 1718 trades); LIVE paper from 2026-09-02, re-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 gate refuted + was NaN-dead since Apr-26; 16 slots halves path dependence). Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased to the momentum book NAV so the two sleeves stay equal-sized.",
- "last_run": "2026-09-07 18:40:03.676722",
+ "last_run": "2026-09-08 18:40:04.508544",
  "fund_flows": [
   {
    "ts": "2026-09-03 15:26:47.901931",
@@ -26064,9 +26223,9 @@
  "sweep": {
   "symbol": "CASHIETF",
   "units": 112.844,
-  "cost": 121701.13
+  "cost": 121714.67
  },
- "interest_earned": 54.08,
+ "interest_earned": 67.62,
  "dividend": {
   "hwm": 1036879.0,
   "cap": null,

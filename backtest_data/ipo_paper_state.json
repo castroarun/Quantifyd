@@ -15,12 +15,17 @@
   }
  ],
  "pending": [],
- "nav": [],
+ "nav": [
+  {
+   "d": "2026-09-08",
+   "nav": 229609
+  }
+ ],
  "trades": [],
  "missed": [],
  "data_events": [],
  "started": "2026-09-08",
- "last_run": "2026-09-07 18:45:03.398037",
+ "last_run": "2026-09-08 18:45:04.740987",
  "discarded_on_arming": [
   {
    "symbol": "MARSONS",

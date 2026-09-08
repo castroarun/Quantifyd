@@ -119,6 +119,31 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Open Alpha - automated execution soak: did the machine trade the spec?",
+     "2026-10-09", "PENDING",
+     "From 08-Sep-2026 Open Alpha places its own exits (15:18) and arms its own entries "
+     "(18:50) - before that it was manual-assisted and had NO entry scanner at all, so a "
+     "freed slot could never refill. One month of live evidence, then check: (1) every "
+     "exit the 15:18 check raised was actually PLACED and FILLED, with no OA-EXIT order "
+     "left resting overnight; (2) every freed slot was refilled by the next session's "
+     "scan, so the book sits at 16/16 rather than drifting down; (3) reconcile applied "
+     "every tagged fill - book positions and cash match the broker exactly; (4) realised "
+     "P&L per closed trade is sane (a cost-rate bug reported -419,999,000 on a Rs1,000 "
+     "trade before tests caught it). FAIL on any of these = go back to alert-only while "
+     "it is fixed."),
+
+    ("Open Alpha - measure the gap-ceiling deviation",
+     "2026-11-08", "PENDING",
+     "KNOWN, ACCEPTED DEVIATION from r/142: the study fills entries at max(pivot, open) "
+     "with NO ceiling, but Kite refuses SL-M via API ('market orders without market "
+     "protection') and the exchange caps a stop-limit's limit-to-trigger spread per scrip "
+     "(Rs 8.80 on CUPID, ~3%). So a breakout that gaps more than ~3% above its pivot will "
+     "NOT fill where the backtest took it. This is not a rounding matter - gap-ups are "
+     "where breakout edges concentrate, so the live book may be systematically missing its "
+     "best trades. TASK: count armed-but-unfilled OA-ENTRY orders and the gap size on each, "
+     "then replay r/142 with a 3% fill ceiling to price what the constraint actually costs. "
+     "If material, the options are a market-protection order type or accepting a lower "
+     "expected return than the study advertises - state which."),
     ("Sector indices - back-fill to 2005 inception, then re-ask research/156",
      "2027-03-07", "PENDING",
      "research/156 found NO EDGE in sector rotation and NO ADDED VALUE in sector-gated stock "

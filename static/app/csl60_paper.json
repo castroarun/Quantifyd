@@ -19,13 +19,13 @@
    "entry": 50.45,
    "entry_ts": "09:16",
    "sl_level": 80.72000000000001,
-   "exit": null,
-   "exit_ts": null,
-   "exit_reason": null,
-   "status": "OPEN",
-   "ltp": 29.75,
-   "ltp_ts": "12:25",
-   "pnl_gross": 13455.000000000002,
+   "exit": 12.5,
+   "exit_ts": "15:15",
+   "exit_reason": "TIME",
+   "status": "CLOSED",
+   "ltp": 16.05,
+   "ltp_ts": "15:14",
+   "pnl_gross": 24667.500000000004,
    "book": "dte0"
   },
   {
@@ -36,13 +36,13 @@
    "entry": 46.3,
    "entry_ts": "09:16",
    "sl_level": 74.08,
-   "exit": null,
-   "exit_ts": null,
-   "exit_reason": null,
-   "status": "OPEN",
-   "ltp": 52.7,
-   "ltp_ts": "12:25",
-   "pnl_gross": -4160.000000000004,
+   "exit": 76.45,
+   "exit_ts": "15:15",
+   "exit_reason": "TIME",
+   "status": "CLOSED",
+   "ltp": 72.2,
+   "ltp_ts": "15:14",
+   "pnl_gross": -19597.500000000004,
    "book": "dte0"
   }
  ],
@@ -399,26 +399,26 @@
   },
   {
    "trade_date": "2026-09-08",
-   "status": "OPEN",
+   "status": "CLOSED",
    "source": "live",
    "atm_strike": 23700.0,
    "entry_spot": 23691.6,
-   "gross": 9295.0,
-   "turnover": 116480.0,
-   "net": 8527.77,
+   "gross": 5070.0,
+   "turnover": 120705.0,
+   "net": 4277.84,
    "n_sl": 0,
    "note": "",
-   "updated_at": "2026-09-08T12:26:02",
+   "updated_at": "2026-09-08T15:16:02",
    "book": "dte0"
   }
  ],
  "n_days": 13,
- "cum_net": 32643.42,
+ "cum_net": 28393.49,
  "shadow": {
   "book": "dte1",
   "n_days": 13,
   "cum_net": 108805.45,
   "note": "DTE-1 shadow - study REJECTED this DTE; forward test only"
  },
- "generated": "2026-09-08T12:26:02"
+ "generated": "2026-09-08T15:16:02"
 }

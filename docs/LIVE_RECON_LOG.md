@@ -763,3 +763,45 @@ Live vs app reconciliation · 2026-09-08 11:00 IST
 Filled today by tag:
   OA-TOPUP                    156
 ```
+
+## 2026-09-08 14:00 IST — 8 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-08 14:00 IST
+25 broker legs · 8 alerts · 4 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds 200 that no book claims (no order tag)
+[ALERT] ORPHAN BSE26SEP3700CE: broker holds -400 that no book claims (order tag: BOV2D2SYdYTtg1OcfxpU)
+[ALERT] ORPHAN HAL26SEP4900CE: broker holds 300 that no book claims (no order tag)
+[ALERT] ORPHAN HAL26SEP5000CE: broker holds -300 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP15CE: broker holds 71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP17CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP18CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP20CE: broker holds 71475 that no book claims (no order tag)
+[INFO] MULTI-BOOK ENTERO: broker 5 = OA-TOPUP +5 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK INDSWFTLAB: broker 19 = OA-TOPUP +19 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK INOXINDIA: broker 5 = OA-TOPUP +5 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IOLCP: broker 39 = OA-TOPUP +39 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK IRISDOREME: broker 182 = OA-TOPUP +182 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK KISSHT: broker 132 = IPO-ENTRY +132 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK KMEW: broker 4 = OA-TOPUP +4 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK KTKBANK: broker 33 = OA-TOPUP +33 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK MANINDS: broker 12 = OA-TOPUP +12 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK NITINSPIN: broker 17 = OA-TOPUP +17 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK SBCL: broker 9 = OA-TOPUP +9 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK SETL: broker 30 = OA-TOPUP +30 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK SHILPAMED: broker 11 = OA-TOPUP +11 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK SPORTKING: broker 50 = OA-TOPUP +50 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK SSWL: broker 26 = OA-TOPUP +26 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK TMB: broker 11 = OA-TOPUP +11 — placed by our books, not visible in the page feed
+[INFO] MULTI-BOOK WELCORP: broker 4 = OA-TOPUP +4 — placed by our books, not visible in the page feed
+[WARN] NAKED BSE26SEP3700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED HAL26SEP5000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP17CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP18CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  OA-TOPUP                    457
+  BOV2D2SYdYTtg1OcfxpU        200
+  IPO-ENTRY                   132
+```

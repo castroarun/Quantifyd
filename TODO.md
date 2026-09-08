@@ -2,7 +2,83 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ⏳ 2026-09-08 — Momentum Portfolio (mpf): one summary panel across all three books — SHIPPED, one restart owed
+## 🔴 2026-09-08 — ALERTS GO NOWHERE: email and WhatsApp are DORMANT (Arun action)
+
+**Every alert this system raises is currently written to a file and delivered to no one.**
+Verified by sending a test alert through the real module on 08-Sep: it wrote the feed line
+and reported both channels dormant.
+
+```
+email:    email DORMANT (set EMAIL_SMTP_HOST/USER/PASS and EMAIL_TO in .env)
+whatsapp: whatsapp DORMANT (set WHATSAPP_ENABLED=1 + TWILIO_* + WHATSAPP_TO in .env)
+```
+
+**What this silences right now:**
+
+| Alert | Raised by | Matters because |
+|---|---|---|
+| EXIT DUE / EXIT PLACED / **EXIT FAILED TO PLACE** | `oa_real.check` | an exit that could not be sent is money leaking |
+| Entry could not be armed | `oa_entry.arm` | a slot silently stays empty |
+| Order rejected / unfilled | `equity_executor.flush_failures` | built 08-Sep and has never actually sent anything |
+| Reconcile mismatch, sold-something-not-held | `oa_real.reconcile` | book drifting from the account |
+| IPO exits and data events | `ipo_paper` | same class |
+
+**How it got missed:** `_alert()` in `oa_real.py` and `ipo_paper.py` appended to
+`/tmp/nas_alert_feed.log` — which is not an alert feed at all, it is the **cron output log**
+of `scripts/nas_alert_feed.py` (a different job) and is full of "no new orders" lines.
+Nothing has ever read it. Fixed 08-Sep: alerts now go to
+`backtest_data/book_alerts.jsonl` and critical ones call `services/dividend_notify`. That
+path works — it simply has no credentials to use.
+
+**This is why SPORTKING sat a full day below its 15-SMA trail.** The 15:18 check produced
+the exact sell order and wrote it to a log nobody reads.
+
+### Arun does this (Claude will not touch `.env` — denied path, and it holds credentials)
+
+```bash
+# on the VPS, append to /home/arun/quantifyd/.env
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_USER=<the sending address>
+EMAIL_SMTP_PASS=<a Gmail APP PASSWORD, not the account password>
+EMAIL_TO=arun.castromin@gmail.com
+```
+
+Email alone closes the gap; WhatsApp needs a Twilio account and can wait.
+**No restart needed** — the alerting runs in cron-launched scripts, which read `.env` fresh.
+
+**Verify it works** (writes one clearly-marked test alert, sends nothing else):
+
+```bash
+cd /home/arun/quantifyd && set -a && . ./.env && set +a && venv/bin/python3 - <<'EOF'
+from services.dividend_notify import send_email, send_whatsapp
+print('email   :', send_email('Quantifyd alert test', '<pre>ignore me</pre>'))
+print('whatsapp:', send_whatsapp('Quantifyd alert test - ignore'))
+EOF
+```
+
+Until this is done, **the page is the only channel that works** — the Capital Desk's
+"Room before a sale" and each book's failure banner.
+
+---
+
+## ⏳ 2026-09-08 — also left open by tonight's Open Alpha automation
+
+- **IPO Base has the identical missing entry scanner.** `ipo_paper.py` finds its own
+  candidates but, like Open Alpha before tonight, never places an entry. Build it the same
+  way (`services/oa_entry.py` is the template) once Open Alpha has run clean for a few days.
+- **The gap-ceiling deviation.** The study fills entries at `max(pivot, open)` with no
+  ceiling; Kite refuses SL-M via API and the exchange caps a stop-limit's spread (~3%). A
+  bigger gap will not fill where the backtest took it. Measure the miss rate at the soak
+  review — gap-ups are exactly where breakout edges live, so this could matter more than
+  its size suggests.
+- **`/api/momentum-paper/state` takes 10–16s** and every True North page load pays it. The
+  first-paint path hides it; caching the pandas pivot or baking the feed would fix it.
+- **Two credential rotations still owed** — the `.env.bak` Kite leak (02-Sep) and the
+  GitHub PAT found in cleartext in the VPS git remote.
+
+---
+
+## ✅ 2026-09-08 — Momentum Portfolio (mpf): one summary panel across all three books — SHIPPED and restarted
 
 **"mpf"** is Arun's shorthand for the Momentum Portfolio: the `/app/portfolio` tab group —
 True North (`momentum-3l`), Open Alpha (`oa-real`), IPO Base (`ipo-paper`) and the Capital
