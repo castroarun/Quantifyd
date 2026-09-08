@@ -77,7 +77,10 @@ def main():
               swept=round(swept), nav=round(nav), capital=round(capital),
               pnl=round(tot_pnl),
               pnl_pct=round(100 * tot_pnl / (tot_val - tot_pnl), 2) if tot_val - tot_pnl else 0,
-              n=len(rows), slots=mp.CFG['n_hold'], source='gen_momentum_live')
+              n=len(rows), slots=mp.CFG['n_hold'],
+              # what the swept cash has actually earned: ETF value less its cost
+              interest=round(swept - float(mp._get('sweep_cost', 0.0) or 0.0)) if swept else 0,
+              source='gen_momentum_live')
     tmp = OUT.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
     os.replace(tmp, OUT)

@@ -290,7 +290,7 @@ button.curveKeyOn { opacity: 1; }
 
 /* ── holdings, collapsible ───────────────────────────────────────────────────────── */
 .cardTitleTog {
-  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  display: flex; align-items: baseline; gap: 0; width: 100%;
   background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
   text-align: left; color: inherit;
 }
@@ -300,7 +300,10 @@ button.curveKeyOn { opacity: 1; }
   transition: transform 0.18s ease;
 }
 .cardTitleTog[aria-expanded="false"] .caret { transform: rotate(-90deg); }
-.cardCount { font-size: 11.5px; font-weight: 400; color: var(--ink-muted, #888780); }
+.cardCount {
+  font-size: 11.5px; font-weight: 400; color: var(--ink-muted, #888780);
+  margin-left: 8px;          /* its own spacing: .cardTitle is not a flex container */
+}
 
 /* Marks a scheduled step that can place an order or raise an alert, as against one that
    only refreshes data. */
@@ -321,7 +324,8 @@ button.curveKeyOn { opacity: 1; }
   color: var(--ink-secondary, #5F5E5A); font-variant-numeric: tabular-nums;
 }
 .moneyKey i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
-.moneyKeyName { flex: 1; }
+.moneyKeyName { flex: none; }   /* only as wide as the name */
+.moneyKey b { margin-left: auto; }
 .moneyKey b { color: var(--ink, #1B1B1A); font-weight: 600; }
 .moneySub {
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
@@ -348,4 +352,10 @@ button.curveKeyOn { opacity: 1; }
 .pnlBarTotal {
   border-top: 1px solid var(--hairline, rgba(0,0,0,0.10));
   margin-top: 4px; padding-top: 8px; font-size: 13.5px; color: var(--ink, #1B1B1A);
+}
+
+/* What went in and what it is worth now, under the book's name in the P&L column. */
+.pnlWas {
+  display: block; font-size: 10.5px; font-weight: 400; line-height: 1.5;
+  color: var(--ink-muted, #888780); font-variant-numeric: tabular-nums;
 }

@@ -641,7 +641,7 @@ function DividendsCard() {
    return series. */
 
 type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
-  swept: number; pnl: number; n: number; slots?: number };
+  swept: number; pnl: number; n: number; slots?: number; interest?: number };
 type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
   pnl: number; realized: number; gain: number; return_pct: number;
   navcurve: { d: string; nav: number }[]; positions: unknown[]; slots?: number };
@@ -702,6 +702,8 @@ function MoneyCard({ tnLive, oa, ipo, ipoLive }:
      counted only once it is live - the same rule the totals above use. */
   const stocks = (tnLive?.value ?? 0) + (oa?.value ?? 0) + (ipoLive ? (ipo?.value ?? 0) : 0);
   const parked = tnLive?.swept ?? 0;
+  /* Inside True North's own P&L already — shown, but never added again. */
+  const yieldRs = tnLive?.interest ?? 0;
   const free = (tnLive?.cash ?? 0) + (oa?.cash ?? 0) + (ipoLive ? (ipo?.cash ?? 0) : 0);
   const total = stocks + parked + free;
   if (total <= 0) return null;
@@ -771,10 +773,24 @@ function MoneyCard({ tnLive, oa, ipo, ipoLive }:
               {net >= 0 ? '+' : '−'}{rup(Math.abs(net)).slice(1)}
             </b>
           </div>
+          {parked > 0 && (
+            <div className={styles.pnlBarRow} style={{ paddingTop: 2 }}>
+              <span className={styles.pnlBarName} style={{ width: 'auto' }}>
+                <span className={styles.muted}>of which</span> liquid fund
+              </span>
+              <span className={styles.pnlBarTrack} style={{ flex: 'none' }} />
+              <span className={styles.muted} style={{ marginLeft: 'auto', fontSize: 11.5 }}>
+                {rup(parked)} parked{yieldRs ? ' · earned ' : ''}
+                {yieldRs ? <b className={yieldRs >= 0 ? styles.pos : styles.neg}>
+                  {yieldRs >= 0 ? '+' : '−'}{rup(Math.abs(yieldRs)).slice(1)}</b> : null}
+              </span>
+            </div>
+          )}
           <p className={styles.note} style={{ marginTop: 8 }}>
             Drawn as bars from a shared zero rather than a ring: one book can be down while
             another is up, and a ring divides a whole into parts that a signed quantity has
-            not got.
+            not got. The liquid fund is True North's swept cash, so its yield is already
+            inside True North's figure — shown here, never added twice.
           </p>
         </div>
       </div>
@@ -1007,24 +1023,25 @@ export default function CapitalDesk() {
         </div>
         <div className={styles.sumPnl}>
           <div className={styles.sumLabel}>Profit &amp; loss</div>
-          <div className={styles.pnlRow}>
-            <span>Open today</span>
-            <b className={dayPnl >= 0 ? styles.pos : styles.neg}>
-              {dayPnl >= 0 ? '+' : '−'}{rup(Math.abs(dayPnl)).slice(1)}</b>
-          </div>
-          <div className={styles.pnlRow}>
-            <span>True North</span>
-            <b>{rup(navTN)}</b>
-          </div>
-          <div className={styles.pnlRow}>
-            <span>Open Alpha</span>
-            <b>{rup(navOA)}</b>
-          </div>
-          <div className={styles.pnlRow}>
-            <span>IPO Base</span>
-            <b className={ipoLive ? undefined : styles.muted}>
-              {ipoLive ? rup(navIPO) : 'on paper'}</b>
-          </div>
+          {[{ k: 'True North', inv: capTN, now: navTN },
+            { k: 'Open Alpha', inv: capOA, now: navOA },
+            ...(ipoLive ? [{ k: 'IPO Base', inv: capIPOreal, now: navIPO }]
+                        : [{ k: 'IPO Base', inv: 0, now: 0 }])].map((b) => {
+            const d = b.now - b.inv;
+            return (
+              <div key={b.k} className={styles.pnlRow} style={{ alignItems: 'flex-start' }}>
+                <span>
+                  {b.k}
+                  <span className={styles.pnlWas}>
+                    {b.inv ? `${rup(b.inv)} → ${rup(b.now)}` : 'on paper'}
+                  </span>
+                </span>
+                <b className={!b.inv ? styles.muted : d >= 0 ? styles.pos : styles.neg}>
+                  {b.inv ? (d >= 0 ? '+' : '−') + rup(Math.abs(d)).slice(1) : '—'}
+                </b>
+              </div>
+            );
+          })}
           <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
             <span>Total return</span>
             <b className={gain >= 0 ? styles.pos : styles.neg}>
