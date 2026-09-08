@@ -318,6 +318,7 @@ button.curveKeyOn { opacity: 1; }
 .moneyGrid { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
 @media (min-width: 760px) { .moneyGrid { grid-template-columns: 1.05fr 1fr; } }
 .moneySplit { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.moneyGrid > div { min-width: 0; }
 .moneyKeys { display: flex; flex-direction: column; gap: 9px; min-width: 200px; flex: 1; }
 .moneyKey {
   display: flex; align-items: baseline; gap: 8px; font-size: 12.5px;
@@ -359,3 +360,27 @@ button.curveKeyOn { opacity: 1; }
   display: block; font-size: 10.5px; font-weight: 400; line-height: 1.5;
   color: var(--ink-muted, #888780); font-variant-numeric: tabular-nums;
 }
+
+/* ── Room before a sale: distance from each holding to the rule that would sell it ──── */
+.roomBlock {
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid var(--hairline-soft, rgba(0,0,0,0.06));
+}
+.roomRow {
+  display: flex; align-items: center; gap: 9px; padding: 3px 0;
+  font-size: 12px; color: var(--ink-secondary, #5F5E5A);
+  font-variant-numeric: tabular-nums;
+}
+.roomSym { width: 96px; flex: none; font-weight: 600; color: var(--ink, #1B1B1A);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roomBook {
+  width: 30px; flex: none; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--ink-muted, #888780);
+}
+.roomTrack { flex: 1; min-width: 40px; height: 8px; border-radius: 2px;
+  background: var(--hairline-soft, rgba(0,0,0,0.06)); overflow: hidden; }
+.roomTrack i { display: block; height: 100%; border-radius: 2px; }
+.roomRow b { width: 44px; flex: none; text-align: right; font-weight: 600; }
+.roomRule { width: 96px; flex: none; font-size: 10.5px; color: var(--ink-muted, #888780);
+  text-align: right; white-space: nowrap; }
+.roomMore { margin-top: 7px; font-size: 11px; color: var(--ink-muted, #888780); }

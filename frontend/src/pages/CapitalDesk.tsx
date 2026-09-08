@@ -641,14 +641,101 @@ function DividendsCard() {
    return series. */
 
 type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
-  swept: number; pnl: number; n: number; slots?: number; interest?: number };
+  swept: number; pnl: number; n: number; slots?: number; interest?: number;
+  positions?: { symbol: string; to_stop_pct?: number | null }[] };
 type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
   pnl: number; realized: number; gain: number; return_pct: number;
-  navcurve: { d: string; nav: number }[]; positions: unknown[]; slots?: number };
+  navcurve: { d: string; nav: number }[]; slots?: number;
+  positions: { symbol: string; to_stop_pct?: number | null;
+               to_trail_pct?: number | null }[] };
 type LiveIPO = { updated: string; mode: string; nav: number; capital: number; value: number;
   cash: number; pnl: number; realized: number; gain: number; return_pct: number;
   slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
-  pending: unknown[] };
+  pending: unknown[];
+  positions?: { symbol: string; to_stop_pct?: number | null;
+                to_trail_pct?: number | null }[] };
+
+/* ROOM BEFORE A SALE — how far each holding is from the rule that would sell it.
+ *
+ * The one risk question the desk could not answer: not "what am I worth" but "what is
+ * about to go". Each book has its own exit, so the distance is measured against whichever
+ * of that book's rules is nearest, and the row says which one:
+ *   True North  15-day-low Donchian stop
+ *   Open Alpha  the -8% stop, or the 15-SMA trail, whichever is closer
+ *   IPO Base    the -8% stop, or the 20-SMA trail, whichever is closer
+ *
+ * Sorted closest first and cut to a handful, because a name with 30% of room is not news.
+ * A NEGATIVE distance means the rule is already breached and the exit is due at the next
+ * check - that is the case worth seeing above all others, so it is never truncated away.
+ */
+type Room = { sym: string; book: string; pct: number; rule: string };
+
+function roomRows(tnLive: LiveTN | null, oa: LiveOA | null, ipo: LiveIPO | null,
+                  ipoLive: boolean): Room[] {
+  const out: Room[] = [];
+  const push = (sym: string, book: string, cands: { v: number | null | undefined; rule: string }[]) => {
+    const live = cands.filter((c) => c.v != null) as { v: number; rule: string }[];
+    if (!live.length) return;
+    const nearest = live.reduce((a, b) => (b.v < a.v ? b : a));
+    out.push({ sym, book, pct: nearest.v, rule: nearest.rule });
+  };
+  (tnLive?.positions ?? []).forEach((p: any) =>
+    push(p.symbol, 'TN', [{ v: p.to_stop_pct, rule: 'Donchian stop' }]));
+  (oa?.positions ?? []).forEach((p: any) =>
+    push(p.symbol, 'OA', [{ v: p.to_stop_pct, rule: '−8% stop' },
+                          { v: p.to_trail_pct, rule: '15-SMA trail' }]));
+  if (ipoLive) {
+    (ipo?.positions ?? []).forEach((p: any) =>
+      push(p.symbol, 'IPO', [{ v: p.to_stop_pct, rule: '−8% stop' },
+                             { v: p.to_trail_pct, rule: '20-SMA trail' }]));
+  }
+  return out.sort((a, b) => a.pct - b.pct);
+}
+
+function RoomBlock({ rows }: { rows: Room[] }) {
+  if (!rows.length) return null;
+  const SHOW = 6;
+  /* Anything already past its rule is shown however many there are — that is the point. */
+  const due = rows.filter((r) => r.pct < 0);
+  const head = rows.slice(0, Math.max(SHOW, due.length));
+  const rest = rows.slice(head.length);
+  const worst = Math.max(12, ...head.map((r) => Math.abs(r.pct)));
+  const tone = (v: number) =>
+    v < 0 ? 'var(--accent-neg,#A32D2D)'
+      : v < 5 ? 'var(--accent-neg,#A32D2D)'
+      : v < 10 ? 'var(--accent-warn,#B45309)'
+      : 'var(--accent-pos,#0F6E56)';
+
+  return (
+    <div className={styles.roomBlock}>
+      <div className={styles.moneySub}>
+        Room before a sale
+        <span className={styles.cardCount} style={{ textTransform: 'none', letterSpacing: 0 }}>
+          closest to its exit rule first
+        </span>
+      </div>
+      {head.map((r) => (
+        <div key={r.book + r.sym} className={styles.roomRow}>
+          <span className={styles.roomSym}>{r.sym}</span>
+          <span className={styles.roomBook}>{r.book}</span>
+          <span className={styles.roomTrack}>
+            <i style={{ width: `${Math.min(100, (Math.abs(r.pct) / worst) * 100)}%`,
+                        background: tone(r.pct) }} />
+          </span>
+          <b style={{ color: tone(r.pct) }}>
+            {r.pct < 0 ? 'due' : r.pct.toFixed(1) + '%'}
+          </b>
+          <span className={styles.roomRule}>{r.rule}</span>
+        </div>
+      ))}
+      {rest.length > 0 && (
+        <div className={styles.roomMore}>
+          {rest.length} more, all with over {rest[0].pct.toFixed(0)}% of room
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* WHERE THE MONEY SITS — the cut the page did not already have.
  *
@@ -732,6 +819,7 @@ function MoneyCard({ tnLive, oa, ipo, ipoLive }:
       </div>
 
       <div className={styles.moneyGrid}>
+        <div>
         <div className={styles.moneySplit}>
           <Donut segs={where} centre={`${Math.round((stocks / total) * 100)}%`} sub="at work" />
           <div className={styles.moneyKeys}>
@@ -744,6 +832,9 @@ function MoneyCard({ tnLive, oa, ipo, ipoLive }:
               </div>
             ))}
           </div>
+        </div>
+
+        <RoomBlock rows={roomRows(tnLive, oa, ipo, ipoLive)} />
         </div>
 
         <div className={styles.moneyPnl}>

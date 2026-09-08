@@ -25,6 +25,30 @@ sys.path.insert(0, str(ROOT))
 OUT = ROOT / 'static' / 'app' / 'momentum_live.json'
 
 
+
+def donchian_stop(sym, n=15):
+    """The 15-day-low stop: min of the n closes BEFORE the latest bar.
+
+    Mirrors momentum_paper._donchian_low, which slices [-n-1:-1] off the close series -
+    i.e. it excludes the most recent bar. Read straight from SQLite so the per-minute
+    bake never touches the pandas pivot that makes the state endpoint slow.
+    """
+    import sqlite3
+    try:
+        con = sqlite3.connect(
+            'file:%s?mode=ro' % (ROOT / 'backtest_data' / 'market_data.db'), uri=True)
+        try:
+            rows = [r[0] for r in con.execute(
+                "SELECT close FROM market_data_unified WHERE symbol=? AND timeframe='day' "
+                "AND close > 0 ORDER BY date DESC LIMIT ?", (sym, n + 1))]
+        finally:
+            con.close()
+    except Exception:
+        return None
+    # 1dp, matching momentum_paper's own rounding - two pages must not show two stops
+    return round(min(rows[1:]), 1) if len(rows) > n else None
+
+
 def main():
     from services import momentum_paper as mp
 
@@ -57,7 +81,10 @@ def main():
         pnl = qty * (ltp - entry) if entry else 0.0
         tot_val += val
         tot_pnl += pnl
+        _stop = donchian_stop(s)
         rows.append(dict(
+            stop=_stop,
+            to_stop_pct=(round((ltp / _stop - 1) * 100, 1) if (_stop and ltp) else None),
             symbol=s, qty=qty, entry_price=round(entry, 2), ltp=round(float(ltp), 2),
             prev_close=round(float(prev), 2) if prev else None,
             day_move_pct=round((ltp / prev - 1) * 100, 2) if prev else None,
