@@ -47,11 +47,15 @@ UI = ROOT / 'static' / 'app' / 'oa_real.json'
 # A real feed the pages can read. The old path was another job's cron log.
 FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 STOP_PCT = 0.08
+COST_PCT = 0.0025        # 25 bps per side, the study's assumption
 # 16 equal slots at 6.25% of NAV each - the book's shape, stated once so the pages do
 # not have to know it.
 SLOTS = 16
 
-OA_TAG = 'OA-TOPUP'          # only orders carrying this tag belong to this book
+OA_TAG = 'OA-TOPUP'          # top-ups into existing holdings
+# Every tag this book answers to. An order without one of these is somebody else's, in an
+# account that holds 54 names across personal holdings and other books.
+BOOK_TAGS = ('OA-TOPUP', 'OA-ENTRY', 'OA-EXIT')
 SEEN_ORDERS = ROOT / 'backtest_data' / 'oa_applied_orders.json'
 TRAIL_N = 15
 MAX_FLOW = 10_000_000
@@ -460,36 +464,45 @@ def reconcile(dry=True):
     """
     kite = _kite()
     seen = json.load(open(SEEN_ORDERS)) if SEEN_ORDERS.exists() else {}
-    adds = {}
+    adds, sells = {}, {}
     for o in kite.orders():
         oid = str(o.get('order_id'))
-        if (o.get('status') != 'COMPLETE' or o.get('transaction_type') != 'BUY'
-                or o.get('product') != 'CNC' or not o.get('filled_quantity')):
+        if (o.get('status') != 'COMPLETE' or o.get('product') != 'CNC'
+                or not o.get('filled_quantity')):
             continue
-        if (o.get('tag') or '') != OA_TAG:          # not this book's order
+        if (o.get('tag') or '') not in BOOK_TAGS:   # not this book's order
             continue
         if oid in seen:                             # already applied on an earlier run
             continue
         s = o['tradingsymbol']
         q, px = int(o['filled_quantity']), float(o['average_price'])
-        pq, pv = adds.get(s, (0, 0.0))
-        adds[s] = (pq + q, pv + q * px)
-        seen[oid] = dict(ts=str(datetime.now()), symbol=s, qty=q, price=px)
+        if o.get('transaction_type') == 'BUY':
+            pq, pv = adds.get(s, (0, 0.0))
+            adds[s] = (pq + q, pv + q * px)
+        else:
+            pq, pv = sells.get(s, (0, 0.0))
+            sells[s] = (pq + q, pv + q * px)
+        seen[oid] = dict(ts=str(datetime.now()), symbol=s, side=o.get('transaction_type'),
+                         qty=q, price=px)
 
-    if not adds:
+    if not adds and not sells:
         print('reconcile: no new tagged fills')
         if not dry:
             mark()
         return
 
-    lines, spend = [], 0.0
+    lines, spend, raised = [], 0.0, 0.0
     for s, (q, val) in adds.items():
         lines.append('%s +%d @%.2f = Rs %s' % (s, q, val / q, format(round(val), ',')))
         spend += val
+    for s, (q, val) in sells.items():
+        lines.append('%s -%d @%.2f = Rs %s' % (s, q, val / q, format(round(val), ',')))
+        raised += val
     print('reconcile would apply:' if dry else 'reconcile applying:')
     for l in lines:
         print('   ', l)
-    print('    total Rs %s' % format(round(spend), ','))
+    print('    bought Rs %s, sold Rs %s'
+          % (format(round(spend), ','), format(round(raised), ',')))
     if dry:
         print('  (dry run - pass dry=False to write)')
         return
@@ -499,13 +512,35 @@ def reconcile(dry=True):
         return
     try:
         st = load_state()
-        if spend > float(st['cash']) + 1:
+        if spend - raised > float(st['cash']) + 1:
             _alert('OA reconcile refused',
                    'Tagged fills cost Rs %s but the book only holds Rs %s in cash. '
                    'Nothing applied - check for a missed deposit.'
                    % (format(round(spend), ','), format(round(st['cash']), ',')))
             print('REFUSED: fills exceed book cash')
             return
+        by_sym = {p['symbol']: p for p in st['positions']}
+
+        # ---- exits first: a sale funds the buys, and frees the slot ----
+        for s, (q, val) in sells.items():
+            pos = by_sym.get(s)
+            if not pos:
+                _alert('OA reconcile: sold something the book does not hold',
+                       'A tagged SELL filled for %s x%d but the book has no such position. '
+                       'Check whether it was already applied by hand.' % (s, q))
+                continue
+            px = val / q
+            gross = q * (px - pos['buy'])
+            st.setdefault('trades', []).append(dict(
+                symbol=s, qty=q, buy=pos['buy'], sell=round(px, 2),
+                entry_date=pos.get('entry_date'), exit_date=str(date.today()),
+                reason='rule_exit', net_pnl=round(gross - COST_PCT * q * (px + pos['buy'])),
+                pnl_pct=round((px / pos['buy'] - 1) * 100, 2)))
+            if q >= pos['qty']:
+                st['positions'] = [x for x in st['positions'] if x['symbol'] != s]
+            else:
+                pos['qty'] -= q                    # partial fill: keep the remainder
+            st['cash'] = round(float(st['cash']) + val, 2)
         by_sym = {p['symbol']: p for p in st['positions']}
         for s, (q, val) in adds.items():
             avg = val / q
@@ -529,8 +564,52 @@ def reconcile(dry=True):
     mark()
 
 
-def check():
-    """15:18 close-proxy rule check. Alert-only."""
+EXIT_TAG = 'OA-EXIT'
+EXIT_FLOOR = 0.02          # a sell limit 2% under the last price
+
+
+def _resting(kite, symbol, side):
+    """Is one of this book's orders already live for that symbol and side?"""
+    try:
+        for o in kite.orders():
+            if (o.get('tradingsymbol') == symbol and o.get('transaction_type') == side
+                    and o.get('status') not in ('REJECTED', 'CANCELLED')):
+                return True
+    except Exception as e:
+        print('order read failed, refusing to place blind:', e)
+        return True                       # unknown state: do NOT risk a duplicate
+    return False
+
+
+def place_exit(kite, symbol, qty, ltp, tick=0.05):
+    """Send one exit. Returns (order_id, error).
+
+    A LIMIT with a floor rather than a market order: Kite refuses bare market orders via
+    API, and a floor costs nothing in a normal session - a limit sell fills at the best
+    price at or above it - while refusing to dump into a collapse.
+    """
+    import math
+    if _resting(kite, symbol, 'SELL'):
+        return None, 'a SELL is already live'
+    floor = round(math.floor((ltp * (1 - EXIT_FLOOR)) / tick) * tick, 2)
+    try:
+        oid = kite.place_order(variety='regular', exchange='NSE', tradingsymbol=symbol,
+                               transaction_type='SELL', quantity=int(qty), product='CNC',
+                               order_type='LIMIT', price=floor, validity='DAY',
+                               tag=EXIT_TAG)
+        return oid, None
+    except Exception as e:
+        return None, str(e)
+
+
+def check(arm=False):
+    """15:18 close-proxy rule check.
+
+    With `arm`, it PLACES the exits it finds instead of only naming them. Until 08-Sep-2026
+    it was alert-only, and the alert went to a log nobody read - so SPORTKING sat a full
+    day below its trail with the right order sitting in a file. Arun approved automatic
+    exits the same evening.
+    """
     kite = _kite()
     st = load_state()
     syms = [p['symbol'] for p in st['positions']]
@@ -551,13 +630,27 @@ def check():
         _alert('OA-REAL 15:18 check: all clear', f'{len(syms)} positions, no exits due', 'low')
         print('all clear')
     for p, lp, why in hits:
-        msg = (f"SELL {p['symbol']} x{p['qty']} CNC (limit ~{lp:.2f}) — {why}. "
-               f"Entry {p['buy']}, now {lp} ({(lp/p['buy']-1)*100:+.1f}%). Place before 15:30.")
-        _alert(f"OA-REAL EXIT DUE: {p['symbol']}", msg)
-        print('EXIT DUE:', msg)
+        head = (f"SELL {p['symbol']} x{p['qty']} CNC — {why}. "
+                f"Entry {p['buy']}, now {lp} ({(lp/p['buy']-1)*100:+.1f}%).")
+        if not arm:
+            _alert(f"OA-REAL EXIT DUE: {p['symbol']}",
+                   head + f" Place before 15:30 (limit ~{lp:.2f}).")
+            print('EXIT DUE:', head)
+            continue
+        oid, err = place_exit(kite, p['symbol'], p['qty'], lp)
+        if oid:
+            _alert(f"OA-REAL EXIT PLACED: {p['symbol']}",
+                   head + f" Order {oid} is in, limit floored 2% under {lp:.2f}.")
+            print('EXIT PLACED:', p['symbol'], oid)
+        else:
+            # An exit that could not be sent is the one thing that must never be quiet.
+            _alert(f"OA-REAL EXIT FAILED TO PLACE: {p['symbol']}",
+                   head + f" The order was NOT sent: {err}. Place it by hand.")
+            print('EXIT FAILED:', p['symbol'], err)
 
 
 if __name__ == '__main__':
-    _modes = {'seed': seed, 'mark': mark, 'check': check, 'ui-only': ui_only,
+    _modes = {'seed': seed, 'mark': mark, 'ui-only': ui_only,
+              'check': lambda: check(arm='--arm' in sys.argv),
               'reconcile': lambda: reconcile(dry='--arm' not in sys.argv)}
     _modes[sys.argv[1] if len(sys.argv) > 1 else 'mark']()
