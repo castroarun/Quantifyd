@@ -302,10 +302,12 @@ def _chain(points):
 
 
 # The Momentum Portfolio, in the order the tabs sit in.
+# Open Alpha's old #7C3AED collided with Nifty 500's; these three are separated from the
+# combined blue, from Nifty 50's amber, and from one another.
 PORTFOLIO_BOOKS = [
-    ('momentum-3l', 'True North', '#0F6E56'),
-    ('oa-real',     'Open Alpha', '#7C3AED'),
-    ('ipo-paper',   'IPO Base',   '#C2410C'),
+    ('momentum-3l', 'True North', '#0F6E56'),   # deep green
+    ('oa-real',     'Open Alpha', '#A21CAF'),   # fuchsia
+    ('ipo-paper',   'IPO Base',   '#0E7490'),   # teal
 ]
 
 
@@ -453,7 +455,7 @@ def api_book_benchmarks(book_id):
                 _inc, bc = _book_curve(bid)
                 if len(bc) >= 2:
                     extra[bid] = {'label': label, 'points': _as_index(bc),
-                                  'color': color, 'on': False}
+                                  'color': color, 'on': True, 'dash': '4 3'}
         else:
             inception, curve = _book_curve(book_id)
         series = {}

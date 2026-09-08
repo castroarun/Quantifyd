@@ -59,7 +59,7 @@ type State = {
 type LiveRow = { symbol: string; qty: number; entry_price: number; ltp: number;
   prev_close: number | null; day_move_pct: number | null; value: number;
   pnl: number; pnl_pct: number | null };
-type LiveFeed = { updated: string; positions: LiveRow[]; value: number; cash: number;
+type LiveFeed = { updated: string; slots?: number; positions: LiveRow[]; value: number; cash: number;
   swept: number; nav: number; capital: number; pnl: number; pnl_pct: number; n: number };
 
 const pnlTint = (pctv: number | null | undefined): React.CSSProperties => {
@@ -176,24 +176,30 @@ export default function MomentumPaper() {
           </span>
         </div>
 
-        <div className={styles.bookSummary}>
-          <div className={styles.sumMain}>
-            <div className={styles.sumLabel}>Book value</div>
-            <div className={styles.sumHero}>
-              <Tick v={live.nav} render={(n) => inr(n ?? 0)} />
-            </div>
-            <div className={styles.sumSub}>
-              on <b>{inr(live.capital)}</b> of capital · stocks {lakh(live.value)} ·
-              liquid fund {lakh(live.swept)} · cash {lakh(live.cash)}
-            </div>
-            <div className={styles.sumStatus}>
-              <span><b>{live.n}</b> holdings</span>
-              <span>day P&L{' '}
-                <b className={live.pnl >= 0 ? styles.pos : styles.neg}>
-                  {live.pnl >= 0 ? '+' : ''}{inr(live.pnl)}</b></span>
-            </div>
-          </div>
-        </div>
+        <BookPanel
+          label="Book value"
+          hero={<Tick v={live.nav} render={(n) => inr(n ?? 0)} />}
+          gain={live.nav - live.capital}
+          returnPct={live.capital ? ((live.nav - live.capital) / live.capital) * 100 : null}
+          capital={live.capital}
+          capitalWord="of capital"
+          updated={live.updated}
+          segs={[
+            { k: 'Stocks', v: live.value, c: '#2563EB' },
+            { k: 'Liquid fund', v: live.swept, c: '#0891B2' },
+            { k: 'Un-swept cash', v: live.cash, c: 'var(--ink-faint,#B4B2A9)' },
+          ].filter((x) => x.v > 0)}
+          pnl={[{ k: 'Unrealised', v: live.pnl,
+                  hint: 'open positions since entry — not today\u2019s move' }]}
+          bookId="momentum-3l"
+          curveUrl="/api/momentum-paper/benchmarks"
+          curveLabel="Momentum-30"
+          storageKey="momentum-3l"
+          status={<>
+            <span><b>{live.n}{live.slots ? `/${live.slots}` : ''}</b> holdings</span>
+            <span className={styles.muted}>gate, rebalance and realised still loading…</span>
+          </>}
+        />
 
         <div className={styles.card}>
           <div className={styles.cardTitle}>Holdings — live marks</div>

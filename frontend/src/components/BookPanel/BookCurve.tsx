@@ -26,6 +26,8 @@ type Series = {
   color?: string;
   /** Whether it starts visible. Nifty 50 does; the rest are opt-in. */
   on?: boolean;
+  /** SVG dash pattern. Solid is what the portfolio IS; dashed is a component of it. */
+  dash?: string;
 };
 type Payload = { inception?: string; book: BookPt[]; series: Record<string, Series> };
 
@@ -58,7 +60,7 @@ function dmy(iso: string, short = false) {
 }
 const pctTxt = (v: number) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2) + '%';
 
-type Line = { key: string; label: string; color: string };
+type Line = { key: string; label: string; color: string; dash?: string };
 
 /** Known indices in their fixed order, then anything else the feed sent. */
 function comparisons(series: Record<string, Series> | undefined): Line[] {
@@ -66,11 +68,12 @@ function comparisons(series: Record<string, Series> | undefined): Line[] {
   const out: Line[] = [];
   INDEX_ORDER.forEach((k) => {
     if (s[k]) out.push({ key: k, label: s[k].label || INDEX_META[k].label,
-                         color: s[k].color || INDEX_META[k].color });
+                         color: s[k].color || INDEX_META[k].color, dash: s[k].dash });
   });
   Object.keys(s).forEach((k) => {
     if (INDEX_META[k]) return;
-    out.push({ key: k, label: s[k].label || k, color: s[k].color || FALLBACK });
+    out.push({ key: k, label: s[k].label || k, color: s[k].color || FALLBACK,
+               dash: s[k].dash });
   });
   return out;
 }
@@ -238,6 +241,7 @@ export default function BookCurve({ url, label }: { url: string; label: string }
             <g key={s.key}>
               <polyline points={pts} fill="none" stroke={s.color}
                         strokeWidth={s.key === 'BOOK' ? 2.1 : 1.4}
+                        strokeDasharray={s.dash}
                         strokeLinejoin="round" strokeLinecap="round" />
               {!isNaN(last) && <>
                 <circle cx={X(n - 1)} cy={Y(last)} r={2.6} fill={s.color} />
@@ -264,7 +268,9 @@ export default function BookCurve({ url, label }: { url: string; label: string }
                   aria-pressed={!!on[s.key]}
                   className={`${styles.curveKey} ${on[s.key] ? styles.curveKeyOn : ''}`}
                   onClick={() => setOn((o) => ({ ...o, [s.key]: !o[s.key] }))}>
-            <i style={{ background: s.color }} />{s.label}
+            <i style={s.dash
+              ? { background: `repeating-linear-gradient(90deg, ${s.color} 0 4px, transparent 4px 7px)` }
+              : { background: s.color }} />{s.label}
             <b>{out[s.key] ? pctTxt(out[s.key][n - 1]) : '—'}</b>
           </button>
         ))}
