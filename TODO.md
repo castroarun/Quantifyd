@@ -48,6 +48,31 @@ record line appears on Open Alpha and IPO Base (both will honestly read
 **Rollback:** backups of every file touched are in `/tmp/mpf/*.bak`;
 `git revert 59111294` undoes the whole change.
 
+### ⏳ Also waiting on that same 15:40 restart (commit `da46984f`)
+
+Capital Desk: slots not counts, "0 armed" in plain words, a **What happens next** schedule,
+and the combined portfolio curve behind the same chevron.
+
+```bash
+curl -s http://127.0.0.1:5000/api/books/portfolio/benchmarks | python3 -c "import json,sys; d=json.load(sys.stdin); print('combined n=%d last=%+.2f%%' % (len(d['book']), d['book'][-1]['r'])); print('series:', sorted(d['series']))"
+# expect: combined n=21 last=-2.70%  ·  series includes NIFTY50 + momentum-3l/oa-real
+```
+
+Then open `/app/capital`: the status line should read `5/8 True North holdings ·
+16/16 Open Alpha holdings · 1/8 IPO on paper · no buy-stops for tomorrow`, and the chevron
+at its right should open the combined curve with the three books toggleable.
+
+**Maintenance coupling to know about:** the `What happens next` list in `CapitalDesk.tsx`
+(`const DAY: Step[]`) MIRRORS the VPS crontab and `momentum_paper.register()`. It is
+display-only and schedules nothing, but if a job moves, move it there too or the page will
+calmly state a falsehood. A comment above the list says so.
+
+**Incident, 08-Sep 14:20:** adding the slot count to `gen_momentum_live.py` produced a
+repeated `n=` keyword — a SyntaxError in a script that runs every minute of market hours.
+True North's live feed went stale for one mark before restore. Display data only, no
+trading impact. The patch script now compiles the result before writing it; that guard
+belongs in every patch that touches a cron-driven script.
+
 ### Notes worth keeping
 
 - OA and IPO keep trades in **JSON state**, not SQLite, which is why they were never in
