@@ -301,6 +301,118 @@ def _chain(points):
     return out
 
 
+# The Momentum Portfolio, in the order the tabs sit in.
+PORTFOLIO_BOOKS = [
+    ('momentum-3l', 'True North', '#0F6E56'),
+    ('oa-real',     'Open Alpha', '#7C3AED'),
+    ('ipo-paper',   'IPO Base',   '#C2410C'),
+]
+
+
+def _raw_points(book_id: str):
+    """-> [{d, nav, capital}] for one book, capital filled in where the book omits it.
+
+    True North keeps its curve in SQLite; the other two keep it in JSON state. IPO Base
+    records nav without capital, so its current capital stands for every day it has -
+    which is right while capital has only been set once, and is what makes its first day
+    read as funding rather than as a 100% gain.
+    """
+    if book_id == 'momentum-3l':
+        db = BD / 'momentum_paper.db'
+        if not db.exists():
+            return []
+        try:
+            conn = sqlite3.connect(f'file:{db}?mode=ro', uri=True)
+            try:
+                rows = conn.execute(
+                    'SELECT d, nav, COALESCE(capital,0) FROM mp_nav '
+                    'WHERE nav > 0 ORDER BY d').fetchall()
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.debug('[curve] mp_nav unreadable: %s', e)
+            return []
+        return _fill_capital([{'d': str(d)[:10], 'nav': float(n),
+                               'capital': (float(c) or None)} for d, n, c in rows])
+
+    fname = JSON_BOOKS.get(book_id)
+    if not fname or not (BD / fname).exists():
+        return []
+    try:
+        st = json.loads((BD / fname).read_text(encoding='utf-8'))
+    except Exception as e:
+        logger.debug('[curve] %s unreadable: %s', fname, e)
+        return []
+    out = []
+    for pt in (st.get('navcurve') or st.get('nav') or []):
+        d = pt.get('d')
+        if not isinstance(d, str) or not _ISO_DAY.match(d[:10]):
+            continue
+        cap = pt.get('capital')
+        try:
+            out.append({'d': d[:10], 'nav': float(pt.get('nav') or 0),
+                        'capital': float(cap) if cap not in (None, '') else None})
+        except (TypeError, ValueError):
+            continue
+    return _fill_capital(out)
+
+
+def _fill_capital(points):
+    """Fill the gaps in a book's capital column WITHOUT inventing any.
+
+    Forward from the last known value (a day with no flow), backward from the first known
+    value for the days before it, and the day's own NAV only if the book never records
+    capital at all - which makes it enter at par and contribute zero return on the day it
+    is funded.
+    """
+    known = [p['capital'] for p in points if p['capital'] is not None]
+    first_known = known[0] if known else None
+    last = None
+    for p in points:
+        if p['capital'] is not None:
+            last = p['capital']
+        elif last is not None:
+            p['capital'] = last                     # no flow that day
+        elif first_known is not None:
+            p['capital'] = first_known              # before the first recorded figure
+        else:
+            p['capital'] = p['nav']                 # never recorded: enter at par ...
+            last = p['capital']                     # ... once, then carry it forward
+    return points
+
+
+def _portfolio_points():
+    """The three books summed per day, each carried forward over days it did not report.
+
+    A book contributes nothing before its first point - nav 0 AND capital 0 - so the day
+    it is funded appears as a flow, not as performance.
+    """
+    per = {bid: {p['d']: p for p in _raw_points(bid)} for bid, _l, _c in PORTFOLIO_BOOKS}
+    days = sorted({d for m in per.values() for d in m})
+    if not days:
+        return []
+    last = {bid: None for bid in per}
+    out = []
+    for d in days:
+        nav = cap = 0.0
+        for bid, m in per.items():
+            if d in m:
+                last[bid] = m[d]
+            cur = last[bid]
+            if cur is None:
+                continue                       # not started: contributes nothing
+            nav += cur['nav']
+            cap += cur['capital'] or 0.0
+        if nav > 0:
+            out.append({'d': d, 'nav': nav, 'capital': cap or None})
+    return out
+
+
+def _as_index(curve):
+    """A book's time-weighted curve as a base-100 series the chart can rebase by division."""
+    return [{'d': pt['d'], 'c': round(100.0 * (1 + pt['r'] / 100.0), 6)} for pt in curve]
+
+
 def _book_curve(book_id: str):
     """-> (inception, [{d, r, nav}]) for any book the portfolio can chart."""
     if book_id == 'momentum-3l':
@@ -331,7 +443,19 @@ def api_book_benchmarks(book_id):
     hour against daily bars that only change after the close.
     """
     try:
-        inception, curve = _book_curve(book_id)
+        extra = {}
+        if book_id == 'portfolio':
+            pts = _portfolio_points()
+            curve = _chain(pts)
+            inception = pts[0]['d'] if pts else None
+            # each book beside the combined line, so one chart shows who is carrying it
+            for bid, label, color in PORTFOLIO_BOOKS:
+                _inc, bc = _book_curve(bid)
+                if len(bc) >= 2:
+                    extra[bid] = {'label': label, 'points': _as_index(bc),
+                                  'color': color, 'on': False}
+        else:
+            inception, curve = _book_curve(book_id)
         series = {}
         if curve:
             try:
@@ -339,6 +463,7 @@ def api_book_benchmarks(book_id):
                 series = mp.benchmark_series(curve[0]['d']) or {}
             except Exception as e:                      # a missing index must not 500 the page
                 logger.warning('[curve] benchmark series failed for %s: %s', book_id, e)
+        series.update(extra)
         return jsonify({'inception': inception, 'book': curve, 'series': series})
     except Exception as e:
         logger.error('[curve] failed for %s: %s', book_id, e, exc_info=True)

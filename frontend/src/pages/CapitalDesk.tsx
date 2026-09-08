@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '../api/client';
 import styles from './MomentumPaper.module.css';
 import LiveTick from '../components/LiveTick/LiveTick';
+import BookCurve from '../components/BookPanel/BookCurve';
 
 /* CAPITAL DESK (/app/capital) — the one page that owns every rupee in and out.
    Renamed from "Sleeves 50-50" on 05-Sep-2026: the book is three systems on a
@@ -28,8 +29,6 @@ type BsFeed = {
 /* The TIME-WEIGHTED curve. True North was funded from Rs2.98L to Rs9.07L inside this
    window, so raw NAV is not a return series -- book_curve() backs each day's flow out
    before chaining, which is the only reason the two sleeves can share an axis. */
-type TnBook = { d: string; nav: number; r: number };
-type TnBench = { book: TnBook[]; inception: string; series: Record<string, unknown> };
 
 const pct = (n: number | null | undefined) =>
   n == null ? '—' : (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
@@ -642,101 +641,132 @@ function DividendsCard() {
    return series. */
 
 type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
-  swept: number; pnl: number; n: number };
+  swept: number; pnl: number; n: number; slots?: number };
 type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
   pnl: number; realized: number; gain: number; return_pct: number;
-  navcurve: { d: string; nav: number }[]; positions: unknown[] };
+  navcurve: { d: string; nav: number }[]; positions: unknown[]; slots?: number };
 type LiveIPO = { updated: string; mode: string; nav: number; capital: number; value: number;
   cash: number; pnl: number; realized: number; gain: number; return_pct: number;
   slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
   pending: unknown[] };
 
-/* Growth of 100 for each book and the portfolio, on the days they share. Books started
-   on different dates, so the common window is the shortest of them — stated on the card
-   rather than quietly padded. */
-function CombinedCurve({ tn, oa, ipo }:
-  { tn: TnBench | null; oa: LiveOA | null; ipo: LiveIPO | null }) {
-  const series: { name: string; color: string; pts: { d: string; v: number }[] }[] = [];
-  if (tn?.book?.length)
-    series.push({ name: 'True North', color: '#2563EB',
-                  pts: tn.book.map((r) => ({ d: r.d, v: 1 + r.r / 100 })) });
-  if (oa?.navcurve?.length)
-    series.push({ name: 'Open Alpha', color: '#0891B2',
-                  pts: oa.navcurve.map((r) => ({ d: r.d, v: r.nav })) });
-  if (ipo?.navcurve?.length)
-    series.push({ name: 'IPO Base', color: '#D946A0',
-                  pts: ipo.navcurve.map((r) => ({ d: r.d, v: r.nav })) });
-  const bench = (tn?.book ?? []) as unknown as { d: string; bench?: number }[];
-  const nb = (tn?.series as any)?.NIFTYBEES as { d: string; v: number }[] | undefined;
+/* WHAT HAPPENS NEXT — the desk's answer to "should I be doing something?"
+ *
+ * The page showed the portfolio's state but never its next move, so the only way to know
+ * whether a deposit would be deployed this morning or next Tuesday was to read a crontab.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * THIS LIST MIRRORS THE VPS CRONTAB AND momentum_paper.register(). It is display only —
+ * nothing here schedules anything — so if a job moves, MOVE IT HERE TOO or the page will
+ * calmly state a falsehood. Sources, as of 08-Sep-2026:
+ *   crontab -l                     : the 09:20 executor, the IPO reconciles, 15:18, 15:50,
+ *                                    16:20, 17:30, 17:45, 18:45
+ *   services/momentum_paper.py     : 09:20 reconcile, 14:45 rebalance, 15:05 exits
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * `acts` marks the steps that can move money or raise an order alert, as against the ones
+ * that only refresh data. That is the distinction worth seeing at a glance.
+ */
+type Step = { at: string; what: string; who: string; acts?: boolean };
 
-  const dateSets = series.map((s) => new Set(s.pts.map((p) => p.d)));
-  const common = series.length
-    ? [...dateSets[0]].filter((d) => dateSets.every((s) => s.has(d))).sort()
-    : [];
+const DAY: Step[] = [
+  { at: '09:20', who: 'all three', acts: true,
+    what: 'Deploy any cash you deposited — the executor places the buys and alerts anything it could not fill' },
+  { at: '09:35', who: 'IPO Base', what: 'Confirm overnight buy-stop fills against the broker (again at 11:35, 13:35, 15:35)' },
+  { at: '14:45', who: 'True North', acts: true,
+    what: 'Monthly re-rank — only on the rebalance day, and it runs early to leave runway' },
+  { at: '15:05', who: 'True North', acts: true,
+    what: 'Exit check — Donchian 15-day-low stop and the 100-DMA gate' },
+  { at: '15:18', who: 'Open Alpha', acts: true,
+    what: 'Exit check — the −8% stop and the 15-SMA trail' },
+  { at: '15:50', who: 'Open Alpha', what: 'Reconcile the day’s own fills into the book' },
+  { at: '16:20', who: 'True North', what: 'Momentum scan for the next rebalance' },
+  { at: '17:30', who: 'IPO Base', what: 'Onboard newly listed NSE names into the universe' },
+  { at: '17:45', who: 'all three', what: 'Daily price refresh for every name in the universe' },
+  { at: '18:45', who: 'IPO Base', acts: true,
+    what: 'The book runs: exits, entries, and tomorrow’s buy-stops are armed' },
+];
 
-  if (common.length < 3) {
-    return (
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Combined curve</div>
-        <p className={styles.note}>
-          The books start on different dates and share only {common.length} common
-          {common.length === 1 ? ' day' : ' days'} so far — Open Alpha since 04-Sep and
-          IPO Base since 06-Sep. The curve draws once there are a few days they all cover.
-          Each book&apos;s own curve is on its tab in the meantime.
-        </p>
-      </div>
-    );
-  }
+function istNow() {
+  const d = new Date();
+  return new Date(d.getTime() + (d.getTimezoneOffset() + 330) * 60000);
+}
 
-  const reb = (s: typeof series[0]) => {
-    const m = new Map(s.pts.map((p) => [p.d, p.v]));
-    const base = m.get(common[0])!;
-    return common.map((d) => (m.get(d)! / base) * 100);
-  };
-  const lines = series.map((s) => ({ name: s.name, color: s.color, v: reb(s) }));
-  const port = common.map((_, i) => lines.reduce((a, l) => a + l.v[i], 0) / lines.length);
-  lines.unshift({ name: 'Portfolio (blend)', color: '#111', v: port });
-  if (nb?.length) {
-    const m = new Map(nb.map((r) => [r.d, r.v]));
-    if (common.every((d) => m.has(d))) {
-      const b0 = m.get(common[0])!;
-      lines.push({ name: 'NIFTY', color: '#B4B2A9', v: common.map((d) => (m.get(d)! / b0) * 100) });
-    }
-  }
-  const st = stats(port, common);
+function NextUp() {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const now = istNow();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const weekend = now.getDay() === 0 || now.getDay() === 6;
+  const mm = (s: string) => parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(3), 10);
+
+  /* On a weekend, or once the day's last job has run, the whole list is "tomorrow" —
+     saying "next: 09:20" on a Saturday evening would be true only in a useless sense. */
+  const nextIdx = weekend ? -1 : DAY.findIndex((s) => mm(s.at) > mins);
+  const when = weekend
+    ? 'Nothing runs at the weekend — the list below resumes Monday'
+    : nextIdx === -1
+      ? 'Done for today — the list below resumes tomorrow'
+      : `Next in ${(() => {
+          const d = mm(DAY[nextIdx].at) - mins;
+          return d < 60 ? `${d} min` : `${Math.floor(d / 60)}h ${d % 60}m`;
+        })()}`;
+
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle}>
-        Combined curve — growth of 100 over the {common.length} days all books share
+        What happens next
+        <span className={styles.cardCount}>{when} · all times IST, weekdays</span>
       </div>
-      <MultiCurve dates={common} lines={lines.map((l) => ({
-        name: l.name, v: l.v, color: l.color,
-        dash: l.name === 'NIFTY' ? '4 3' : undefined,
-      }))} />
-      <div className={styles.legend} style={{ marginTop: 8 }}>
-        {lines.map((l) => (
-          <span key={l.name} className={styles.legendItem}>
-            <i className={styles.swatch} style={{ background: l.color }} />
-            {l.name} <b>{pct(l.v[l.v.length - 1] - 100)}</b>
-          </span>
-        ))}
-      </div>
+      <table className={styles.table}>
+        <tbody>
+          {DAY.map((s, i) => {
+            const done = !weekend && mm(s.at) <= mins;
+            const isNext = i === nextIdx;
+            return (
+              <tr key={s.at + s.who}
+                  style={{ opacity: done ? 0.45 : 1,
+                           fontWeight: isNext ? 600 : undefined }}>
+                <td style={{ width: 62, whiteSpace: 'nowrap' }}>
+                  <b>{s.at}</b>
+                </td>
+                <td style={{ width: 96, whiteSpace: 'nowrap' }} className={styles.muted}>{s.who}</td>
+                <td>
+                  {s.what}
+                  {s.acts && <span className={styles.actsTag} title="This step can place an order or raise an alert">acts</span>}
+                </td>
+                <td style={{ width: 74, textAlign: 'right' }} className={styles.muted}>
+                  {isNext ? 'next' : done ? 'done' : ''}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
       <p className={styles.note}>
-        Equal-weighted blend of the books that have started, rebased to 100 on the first
-        shared day. True North is drawn from its TIME-WEIGHTED curve — it was funded from
-        Rs 2.98L to Rs 9.38L inside this window, so raw NAV is not a return series.
-        Portfolio over this window: {pct(st.total)} · worst drawdown {pct(st.dd)}.
+        Deposits are the only thing that waits on you, and only until the next 09:20 — the
+        executor deploys them, places the orders and alerts anything it could not fill by
+        email and WhatsApp. Steps marked <b>acts</b> can move money or raise an alert; the
+        rest only refresh data.
       </p>
     </div>
   );
 }
 
+/* Growth of 100 for each book and the portfolio, on the days they share. Books started
+   on different dates, so the common window is the shortest of them — stated on the card
+   rather than quietly padded. */
+
 export default function CapitalDesk() {
   const [tnLive, setTnLive] = useState<LiveTN | null>(null);
   const [oa, setOa] = useState<LiveOA | null>(null);
   const [ipo, setIpo] = useState<LiveIPO | null>(null);
-  const [tn, setTn] = useState<TnBench | null>(null);
   const [showEvidence, setShowEvidence] = useState(false);
+  const [showCurve, setShowCurve] = useState(false);
 
   useEffect(() => {
     const j = (u: string) => fetch(u + '?t=' + Date.now()).then((r) => (r.ok ? r.json() : null));
@@ -746,11 +776,12 @@ export default function CapitalDesk() {
       j('/app/ipo_paper.json').then(setIpo).catch(() => {});
     };
     load();
-    apiGet<TnBench>('/api/momentum-paper/benchmarks').then(setTn).catch(() => setTn(null));
     const id = setInterval(load, 10000);
     return () => clearInterval(id);
   }, []);
 
+  const tnSlots = tnLive?.slots ?? 0;
+  const armed = ipo?.pending?.length ?? 0;
   const navTN = tnLive?.nav ?? 0;
   const navOA = oa?.nav ?? 0;
   const navIPO = ipo?.nav ?? 0;
@@ -795,6 +826,7 @@ export default function CapitalDesk() {
         </span>
       </div>
 
+      <div className={`${styles.sumWrap} ${showCurve ? styles.sumWrapOpen : ''}`}>
       <div className={styles.bookSummary}>
         <div className={styles.sumMain}>
           <div className={styles.sumLabel}>Portfolio value</div>
@@ -824,11 +856,21 @@ export default function CapitalDesk() {
             ))}
           </div>
           <div className={styles.sumStatus}>
-            <span><b>{tnLive?.n ?? 0}</b> True North holdings</span>
-            <span><b>{oa?.positions?.length ?? 0}</b> Open Alpha holdings</span>
-            <span>IPO <b>{ipoLive ? 'live' : 'on paper'}</b>
-              {ipo ? ` · ${ipo.slots_used}/${ipo.slots} slots · ${ipo.pending?.length ?? 0} armed` : ''}
+            <span><b>{tnLive?.n ?? 0}{tnSlots ? `/${tnSlots}` : ''}</b> True North holdings</span>
+            <span><b>{oa?.positions?.length ?? 0}{oa?.slots ? `/${oa.slots}` : ''}</b> Open Alpha holdings</span>
+            <span><b>{ipo ? `${ipo.slots_used}/${ipo.slots}` : '—'}</b>{' '}
+              IPO {ipoLive ? 'live' : 'on paper'}</span>
+            <span title="Buy-stop orders queued for the next session: names that closed above their pivot today, which IPO Base will buy tomorrow if they trade there.">
+              {armed === 0
+                ? <span className={styles.muted}>no buy-stops for tomorrow</span>
+                : <><b>{armed}</b> buy-stop{armed === 1 ? '' : 's'} for tomorrow</>}
             </span>
+            <button type="button" className={styles.sumTog} onClick={() => setShowCurve((v) => !v)}
+                    aria-expanded={showCurve} aria-controls="desk-curve"
+                    title={showCurve ? 'Hide the curve'
+                                     : 'The portfolio against Nifty 50, with each book beside it'}>
+              {'\u25be'}
+            </button>
           </div>
         </div>
         <div className={styles.sumPnl}>
@@ -859,9 +901,16 @@ export default function CapitalDesk() {
           </div>
         </div>
       </div>
+      {showCurve && (
+        <div className={styles.sumReveal} id="desk-curve">
+          <BookCurve url="/api/books/portfolio/benchmarks" label="Momentum Portfolio" />
+        </div>
+      )}
+      </div>
+
+      <NextUp />
 
       <AllocationDesk />
-      <CombinedCurve tn={tn} oa={oa} ipo={ipo} />
       <FundsPanel />
       <DividendsCard />
 

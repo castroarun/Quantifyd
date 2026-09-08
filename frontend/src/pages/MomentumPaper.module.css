@@ -301,3 +301,12 @@ button.curveKeyOn { opacity: 1; }
 }
 .cardTitleTog[aria-expanded="false"] .caret { transform: rotate(-90deg); }
 .cardCount { font-size: 11.5px; font-weight: 400; color: var(--ink-muted, #888780); }
+
+/* Marks a scheduled step that can place an order or raise an alert, as against one that
+   only refreshes data. */
+.actsTag {
+  display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 999px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--accent-warn, #B45309);
+  background: var(--status-warning-soft, rgba(180, 83, 9, 0.10));
+}

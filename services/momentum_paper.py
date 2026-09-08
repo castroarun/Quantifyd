@@ -1716,6 +1716,7 @@ def get_state():
         total_return_pct=round((nav / cap - 1) * 100, 2) if cap else 0,
         unrealized=round(equity - sum(p["invested"] for p in pos.values())),
         realized_net=round(realized), n_holdings=n_stocks,
+        slots_total=CFG["n_hold"],
         # in LIVE the "interest" IS the ETF's gain; the modelled accrual is paper-only and always 0
         interest_earned=(round(_sweep_value() - float(_get("sweep_cost", 0.0) or 0.0))
                          if (_is_live() and _sweep_units()) else round(_get("interest_earned", 0.0))),

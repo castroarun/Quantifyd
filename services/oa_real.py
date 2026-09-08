@@ -46,6 +46,10 @@ LOCK = ROOT / 'backtest_data' / 'oa_real_state.lock'
 UI = ROOT / 'static' / 'app' / 'oa_real.json'
 FEED = Path('/tmp/nas_alert_feed.log')
 STOP_PCT = 0.08
+# 16 equal slots at 6.25% of NAV each - the book's shape, stated once so the pages do
+# not have to know it.
+SLOTS = 16
+
 OA_TAG = 'OA-TOPUP'          # only orders carrying this tag belong to this book
 SEEN_ORDERS = ROOT / 'backtest_data' / 'oa_applied_orders.json'
 TRAIL_N = 15
@@ -339,6 +343,7 @@ def mark():
               gain=round(gain),
               pnl_pct=round(100 * tot_pnl / cost, 2) if cost else 0,
               return_pct=round(100 * gain / capital, 2) if capital else 0,
+              slots=SLOTS, slots_used=len(rows),
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),
@@ -404,6 +409,7 @@ def ui_only():
               pnl=round(tot_pnl), realized=round(realized), gain=round(gain),
               pnl_pct=round(100 * tot_pnl / cost, 2) if cost else 0,
               return_pct=round(100 * gain / capital, 2) if capital else 0,
+              slots=SLOTS, slots_used=len(rows),
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),

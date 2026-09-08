@@ -19,20 +19,26 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../../pages/MomentumPaper.module.css';
 
 type BookPt = { d: string; r: number; nav: number };
-type Payload = {
-  inception?: string;
-  book: BookPt[];
-  series: Record<string, { label: string; points: { d: string; c: number }[] }>;
+type Series = {
+  label: string;
+  points: { d: string; c: number }[];
+  /** Set by the feed for anything that is not one of the known indices. */
+  color?: string;
+  /** Whether it starts visible. Nifty 50 does; the rest are opt-in. */
+  on?: boolean;
 };
+type Payload = { inception?: string; book: BookPt[]; series: Record<string, Series> };
 
 /* Colour belongs to the ENTITY, not to its position in the list: switching Midcap off
    must never repaint Nifty 50. Order fixed, and validated for CVD separation. */
-const INDICES: { key: string; label: string; color: string }[] = [
-  { key: 'NIFTY50', label: 'Nifty 50', color: '#B45309' },
-  { key: 'NIFTY500', label: 'Nifty 500', color: '#7C3AED' },
-  { key: 'NIFTYMIDCAP150', label: 'Midcap 150', color: '#0891B2' },
-  { key: 'NIFTYSMLCAP250', label: 'Smallcap 250', color: '#9D174D' },
-];
+const INDEX_ORDER = ['NIFTY50', 'NIFTY500', 'NIFTYMIDCAP150', 'NIFTYSMLCAP250'];
+const INDEX_META: Record<string, { label: string; color: string }> = {
+  NIFTY50: { label: 'Nifty 50', color: '#B45309' },
+  NIFTY500: { label: 'Nifty 500', color: '#7C3AED' },
+  NIFTYMIDCAP150: { label: 'Midcap 150', color: '#0891B2' },
+  NIFTYSMLCAP250: { label: 'Smallcap 250', color: '#9D174D' },
+};
+const FALLBACK = '#5F5E5A';
 const BOOK_COLOR = '#2563EB';
 
 const RANGES = [
@@ -52,13 +58,28 @@ function dmy(iso: string, short = false) {
 }
 const pctTxt = (v: number) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2) + '%';
 
+type Line = { key: string; label: string; color: string };
+
+/** Known indices in their fixed order, then anything else the feed sent. */
+function comparisons(series: Record<string, Series> | undefined): Line[] {
+  const s = series || {};
+  const out: Line[] = [];
+  INDEX_ORDER.forEach((k) => {
+    if (s[k]) out.push({ key: k, label: s[k].label || INDEX_META[k].label,
+                         color: s[k].color || INDEX_META[k].color });
+  });
+  Object.keys(s).forEach((k) => {
+    if (INDEX_META[k]) return;
+    out.push({ key: k, label: s[k].label || k, color: s[k].color || FALLBACK });
+  });
+  return out;
+}
+
 export default function BookCurve({ url, label }: { url: string; label: string }) {
   const [data, setData] = useState<Payload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [preset, setPreset] = useState('All');
-  const [on, setOn] = useState<Record<string, boolean>>({
-    NIFTY50: true, NIFTY500: false, NIFTYMIDCAP150: false, NIFTYSMLCAP250: false,
-  });
+  const [on, setOn] = useState<Record<string, boolean>>({ NIFTY50: true });
   const [w, setW] = useState(720);
   const box = useRef<HTMLDivElement | null>(null);
 
@@ -67,7 +88,19 @@ export default function BookCurve({ url, label }: { url: string; label: string }
     fetch(url, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json()
         : Promise.reject(new Error(r.status === 404 ? 'NOT_WIRED' : 'HTTP ' + r.status))))
-      .then((d) => { if (!dead) setData(d); })
+      .then((d: Payload) => {
+        if (dead) return;
+        setData(d);
+        /* The feed decides what starts visible; Nifty 50 does unless told otherwise. */
+        setOn((prev) => {
+          const next = { ...prev };
+          Object.entries(d.series || {}).forEach(([k, s]) => {
+            if (s.on != null) next[k] = s.on;
+            else if (next[k] == null) next[k] = k === 'NIFTY50';
+          });
+          return next;
+        });
+      })
       .catch((e) => { if (!dead) setErr(String(e?.message || e)); });
     return () => { dead = true; };
   }, [url]);
@@ -98,7 +131,7 @@ export default function BookCurve({ url, label }: { url: string; label: string }
       BOOK: win.map((p) => ((1 + p.r / 100) / (1 + b0 / 100) - 1) * 100),  // re-chain
     };
     const dates = win.map((p) => p.d);
-    INDICES.forEach((s) => {
+    comparisons(data?.series).forEach((s) => {
       const pts = data?.series?.[s.key]?.points;
       if (!pts?.length) return;
       const by: Record<string, number> = {};
@@ -145,8 +178,9 @@ export default function BookCurve({ url, label }: { url: string; label: string }
 
   const { dates, out } = view;
   const n = dates.length;
-  const live = [{ key: 'BOOK', label, color: BOOK_COLOR }]
-    .concat(INDICES.filter((s) => on[s.key] && out[s.key]));
+  const cmp = comparisons(data.series);
+  const live: Line[] = [{ key: 'BOOK', label, color: BOOK_COLOR }]
+    .concat(cmp.filter((s) => on[s.key] && out[s.key]));
 
   const h = 210, padL = 46, padR = 62, padT = 12, padB = 22;
   const W = w - padL - padR, H = h - padT - padB;
@@ -225,7 +259,7 @@ export default function BookCurve({ url, label }: { url: string; label: string }
           <i style={{ background: BOOK_COLOR }} />{label}
           <b>{pctTxt(bookLast)}</b>
         </span>
-        {INDICES.map((s) => (
+        {cmp.map((s) => (
           <button key={s.key} type="button" disabled={!out[s.key]}
                   aria-pressed={!!on[s.key]}
                   className={`${styles.curveKey} ${on[s.key] ? styles.curveKeyOn : ''}`}
