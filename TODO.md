@@ -25,6 +25,31 @@ drifted apart on date format, timestamp placement and whether the return was sho
   and WhatsApp alert
 - dates dd-Mon-yyyy everywhere (IPO Base had been rendering `8 Sep`)
 
+### ✅ RESTARTS DONE — everything above is live (08-Sep-2026)
+
+- 15:40:11 — deferred restart fired on its own gate (0 open strangle legs).
+- 15:55:48 — a second restart, because the dashed-book-lines change landed *after* the
+  first one. Clock checked (15:55 Tue, market closed); open risk checked and clear: the
+  only options position was a **defined-risk IDEA call spread** (short 18CE / long 20CE,
+  equal quantity, so the long leg caps the short), everything else CNC equity, and **zero
+  resting orders**.
+
+Verified live: 18 books in `/api/books/liveness` (oa-real 16 open, ipo-paper 1 open);
+`/api/books/{momentum-3l,oa-real,ipo-paper,portfolio}/benchmarks` all 200; portfolio curve
+n=22 at −2.25% with True North (#0F6E56) and Open Alpha (#A21CAF) dashed and on by
+default; `slots_total = 8` in True North's state.
+
+IPO Base is absent from the portfolio chart's series **by design** — it has fewer than two
+curve points, and two points are a line, not a record. It joins itself once it has history.
+
+### ⚠️ `/api/momentum-paper/state` measured 15.9s cold (9.7s warm)
+
+Worse than the 0.6–3.5s recorded earlier. It does a live Kite quote **plus** a large pandas
+pivot on the request path. The first-paint path now renders the complete panel from the
+baked feed so the page no longer *looks* broken while waiting, but this endpoint is still
+the slowest thing in the app and every True North page load pays it. Worth a session of
+its own: cache the pivot, or bake the whole thing the way Open Alpha does.
+
 ### ⏳ PENDING — the 15:40 restart (armed 13:50, PID 2193127)
 
 `services/book_liveness.py` is edited on disk but the running gunicorn has not loaded it.
