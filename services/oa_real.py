@@ -44,7 +44,8 @@ ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / 'backtest_data' / 'oa_real_state.json'
 LOCK = ROOT / 'backtest_data' / 'oa_real_state.lock'
 UI = ROOT / 'static' / 'app' / 'oa_real.json'
-FEED = Path('/tmp/nas_alert_feed.log')
+# A real feed the pages can read. The old path was another job's cron log.
+FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 STOP_PCT = 0.08
 # 16 equal slots at 6.25% of NAV each - the book's shape, stated once so the pages do
 # not have to know it.
@@ -133,9 +134,28 @@ def _kite():
 
 
 def _alert(title, body, urgency='critical'):
-    with open(FEED, 'a') as f:
-        f.write(json.dumps(dict(ts=str(datetime.now()), book='OA-REAL', urgency=urgency,
-                                title=title, body=body)) + '\n')
+    """Record the alert, and for a critical one actually send it.
+
+    The feed is a real file the pages read. `/tmp/nas_alert_feed.log`, which this used to
+    write to, is the cron output log of a different job and is read by nobody -- an exit
+    alert written there reached no one at all (found 08-Sep-2026, SPORTKING).
+    """
+    line = dict(ts=str(datetime.now()), book='OA-REAL', urgency=urgency,
+                title=title, body=body)
+    try:
+        with open(FEED, 'a') as f:
+            f.write(json.dumps(line) + '\n')
+    except Exception as e:
+        print('alert feed write failed:', e)
+    if urgency != 'critical':
+        return
+    try:
+        from services.dividend_notify import send_email, send_whatsapp
+        print('  email:', send_email(title, '<pre>%s</pre>' % body))
+        print('  whatsapp:', send_whatsapp(title + chr(10) + body))
+    except Exception as e:
+        # never let a notification failure break the run that produced the signal
+        print('alert delivery failed:', e)
 
 
 def _sma15(kite, syms, live):

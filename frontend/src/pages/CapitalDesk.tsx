@@ -699,7 +699,9 @@ function RoomBlock({ rows }: { rows: Room[] }) {
   const due = rows.filter((r) => r.pct < 0);
   const head = rows.slice(0, Math.max(SHOW, due.length));
   const rest = rows.slice(head.length);
-  const worst = Math.max(12, ...head.map((r) => Math.abs(r.pct)));
+  /* The gauge is ROOM LEFT out of 10%, not distance: a longer bar must mean safer.
+     Drawing |distance| made a breached rule the longest bar on the chart. */
+  const FULL = 10;
   const tone = (v: number) =>
     v < 0 ? 'var(--accent-neg,#A32D2D)'
       : v < 5 ? 'var(--accent-neg,#A32D2D)'
@@ -711,7 +713,7 @@ function RoomBlock({ rows }: { rows: Room[] }) {
       <div className={styles.moneySub}>
         Room before a sale
         <span className={styles.cardCount} style={{ textTransform: 'none', letterSpacing: 0 }}>
-          closest to its exit rule first
+          the bar is room left, out of 10% — a full track is comfortable, an empty one is next
         </span>
       </div>
       {head.map((r) => (
@@ -719,19 +721,29 @@ function RoomBlock({ rows }: { rows: Room[] }) {
           <span className={styles.roomSym}>{r.sym}</span>
           <span className={styles.roomBook}>{r.book}</span>
           <span className={styles.roomTrack}>
-            <i style={{ width: `${Math.min(100, (Math.abs(r.pct) / worst) * 100)}%`,
+            <i style={{ width: `${Math.max(0, Math.min(100, (r.pct / FULL) * 100))}%`,
                         background: tone(r.pct) }} />
           </span>
           <b style={{ color: tone(r.pct) }}>
             {r.pct < 0 ? 'due' : r.pct.toFixed(1) + '%'}
           </b>
-          <span className={styles.roomRule}>{r.rule}</span>
+          <span className={styles.roomRule}>
+            {r.pct < 0 ? <span className={styles.roomDue}>alerted · place the sell</span> : r.rule}
+          </span>
         </div>
       ))}
       {rest.length > 0 && (
         <div className={styles.roomMore}>
           {rest.length} more, all with over {rest[0].pct.toFixed(0)}% of room
         </div>
+      )}
+      {due.length > 0 && (
+        <p className={styles.note} style={{ marginTop: 9 }}>
+          <b>{due.length === 1 ? 'That name is' : 'Those names are'} past the exit rule and
+          still held.</b> Open Alpha and IPO Base alert their exits — neither has an exit
+          executor, so the book raises the order and you place it. The entry side is
+          automated; the exit side is not.
+        </p>
       )}
     </div>
   );

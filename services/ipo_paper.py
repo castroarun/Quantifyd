@@ -71,7 +71,8 @@ LOCK = ROOT / 'backtest_data' / 'ipo_paper_state.lock'
 UI_JSON = ROOT / 'static' / 'app' / 'ipo_paper.json'
 ALLOC = ROOT / 'backtest_data' / 'allocation_targets.json'
 LISTINGS = ROOT / 'research' / '153_ipo_base' / 'results' / 'listing_dates.csv'
-FEED = Path('/tmp/nas_alert_feed.log')
+# A real feed the pages can read. The old path was another job's cron log.
+FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 
 CAPITAL = 1_000_000          # notional while on paper
 SLOTS = 8
@@ -116,18 +117,28 @@ def ist_now():
 
 
 def _alert(title, body, urgency='critical'):
+    """Record the alert, and for a critical one actually send it.
+
+    The feed is a real file the pages read. `/tmp/nas_alert_feed.log`, which this used to
+    write to, is the cron output log of a different job and is read by nobody -- an exit
+    alert written there reached no one at all (found 08-Sep-2026, SPORTKING).
+    """
+    line = dict(ts=str(datetime.now()), book='IPO-BASE', urgency=urgency,
+                title=title, body=body)
     try:
         with open(FEED, 'a') as f:
-            f.write(json.dumps(dict(ts=str(datetime.now()), book='IPO-BASE',
-                                    urgency=urgency, title=title, body=body)) + '\n')
-    except Exception:
-        pass
-
-
-# ───────────────────────── state ─────────────────────────
-IPO_TAG = 'IPO-ENTRY'
-SEEN_ORDERS = ROOT / 'backtest_data' / 'ipo_applied_orders.json'
-
+            f.write(json.dumps(line) + '\n')
+    except Exception as e:
+        print('alert feed write failed:', e)
+    if urgency != 'critical':
+        return
+    try:
+        from services.dividend_notify import send_email, send_whatsapp
+        print('  email:', send_email(title, '<pre>%s</pre>' % body))
+        print('  whatsapp:', send_whatsapp(title + chr(10) + body))
+    except Exception as e:
+        # never let a notification failure break the run that produced the signal
+        print('alert delivery failed:', e)
 
 def own_fills():
     """{symbol: (qty, avg)} from THIS BOOK'S completed orders only, never holdings.

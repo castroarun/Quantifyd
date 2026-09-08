@@ -384,3 +384,6 @@ button.curveKeyOn { opacity: 1; }
 .roomRule { width: 96px; flex: none; font-size: 10.5px; color: var(--ink-muted, #888780);
   text-align: right; white-space: nowrap; }
 .roomMore { margin-top: 7px; font-size: 11px; color: var(--ink-muted, #888780); }
+
+/* A breached rule: the row says who acts next, because "due" alone reads as a failure. */
+.roomDue { color: var(--accent-neg, #A32D2D); font-weight: 600; }
