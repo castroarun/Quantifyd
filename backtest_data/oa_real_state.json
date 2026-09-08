@@ -145,8 +145,8 @@
    "capital": 446349
   }
  ],
- "capital": 446348.68,
- "cash": 0.0,
+ "capital": 617637.68,
+ "cash": 171289.0,
  "fund_flows": [
   {
    "ts": "2026-09-04 14:49:08.392401",
@@ -154,6 +154,13 @@
    "amount": 446348.68,
    "via": "seed 04-Sep-2026 (backfilled by the D1 migration)",
    "positions_touched": true
+  },
+  {
+   "ts": "2026-09-08 07:36:32.467643",
+   "kind": "deposit",
+   "amount": 171289.0,
+   "via": "capital desk",
+   "positions_touched": false
   }
  ],
  "dividend": {

@@ -110,6 +110,7 @@ def _kite_holdings() -> list[dict]:
             (h.get('quantity') or 0)
             + (h.get('t1_quantity') or 0)
             + (h.get('collateral_quantity') or 0)
+            + ((h.get('mtf') or {}).get('quantity') or 0)   # margin-funded (MTF) shares
         )
         if qty <= 0:
             continue

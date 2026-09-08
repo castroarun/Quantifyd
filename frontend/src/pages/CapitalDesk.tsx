@@ -122,7 +122,9 @@ function AllocationPanel({ a }: { a: Allocation }) {
       <div className={styles.sub} style={{ marginBottom: 10 }}>
         {BOOK_LABEL[a.base] ?? a.base} is the base: it is never sold to rebalance. Arriving cash
         goes to whichever book is furthest below its share.
-        {a.ipo_status === 'paper' && ' IPO is on paper, so its share is earmarked in the liquid ETF.'}
+        {a.ipo_status === 'paper'
+          ? ' IPO is on paper, so its share is earmarked in the liquid ETF.'
+          : ' IPO is LIVE — real money, and its signals are real orders.'}
       </div>
       <table className={styles.table}>
         <thead>
@@ -158,9 +160,16 @@ function AllocationPanel({ a }: { a: Allocation }) {
 function AllocationDesk() {
   const [a, setA] = useState<Allocation | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  /* This fetched once on mount and never again. After the Rs 4,00,000 deposit on
+     08-Sep the table still showed Open Alpha at Rs 4,46,349 and IPO at zero, and still
+     described IPO as being on paper minutes after that same deposit had taken it live.
+     A table about where the money IS cannot be a snapshot of where it WAS. */
   useEffect(() => {
-    apiGet<Allocation>('/api/sleeves/allocation').then(setA)
+    const load = () => apiGet<Allocation>('/api/sleeves/allocation').then(setA)
       .catch((e) => setErr(String(e)));
+    load();
+    const id = setInterval(load, 10000);
+    return () => clearInterval(id);
   }, []);
   if (err) return (
     <div className={styles.card}>
@@ -178,6 +187,10 @@ function FundsPanel() {
   const [kind, setKind] = useState<'deposit' | 'withdraw'>('deposit');
   const [target, setTarget] = useState<'auto' | 'truenorth' | 'openalpha' | 'ipo'>('auto');
   const [route, setRoute] = useState<RoutePlan | null>(null);
+  const [receipt, setReceipt] = useState<{
+    kind: string; total: number; halted: boolean; ts: Date;
+    done: { book: string; amount: number; data: any }[]; skipped: string[];
+  } | null>(null);
   const [plans, setPlans] = useState<any[] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -239,7 +252,8 @@ function FundsPanel() {
     if (!window.confirm(warn + kind + ' Rs ' + n.toLocaleString('en-IN')
         + ' split as:\n' + lines + '\n\nProceed?')) return;
     setBusy(true);
-    const applied: string[] = [], skipped: string[] = [];
+    const done: { book: string; amount: number; data: any }[] = [];
+    const skipped: string[] = [];
     let halted = false;
     for (const p of plans) {
       const label = BOOK_LABEL[p.book] ?? p.book;
@@ -247,13 +261,11 @@ function FundsPanel() {
       const r = await call('/api/sleeves/' + p.book + '/' + kind,
                            { amount: Math.round(p.amount), dry_run: false })
         .catch((e) => ({ ok: false, data: { error: String(e) } }));
-      if (r.ok) applied.push(label + ' ' + rup(p.amount));
+      if (r.ok) done.push({ book: p.book, amount: p.amount, data: r.data });
       else { halted = true; skipped.push(label + ' FAILED: ' + (r.data?.error || 'error')); }
     }
-    setMsg(halted
-      ? 'PARTIAL — applied: ' + (applied.join(', ') || 'nothing') + ' · NOT applied: '
-        + skipped.join(', ') + '. Reverse the applied legs manually to undo the whole flow.'
-      : 'Done — ' + applied.join(' · '));
+    setReceipt({ kind, total: n, done, skipped, halted, ts: new Date() });
+    setMsg(null);
     setPlans(null); setRoute(null); setAmt(''); setBusy(false); load();
   };
 
@@ -273,6 +285,68 @@ function FundsPanel() {
           </span>
         ))}
       </div>
+      {receipt && (
+        <div style={{
+          border: `1px solid ${receipt.halted ? 'var(--accent-neg,#A32D2D)' : 'var(--accent-pos,#0F6E56)'}`,
+          borderLeftWidth: 4, borderRadius: 7, padding: '11px 14px', margin: '4px 0 14px',
+          background: 'var(--surface,#fff)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <b style={{ fontSize: 14 }}>
+              {receipt.halted ? 'Partly applied' : `${receipt.kind === 'deposit' ? 'Deposited' : 'Withdrawn'} ${rup(receipt.total)}`}
+            </b>
+            <span className={styles.muted} style={{ fontSize: 11.5 }}>
+              {receipt.ts.toLocaleTimeString('en-IN', { hour12: false })} IST
+            </span>
+            <button onClick={() => setReceipt(null)}
+                    style={{ marginLeft: 'auto', cursor: 'pointer', font: '500 11px inherit',
+                             padding: '2px 8px', borderRadius: 5, background: 'transparent',
+                             border: '1px solid var(--hairline,rgba(0,0,0,0.16))',
+                             color: 'var(--ink-muted,#8a8a85)' }}>dismiss</button>
+          </div>
+
+          <table className={styles.table} style={{ marginTop: 8 }}>
+            <tbody>
+              {receipt.done.map((d) => (
+                <tr key={d.book}>
+                  <td className={styles.sym}>{BOOK_LABEL[d.book] ?? d.book}</td>
+                  <td><b>{rup(d.amount)}</b></td>
+                  <td className={styles.muted}>
+                    {d.data?.capital_after != null && `capital now ${rup(d.data.capital_after)}`}
+                    {d.data?.cash_after != null && ` · cash ${rup(d.data.cash_after)}`}
+                  </td>
+                </tr>
+              ))}
+              {receipt.skipped.map((s, i) => (
+                <tr key={'s' + i}><td className={styles.neg} colSpan={3}>{s}</td></tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* The consequences worth saying out loud. */}
+          {receipt.done.some((d) => d.data?.arms_live) && (
+            <p className={styles.note} style={{ color: 'var(--accent-pos,#0F6E56)', fontWeight: 600 }}>
+              IPO Base is now LIVE. It has left paper permanently — every signal from the next
+              scan is a real-money instruction. Withdrawing does not put it back on paper.
+            </p>
+          )}
+          {receipt.done.filter((d) => (d.data?.cash_after ?? 0) > 1000).map((d) => (
+            <p key={'c' + d.book} className={styles.note}>
+              <b>{rup(d.data.cash_after)} sits as cash in {BOOK_LABEL[d.book] ?? d.book}.</b>{' '}
+              Neither live book has an automated executor, so it stays undeployed until you
+              place the buys yourself — the book alerts the exact orders, it never sends them.
+            </p>
+          ))}
+          {receipt.halted && (
+            <p className={styles.note} style={{ color: 'var(--accent-neg,#A32D2D)' }}>
+              Some legs did not run. The books are separate stores, so this cannot be rolled
+              back automatically — reverse the applied legs by hand if you want the whole
+              flow undone.
+            </p>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <select value={kind} onChange={(e) => { setKind(e.target.value as any); setPlans(null); }} style={sel}>
           <option value="deposit">Deposit</option>

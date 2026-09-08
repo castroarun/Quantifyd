@@ -16,7 +16,8 @@ def _owned_qty(h: dict) -> int:
     (e.g. a stock bought yesterday) and pledged holdings entirely."""
     return (int(h.get("quantity") or 0)
             + int(h.get("t1_quantity") or 0)
-            + int(h.get("collateral_quantity") or 0))
+            + int(h.get("collateral_quantity") or 0)
+            + int((h.get("mtf") or {}).get("quantity") or 0))
 
 
 def _row(h: dict) -> dict:

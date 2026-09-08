@@ -1440,6 +1440,23 @@ def dad_callback():
         return redirect('/app/holdings?stanly=failed')
 
 
+@app.route('/api/dad/refresh', methods=['POST'])
+@login_required
+def api_dad_refresh():
+    """Re-login Stanly's account via TOTP server-side and refresh the token. Drives the
+    'Connect' button — the browser OAuth flow can't return to the app over plain http."""
+    import subprocess, sys as _sys
+    try:
+        r = subprocess.run([_sys.executable, 'scripts/dad_auto_login.py'],
+                           cwd='/home/arun/quantifyd', capture_output=True, text=True, timeout=90)
+        ok = 'auto-login SUCCESS' in ((r.stdout or '') + (r.stderr or ''))
+        logger.info(f"[DAD] refresh via button: {'OK' if ok else 'FAILED'}")
+        return jsonify({'ok': ok}), (200 if ok else 502)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[DAD] refresh failed: {e}")
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @app.route('/api/holdings/order', methods=['POST'])
 @login_required
 def api_holdings_topup():

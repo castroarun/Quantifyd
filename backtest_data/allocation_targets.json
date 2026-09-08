@@ -5,7 +5,7 @@
   "ipo": 0.2
  },
  "base": "truenorth",
- "ipo_status": "paper",
+ "ipo_status": "live",
  "changelog": [
   {
    "date": "2026-09-05",
@@ -14,6 +14,20 @@
   {
    "date": "2026-09-06",
    "text": "No gold sleeve for now (Arun). Targets stay TN 40 / OA 40 / IPO 20. research/147 and research/154 both favoured a gold allocation on the numbers; this is a deliberate choice not to add a fourth sleeve while the third is untraded, not a refutation of the finding."
+  },
+  {
+   "date": "2026-09-08",
+   "text": "IPO sleeve armed for real money by a Rs 228,711 deposit through the Capital Desk. Execution stays manual-assisted until an executor exists."
+  }
+ ],
+ "ipo_funded": 228711.0,
+ "ipo_armed_ts": "2026-09-08 07:36:32",
+ "flows": [
+  {
+   "ts": "2026-09-08 07:36:32",
+   "kind": "deposit",
+   "amount": 228711.0,
+   "via": "capital desk"
   }
  ]
 }
