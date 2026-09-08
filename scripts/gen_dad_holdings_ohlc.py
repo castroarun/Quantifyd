@@ -52,7 +52,9 @@ def main():
         raw = get_dad_kite().holdings() or []
     except Exception as e:  # noqa: BLE001
         print("FATAL dad holdings fetch failed:", e); sys.exit(1)
-    syms = [h["tradingsymbol"] for h in raw if (h.get("quantity") or 0) > 0]
+    syms = [h["tradingsymbol"] for h in raw
+            if ((h.get("quantity") or 0) + (h.get("t1_quantity") or 0)
+                + (h.get("collateral_quantity") or 0) + ((h.get("mtf") or {}).get("quantity") or 0)) > 0]
     print(f"{len(syms)} dad symbols")
 
     prev = {}
