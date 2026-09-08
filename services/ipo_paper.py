@@ -354,6 +354,64 @@ def write_ui(st, wide, asof, log, dry=False):
 
 
 # ───────────────────────── engine ─────────────────────────
+def reconcile_now():
+    """Apply this book's completed orders to state and rebake the page.
+
+    The nightly cycle refuses to run before 15:35 so it never scans a half-formed bar,
+    and arming deliberately does not scan either. That left a gap: after the sleeve went
+    live and its first order filled, the page still showed the previous evening's bake -
+    PAPER, a notional ten lakh, and KISSHT sitting as an unfilled buy-stop it had in fact
+    already bought. Reconciling is not scanning, so it can run at any hour.
+    """
+    fills, seen = own_fills()
+    if fills is None:
+        print('order book unreachable; nothing applied')
+        return
+    if not acquire_lock():
+        print('book busy')
+        return
+    try:
+        st = load_state()
+        booked = []
+        by_sym = {p['symbol']: p for p in st['positions']}
+        for s, (qty, avg) in fills.items():
+            cost = qty * avg
+            if cost > float(st['cash']) + 1:
+                _alert('IPO reconcile refused: %s' % s,
+                       'Broker shows x%d at %.2f costing Rs %s, but the book holds only '
+                       'Rs %s. Nothing applied for this name.'
+                       % (qty, avg, format(round(cost), ','), format(round(st['cash']), ',')))
+                print('REFUSED %s: costs more than the book holds' % s)
+                continue
+            if s in by_sym:
+                p0 = by_sym[s]
+                nq = p0['qty'] + qty
+                p0['buy'] = round((p0['qty'] * p0['buy'] + cost) / nq, 2)
+                p0['qty'] = nq
+                p0['stop'] = round(p0['buy'] * (1 - STOP), 2)
+            else:
+                st['positions'].append(dict(
+                    symbol=s, qty=int(qty), buy=round(avg, 2),
+                    entry_date=str(date.today()), stop=round(avg * (1 - STOP), 2),
+                    pivot=next((c['pivot'] for c in st.get('pending', [])
+                                if c['symbol'] == s), None), src='executor'))
+            st['cash'] = round(max(0.0, float(st['cash']) - cost), 2)
+            st['pending'] = [c for c in st.get('pending', []) if c['symbol'] != s]
+            booked.append('%s x%d @%.2f' % (s, qty, avg))
+        if booked:
+            save_state(st)
+            json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
+    finally:
+        release_lock()
+    print('booked: ' + ('; '.join(booked) if booked else 'nothing new'))
+    loaded = load_wide()
+    if loaded:
+        wide, _l = loaded
+        write_ui(load_state(), wide, wide['close'].index[-1],
+                 ['reconciled ' + str(datetime.now())[:19]], dry=False)
+        print('page refreshed')
+
+
 def arm():
     """Take the book live NOW, without running a scan.
 
@@ -621,5 +679,7 @@ def main():
 if __name__ == '__main__':
     if '--arm-now' in sys.argv:
         arm()
+    elif '--reconcile' in sys.argv:
+        reconcile_now()
     else:
         main()

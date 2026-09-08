@@ -1,66 +1,55 @@
 {
- "updated": "2026-09-07 18:45:03.411508",
+ "updated": "2026-09-08 12:07:13.563183",
  "asof": "2026-09-07",
- "mode": "paper",
+ "mode": "live",
  "positions": [
   {
-   "symbol": "MARSONS",
-   "qty": 1345,
-   "buy": 139.4,
-   "entry_date": "2026-09-07",
-   "stop": 128.25,
-   "pivot": 133.17,
-   "listed": "2026-03-13",
-   "ltp": 128.8,
-   "value": 173236,
-   "pnl": -14257,
-   "pnl_pct": -7.6,
-   "trail": 117.76,
-   "target": 174.25,
-   "to_stop_pct": 0.4,
-   "to_trail_pct": 9.4,
-   "days": 0,
-   "weight": 17.6
+   "symbol": "KISSHT",
+   "qty": 132,
+   "buy": 323.85,
+   "entry_date": "2026-09-08",
+   "stop": 297.94,
+   "pivot": 313.6,
+   "src": "executor",
+   "ltp": 320.95,
+   "value": 42365,
+   "pnl": -383,
+   "pnl_pct": -0.9,
+   "trail": 304.54,
+   "target": 404.81,
+   "to_stop_pct": 7.7,
+   "to_trail_pct": 5.4,
+   "days": -1,
+   "weight": 18.6
   }
  ],
- "capital": 1000000,
- "cash": 812038,
- "value": 173236,
- "nav": 985274,
- "pnl": -14257,
+ "capital": 228711,
+ "cash": 185963,
+ "value": 42365,
+ "nav": 228328,
+ "pnl": -383,
  "realized": 0,
- "gain": -14726,
- "return_pct": -1.47,
- "invested_pct": 17.6,
+ "gain": -383,
+ "return_pct": -0.17,
+ "invested_pct": 18.6,
  "slots": 8,
  "slots_used": 1,
- "pending": [
-  {
-   "symbol": "KISSHT",
-   "pivot": 313.6,
-   "close": 320.95,
-   "depth_pct": 9.2,
-   "tv": 353533403.425,
-   "listed": "2026-05-08",
-   "age_days": 122
-  }
- ],
- "navcurve": [
-  {
-   "d": "2026-09-04",
-   "nav": 1000000
-  },
-  {
-   "d": "2026-09-07",
-   "nav": 985274
-  }
- ],
+ "pending": [],
+ "navcurve": [],
  "trades": [],
  "data_events": [],
- "started": "2026-09-06",
+ "started": "2026-09-08",
  "log": [
-  "panel 23 names in the age band, asof 2026-09-07",
-  "FILL MARSONS x1345 @139.40 (pivot 133.17)",
-  "1 candidates, 7 slots free, 1 buy-stops armed for tomorrow"
+  "reconciled 2026-09-08 12:07:13"
+ ],
+ "failed_orders": [
+  {
+   "ts": "2026-09-08 12:02:00.860116",
+   "book": "ipo-base",
+   "symbol": "KISSHT",
+   "qty": 132,
+   "reason": "entry not placed",
+   "detail": "per second exceeded"
+  }
  ]
 }

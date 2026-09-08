@@ -2,19 +2,19 @@
  "book": "IPO-BASE",
  "mode": "live",
  "capital": 228711.0,
- "cash": 228711.0,
- "positions": [],
- "pending": [
+ "cash": 185962.8,
+ "positions": [
   {
    "symbol": "KISSHT",
+   "qty": 132,
+   "buy": 323.85,
+   "entry_date": "2026-09-08",
+   "stop": 297.94,
    "pivot": 313.6,
-   "close": 320.95,
-   "depth_pct": 9.2,
-   "tv": 353533403.425,
-   "listed": "2026-05-08",
-   "age_days": 122
+   "src": "executor"
   }
  ],
+ "pending": [],
  "nav": [],
  "trades": [],
  "missed": [],

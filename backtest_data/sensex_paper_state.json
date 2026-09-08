@@ -2936,12 +2936,12 @@
    "ce_entry": 370.65,
    "pe_entry": 257.85,
    "credit": 628.5,
-   "ce_exit": 316.8,
-   "pe_exit": 294.0,
+   "ce_exit": 305.35,
+   "pe_exit": 306.45,
    "exit_reason": "time1515",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 668,
+   "pnl": 628,
    "legs": [
     {
      "type": "CE",
@@ -2949,8 +2949,8 @@
      "strike": 75800,
      "qty": 40,
      "entry": 370.65,
-     "ltp": 316.8,
-     "pnl": 2154
+     "ltp": 305.35,
+     "pnl": 2612
     },
     {
      "type": "PE",
@@ -2958,8 +2958,8 @@
      "strike": 75800,
      "qty": 40,
      "entry": 257.85,
-     "ltp": 294.0,
-     "pnl": -1446
+     "ltp": 306.45,
+     "pnl": -1944
     }
    ]
   },
@@ -2975,12 +2975,12 @@
    "ce_entry": 227.6,
    "pe_entry": 147.4,
    "credit": 375.0,
-   "ce_exit": 194.6,
-   "pe_exit": 168.05,
+   "ce_exit": 186.05,
+   "pe_exit": 177.85,
    "exit_reason": "time1445",
    "entry_time": "09:20",
    "exit_time": "14:45",
-   "pnl": 454,
+   "pnl": 404,
    "legs": [
     {
      "type": "CE",
@@ -2988,8 +2988,8 @@
      "strike": 76100,
      "qty": 40,
      "entry": 227.6,
-     "ltp": 194.6,
-     "pnl": 1320
+     "ltp": 186.05,
+     "pnl": 1662
     },
     {
      "type": "PE",
@@ -2997,8 +2997,8 @@
      "strike": 75500,
      "qty": 40,
      "entry": 147.4,
-     "ltp": 168.05,
-     "pnl": -826
+     "ltp": 177.85,
+     "pnl": -1218
     }
    ]
   }
