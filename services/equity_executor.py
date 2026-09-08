@@ -39,6 +39,7 @@ Log:  /tmp/equity_executor.log   Ledger: backtest_data/executor_orders.json
 import json
 import os
 import sys
+import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -56,7 +57,8 @@ IPO_LOCK = ROOT / 'backtest_data' / 'ipo_paper_state.lock'
 OA_SLOTS = 16
 IPO_SIZE_PCT = 0.1875
 MIN_ORDER = 2_000.0          # below this the brokerage/rounding is not worth an order
-TICK = 0.05
+TICK = 0.05                  # fallback only; real ticks come from the instrument dump
+ORDER_GAP = 0.45             # seconds between orders; the broker throttles per second
 
 
 def ist():
@@ -82,10 +84,30 @@ def kite():
     return k
 
 
-def tick_round(px, up=True):
-    n = px / TICK
+_TICKS = {}
+
+
+def load_ticks(k):
+    """Real tick size per symbol. Assuming 0.05 got three orders rejected on the first
+    live run - INOXINDIA, KMEW and SBCL all trade in 0.10 - with the plain message
+    "Tick size for this script is 0.10". The exchange publishes it; ask rather than guess."""
+    global _TICKS
+    if _TICKS:
+        return _TICKS
+    try:
+        for i in k.instruments('NSE'):
+            if i.get('instrument_type') == 'EQ' and i.get('tick_size'):
+                _TICKS[i['tradingsymbol']] = float(i['tick_size'])
+    except Exception as e:
+        print('tick sizes unavailable (%s) - falling back to 0.05' % e)
+    return _TICKS
+
+
+def tick_round(px, up=True, symbol=None):
+    tick = _TICKS.get(symbol, TICK) if symbol else TICK
+    n = px / tick
     n = int(n) + 1 if up and n != int(n) else round(n)
-    return round(n * TICK, 2)
+    return round(round(n * tick, 4), 2)
 
 
 # ───────────────────────── the idempotency ledger ─────────────────────────
@@ -140,17 +162,31 @@ def save_json(path, obj):
 
 
 def place(k, symbol, qty, ltp, arm, tag):
-    """A marketable LIMIT buy, CNC. Returns (order_id|None, price, note)."""
-    limit = tick_round(ltp * 1.005, up=True)      # 0.5% through the touch
+    """A marketable LIMIT buy, CNC, paced and retried.
+
+    The first live run fired sixteen orders back to back and Kite rejected six of them
+    with "Maximum allowed order requests per second exceeded" - including the IPO entry,
+    which ran last and so paid for the whole Open Alpha batch ahead of it. Orders are
+    now spaced, and a throttle is retried rather than treated as a refusal.
+    """
+    limit = tick_round(ltp * 1.005, up=True, symbol=symbol)
     if not arm:
         return None, limit, 'DRY'
-    try:
-        oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=symbol,
-                            transaction_type='BUY', quantity=int(qty), product='CNC',
-                            order_type='LIMIT', price=limit, validity='DAY', tag=tag[:20])
-        return oid, limit, 'PLACED'
-    except Exception as e:
-        return None, limit, f'FAILED: {e}'
+    for attempt in range(4):
+        try:
+            oid = k.place_order(variety='regular', exchange='NSE', tradingsymbol=symbol,
+                                transaction_type='BUY', quantity=int(qty), product='CNC',
+                                order_type='LIMIT', price=limit, validity='DAY', tag=tag[:20])
+            time.sleep(ORDER_GAP)
+            return oid, limit, 'PLACED'
+        except Exception as e:
+            msg = str(e)
+            if 'per second' in msg.lower() and attempt < 3:
+                time.sleep(1.2 * (attempt + 1))
+                continue
+            return None, limit, f'FAILED: {msg}'
+    return None, limit, 'FAILED: throttled'
+
 
 
 # ───────────────────────── Open Alpha: top up to equal weight ─────────────────────────
@@ -166,6 +202,7 @@ def deploy_open_alpha(arm, led):
         return
 
     k = kite()
+    load_ticks(k)
     q = {}
     syms = [p['symbol'] for p in pos]
     for i in range(0, len(syms), 25):
@@ -242,6 +279,7 @@ def deploy_ipo(arm, led):
         return
     equity = cash + sum(p['qty'] * p['buy'] for p in st.get('positions', []))
     k = kite()
+    load_ticks(k)
     placed = 0
     for c in pend:
         s, pivot = c['symbol'], float(c['pivot'])
@@ -265,8 +303,8 @@ def deploy_ipo(arm, led):
         if qty < 1 or qty * fill_ref > cash:
             print(f'  {s}: cash short for a slot, skipped')
             continue
-        trig = tick_round(pivot, up=True)
-        limit = tick_round(fill_ref * 1.005, up=True)
+        trig = tick_round(pivot, up=True, symbol=s)
+        limit = tick_round(fill_ref * 1.005, up=True, symbol=s)
         slip = (ltp / pivot - 1) * 100
         if not arm:
             how = (f'MARKET (pivot already through: last {ltp}, +{slip:.2f}% over pivot)'
@@ -325,18 +363,22 @@ def main():
             return
     print(f'=== equity executor {now:%Y-%m-%d %H:%M} IST · {"ARMED" if arm else "DRY RUN"} ===')
     led = load_ledger()
-    if which in ('all', 'open-alpha'):
-        try:
-            deploy_open_alpha(arm, led)
-        except Exception as e:
-            print('open-alpha failed:', e)
-            alert('Executor failed: open-alpha', str(e))
+    # ENTRIES FIRST. A new entry is a signal with a price attached and a day to live; a
+    # top-up is housekeeping that can wait until tomorrow. On the first live run the
+    # order was the other way round, so sixteen top-up attempts used up the rate limit
+    # and the one entry of the day was rejected.
     if which in ('all', 'ipo-base'):
         try:
             deploy_ipo(arm, led)
         except Exception as e:
             print('ipo-base failed:', e)
             alert('Executor failed: ipo-base', str(e))
+    if which in ('all', 'open-alpha'):
+        try:
+            deploy_open_alpha(arm, led)
+        except Exception as e:
+            print('open-alpha failed:', e)
+            alert('Executor failed: open-alpha', str(e))
 
 
 if __name__ == '__main__':

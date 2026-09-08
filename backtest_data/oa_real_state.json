@@ -4,130 +4,130 @@
  "positions": [
   {
    "symbol": "INDSWFTLAB",
-   "qty": 80,
-   "buy": 355.53,
+   "qty": 99,
+   "buy": 362.33,
    "entry_date": "2026-09-04",
-   "stop": 327.09,
+   "stop": 333.34,
    "src": "real"
   },
   {
    "symbol": "SETL",
-   "qty": 69,
-   "buy": 408.8,
+   "qty": 99,
+   "buy": 402.69,
    "entry_date": "2026-09-04",
-   "stop": 376.1,
+   "stop": 370.47,
    "src": "real"
   },
   {
    "symbol": "WELCORP",
-   "qty": 10,
-   "buy": 2597.1,
+   "qty": 14,
+   "buy": 2596.36,
    "entry_date": "2026-09-04",
-   "stop": 2389.33,
+   "stop": 2388.65,
    "src": "real"
   },
   {
    "symbol": "SHILPAMED",
-   "qty": 29,
-   "buy": 965.55,
+   "qty": 40,
+   "buy": 962.36,
    "entry_date": "2026-09-04",
-   "stop": 888.31,
+   "stop": 885.37,
    "src": "real"
   },
   {
    "symbol": "KMEW",
-   "qty": 9,
-   "buy": 3037.64,
+   "qty": 13,
+   "buy": 3018.75,
    "entry_date": "2026-09-04",
-   "stop": 2794.63,
+   "stop": 2777.25,
    "src": "real"
   },
   {
    "symbol": "SBCL",
-   "qty": 25,
-   "buy": 1116.9,
+   "qty": 34,
+   "buy": 1115.48,
    "entry_date": "2026-09-04",
-   "stop": 1027.55,
+   "stop": 1026.24,
    "src": "real"
   },
   {
    "symbol": "IOLCP",
-   "qty": 142,
-   "buy": 199.71,
+   "qty": 181,
+   "buy": 202.68,
    "entry_date": "2026-09-04",
-   "stop": 183.73,
+   "stop": 186.47,
    "src": "real"
   },
   {
    "symbol": "SPORTKING",
-   "qty": 124,
-   "buy": 229.33,
+   "qty": 174,
+   "buy": 227.18,
    "entry_date": "2026-09-04",
-   "stop": 210.98,
+   "stop": 209.01,
    "src": "real"
   },
   {
    "symbol": "IRISDOREME",
-   "qty": 452,
-   "buy": 62.94,
+   "qty": 634,
+   "buy": 62.39,
    "entry_date": "2026-09-04",
-   "stop": 57.9,
+   "stop": 57.4,
    "src": "real"
   },
   {
    "symbol": "INOXINDIA",
-   "qty": 12,
-   "buy": 2252.0,
+   "qty": 17,
+   "buy": 2236.5,
    "entry_date": "2026-09-04",
-   "stop": 2071.84,
+   "stop": 2057.58,
    "src": "real"
   },
   {
    "symbol": "MANINDS",
-   "qty": 35,
-   "buy": 792.5,
+   "qty": 47,
+   "buy": 800.19,
    "entry_date": "2026-09-04",
-   "stop": 729.1,
+   "stop": 736.17,
    "src": "real"
   },
   {
    "symbol": "SSWL",
-   "qty": 80,
-   "buy": 356.17,
+   "qty": 106,
+   "buy": 358.3,
    "entry_date": "2026-09-04",
-   "stop": 327.67,
+   "stop": 329.64,
    "src": "real"
   },
   {
    "symbol": "ENTERO",
-   "qty": 15,
-   "buy": 1833.27,
+   "qty": 20,
+   "buy": 1844.48,
    "entry_date": "2026-09-04",
-   "stop": 1686.61,
+   "stop": 1696.92,
    "src": "real"
   },
   {
    "symbol": "NITINSPIN",
-   "qty": 44,
-   "buy": 641.9,
+   "qty": 61,
+   "buy": 636.65,
    "entry_date": "2026-09-04",
-   "stop": 590.55,
+   "stop": 585.72,
    "src": "real"
   },
   {
    "symbol": "TMB",
-   "qty": 30,
-   "buy": 932.62,
+   "qty": 41,
+   "buy": 931.0,
    "entry_date": "2026-09-04",
-   "stop": 858.01,
+   "stop": 856.52,
    "src": "real"
   },
   {
    "symbol": "KTKBANK",
-   "qty": 83,
-   "buy": 340.3,
+   "qty": 116,
+   "buy": 338.08,
    "entry_date": "2026-09-04",
-   "stop": 313.08,
+   "stop": 311.03,
    "src": "real"
   }
  ],
@@ -146,7 +146,7 @@
   }
  ],
  "capital": 617637.68,
- "cash": 171289.0,
+ "cash": 7395.57,
  "fund_flows": [
   {
    "ts": "2026-09-04 14:49:08.392401",
@@ -172,5 +172,183 @@
   "adopted": "2026-09-05",
   "anchored_on": "oa_real",
   "note": "Re-anchored 05-Sep-2026 from the paper model (HWM Rs n/a) to the real book. Nothing earned by the paper model is distributable."
- }
+ },
+ "pending_orders": [
+  {
+   "symbol": "WELCORP",
+   "qty": 4,
+   "ltp": 2594.9,
+   "limit": 2607.9,
+   "cost": 10380,
+   "order_id": "260908150131441",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "SETL",
+   "qty": 30,
+   "ltp": 388.9,
+   "limit": 390.85,
+   "cost": 11667,
+   "order_id": "260908150131520",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "NITINSPIN",
+   "qty": 17,
+   "ltp": 623.2,
+   "limit": 626.35,
+   "cost": 10594,
+   "order_id": "260908150131537",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "SPORTKING",
+   "qty": 50,
+   "ltp": 221.53,
+   "limit": 222.65,
+   "cost": 11076,
+   "order_id": "260908150131549",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "KTKBANK",
+   "qty": 33,
+   "ltp": 332.5,
+   "limit": 334.2,
+   "cost": 10972,
+   "order_id": "260908150131563",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "SHILPAMED",
+   "qty": 11,
+   "ltp": 952.4,
+   "limit": 957.2,
+   "cost": 10476,
+   "order_id": "260908150131603",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "TMB",
+   "qty": 11,
+   "ltp": 925.9,
+   "limit": 930.55,
+   "cost": 10185,
+   "order_id": "260908150131621",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "INOXINDIA",
+   "qty": 5,
+   "ltp": 2198.7,
+   "limit": 2209.7,
+   "cost": 10994,
+   "order_id": "260908150850711",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "KMEW",
+   "qty": 4,
+   "ltp": 2974,
+   "limit": 2988.9,
+   "cost": 11896,
+   "order_id": "260908150850739",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "IRISDOREME",
+   "qty": 182,
+   "ltp": 61,
+   "limit": 61.31,
+   "cost": 11102,
+   "order_id": "260908150850769",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "SBCL",
+   "qty": 9,
+   "ltp": 1112,
+   "limit": 1117.6,
+   "cost": 10008,
+   "order_id": "260908150850794",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "ENTERO",
+   "qty": 5,
+   "ltp": 1878,
+   "limit": 1887.4,
+   "cost": 9390,
+   "order_id": "260908150850821",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "MANINDS",
+   "qty": 12,
+   "ltp": 821.75,
+   "limit": 825.9,
+   "cost": 9861,
+   "order_id": "260908150850848",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "SSWL",
+   "qty": 26,
+   "ltp": 364.8,
+   "limit": 366.65,
+   "cost": 9485,
+   "order_id": "260908150850873",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "IOLCP",
+   "qty": 39,
+   "ltp": 213.5,
+   "limit": 214.57,
+   "cost": 8326,
+   "order_id": "260908150850896",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  },
+  {
+   "symbol": "INDSWFTLAB",
+   "qty": 19,
+   "ltp": 390.95,
+   "limit": 392.95,
+   "cost": 7428,
+   "order_id": "260908150850925",
+   "note": "PLACED",
+   "d": "2026-09-08",
+   "kind": "topup"
+  }
+ ]
 }

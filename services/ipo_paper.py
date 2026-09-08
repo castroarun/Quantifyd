@@ -125,11 +125,18 @@ def _alert(title, body, urgency='critical'):
 
 
 # ───────────────────────── state ─────────────────────────
-def broker_cnc():
-    """{symbol: (qty, avg_price)} the account actually holds, delivery only.
+IPO_TAG = 'IPO-ENTRY'
+SEEN_ORDERS = ROOT / 'backtest_data' / 'ipo_applied_orders.json'
 
-    Holdings plus today's completed CNC buys, because a stock bought this morning is not
-    in holdings until settlement but IS owned.
+
+def own_fills():
+    """{symbol: (qty, avg)} from THIS BOOK'S completed orders only, never holdings.
+
+    Matching a book against broker holdings by symbol is unsafe in a shared account:
+    on 08-Sep that approach handed Open Alpha 481 shares of a stock it owned 9 of,
+    because the account also carries personal holdings and other books. This reads the
+    order book, keeps only completed CNC buys carrying this book's tag, and skips any
+    order already applied on an earlier run.
     """
     try:
         from kiteconnect import KiteConnect
@@ -138,22 +145,25 @@ def broker_cnc():
         tok = json.load(open(ROOT / 'backtest_data' / 'access_token.json'))
         k = KiteConnect(api_key=api_key)
         k.set_access_token(tok.get('access_token') or tok.get('token'))
-        out = {}
-        for h in k.holdings():
-            q = (h.get('quantity') or 0) + (h.get('t1_quantity') or 0)
-            if q > 0:
-                out[h['tradingsymbol']] = (q, float(h.get('average_price') or 0))
-        for o in k.orders():
-            if (o.get('status') == 'COMPLETE' and o.get('transaction_type') == 'BUY'
-                    and o.get('product') == 'CNC' and o.get('filled_quantity')):
-                s = o['tradingsymbol']
-                pq, pa = out.get(s, (0, 0.0))
-                nq = pq + o['filled_quantity']
-                out[s] = (nq, ((pq * pa) + o['filled_quantity'] * float(o['average_price'])) / nq)
-        return out
+        orders = k.orders()
     except Exception as e:
-        print('broker read failed:', e)
-        return None
+        print('order book unreachable:', e)
+        return None, None
+    seen = json.load(open(SEEN_ORDERS)) if SEEN_ORDERS.exists() else {}
+    out = {}
+    for o in orders:
+        oid = str(o.get('order_id'))
+        if (o.get('status') != 'COMPLETE' or o.get('transaction_type') != 'BUY'
+                or o.get('product') != 'CNC' or not o.get('filled_quantity')):
+            continue
+        if (o.get('tag') or '') != IPO_TAG or oid in seen:
+            continue
+        s = o['tradingsymbol']
+        q, px = int(o['filled_quantity']), float(o['average_price'])
+        pq, pv = out.get(s, (0, 0.0))
+        out[s] = (pq + q, pv + q * px)
+        seen[oid] = dict(ts=str(datetime.now()), symbol=s, qty=q, price=px)
+    return {s: (q, v / q) for s, (q, v) in out.items()}, seen
 
 
 def book_mode():
@@ -505,7 +515,7 @@ def main():
         # never books a fill it merely hoped for.
         still = []
         if st.get('mode') == 'live':
-            held = broker_cnc()
+            held, seen = own_fills()
             if held is None:
                 log.append('broker unreachable — pending buy-stops carried, nothing booked')
                 _alert('IPO reconcile failed',
@@ -538,7 +548,9 @@ def main():
                         symbol=s, qty=int(qty), buy=round(float(avg), 2),
                         entry_date=str(asof)[:10], stop=round(float(avg) * (1 - STOP), 2),
                         pivot=cand['pivot'], listed=cand.get('listed'), src='broker'))
-                    log.append(f'CONFIRMED {s} x{qty} @{avg:.2f} (from the account)')
+                    log.append(f'CONFIRMED {s} x{qty} @{avg:.2f} (from an order this book placed)')
+                if seen is not None:
+                    json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
             st['pending'] = still
         else:
           for cand in st.get('pending', []):

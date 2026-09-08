@@ -1,91 +1,123 @@
 {
- "generated_at": "2026-09-07T14:00:02",
+ "generated_at": "2026-09-08T11:00:02",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 95.4,
-   "pnl": -1790.0,
+   "ltp": 63.7,
+   "pnl": -8130.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "BSE26SEP3700CE": {
    "qty": -200,
    "avg": 42.25,
-   "ltp": 35.3,
-   "pnl": 1390.0,
+   "ltp": 21.6,
+   "pnl": 4130.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 109.8,
-   "pnl": -6952.5,
+   "ltp": 225.0,
+   "pnl": 27607.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 72.3,
-   "pnl": 5910.0,
+   "ltp": 159.3,
+   "pnl": -20190.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 1.1,
-   "pnl": 39311.2,
+   "ltp": 0.89,
+   "pnl": 24301.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.27,
-   "pnl": -10721.2,
+   "ltp": 0.23,
+   "pnl": -7862.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.15,
-   "pnl": -5718.0,
+   "ltp": 0.12,
+   "pnl": -3573.7,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP20CE": {
    "qty": 71475,
    "avg": 0.04,
-   "ltp": 0.06,
-   "pnl": 1429.5,
+   "ltp": 0.05,
+   "pnl": 714.8,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "DYCL": {
-   "qty": -19,
-   "avg": 459.57894736842104,
-   "ltp": 462.9,
-   "pnl": -63.1,
+  "KTKBANK": {
+   "qty": 33,
+   "avg": 332.5090909090909,
+   "ltp": 332.75,
+   "pnl": 8.0,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "LIQUIDCASE": {
-   "qty": -6907,
-   "avg": 115.80625018097582,
-   "ltp": 115.8,
-   "pnl": 43.2,
+  "NITINSPIN": {
+   "qty": 17,
+   "avg": 623.0529411764705,
+   "ltp": 647.55,
+   "pnl": 416.4,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "SMSPHARMA": {
-   "qty": 69,
-   "avg": 404.5,
-   "ltp": 401.05,
-   "pnl": -238.0,
+  "SETL": {
+   "qty": 30,
+   "avg": 388.65,
+   "ltp": 395.55,
+   "pnl": 207.0,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "SHILPAMED": {
+   "qty": 11,
+   "avg": 953.9454545454547,
+   "ltp": 948.2,
+   "pnl": -63.2,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "SPORTKING": {
+   "qty": 50,
+   "avg": 221.86,
+   "ltp": 213.98,
+   "pnl": -394.0,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "TMB": {
+   "qty": 11,
+   "avg": 926.5681818181819,
+   "ltp": 922.2,
+   "pnl": -48.0,
+   "product": "CNC",
+   "exchange": "NSE"
+  },
+  "WELCORP": {
+   "qty": 4,
+   "avg": 2594.5,
+   "ltp": 2613.5,
+   "pnl": 76.0,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -158,27 +190,59 @@
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "DYCL",
-   "broker_qty": -19,
+   "kind": "MULTI-BOOK",
+   "symbol": "KTKBANK",
+   "broker_qty": 33,
    "app_qty": 0,
-   "detail": "manual holding, -19 \u2014 no book tracks it"
+   "detail": "broker 33 = OA-TOPUP +33 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "LIQUIDCASE",
-   "broker_qty": -6907,
+   "kind": "MULTI-BOOK",
+   "symbol": "NITINSPIN",
+   "broker_qty": 17,
    "app_qty": 0,
-   "detail": "manual holding, -6907 \u2014 no book tracks it"
+   "detail": "broker 17 = OA-TOPUP +17 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "INFO",
-   "kind": "MANUAL",
-   "symbol": "SMSPHARMA",
-   "broker_qty": 69,
+   "kind": "MULTI-BOOK",
+   "symbol": "SETL",
+   "broker_qty": 30,
    "app_qty": 0,
-   "detail": "manual holding, 69 \u2014 no book tracks it"
+   "detail": "broker 30 = OA-TOPUP +30 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "SHILPAMED",
+   "broker_qty": 11,
+   "app_qty": 0,
+   "detail": "broker 11 = OA-TOPUP +11 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "SPORTKING",
+   "broker_qty": 50,
+   "app_qty": 0,
+   "detail": "broker 50 = OA-TOPUP +50 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "TMB",
+   "broker_qty": 11,
+   "app_qty": 0,
+   "detail": "broker 11 = OA-TOPUP +11 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "WELCORP",
+   "broker_qty": 4,
+   "app_qty": 0,
+   "detail": "broker 4 = OA-TOPUP +4 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "WARN",
@@ -214,9 +278,9 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 6995
+  "OA-TOPUP": 156
  },
  "alerts": 8,
  "warns": 4,
- "infos": 3
+ "infos": 7
 }

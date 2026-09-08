@@ -9,41 +9,41 @@
  "exit": "15:15",
  "rules": "expiry-day only - sell ATM straddle 09:16 - per-leg SL 1.60x - trail-to-BE after first stop - square off 15:15",
  "study": "/app/straddle-study",
- "today": "2026-09-07",
+ "today": "2026-09-08",
  "today_legs": [
   {
-   "trade_date": "2026-09-07",
+   "trade_date": "2026-09-08",
    "leg": "CE",
-   "strike": 23850.0,
+   "strike": 23700.0,
    "qty": 650,
-   "entry": 71.35,
+   "entry": 50.45,
    "entry_ts": "09:16",
-   "sl_level": 114.16,
-   "exit": 52.45,
-   "exit_ts": "15:15",
-   "exit_reason": "TIME",
-   "status": "CLOSED",
-   "ltp": 53.4,
-   "ltp_ts": "15:14",
-   "pnl_gross": 12284.999999999995,
-   "book": "dte1"
+   "sl_level": 80.72000000000001,
+   "exit": null,
+   "exit_ts": null,
+   "exit_reason": null,
+   "status": "OPEN",
+   "ltp": 32.65,
+   "ltp_ts": "11:56",
+   "pnl_gross": 11570.000000000004,
+   "book": "dte0"
   },
   {
-   "trade_date": "2026-09-07",
+   "trade_date": "2026-09-08",
    "leg": "PE",
-   "strike": 23850.0,
+   "strike": 23700.0,
    "qty": 650,
-   "entry": 70.1,
+   "entry": 46.3,
    "entry_ts": "09:16",
-   "sl_level": 112.16,
-   "exit": 83.6,
-   "exit_ts": "15:15",
-   "exit_reason": "TIME",
-   "status": "CLOSED",
-   "ltp": 83.85,
-   "ltp_ts": "15:14",
-   "pnl_gross": -8775.0,
-   "book": "dte1"
+   "sl_level": 74.08,
+   "exit": null,
+   "exit_ts": null,
+   "exit_reason": null,
+   "status": "OPEN",
+   "ltp": 50.75,
+   "ltp_ts": "11:56",
+   "pnl_gross": -2892.500000000002,
+   "book": "dte0"
   }
  ],
  "days": [
@@ -396,15 +396,29 @@
    "note": "",
    "updated_at": "2026-09-07T15:16:02",
    "book": "dte1"
+  },
+  {
+   "trade_date": "2026-09-08",
+   "status": "OPEN",
+   "source": "live",
+   "atm_strike": 23700.0,
+   "entry_spot": 23691.6,
+   "gross": 8677.5,
+   "turnover": 117097.5,
+   "net": 7906.62,
+   "n_sl": 0,
+   "note": "",
+   "updated_at": "2026-09-08T11:57:01",
+   "book": "dte0"
   }
  ],
- "n_days": 12,
- "cum_net": 24115.65,
+ "n_days": 13,
+ "cum_net": 32022.27,
  "shadow": {
   "book": "dte1",
   "n_days": 13,
   "cum_net": 108805.45,
   "note": "DTE-1 shadow - study REJECTED this DTE; forward test only"
  },
- "generated": "2026-09-07T15:16:02"
+ "generated": "2026-09-08T11:57:01"
 }
