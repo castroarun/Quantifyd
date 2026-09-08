@@ -115,6 +115,24 @@ export default function Holdings() {
   const [tab, setTab] = useState<'digest' | 'charts'>('digest');
   const [account, setAccount] = useState<'me' | 'dad' | 'both'>('me');
   const [funds, setFunds] = useState<{ available: number; cash: number; live_balance: number } | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [reload, setReload] = useState(0);
+
+  // "Connect Stanly's account" — server-side TOTP re-login (the browser OAuth flow can't
+  // return to the app over plain http), then refetch the digest.
+  const connectStanly = async () => {
+    setConnecting(true);
+    try {
+      const r = await fetch('/api/dad/refresh', { method: 'POST' });
+      const j = await r.json().catch(() => ({ ok: false }));
+      if (j.ok) setReload((n) => n + 1);
+      else alert("Couldn't connect Stanly's account — login failed. Check that TOTP is still enabled.");
+    } catch {
+      alert('Network error connecting Stanly’s account.');
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +149,7 @@ export default function Holdings() {
     load();
     const id = setInterval(load, 15_000);
     return () => { cancelled = true; clearInterval(id); };
-  }, [account]);
+  }, [account, reload]);
 
   // Available cash for the hero strip (sum across both accounts when combined)
   useEffect(() => {
@@ -199,10 +217,11 @@ export default function Holdings() {
       {account === 'dad' && (data as { error?: string }).error ? (
         <div style={{ margin: '4px 0 10px', padding: '10px 14px', background: 'var(--brand-amber-soft)', color: 'var(--brand-amber)', borderRadius: 8, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <span>{(data as { error?: string }).error} — Stanly's session isn't connected.</span>
-          <a
-            href="/dad/login"
-            style={{ background: 'var(--brand-navy)', color: '#fff', padding: '7px 14px', borderRadius: 8, fontWeight: 650, textDecoration: 'none', whiteSpace: 'nowrap' }}
-          >Connect Stanly's account →</a>
+          <button
+            onClick={connectStanly}
+            disabled={connecting}
+            style={{ background: 'var(--brand-navy)', color: '#fff', padding: '7px 14px', border: 0, borderRadius: 8, fontWeight: 650, cursor: connecting ? 'wait' : 'pointer', whiteSpace: 'nowrap', opacity: connecting ? 0.7 : 1 }}
+          >{connecting ? 'Connecting…' : "Connect Stanly's account →"}</button>
         </div>
       ) : null}
 
