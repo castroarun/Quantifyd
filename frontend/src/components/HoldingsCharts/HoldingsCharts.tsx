@@ -45,6 +45,9 @@ interface Series {
   prevClose: number;
 }
 
+// liquid/cash parking + overnight funds — excluded from the candlestick wall (kept in totals)
+const CASH_FUND = /LIQUID|CASHIETF|OVERNIGHT/i;
+
 function toSeries(r: HoldingsRecord, bars?: Bar[]): Series | null {
   // Prefer the digest sparkline; fall back to the OHLC file's closes when the
   // sparkline is empty (Yahoo occasionally returns nothing for a symbol at
@@ -660,8 +663,12 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
     return () => { on = false; };
   }, [ohlcUrl, (ohlcUrls || []).join(',')]);
 
+  // liquid / cash parking funds (LIQUIDCASE, CASHIETF, LIQUIDBEES…) barely move — a
+  // candlestick of them is a flat line. Hide them from the wall; they stay in the totals.
+  const cashCount = holdings.filter((r) => CASH_FUND.test(r.tradingsymbol)).length;
   const allSeries = useMemo(
-    () => holdings.map((r) => toSeries(r, ohlc[r.tradingsymbol])).filter((s): s is Series => s !== null),
+    () => holdings.filter((r) => !CASH_FUND.test(r.tradingsymbol))
+      .map((r) => toSeries(r, ohlc[r.tradingsymbol])).filter((s): s is Series => s !== null),
     [holdings, ohlc],
   );
 
@@ -916,7 +923,7 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
       ) : current ? (
         <div className={styles.focus}>
           <div className={`${styles.panel} ${styles.rail}`}>
-            <div className={styles.railH}>{list.length} holdings</div>
+            <div className={styles.railH}>{list.length} holdings{cashCount > 0 ? ` · +${cashCount} cash fund${cashCount > 1 ? 's' : ''} in totals` : ''}</div>
             {list.map((h) => {
               const rv = sort === 'pnl' ? pct(h.ret, 0) : sort === 'ath' ? pct(h.fromAth, 0) : sort === 'val' ? fmtRs(h.current) : pct(h.day);
               const rvn = sort === 'pnl' ? h.ret : sort === 'ath' ? h.fromAth : h.day;

@@ -45,6 +45,36 @@ def fetch_bars(symbol, attempts=3):
     return best
 
 
+def backfill_kite(kite, symbol, token, rows):
+    """Append recent daily bars from Kite that yfinance is missing (freshness for
+    lagging / recently-listed symbols like DYCL). Kite is the broker's own data."""
+    if not (kite and token and rows):
+        return rows
+    frm = datetime.datetime.strptime(rows[-1]["t"], "%Y-%m-%d")
+    to = datetime.datetime.now()
+    if (to.date() - frm.date()).days < 1:
+        return rows
+    try:
+        candles = kite.historical_data(token, frm, to, "day")
+    except Exception as e:  # noqa: BLE001
+        print("  kite backfill err", symbol, e)
+        return rows
+    have = {r["t"] for r in rows}
+    added = 0
+    for c in candles or []:
+        d = c["date"].strftime("%Y-%m-%d") if hasattr(c["date"], "strftime") else str(c["date"])[:10]
+        if d in have:
+            continue
+        rows.append({"t": d, "o": round(float(c["open"]), 2), "h": round(float(c["high"]), 2),
+                     "l": round(float(c["low"]), 2), "c": round(float(c["close"]), 2),
+                     "v": int(c.get("volume") or 0)})
+        added += 1
+    if added:
+        rows.sort(key=lambda r: r["t"])
+        print(f"  +{added} Kite bars {symbol}")
+    return rows
+
+
 def main():
     if not is_configured():
         print("DAD not configured — skipping"); sys.exit(0)
@@ -56,6 +86,14 @@ def main():
             if ((h.get("quantity") or 0) + (h.get("t1_quantity") or 0)
                 + (h.get("collateral_quantity") or 0) + ((h.get("mtf") or {}).get("quantity") or 0)) > 0]
     print(f"{len(syms)} dad symbols")
+    tokmap = {h["tradingsymbol"]: h.get("instrument_token") for h in raw}
+    # historical-data API isn't enabled on Stanly's Kite app, so backfill via the MAIN
+    # account (historical data is instrument-level, not account-specific)
+    try:
+        from services.kite_service import get_kite
+        kite = get_kite()
+    except Exception as e:  # noqa: BLE001
+        print("  main kite unavailable, no backfill:", e); kite = None
 
     prev = {}
     if os.path.exists(OUT):
@@ -67,10 +105,13 @@ def main():
     out = {}
     for s in syms:
         rows = fetch_bars(s)
-        keep = rows if len(rows) >= len(prev.get(s, [])) else prev[s]
+        rows = backfill_kite(kite, s, tokmap.get(s), rows)
+        merged = {r["t"]: r for r in (prev.get(s, []) or [])}
+        merged.update({r["t"]: r for r in rows})
+        keep = [merged[t] for t in sorted(merged)]
         if keep:
             out[s] = keep
-            print("ok" if len(keep) >= 20 else "THIN", s, len(keep))
+            print("ok" if len(keep) >= 20 else "THIN", s, len(keep), "last", keep[-1]["t"])
         else:
             print("NO-DATA", s)
         time.sleep(0.3)

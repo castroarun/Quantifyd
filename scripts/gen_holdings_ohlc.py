@@ -59,6 +59,36 @@ def fetch_bars(symbol, attempts=3):
     return best
 
 
+def backfill_kite(kite, symbol, token, rows):
+    """Append recent daily bars from Kite that yfinance is missing (freshness for
+    lagging / recently-listed symbols like DYCL). Kite is the broker's own data."""
+    if not (kite and token and rows):
+        return rows
+    frm = datetime.datetime.strptime(rows[-1]['t'], '%Y-%m-%d')
+    to = datetime.datetime.now()
+    if (to.date() - frm.date()).days < 1:
+        return rows
+    try:
+        candles = kite.historical_data(token, frm, to, 'day')
+    except Exception as e:  # noqa: BLE001
+        print('  kite backfill err', symbol, e)
+        return rows
+    have = {r['t'] for r in rows}
+    added = 0
+    for c in candles or []:
+        d = c['date'].strftime('%Y-%m-%d') if hasattr(c['date'], 'strftime') else str(c['date'])[:10]
+        if d in have:
+            continue
+        rows.append({'t': d, 'o': round(float(c['open']), 2), 'h': round(float(c['high']), 2),
+                     'l': round(float(c['low']), 2), 'c': round(float(c['close']), 2),
+                     'v': int(c.get('volume') or 0)})
+        added += 1
+    if added:
+        rows.sort(key=lambda r: r['t'])
+        print(f'  +{added} Kite bars {symbol}')
+    return rows
+
+
 def main():
     try:
         syms = holdings_symbols()
@@ -66,6 +96,13 @@ def main():
         print('FATAL digest fetch failed:', e)
         sys.exit(1)
     print(f'{len(syms)} symbols')
+
+    from services.kite_service import get_kite
+    try:
+        kite = get_kite()
+        tokmap = {h['tradingsymbol']: h.get('instrument_token') for h in (kite.holdings() or [])}
+    except Exception as e:  # noqa: BLE001
+        print('  kite unavailable, yfinance only:', e); kite = None; tokmap = {}
 
     # never downgrade: keep the best OHLC we've ever captured per symbol
     prev = {}
@@ -78,12 +115,15 @@ def main():
     out = {}
     for s in syms:
         rows = fetch_bars(s)
-        keep = rows if len(rows) >= len(prev.get(s, [])) else prev[s]
+        rows = backfill_kite(kite, s, tokmap.get(s), rows)
+        # merge: union of previously-captured bars + fresh fetch (fresh wins on overlap)
+        # -> keep the longest history AND the most recent days (never freeze on stale)
+        merged = {r['t']: r for r in (prev.get(s, []) or [])}
+        merged.update({r['t']: r for r in rows})
+        keep = [merged[t] for t in sorted(merged)]
         if keep:
             out[s] = keep
-            tag = 'ok' if len(keep) >= 20 else 'THIN'
-            src = '' if keep is rows else ' (kept previous)'
-            print(tag, s, len(keep), src)
+            print('ok' if len(keep) >= 20 else 'THIN', s, len(keep), 'last', keep[-1]['t'])
         else:
             print('NO-DATA', s)
         time.sleep(0.3)
