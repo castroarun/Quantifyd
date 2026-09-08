@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-08 12:07:13.563183",
+ "updated": "2026-09-08 12:09:05.022609",
  "asof": "2026-09-07",
  "mode": "live",
  "positions": [
@@ -40,16 +40,7 @@
  "data_events": [],
  "started": "2026-09-08",
  "log": [
-  "reconciled 2026-09-08 12:07:13"
+  "reconciled 2026-09-08 12:09:05"
  ],
- "failed_orders": [
-  {
-   "ts": "2026-09-08 12:02:00.860116",
-   "book": "ipo-base",
-   "symbol": "KISSHT",
-   "qty": 132,
-   "reason": "entry not placed",
-   "detail": "per second exceeded"
-  }
- ]
+ "failed_orders": []
 }

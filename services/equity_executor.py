@@ -181,9 +181,22 @@ def note_failure(book, symbol, qty, reason, detail=''):
 def flush_failures(arm):
     """Persist, alert, and push onto the book feeds so the pages show it."""
     if not _FAILED:
-        # a clean run clears yesterday's banner rather than leaving a stale warning
+        # A CLEAN RUN MUST CLEAR THE BANNER EVERYWHERE. Clearing only this file left the
+        # book pages showing a failure that had since succeeded: KISSHT was reported as
+        # not placed while the account already held it, because the page reads
+        # `failed_orders` off the book feed and nothing ever reset it.
         if arm:
             save_json(FAILURES, dict(d=str(date.today()), items=[]))
+            for sp in (OA_STATE, IPO_STATE):
+                try:
+                    if not sp.exists():
+                        continue
+                    st = json.load(open(sp))
+                    if st.get('failed_orders'):
+                        st['failed_orders'] = []
+                        save_json(sp, st)
+                except Exception as e:
+                    print('  could not clear the banner on %s: %s' % (sp.name, e))
         return
     save_json(FAILURES, dict(d=str(date.today()), items=_FAILED))
     lines = ['%s %s x%s — %s' % (f['book'], f['symbol'], f['qty'], f['reason'])
