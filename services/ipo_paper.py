@@ -65,6 +65,10 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+# Run as a script, Python puts services/ on the path, not the repo root -
+# so `import services.x` fails and every alert delivery died silently in a
+# try/except (found 09-Sep-2026 in the KTKBANK exit log).
+sys.path.insert(0, str(ROOT))
 DB = ROOT / 'backtest_data' / 'market_data.db'
 STATE = ROOT / 'backtest_data' / 'ipo_paper_state.json'
 LOCK = ROOT / 'backtest_data' / 'ipo_paper_state.lock'

@@ -41,6 +41,10 @@ from datetime import date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Run as a script, Python puts services/ on the path, not the repo root -
+# so `import services.x` fails and every alert delivery died silently in a
+# try/except (found 09-Sep-2026 in the KTKBANK exit log).
+sys.path.insert(0, str(ROOT))
 STATE = ROOT / 'backtest_data' / 'oa_real_state.json'
 LOCK = ROOT / 'backtest_data' / 'oa_real_state.lock'
 UI = ROOT / 'static' / 'app' / 'oa_real.json'
