@@ -132,10 +132,26 @@ export default function MomentumPaper() {
      0.58s then 3.57s back-to-back during market hours on 2026-09-07. Waiting on it means
      the page is blank for seconds and its prices then sit still for a minute.
 
-     So the prices come from a cron-baked file the way Open Alpha's do (~3ms), polled
-     every 10s, while the API is polled once a minute for the rest. If the baked file is
-     missing or stale the page is exactly what it was before — the API alone. */
-  const load = () => apiGet<State>('/api/momentum-paper/state').then(setS).catch((e) => setErr(String(e)));
+     So BOTH feeds are cron-baked files now, the way Open Alpha's are: prices from
+     momentum_live.json every 10s, and the rest of the state from momentum_state.json,
+     each served in about 3ms. The API remains the fallback for a missing or stale bake —
+     slow but correct, which is the right way round. */
+  /* The baked state first. Open Alpha has never had this problem because its page reads a
+     file a cron already wrote; this is the same trick applied to the slower book. The API
+     stays as the fallback, so a missing or stale bake costs speed, never correctness. */
+  const STALE_MS = 20 * 60 * 1000;
+  const loadFromApi = () =>
+    apiGet<State>('/api/momentum-paper/state').then(setS).catch((e) => setErr(String(e)));
+  const load = () =>
+    fetch('/app/momentum_state.json?t=' + Date.now(), { cache: 'no-store' })
+      .then((x) => (x.ok ? x.json() : Promise.reject(new Error(String(x.status)))))
+      .then((d: State & { baked?: string }) => {
+        const age = d.baked ? Date.now() - Date.parse(d.baked.replace(' ', 'T')) : Infinity;
+        if (!d.nav || !Number.isFinite(age) || age > STALE_MS) throw new Error('stale bake');
+        setS(d);
+        setErr(null);
+      })
+      .catch(loadFromApi);
   const loadLive = () =>
     fetch('/app/momentum_live.json?t=' + Date.now())
       .then((x) => (x.ok ? x.json() : Promise.reject(new Error(String(x.status)))))

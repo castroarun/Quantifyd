@@ -6,7 +6,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
    They were four separate sidebar rows, which is wrong twice over: it is one portfolio,
    and the sidebar had grown long enough that the books were hard to find in it. Press
-   1-4 to move between them; the tab is in the URL (?tab=oa) so a particular book can
+   0-3 to move between them (0 is the desk, where the portfolio opens); the tab is in
+   the URL (?tab=oa) so a particular book can
    still be linked to and reloaded directly.
 
    Each tab is a lazy chunk, so opening the portfolio does not download all four. */
@@ -22,15 +23,21 @@ const TABS: { id: TabId; n: number; label: string; sub: string }[] = [
   { id: 'tn', n: 1, label: 'True North', sub: 'Nifty-200 momentum · LIVE' },
   { id: 'oa', n: 2, label: 'Open Alpha', sub: 'ATH breakout · LIVE' },
   { id: 'ipo', n: 3, label: 'IPO Base', sub: 'recent listings · paper' },
-  { id: 'cd', n: 4, label: 'Capital Desk', sub: 'money in and out · targets' },
+  /* 0, not 4: the desk is where the portfolio opens, so its key sits beside 1-2-3
+     rather than after them. The tab keeps its place at the end of the strip - moving it
+     would shuffle three shortcuts people already have in their fingers. */
+  { id: 'cd', n: 0, label: 'Capital Desk', sub: 'money in and out · targets' },
 ];
 
 export default function Portfolio() {
   const nav = useNavigate();
   const loc = useLocation();
   const urlTab = new URLSearchParams(loc.search).get('tab') as TabId | null;
+  /* The desk is the default: arriving at the portfolio, the question is what the whole
+     thing is worth and what happens next, not how one book is doing. A ?tab= link still
+     wins, so a bookmarked book opens on that book. */
   const [tab, setTab] = useState<TabId>(
-    TABS.some((t) => t.id === urlTab) ? (urlTab as TabId) : 'tn');
+    TABS.some((t) => t.id === urlTab) ? (urlTab as TabId) : 'cd');
 
   const go = (id: TabId) => {
     setTab(id);
@@ -56,9 +63,10 @@ export default function Portfolio() {
   return (
     <div>
       <div role="tablist" aria-label="Portfolio books" style={{
-        display: 'flex', gap: 4, flexWrap: 'wrap', padding: '10px 22px 0',
+        display: 'flex', gap: 4, flexWrap: 'wrap', padding: '2px 22px 0',
         borderBottom: '1px solid var(--hairline,rgba(0,0,0,0.1))',
         background: 'var(--surface,#fff)', position: 'sticky', top: 0, zIndex: 20,
+        marginBottom: 14,        /* the strip's border was touching the heading below it */
       }}>
         {TABS.map((t) => {
           const on = t.id === tab;

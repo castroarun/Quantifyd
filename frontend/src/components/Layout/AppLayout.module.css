@@ -12,7 +12,8 @@
 }
 
 .content {
-  padding: 36px 48px 56px;
+  /* was 36px: a lid that deep pushed every page down for no reason (Arun, 09-Sep-2026) */
+  padding: 22px 48px 56px;
   flex: 1;
   min-width: 0;
 }
