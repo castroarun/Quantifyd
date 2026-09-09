@@ -1,0 +1,18 @@
+{
+ "asof": "2026-09-09 12:02:35",
+ "mode": "DRY-RUN (not armed)",
+ "armed": false,
+ "killed": false,
+ "lots": 3,
+ "qty": 195,
+ "vix_rank_min": 25,
+ "target": 0.5,
+ "stop": 2.0,
+ "dte_in": 45,
+ "dte_out": 21,
+ "decide_window": "15:20-15:29 IST",
+ "open_positions": [],
+ "closed_trades": [],
+ "realised_rs": 0,
+ "events": []
+}

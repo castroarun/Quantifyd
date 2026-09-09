@@ -1,62 +1,115 @@
 {
- "generated_at": "2026-09-08T15:55:22",
- "day": "2026-09-08",
+ "generated_at": "2026-09-09T12:00:23",
+ "day": "2026-09-09",
  "expiry": "2026-09-15",
  "entry_day": "2026-09-09",
  "exit_day": "2026-09-14",
- "spot_now": 23635.1,
- "spot_at": "2026-09-08T15:34:00",
- "vix": 11.13,
- "vix_asof": "2026-09-07",
- "cpr_pct": 0.148,
+ "spot_now": 23496.35,
+ "spot_at": "2026-09-09T11:59:00",
+ "vix": 11.15,
+ "vix_asof": "2026-09-08",
+ "cpr_pct": 0.098,
  "books": {
   "FLY_PLAIN_GATED": {
    "name": "Fly \u00b7 full rules (VIX-gated)",
    "cpr": false,
    "stop": 0.02,
    "vix_gate": true,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "GATED",
+   "reason": "VIX 11.15 < 13.0 floor at entry"
   },
   "FLY_D_GATED": {
    "name": "Fly D \u00b7 CPR + stop (VIX-gated)",
    "cpr": true,
    "stop": 0.02,
    "vix_gate": true,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "GATED",
+   "reason": "VIX 11.15 < 13.0 floor at entry"
   },
   "FLY_C_GATED": {
    "name": "Fly C \u00b7 CPR, no stop (VIX-gated)",
    "cpr": true,
    "stop": null,
    "vix_gate": true,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "GATED",
+   "reason": "VIX 11.15 < 13.0 floor at entry"
   },
   "FLY_PLAIN_OPEN": {
    "name": "Fly \u00b7 full rules (ungated)",
    "cpr": false,
    "stop": 0.02,
    "vix_gate": false,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "OPEN",
+   "reason": "held since 2026-09-09 09:20",
+   "entry_day": "2026-09-09",
+   "entry_spot": 23506.1,
+   "atm": 23500.0,
+   "wings": [
+    23050.0,
+    23950.0
+   ],
+   "credit": 233.9,
+   "mark": 220.7,
+   "pnl": 7761,
+   "move_pct": -0.04,
+   "legs": [
+    {
+     "side": "SELL",
+     "type": "CE",
+     "strike": 23500.0,
+     "qty": 650,
+     "entry": 164.0,
+     "ltp": 146.0,
+     "at": "2026-09-09T12:00:00",
+     "pnl": 11700
+    },
+    {
+     "side": "SELL",
+     "type": "PE",
+     "strike": 23500.0,
+     "qty": 650,
+     "entry": 105.95,
+     "ltp": 105.6,
+     "at": "2026-09-09T12:00:00",
+     "pnl": 228
+    },
+    {
+     "side": "BUY",
+     "type": "CE",
+     "strike": 23950.0,
+     "qty": 650,
+     "entry": 20.0,
+     "ltp": 16.05,
+     "at": "2026-09-09T12:00:00",
+     "pnl": -2567
+    },
+    {
+     "side": "BUY",
+     "type": "PE",
+     "strike": 23050.0,
+     "qty": 650,
+     "entry": 16.05,
+     "ltp": 14.85,
+     "at": "2026-09-09T12:00:00",
+     "pnl": -780
+    }
+   ]
   },
   "FLY_D_OPEN": {
    "name": "Fly D \u00b7 CPR + stop (ungated)",
    "cpr": true,
    "stop": 0.02,
    "vix_gate": false,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "GATED",
+   "reason": "prior-day CPR 0.098% < 0.1%"
   },
   "FLY_C_OPEN": {
    "name": "Fly C \u00b7 CPR, no stop (ungated)",
    "cpr": true,
    "stop": null,
    "vix_gate": false,
-   "state": "FLAT",
-   "reason": "no cycle open right now"
+   "state": "GATED",
+   "reason": "prior-day CPR 0.098% < 0.1%"
   }
  }
 }

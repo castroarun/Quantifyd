@@ -94,5 +94,12 @@
   "symbol": "INDSWFTLAB",
   "qty": 19,
   "price": 390.95
+ },
+ "260908151579157": {
+  "ts": "2026-09-09 12:03:11.300158",
+  "symbol": "SPORTKING",
+  "side": "SELL",
+  "qty": 174,
+  "price": 215.99
  }
 }

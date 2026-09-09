@@ -641,7 +641,7 @@ function DividendsCard() {
    return series. */
 
 type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
-  swept: number; pnl: number; n: number; slots?: number; interest?: number;
+  swept: number; pnl: number; n: number; slots?: number; interest?: number; realized?: number;
   positions?: { symbol: string; to_stop_pct?: number | null }[] };
 type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
   pnl: number; realized: number; gain: number; return_pct: number;
@@ -1126,25 +1126,29 @@ export default function CapitalDesk() {
         </div>
         <div className={styles.sumPnl}>
           <div className={styles.sumLabel}>Profit &amp; loss</div>
-          {[{ k: 'True North', inv: capTN, now: navTN },
-            { k: 'Open Alpha', inv: capOA, now: navOA },
-            ...(ipoLive ? [{ k: 'IPO Base', inv: capIPOreal, now: navIPO }]
-                        : [{ k: 'IPO Base', inv: 0, now: 0 }])].map((b) => {
-            const d = b.now - b.inv;
-            return (
-              <div key={b.k} className={styles.pnlRow} style={{ alignItems: 'flex-start' }}>
-                <span>
-                  {b.k}
-                  <span className={styles.pnlWas}>
-                    {b.inv ? `${rup(b.inv)} → ${rup(b.now)}` : 'on paper'}
-                  </span>
-                </span>
-                <b className={!b.inv ? styles.muted : d >= 0 ? styles.pos : styles.neg}>
-                  {b.inv ? (d >= 0 ? '+' : '−') + rup(Math.abs(d)).slice(1) : '—'}
+          {(() => {
+            /* The parts, in the same order and language as every book page. Costs are the
+               residual - unrealised is measured before entry costs while realised is
+               already net of its own, so naming the gap is the honest thing to do. */
+            const unreal = (tnLive?.pnl ?? 0) + (oa?.pnl ?? 0) + (ipoLive ? (ipo?.pnl ?? 0) : 0);
+            const real = (tnLive?.realized ?? 0) + (oa?.realized ?? 0)
+                       + (ipoLive ? (ipo?.realized ?? 0) : 0);
+            const yld = tnLive?.interest ?? 0;
+            const costs = gain - (unreal + real + yld);
+            return [
+              { k: 'Unrealised', v: unreal, hint: 'open positions, before entry costs' },
+              { k: 'Realised (net)', v: real, hint: 'closed trades, after their own costs' },
+              { k: 'Liquid fund yield', v: yld, hint: 'gain on True North\u2019s swept cash' },
+              { k: 'Costs & fees', v: costs, hint: 'the residual: brokerage, STT and stamp duty not already netted above' },
+            ].map((x) => (
+              <div key={x.k} className={styles.pnlRow} title={x.hint}>
+                <span>{x.k}</span>
+                <b className={x.v > 0 ? styles.pos : x.v < 0 ? styles.neg : styles.muted}>
+                  {x.v >= 0 ? '+' : '\u2212'}{rup(Math.abs(x.v)).slice(1)}
                 </b>
               </div>
-            );
-          })}
+            ));
+          })()}
           <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
             <span>Total return</span>
             <b className={gain >= 0 ? styles.pos : styles.neg}>

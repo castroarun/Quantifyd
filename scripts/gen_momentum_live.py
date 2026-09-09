@@ -49,6 +49,22 @@ def donchian_stop(sym, n=15):
     return round(min(rows[1:]), 1) if len(rows) > n else None
 
 
+
+def _realized():
+    """Net realised P&L on True North's closed trades. Same figure the state API reports."""
+    import sqlite3
+    try:
+        con = sqlite3.connect(
+            'file:%s?mode=ro' % (ROOT / 'backtest_data' / 'momentum_paper.db'), uri=True)
+        try:
+            v = con.execute('select sum(net_pnl) from mp_closed').fetchone()[0]
+        finally:
+            con.close()
+        return round(v or 0)
+    except Exception:
+        return 0
+
+
 def main():
     from services import momentum_paper as mp
 
@@ -105,6 +121,9 @@ def main():
               pnl=round(tot_pnl),
               pnl_pct=round(100 * tot_pnl / (tot_val - tot_pnl), 2) if tot_val - tot_pnl else 0,
               n=len(rows), slots=mp.CFG['n_hold'],
+              # realised P&L on closed trades: one SUM, so the desk does not have to call
+              # the state endpoint (10-16s) just to complete its P&L breakdown
+              realized=_realized(),
               # what the swept cash has actually earned: ETF value less its cost
               interest=round(swept - float(mp._get('sweep_cost', 0.0) or 0.0)) if swept else 0,
               source='gen_momentum_live')

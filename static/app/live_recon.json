@@ -1,203 +1,91 @@
 {
- "generated_at": "2026-09-08T14:00:03",
+ "generated_at": "2026-09-09T11:00:02",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 64.8,
-   "pnl": -7910.0,
+   "ltp": 37.85,
+   "pnl": -13300.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "BSE26SEP3700CE": {
    "qty": -400,
    "avg": 32.325,
-   "ltp": 22.25,
-   "pnl": 4030.0,
+   "ltp": 13.35,
+   "pnl": 7590.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 213.9,
-   "pnl": 24277.5,
+   "ltp": 204.0,
+   "pnl": 21307.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 149.5,
-   "pnl": -17250.0,
+   "ltp": 139.05,
+   "pnl": -14115.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 0.86,
-   "pnl": 22157.2,
+   "ltp": 0.96,
+   "pnl": 29304.8,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.2,
-   "pnl": -5718.0,
+   "ltp": 0.24,
+   "pnl": -8577.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.11,
-   "pnl": -2859.0,
+   "ltp": 0.13,
+   "pnl": -4288.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP20CE": {
    "qty": 71475,
    "avg": 0.04,
-   "ltp": 0.05,
-   "pnl": 714.8,
+   "ltp": 0.06,
+   "pnl": 1429.5,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "ENTERO": {
-   "qty": 5,
-   "avg": 1878.1,
-   "ltp": 1848.1,
-   "pnl": -150.0,
+  "LUMAXIND": {
+   "qty": 2,
+   "avg": 6259.5,
+   "ltp": 6166.0,
+   "pnl": -187.0,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "INDSWFTLAB": {
-   "qty": 19,
-   "avg": 390.95,
-   "ltp": 391.0,
-   "pnl": 0.9,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "INOXINDIA": {
-   "qty": 5,
-   "avg": 2199.3,
-   "ltp": 2213.2,
-   "pnl": 69.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "IOLCP": {
-   "qty": 39,
-   "avg": 213.49333333333334,
-   "ltp": 212.48,
-   "pnl": -39.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "IRISDOREME": {
-   "qty": 182,
-   "avg": 61.01890109890109,
-   "ltp": 61.87,
-   "pnl": 154.9,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "KISSHT": {
-   "qty": 132,
-   "avg": 323.85,
-   "ltp": 333.75,
-   "pnl": 1306.8,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "KMEW": {
-   "qty": 4,
-   "avg": 2976.25,
-   "ltp": 2980.0,
-   "pnl": 15.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "KTKBANK": {
-   "qty": 33,
-   "avg": 332.5090909090909,
-   "ltp": 334.0,
-   "pnl": 49.2,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "MANINDS": {
-   "qty": 12,
-   "avg": 822.6,
-   "ltp": 828.3,
-   "pnl": 68.4,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "NITINSPIN": {
-   "qty": 17,
-   "avg": 623.0529411764705,
-   "ltp": 654.05,
-   "pnl": 526.9,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "SBCL": {
-   "qty": 9,
-   "avg": 1111.5333333333333,
-   "ltp": 1106.6,
-   "pnl": -44.4,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "SETL": {
-   "qty": 30,
-   "avg": 388.65,
-   "ltp": 396.6,
-   "pnl": 238.5,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "SHILPAMED": {
-   "qty": 11,
-   "avg": 953.9454545454547,
-   "ltp": 956.3,
-   "pnl": 25.9,
+  "SMSPHARMA": {
+   "qty": 25,
+   "avg": 408.4,
+   "ltp": 406.35,
+   "pnl": -51.2,
    "product": "CNC",
    "exchange": "NSE"
   },
   "SPORTKING": {
-   "qty": 50,
-   "avg": 221.86,
-   "ltp": 214.12,
-   "pnl": -387.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "SSWL": {
-   "qty": 26,
-   "avg": 364.8403846153846,
-   "ltp": 369.8,
-   "pnl": 129.0,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "TMB": {
-   "qty": 11,
-   "avg": 926.5681818181819,
-   "ltp": 925.4,
-   "pnl": -12.9,
-   "product": "CNC",
-   "exchange": "NSE"
-  },
-  "WELCORP": {
-   "qty": 4,
-   "avg": 2594.5,
-   "ltp": 2599.4,
-   "pnl": 19.6,
+   "qty": -174,
+   "avg": 215.99,
+   "ltp": 215.91,
+   "pnl": 13.9,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -218,7 +106,7 @@
    "symbol": "BSE26SEP3700CE",
    "broker_qty": -400,
    "app_qty": 0,
-   "detail": "broker holds -400 that no book claims (order tag: BOV2D2SYdYTtg1OcfxpU)"
+   "detail": "broker holds -400 that no book claims (no order tag)"
   },
   {
    "level": "ALERT",
@@ -270,139 +158,27 @@
   },
   {
    "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "ENTERO",
-   "broker_qty": 5,
+   "kind": "MANUAL",
+   "symbol": "LUMAXIND",
+   "broker_qty": 2,
    "app_qty": 0,
-   "detail": "broker 5 = OA-TOPUP +5 \u2014 placed by our books, not visible in the page feed"
+   "detail": "manual holding, 2 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "INDSWFTLAB",
-   "broker_qty": 19,
+   "kind": "MANUAL",
+   "symbol": "SMSPHARMA",
+   "broker_qty": 25,
    "app_qty": 0,
-   "detail": "broker 19 = OA-TOPUP +19 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "INOXINDIA",
-   "broker_qty": 5,
-   "app_qty": 0,
-   "detail": "broker 5 = OA-TOPUP +5 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "IOLCP",
-   "broker_qty": 39,
-   "app_qty": 0,
-   "detail": "broker 39 = OA-TOPUP +39 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "IRISDOREME",
-   "broker_qty": 182,
-   "app_qty": 0,
-   "detail": "broker 182 = OA-TOPUP +182 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "KISSHT",
-   "broker_qty": 132,
-   "app_qty": 0,
-   "detail": "broker 132 = IPO-ENTRY +132 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "KMEW",
-   "broker_qty": 4,
-   "app_qty": 0,
-   "detail": "broker 4 = OA-TOPUP +4 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "KTKBANK",
-   "broker_qty": 33,
-   "app_qty": 0,
-   "detail": "broker 33 = OA-TOPUP +33 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "MANINDS",
-   "broker_qty": 12,
-   "app_qty": 0,
-   "detail": "broker 12 = OA-TOPUP +12 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "NITINSPIN",
-   "broker_qty": 17,
-   "app_qty": 0,
-   "detail": "broker 17 = OA-TOPUP +17 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "SBCL",
-   "broker_qty": 9,
-   "app_qty": 0,
-   "detail": "broker 9 = OA-TOPUP +9 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "SETL",
-   "broker_qty": 30,
-   "app_qty": 0,
-   "detail": "broker 30 = OA-TOPUP +30 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "SHILPAMED",
-   "broker_qty": 11,
-   "app_qty": 0,
-   "detail": "broker 11 = OA-TOPUP +11 \u2014 placed by our books, not visible in the page feed"
+   "detail": "manual holding, 25 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MULTI-BOOK",
    "symbol": "SPORTKING",
-   "broker_qty": 50,
+   "broker_qty": -174,
    "app_qty": 0,
-   "detail": "broker 50 = OA-TOPUP +50 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "SSWL",
-   "broker_qty": 26,
-   "app_qty": 0,
-   "detail": "broker 26 = OA-TOPUP +26 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "TMB",
-   "broker_qty": 11,
-   "app_qty": 0,
-   "detail": "broker 11 = OA-TOPUP +11 \u2014 placed by our books, not visible in the page feed"
-  },
-  {
-   "level": "INFO",
-   "kind": "MULTI-BOOK",
-   "symbol": "WELCORP",
-   "broker_qty": 4,
-   "app_qty": 0,
-   "detail": "broker 4 = OA-TOPUP +4 \u2014 placed by our books, not visible in the page feed"
+   "detail": "broker -174 = OA-EXIT -174 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "WARN",
@@ -438,11 +214,10 @@
   }
  ],
  "filled_by_tag": {
-  "OA-TOPUP": 457,
-  "BOV2D2SYdYTtg1OcfxpU": 200,
-  "IPO-ENTRY": 132
+  "OA-EXIT": 174,
+  "untagged": 27
  },
  "alerts": 8,
  "warns": 4,
- "infos": 17
+ "infos": 3
 }

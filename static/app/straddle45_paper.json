@@ -1,12 +1,12 @@
 {
- "asof": "2026-09-08 16:20:38",
+ "asof": "2026-09-09 12:00:08",
  "upcoming": [
   {
    "expiry": "2026-10-27",
    "entry_date": "2026-09-11",
    "entry_weekday": "Fri",
    "exit_due": "2026-10-06",
-   "days_away": 3,
+   "days_away": 2,
    "weekend_rolled": true
   },
   {
@@ -14,7 +14,7 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 66,
+   "days_away": 65,
    "weekend_rolled": true
   },
   {
@@ -22,7 +22,7 @@
    "entry_date": "2027-02-12",
    "entry_weekday": "Fri",
    "exit_due": "2027-03-09",
-   "days_away": 157,
+   "days_away": 156,
    "weekend_rolled": true
   }
  ],
@@ -32,20 +32,20 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-09-07",
- "realised": 131703.64278000002,
- "unrealised": 11076.000000000013,
- "nav": 1342323.6644278744,
+ "bhav_through": "2026-09-08",
+ "realised": 142559.80425250003,
+ "unrealised": 0,
+ "nav": 1342242.4369371934,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
- "realised_off": 0,
+ "realised_off": 10856.161472500004,
  "unrealised_plan": 0,
- "unrealised_off": 11076.000000000013,
- "nav_plan": 1331247.6644278744,
+ "unrealised_off": 0,
+ "nav_plan": 1331386.2754646936,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
- "idle_earned": 3544.02,
+ "idle_earned": 3682.63,
  "idle_spans": [
   {
    "frm": "2026-06-09",
@@ -70,17 +70,26 @@
    "px_from": 1116.59,
    "px_to": 1118.38,
    "gain": 1917.3
+  },
+  {
+   "frm": "2026-09-08",
+   "to": "2026-09-09",
+   "days": 1,
+   "px_from": 1121.7,
+   "px_to": 1121.83,
+   "gain": 138.61
   }
  ],
- "capital_deployed": 553344.28,
- "capital_deployed_peak": 687280.03,
- "margin_asof": "2026-09-08 16:20",
- "running_pnl": 142779.64278000002,
- "running_pnl_pct": 25.80303943505118,
- "n_closed": 3,
- "n_open": 1,
+ "capital_deployed": null,
+ "capital_deployed_peak": null,
+ "margin_asof": "2026-09-09 12:00",
+ "running_pnl": 142559.80425250003,
+ "running_pnl_pct": null,
+ "n_closed": 4,
+ "n_open": 0,
  "win_rate": 100.0,
- "open_positions": [
+ "open_positions": [],
+ "closed_trades": [
   {
    "id": 4,
    "expiry": "2026-09-29",
@@ -90,108 +99,26 @@
    "credit": 749.7,
    "qty": 195,
    "lots": 3,
-   "exit_date": null,
-   "exit_prem": null,
-   "exit_reason": null,
-   "exit_spot": null,
-   "gross_pts": null,
-   "cost_pts": null,
-   "net_pts": null,
-   "net_rs": null,
-   "status": "OPEN",
+   "exit_date": "2026-09-08",
+   "exit_prem": 688.35,
+   "exit_reason": "TIME_21DTE",
+   "exit_spot": 23635.1,
+   "gross_pts": 61.35000000000002,
+   "cost_pts": 5.677377064102565,
+   "net_pts": 55.67262293589746,
+   "net_rs": 10856.161472500004,
+   "status": "CLOSED",
    "vix_level": 11.31,
    "vix_rank": 22.61904761904762,
    "on_plan": 0,
-   "mark_prem": 692.9,
-   "mark_date": "2026-09-08T15:34:00",
-   "mark_src": "chain-1min",
-   "mtm_rs": 11076.000000000013,
+   "mark_prem": 688.35,
+   "mark_date": "2026-09-08",
+   "mark_src": "bhav",
+   "mtm_rs": 10856.161472500004,
    "mark_spot": 23635.1,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 20,
-   "curve": [
-    {
-     "d": "2026-08-17",
-     "prem": 703.75,
-     "mtm": 8960.25000000001
-    },
-    {
-     "d": "2026-08-18",
-     "prem": 661.3499999999999,
-     "mtm": 17228.250000000025
-    },
-    {
-     "d": "2026-08-19",
-     "prem": 642.9000000000001,
-     "mtm": 20825.999999999993
-    },
-    {
-     "d": "2026-08-20",
-     "prem": 609.55,
-     "mtm": 27329.25000000002
-    },
-    {
-     "d": "2026-08-21",
-     "prem": 603.0999999999999,
-     "mtm": 28587.000000000025
-    },
-    {
-     "d": "2026-08-24",
-     "prem": 590.45,
-     "mtm": 31053.75
-    },
-    {
-     "d": "2026-08-25",
-     "prem": 574.8,
-     "mtm": 34105.500000000015
-    },
-    {
-     "d": "2026-08-26",
-     "prem": 546.15,
-     "mtm": 39692.250000000015
-    },
-    {
-     "d": "2026-08-27",
-     "prem": 547.5,
-     "mtm": 39429.00000000001
-    },
-    {
-     "d": "2026-08-28",
-     "prem": 529.95,
-     "mtm": 42851.25
-    },
-    {
-     "d": "2026-08-31",
-     "prem": 528.05,
-     "mtm": 43221.750000000015
-    },
-    {
-     "d": "2026-09-01",
-     "prem": 559.55,
-     "mtm": 37079.250000000015
-    },
-    {
-     "d": "2026-09-02",
-     "prem": 592.85,
-     "mtm": 30585.750000000004
-    },
-    {
-     "d": "2026-09-03",
-     "prem": 574.65,
-     "mtm": 34134.750000000015
-    },
-    {
-     "d": "2026-09-04",
-     "prem": 520.65,
-     "mtm": 44664.750000000015
-    },
-    {
-     "d": "2026-09-07",
-     "prem": 608.15,
-     "mtm": 27602.250000000015
-    }
-   ],
+   "dte": 19,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -221,7 +148,7 @@
      "side": "SHORT",
      "opt": "CE",
      "strike": 24350.0,
-     "price": 45.0,
+     "price": 44.95,
      "volume": 0,
      "oi": 0,
      "bid": null,
@@ -232,7 +159,7 @@
      "side": "SHORT",
      "opt": "PE",
      "strike": 24350.0,
-     "price": 647.9,
+     "price": 643.4,
      "volume": 0,
      "oi": 0,
      "bid": null,
@@ -240,14 +167,9 @@
      "itm_by": 714.9
     }
    ],
-   "legs_asof": "2026-09-08T15:34:00",
-   "legs_src": "chain 1-min",
-   "margin_real": 553344.28,
-   "margin_peak": 687280.03,
-   "mtm_pct": 2.0016471481371436
-  }
- ],
- "closed_trades": [
+   "legs_asof": "2026-09-08",
+   "legs_src": "bhav"
+  },
   {
    "id": 3,
    "expiry": "2026-08-25",
@@ -276,7 +198,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -15,
+   "dte": -16,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -356,7 +278,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -43,
+   "dte": -44,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -436,7 +358,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -71,
+   "dte": -72,
    "legs_entry": [
     {
      "side": "SHORT",

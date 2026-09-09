@@ -59,14 +59,6 @@
    "src": "real"
   },
   {
-   "symbol": "SPORTKING",
-   "qty": 174,
-   "buy": 227.18,
-   "entry_date": "2026-09-04",
-   "stop": 209.01,
-   "src": "real"
-  },
-  {
    "symbol": "IRISDOREME",
    "qty": 634,
    "buy": 62.39,
@@ -133,7 +125,19 @@
  ],
  "invested": 446348.0,
  "note": "Seeded 04-Sep-2026 from Arun-executed CNC fills (top-16 by RS of the day's 21 triggered candidates). LIQUIDCASE 1757u sold to fund. Deliberate override of the Dec-5 soak gate. Exits manual-assisted: 15:18 checker alerts; no automated selling yet.",
- "trades": [],
+ "trades": [
+  {
+   "symbol": "SPORTKING",
+   "qty": 174,
+   "buy": 227.18,
+   "sell": 215.99,
+   "entry_date": "2026-09-04",
+   "exit_date": "2026-09-09",
+   "reason": "rule_exit",
+   "net_pnl": -2140,
+   "pnl_pct": -4.93
+  }
+ ],
  "navcurve": [
   {
    "d": "2026-09-04",
@@ -151,7 +155,7 @@
   }
  ],
  "capital": 617637.68,
- "cash": 7395.57,
+ "cash": 44977.83,
  "fund_flows": [
   {
    "ts": "2026-09-04 14:49:08.392401",
