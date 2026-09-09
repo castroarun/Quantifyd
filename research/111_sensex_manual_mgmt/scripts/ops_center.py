@@ -15,6 +15,15 @@ Q = Path("/home/arun/quantifyd")
 OUTS = [Q / "static/app/straddles/ops_center.json", Q / "frontend/public/straddles/ops_center.json"]
 
 GROUPS = [
+    ("45-DTE NIFTY straddle LIVE book (research/119)", [
+    ("straddle45 LIVE executor (research/119)", "*/2 15:18-15:30 Mon-Fri cron (flock)",
+     "REAL MONEY. 45-DTE NIFTY ATM short straddle, 3 lots NRML, VIX-rank>25 entry filter, "
+     "TP 50%/SL 200%/21-DTE time exit, decided ONCE in the 15:20-15:29 window to match the "
+     "backtested close-basis rule. Both-legs-or-neither, reconciles against kite.positions() "
+     "before acting, verifies every fill. Unarmed unless STRADDLE45_LIVE=1. "
+     "KILL: touch backtest_data/straddle45_KILL",
+     "cd /home/arun/quantifyd && ./venv/bin/python3 services/straddle45_live.py status"),
+    ]),
     ("CSL-60 DTE-0 straddle PAPER book (research/136)", [
         ("csl60_paper mark", "every minute 09:00-15:59 Mon-Fri cron (flock; acts only on NIFTY expiry days)",
          "Paper-trades the AlgoTest study's rank-1 system: expiry-day 09:16 ATM straddle, per-leg 60% SL, "
@@ -119,6 +128,13 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("straddle45 LIVE - first-fire review (order path never exercised)",
+     "2026-09-12", "PENDING",
+     "The executor ships fully tested UP TO order placement; the fill path itself is "
+     "first exercised on the first live entry. After the first fire (or the first SKIP), "
+     "read /tmp/straddle45_live.log + straddle45_live.db events, reconcile fills against "
+     "the broker, and confirm both legs went on together at the expected strike. Three "
+     "date bugs were caught in pre-flight - assume more may exist in the untested path."),
     ("Open Alpha - automated execution soak: did the machine trade the spec?",
      "2026-10-09", "PENDING",
      "From 08-Sep-2026 Open Alpha places its own exits (15:18) and arms its own entries "

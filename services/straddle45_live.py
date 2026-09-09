@@ -62,8 +62,14 @@ MARGIN_BUFFER = 1.25             # require 1.25x the basket requirement free
 MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
        "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
-ARMED = os.environ.get("STRADDLE45_LIVE") == "1"
-ALLOW_OFF_PLAN = os.environ.get("STRADDLE45_OFF_PLAN") == "1"
+ARM_FILE = os.path.join(ROOT, "backtest_data", "straddle45_ARMED")
+# Armed by the PRESENCE OF A FILE, not by a crontab edit. Arming and disarming a
+# real-money book should never require rewriting the crontab - that is how the
+# 58-job wipe happened on 2026-09-01. touch to arm, rm to disarm, both instant.
+ARMED = os.environ.get("STRADDLE45_LIVE") == "1" or os.path.exists(ARM_FILE)
+ALLOW_OFF_PLAN = (os.environ.get("STRADDLE45_OFF_PLAN") == "1"
+                  or os.path.exists(os.path.join(ROOT, "backtest_data",
+                                                 "straddle45_OFF_PLAN")))
 
 
 def log(msg):

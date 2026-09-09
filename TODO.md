@@ -2,6 +2,24 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## PENDING 2026-09-09 -- 45-DTE straddle LIVE executor deployed, ARMING is Arun's call
+`services/straddle45_live.py` automates entry/management/exit for the research/119 book at
+3 lots real money. Cron `*/2 15:18-15:30 Mon-Fri`. **Unarmed** unless `STRADDLE45_LIVE=1` is
+exported in the cron line -- unarmed it dry-runs and logs the exact orders it would send.
+KILL: `touch backtest_data/straddle45_KILL`. PANIC: `straddle45_live.py panic`.
+**11-Sep is a SKIP as things stand** -- India VIX 11.15, rank 17.9, filter needs >25. The
+executor will correctly do nothing unless vol rises. `STRADDLE45_OFF_PLAN=1` overrides;
+deliberately NOT set.
+Three date bugs were caught in pre-flight, each of which would have failed SILENTLY:
+sessions() excluded today; entry_session() collapsed to TODAY for future dates (would have
+entered 2 days early); exit_session() same collapse (would have closed the position on the
+day it opened). All three now calendar-based and verified against the published plan
+(entry 11-Sep, exit 06-Oct). **The order-placement path itself has never been exercised** --
+first-fire review registered in Ops Center for 2026-09-12.
+Still open: ring-fence Rs11.96L vs Rs13.5L (3 lots breaches at an 8% move), and the
+stress-margin vol axis (dated 2026-11-30).
+Deploy record: `research/119_45dte_short_straddle/NIFTY_45DTE_STRADDLE_LIVE_EXECUTOR_DEPLOY_STATUS.md`.
+
 ## 🔴 2026-09-08 — ALERTS GO NOWHERE: email and WhatsApp are DORMANT (Arun action)
 
 **Every alert this system raises is currently written to a file and delivered to no one.**
