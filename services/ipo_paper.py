@@ -347,7 +347,8 @@ def write_ui(st, wide, asof, log, dry=False):
     ui = dict(updated=str(datetime.now()), asof=str(asof)[:10], mode=st.get('mode', 'paper'),
               positions=rows, capital=round(cap), cash=round(cash), value=round(tot_val),
               nav=round(nav), pnl=round(tot_pnl), realized=round(realized),
-              gain=round(nav + realized - cap),
+              # nav already contains realised P&L (see oa_real.py, 09-Sep-2026)
+              gain=round(nav - cap),
               return_pct=round(100 * (nav + realized - cap) / cap, 2) if cap else 0,
               invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
               slots=SLOTS, slots_used=len(rows),

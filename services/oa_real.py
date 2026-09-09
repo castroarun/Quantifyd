@@ -360,7 +360,9 @@ def mark():
             finally:
                 release_lock()
     realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
-    gain = nav + realized - capital
+    # nav already contains realised P&L: a sale moved the money into cash at the
+    # exit price. Adding `realized` here would subtract every closed trade twice.
+    gain = nav - capital
     ui = dict(updated=str(datetime.now()), positions=rows, invested=round(cost),
               capital=round(capital), value=round(tot_val), cash=round(cash),
               nav=round(nav), pnl=round(tot_pnl), realized=round(realized),
@@ -426,7 +428,9 @@ def ui_only():
     for r in rows:
         r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
     realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
-    gain = nav + realized - capital
+    # nav already contains realised P&L: a sale moved the money into cash at the
+    # exit price. Adding `realized` here would subtract every closed trade twice.
+    gain = nav - capital
     ui = dict(updated=prev_updated or str(datetime.now()), stale=True,
               positions=rows, invested=round(cost), capital=round(capital),
               value=round(tot_val), cash=round(cash), nav=round(nav),
@@ -540,7 +544,9 @@ def reconcile(dry=True):
                 st['positions'] = [x for x in st['positions'] if x['symbol'] != s]
             else:
                 pos['qty'] -= q                    # partial fill: keep the remainder
-            st['cash'] = round(float(st['cash']) + val, 2)
+            # net of charges, at the same rate the trade record was costed at, or the
+            # ledger disagrees with the P&L by exactly the fees
+            st['cash'] = round(float(st['cash']) + val - COST_PCT * val, 2)
         by_sym = {p['symbol']: p for p in st['positions']}
         for s, (q, val) in adds.items():
             avg = val / q
@@ -554,7 +560,7 @@ def reconcile(dry=True):
                 st['positions'].append(dict(symbol=s, qty=q, buy=round(avg, 2),
                                             entry_date=str(date.today()),
                                             stop=round(avg * (1 - STOP_PCT), 2), src='executor'))
-        st['cash'] = round(max(0.0, float(st['cash']) - spend), 2)
+        st['cash'] = round(max(0.0, float(st['cash']) - spend * (1 + COST_PCT)), 2)
         save_state(st)
         json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
     finally:
