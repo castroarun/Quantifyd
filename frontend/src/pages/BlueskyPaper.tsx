@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
-import BookPanel from '../components/BookPanel/BookPanel';
+import BookPanel, { pnlBreakdown } from '../components/BookPanel/BookPanel';
 import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
 import type { HoldingsRecord } from '../api/types';
 
@@ -168,12 +168,9 @@ export default function BlueskyPaper() {
     { k: 'Cash', v: r.cash, c: 'var(--ink-faint,#B4B2A9)' },
   ].filter((x) => x.v > 0);
   const total = segs.reduce((a, x) => a + x.v, 0) || 1;
-  const pnlRows = [
-    { k: 'Unrealised', v: r.pnl, hint: 'open positions vs actual fills' },
-    { k: 'Realised (net)', v: r.realized, hint: 'closed trades, after costs' },
-    { k: 'Costs & fees', v: gain - (r.pnl + r.realized),
-      hint: 'the residual between the book gain and the two lines above' },
-  ];
+  const pnlRows = pnlBreakdown({
+    gain, unrealised: r.pnl, realised: r.realized, invested: r.invested ?? 0,
+  });
 
   return (
     <div className={styles.root}>

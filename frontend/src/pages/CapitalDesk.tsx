@@ -3,6 +3,7 @@ import { apiGet } from '../api/client';
 import styles from './MomentumPaper.module.css';
 import LiveTick from '../components/LiveTick/LiveTick';
 import BookCurve from '../components/BookPanel/BookCurve';
+import { pnlBreakdown } from '../components/BookPanel/BookPanel';
 
 /* CAPITAL DESK (/app/capital) — the one page that owns every rupee in and out.
    Renamed from "Sleeves 50-50" on 05-Sep-2026: the book is three systems on a
@@ -643,7 +644,7 @@ function DividendsCard() {
 type LiveTN = { updated: string; nav: number; capital: number; value: number; cash: number;
   swept: number; pnl: number; n: number; slots?: number; interest?: number; realized?: number;
   positions?: { symbol: string; to_stop_pct?: number | null }[] };
-type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number;
+type LiveOA = { updated: string; nav: number; capital: number; value: number; cash: number; invested?: number;
   pnl: number; realized: number; gain: number; return_pct: number;
   navcurve: { d: string; nav: number }[]; slots?: number;
   positions: { symbol: string; to_stop_pct?: number | null;
@@ -1134,13 +1135,11 @@ export default function CapitalDesk() {
             const real = (tnLive?.realized ?? 0) + (oa?.realized ?? 0)
                        + (ipoLive ? (ipo?.realized ?? 0) : 0);
             const yld = tnLive?.interest ?? 0;
-            const costs = gain - (unreal + real + yld);
-            return [
-              { k: 'Unrealised', v: unreal, hint: 'open positions, before entry costs' },
-              { k: 'Realised (net)', v: real, hint: 'closed trades, after their own costs' },
-              { k: 'Liquid fund yield', v: yld, hint: 'gain on True North\u2019s swept cash' },
-              { k: 'Costs & fees', v: costs, hint: 'the residual: brokerage, STT and stamp duty not already netted above' },
-            ].map((x) => (
+            const invested = (tnLive ? tnLive.value - tnLive.pnl : 0)
+                          + (oa ? oa.invested ?? 0 : 0)
+                          + (ipoLive && ipo ? ipo.value - ipo.pnl : 0);
+            return pnlBreakdown({ gain, unrealised: unreal, realised: real,
+                                  invested, yieldRs: yld }).map((x) => (
               <div key={x.k} className={styles.pnlRow} title={x.hint}>
                 <span>{x.k}</span>
                 <b className={x.v > 0 ? styles.pos : x.v < 0 ? styles.neg : styles.muted}>

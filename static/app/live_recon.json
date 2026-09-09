@@ -1,59 +1,59 @@
 {
- "generated_at": "2026-09-09T11:00:02",
+ "generated_at": "2026-09-09T14:00:02",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 37.85,
-   "pnl": -13300.0,
+   "ltp": 39.55,
+   "pnl": -12960.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "BSE26SEP3700CE": {
    "qty": -400,
    "avg": 32.325,
-   "ltp": 13.35,
-   "pnl": 7590.0,
+   "ltp": 14.7,
+   "pnl": 7050.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 204.0,
-   "pnl": 21307.5,
+   "ltp": 202.5,
+   "pnl": 20857.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 139.05,
-   "pnl": -14115.0,
+   "ltp": 140.3,
+   "pnl": -14490.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 0.96,
-   "pnl": 29304.8,
+   "ltp": 1.14,
+   "pnl": 42170.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.24,
-   "pnl": -8577.0,
+   "ltp": 0.29,
+   "pnl": -12150.8,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.13,
-   "pnl": -4288.5,
+   "ltp": 0.16,
+   "pnl": -6432.7,
    "product": "NRML",
    "exchange": "NFO"
   },
@@ -68,24 +68,24 @@
   "LUMAXIND": {
    "qty": 2,
    "avg": 6259.5,
-   "ltp": 6166.0,
-   "pnl": -187.0,
+   "ltp": 6237.5,
+   "pnl": -44.0,
    "product": "CNC",
    "exchange": "NSE"
   },
   "SMSPHARMA": {
    "qty": 25,
    "avg": 408.4,
-   "ltp": 406.35,
-   "pnl": -51.2,
+   "ltp": 410.8,
+   "pnl": 60.0,
    "product": "CNC",
    "exchange": "NSE"
   },
   "SPORTKING": {
    "qty": -174,
    "avg": 215.99,
-   "ltp": 215.91,
-   "pnl": 13.9,
+   "ltp": 216.48,
+   "pnl": -85.3,
    "product": "CNC",
    "exchange": "NSE"
   }

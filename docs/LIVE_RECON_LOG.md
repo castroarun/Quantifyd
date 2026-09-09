@@ -832,3 +832,30 @@ Filled today by tag:
   OA-EXIT                     174
   untagged                     27
 ```
+
+## 2026-09-09 14:00 IST — 8 alerts, 4 warnings
+
+```
+Live vs app reconciliation · 2026-09-09 14:00 IST
+11 broker legs · 8 alerts · 4 warnings
+
+[ALERT] ORPHAN BSE26SEP3500CE: broker holds 200 that no book claims (no order tag)
+[ALERT] ORPHAN BSE26SEP3700CE: broker holds -400 that no book claims (no order tag)
+[ALERT] ORPHAN HAL26SEP4900CE: broker holds 300 that no book claims (no order tag)
+[ALERT] ORPHAN HAL26SEP5000CE: broker holds -300 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP15CE: broker holds 71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP17CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP18CE: broker holds -71475 that no book claims (no order tag)
+[ALERT] ORPHAN IDEA26SEP20CE: broker holds 71475 that no book claims (no order tag)
+[INFO] MANUAL LUMAXIND: manual holding, 2 — no book tracks it
+[INFO] MANUAL SMSPHARMA: manual holding, 25 — no book tracks it
+[INFO] MULTI-BOOK SPORTKING: broker -174 = OA-EXIT -174 — placed by our books, not visible in the page feed
+[WARN] NAKED BSE26SEP3700CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED HAL26SEP5000CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP17CE: short option with no SL resting at the exchange (software-side stop only)
+[WARN] NAKED IDEA26SEP18CE: short option with no SL resting at the exchange (software-side stop only)
+
+Filled today by tag:
+  OA-EXIT                     174
+  untagged                     27
+```

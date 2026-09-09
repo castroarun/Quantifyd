@@ -6,7 +6,7 @@ import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
-import BookPanel from '../components/BookPanel/BookPanel';
+import BookPanel, { pnlBreakdown } from '../components/BookPanel/BookPanel';
 import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
@@ -592,13 +592,11 @@ function BookSummary({ s, updatedAt }: { s: State; updatedAt?: string | null }) 
   // already net of its sell-side ones, so the three parts land ~Rs900 above the real gain. Printing
   // a total under a divider that does not equal the rows above it is how a P&L block loses trust,
   // so the gap is named and shown rather than hidden.
-  const costs = gain - (s.unrealized + s.realized_net + yieldRs);
-  const rows = [
-    { k: 'Unrealised', v: s.unrealized, hint: 'open positions, before entry costs' },
-    { k: 'Realised (net)', v: s.realized_net, hint: 'closed trades, after costs' },
-    { k: `${s.sweep?.symbol || 'Liquid'} yield`, v: yieldRs, hint: 'gain on parked cash' },
-    { k: 'Costs & fees', v: costs, hint: 'brokerage, STT and stamp duty not already netted above' },
-  ];
+  const rows = pnlBreakdown({
+    gain, unrealised: s.unrealized, realised: s.realized_net,
+    invested: (s.equity || 0) - s.unrealized,          // what the open positions cost
+    yieldRs, yieldLabel: `${s.sweep?.symbol || 'Liquid'} yield`,
+  });
   const tone = (v: number) => (v > 0 ? 'var(--accent-pos,#0F6E56)' : v < 0 ? 'var(--accent-neg,#A32D2D)' : 'var(--ink,#1B1B1A)');
   const gapTone = s.gate_gap_pct == null ? 'var(--ink,#1B1B1A)'
     : s.gate_gap_pct < 0 ? 'var(--accent-neg,#A32D2D)'

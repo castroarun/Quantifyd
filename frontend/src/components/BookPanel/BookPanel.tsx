@@ -72,6 +72,42 @@ export interface BookPanelProps {
   storageKey: string;
 }
 
+
+/** The cost rate every book is modelled at: 25 bps a side, the r/142 study assumption. */
+export const COST_PCT = 0.0025;
+
+/**
+ * The P&L parts, with costs MEASURED rather than left over.
+ *
+ * Every book used to show `gain - (the parts)` as "Costs & fees", which is not a cost - it
+ * is whatever the parts failed to explain, and it printed POSITIVE on Open Alpha. Costs are
+ * now computed from what is actually known, and any genuine discrepancy gets its own line
+ * where it can be seen instead of being dressed up as a fee.
+ */
+export function pnlBreakdown(o: {
+  gain: number; unrealised: number; realised: number; invested: number;
+  yieldRs?: number; yieldLabel?: string;
+}): PnlRow[] {
+  // Open positions only: a closed trade's costs are already inside its realised figure.
+  const costs = -COST_PCT * (o.invested || 0);
+  const rows: PnlRow[] = [
+    { k: 'Unrealised', v: o.unrealised, hint: 'open positions at market, before entry costs' },
+    { k: 'Realised (net)', v: o.realised, hint: 'closed trades, already net of their own costs' },
+  ];
+  if (o.yieldRs) {
+    rows.push({ k: o.yieldLabel ?? 'Liquid fund yield', v: o.yieldRs,
+                hint: 'gain on cash parked in the liquid ETF' });
+  }
+  rows.push({ k: 'Costs & fees', v: costs,
+              hint: `modelled at ${(COST_PCT * 100).toFixed(2)}% a side on ${'\u20b9'}${Math.round(o.invested).toLocaleString('en-IN')} of open positions` });
+  const gap = o.gain - (o.unrealised + o.realised + (o.yieldRs ?? 0) + costs);
+  if (Math.abs(gap) >= 1) {
+    rows.push({ k: 'Unreconciled', v: gap,
+                hint: 'what the parts above do not explain. Mostly modelled charges the cash ledger never paid; it shrinks as trades reconcile through the corrected path. If it grows, something is wrong.' });
+  }
+  return rows;
+}
+
 export default function BookPanel(p: BookPanelProps) {
   const canOpen = !!(p.bookId || p.curveUrl);
   const [open, setOpen] = useState(false);
