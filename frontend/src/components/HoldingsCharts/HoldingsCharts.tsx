@@ -889,7 +889,25 @@ export default function HoldingsCharts({ holdings, ohlcUrl, ohlcUrls, account = 
       </div>
 
       {list.length === 0 ? (
-        <div className={styles.empty}>No holdings match this filter.</div>
+        <div className={styles.empty}>{(() => {
+          /* Three different failures wore the same message until 09-Sep-2026. Say which. */
+          const wanted = holdings.filter((r) => !CASH_FUND.test(r.tradingsymbol));
+          const loaded = Object.keys(ohlc).length;
+          const noBars = wanted.filter((r) => !(ohlc[r.tradingsymbol]?.length >= 2))
+                               .map((r) => r.tradingsymbol);
+          if (!wanted.length) return 'Nothing held here yet.';
+          if (!loaded) {
+            return 'Chart data did not load — the daily OHLC file is missing or unreachable. '
+                 + 'The positions above are unaffected.';
+          }
+          if (noBars.length === wanted.length) {
+            return 'Chart data has no bars for ' + noBars.slice(0, 6).join(', ')
+                 + (noBars.length > 6 ? ` and ${noBars.length - 6} more` : '')
+                 + ' — the OHLC file is stale or was baked before these were bought.';
+          }
+          if (allSeries.length) return 'No holdings match this filter.';
+          return 'Nothing to chart yet.';
+        })()}</div>
       ) : view === 'wall' ? (
         <div className={`${styles.wall} ${density === 'compact' ? styles.wallCompact : ''}`}>
           {list.map((d) => (
