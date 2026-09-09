@@ -349,7 +349,9 @@ def write_ui(st, wide, asof, log, dry=False):
               nav=round(nav), pnl=round(tot_pnl), realized=round(realized),
               # nav already contains realised P&L (see oa_real.py, 09-Sep-2026)
               gain=round(nav - cap),
-              return_pct=round(100 * (nav + realized - cap) / cap, 2) if cap else 0,
+              # nav already contains realised P&L - the same double-count fixed in
+              # `gain` on 09-Sep-2026, one line further down than I looked
+              return_pct=round(100 * (nav - cap) / cap, 2) if cap else 0,
               invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
               slots=SLOTS, slots_used=len(rows),
               pending=st.get('pending', []), navcurve=st.get('nav', []),
@@ -688,8 +690,111 @@ def main():
         release_lock()
 
 
+
+
+def _kite():
+    """The broker client. Raises if the token is missing - callers decide what that means."""
+    from kiteconnect import KiteConnect
+    api_key = [l.split('=', 1)[1].strip() for l in open(ROOT / '.env')
+               if l.startswith('KITE_API_KEY')][0]
+    tok = json.load(open(ROOT / 'backtest_data' / 'access_token.json'))
+    k = KiteConnect(api_key=api_key)
+    k.set_access_token(tok.get('access_token') or tok.get('token'))
+    return k
+
+
+def _live_px(kite, syms):
+    """Last traded price per held symbol; missing quotes simply fall back to the book."""
+    out = {}
+    for i in range(0, len(syms), 200):
+        try:
+            q = kite.quote(['NSE:' + s for s in syms[i:i + 200]])
+            for k, v in q.items():
+                out[k.split(':', 1)[1]] = float(v.get('last_price') or 0)
+        except Exception as e:
+            print('quote batch failed:', e)
+    return {k: v for k, v in out.items() if v > 0}
+
+
+def _sma20_proxy(syms, live):
+    """The 20-SMA the trail would sit at if today closed here: 19 stored closes + the LTP.
+
+    The same close-proxy Open Alpha uses for its 15-SMA. An intraday trail computed any
+    other way would either lag a day or invent a bar that has not closed.
+    """
+    import sqlite3
+    con = sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
+    out = {}
+    try:
+        for s in syms:
+            if s not in live:
+                continue
+            rows = [r[0] for r in con.execute(
+                "select close from market_data_unified where symbol=? and timeframe='day' "
+                'and close > 0 order by date desc limit 19', (s,))]
+            if len(rows) == 19:
+                out[s] = (sum(rows) + live[s]) / 20.0
+    finally:
+        con.close()
+    return out
+
+
+def mark():
+    """Re-price the book from live quotes and rewrite the UI. Never touches state."""
+    st = load_state()
+    syms = [p['symbol'] for p in st.get('positions', [])]
+    if not syms:
+        print('mark: nothing held')
+        return
+    kite = _kite()
+    live = _live_px(kite, syms)
+    smas = _sma20_proxy(syms, live)
+
+    rows, tot_val, tot_pnl = [], 0.0, 0.0
+    today = date.today()
+    for p in st['positions']:
+        lp = live.get(p['symbol'], p['buy'])
+        val = p['qty'] * lp
+        pnl = p['qty'] * (lp - p['buy'])
+        tot_val += val
+        tot_pnl += pnl
+        tr = smas.get(p['symbol'])
+        rows.append(dict(**p, ltp=round(lp, 2), value=round(val), pnl=round(pnl),
+                         pnl_pct=round((lp / p['buy'] - 1) * 100, 2),
+                         trail=round(tr, 2) if tr else None,
+                         target=round(p['buy'] * (1 + TARGET), 2),
+                         to_stop_pct=round((lp / p['stop'] - 1) * 100, 1),
+                         to_trail_pct=round((lp / tr - 1) * 100, 1) if tr else None,
+                         days=(today - date.fromisoformat(p['entry_date'])).days))
+    cash = float(st['cash'])
+    nav = tot_val + cash
+    for r in rows:
+        r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
+    realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
+    cap = float(st['capital'])
+    ui = dict(updated=str(datetime.now()), asof=str(today), mode=st.get('mode', 'paper'),
+              positions=rows, capital=round(cap), cash=round(cash), value=round(tot_val),
+              nav=round(nav), pnl=round(tot_pnl), realized=round(realized),
+              gain=round(nav - cap),
+              return_pct=round(100 * (nav - cap) / cap, 2) if cap else 0,
+              invested_pct=round(100 * tot_val / nav, 1) if nav else 0,
+              slots=SLOTS, slots_used=len(rows),
+              pending=st.get('pending', []), navcurve=st.get('nav', []),
+              trades=st.get('trades', [])[-100:], data_events=st.get('data_events', [])[-20:],
+              failed_orders=st.get('failed_orders', []), started=st.get('started'),
+              log=['intraday mark - prices live, exits still decided by the 18:45 run'])
+    tmp = UI_JSON.with_suffix('.json.tmp')
+    json.dump(ui, open(tmp, 'w'), indent=1, default=str)
+    os.replace(tmp, UI_JSON)
+    print('%s marked %d positions: value Rs %s nav Rs %s'
+          % (datetime.now().strftime('%H:%M:%S'), len(rows),
+             format(round(tot_val), ','), format(round(nav), ',')))
+
+
 if __name__ == '__main__':
-    if '--arm-now' in sys.argv:
+    if '--mark' in sys.argv:
+        mark()
+    elif '--arm-now' in sys.argv:
         arm()
     elif '--reconcile' in sys.argv:
         reconcile_now()

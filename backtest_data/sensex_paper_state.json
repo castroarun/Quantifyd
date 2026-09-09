@@ -3014,12 +3014,12 @@
    "ce_entry": 304.05,
    "pe_entry": 235.0,
    "credit": 539.05,
-   "ce_exit": 205.1,
-   "pe_exit": 248.95,
-   "exit_reason": "time1515",
+   "ce_exit": 166.05,
+   "pe_exit": 343.4,
+   "exit_reason": "SL",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 3360,
+   "pnl": 1144,
    "legs": [
     {
      "type": "CE",
@@ -3027,8 +3027,8 @@
      "strike": 75100,
      "qty": 40,
      "entry": 304.05,
-     "ltp": 205.1,
-     "pnl": 3958
+     "ltp": 166.05,
+     "pnl": 5520
     },
     {
      "type": "PE",
@@ -3036,8 +3036,8 @@
      "strike": 75100,
      "qty": 40,
      "entry": 235.0,
-     "ltp": 248.95,
-     "pnl": -558
+     "ltp": 343.4,
+     "pnl": -4336
     }
    ]
   },

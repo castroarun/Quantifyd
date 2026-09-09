@@ -1,6 +1,6 @@
 {
- "updated": "2026-09-08 18:45:04.743117",
- "asof": "2026-09-08",
+ "updated": "2026-09-09 15:29:06.571815",
+ "asof": "2026-09-09",
  "mode": "live",
  "positions": [
   {
@@ -11,27 +11,27 @@
    "stop": 297.94,
    "pivot": 313.6,
    "src": "executor",
-   "ltp": 330.65,
-   "value": 43646,
-   "pnl": 898,
-   "pnl_pct": 2.1,
-   "trail": 306.3,
+   "ltp": 324.1,
+   "value": 42781,
+   "pnl": 33,
+   "pnl_pct": 0.08,
+   "trail": 307.87,
    "target": 404.81,
-   "to_stop_pct": 11.0,
-   "to_trail_pct": 7.9,
-   "days": 0,
-   "weight": 19.0
+   "to_stop_pct": 8.8,
+   "to_trail_pct": 5.3,
+   "days": 1,
+   "weight": 18.7
   }
  ],
  "capital": 228711,
  "cash": 185963,
- "value": 43646,
- "nav": 229609,
- "pnl": 898,
+ "value": 42781,
+ "nav": 228744,
+ "pnl": 33,
  "realized": 0,
- "gain": 898,
- "return_pct": 0.39,
- "invested_pct": 19.0,
+ "gain": 33,
+ "return_pct": 0.01,
+ "invested_pct": 18.7,
  "slots": 8,
  "slots_used": 1,
  "pending": [],
@@ -43,10 +43,9 @@
  ],
  "trades": [],
  "data_events": [],
+ "failed_orders": [],
  "started": "2026-09-08",
  "log": [
-  "panel 23 names in the age band, asof 2026-09-08",
-  "0 candidates, 7 slots free, 0 buy-stops armed for tomorrow"
- ],
- "failed_orders": []
+  "intraday mark - prices live, exits still decided by the 18:45 run"
+ ]
 }

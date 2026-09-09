@@ -1,19 +1,34 @@
 {
- "generated_at": "2026-09-09T14:40:02",
+ "generated_at": "2026-09-09T15:20:01",
  "books": {
   "orb": {
    "days": [
     {
      "date": "2026-09-09",
-     "trades": 5,
-     "wins": 1,
+     "trades": 9,
+     "wins": 5,
      "losses": 4,
-     "pnl": -4574.5,
-     "deployed": 1213245.4,
-     "cum": -38891.82,
+     "pnl": 1562.1,
+     "deployed": 2131931.0,
+     "cum": -32755.22,
      "mode": "paper",
      "origin": "sim",
      "rows": [
+      {
+       "symbol": "APOLLOHOSP",
+       "pnl": 195.5,
+       "deployed": 205367.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 23,
+       "entry_price": 8929.0,
+       "exit_price": 8937.5,
+       "entry_time": "2026-09-09T09:30:05.465874",
+       "exit_time": "2026-09-09T14:41:51.521038",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "C"
+      },
       {
        "symbol": "ADANIENT",
        "pnl": 4554.0,
@@ -60,6 +75,36 @@
        "conviction_grade": "C"
       },
       {
+       "symbol": "GODREJPROP",
+       "pnl": 4092.2,
+       "deployed": 298778.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 158,
+       "entry_price": 1891.0,
+       "exit_price": 1865.1,
+       "entry_time": "2026-09-09T09:45:05.052682",
+       "exit_time": "2026-09-09T14:51:51.795579",
+       "exit_reason": "TARGET_HIT",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "BEL",
+       "pnl": 1528.8,
+       "deployed": 255247.2,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 624,
+       "entry_price": 409.05,
+       "exit_price": 406.6,
+       "entry_time": "2026-09-09T09:55:05.164513",
+       "exit_time": "2026-09-09T15:16:00.453818",
+       "exit_reason": "EOD_SQUAREOFF",
+       "conviction_grade": "A"
+      },
+      {
        "symbol": "M&M",
        "pnl": -2232.5,
        "deployed": 296970.0,
@@ -87,6 +132,21 @@
        "entry_time": "2026-09-09T10:05:05.220713",
        "exit_time": "2026-09-09T14:30:00.584781",
        "exit_reason": "V9T_LOCK50_BE",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "VEDL",
+       "pnl": 320.1,
+       "deployed": 159293.4,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "LONG",
+       "qty": 582,
+       "entry_price": 273.7,
+       "exit_price": 274.25,
+       "entry_time": "2026-09-09T10:55:05.110772",
+       "exit_time": "2026-09-09T15:02:21.795931",
+       "exit_reason": "SL_HIT",
        "conviction_grade": "B"
       }
      ]
@@ -2715,26 +2775,56 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 214125.05,
+    "avg_trade": 214497.41,
     "days": 20,
-    "trades": 163,
-    "wins": 59,
-    "win_rate": 36.2,
-    "net": -38891.82,
+    "trades": 167,
+    "wins": 63,
+    "win_rate": 37.7,
+    "net": -32755.22,
     "best_day": 3123.4,
     "worst_day": -13754.43,
-    "green_days": 8,
+    "green_days": 9,
     "costs_modelled": false,
-    "t_stat": -1.66,
+    "t_stat": -1.37,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 117,
+    "sim_trades": 121,
     "first": "2026-04-27",
     "last": "2026-09-09"
    }
   },
   "n500m": {
    "days": [
+    {
+     "date": "2026-09-09",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 1034.24,
+     "deployed": 136131.84,
+     "cum": 19185.14,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "WIPRO",
+       "pnl": 1034.24,
+       "deployed": 136131.84,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "short",
+       "signal_type": "volbo",
+       "timeframe": "10min",
+       "qty": 808,
+       "entry_price": 168.48,
+       "exit_price": 167.2,
+       "entry_time": "2026-09-09T09:20:00",
+       "exit_time": "2026-09-09T15:15:00.095028",
+       "exit_reason": "EOD",
+       "exit_policy": "T_R_TARGET_1.0R"
+      }
+     ]
+    },
     {
      "date": "2026-09-03",
      "trades": 1,
@@ -3714,22 +3804,22 @@
     "basis": "risk-sized \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent",
     "max_position": 204576.0,
     "busiest_day": 305348.4,
-    "avg_trade": 133633.03,
-    "days": 29,
-    "trades": 35,
-    "wins": 20,
-    "win_rate": 57.1,
-    "net": 18150.9,
+    "avg_trade": 133702.44,
+    "days": 30,
+    "trades": 36,
+    "wins": 21,
+    "win_rate": 58.3,
+    "net": 19185.14,
     "best_day": 8551.8,
     "worst_day": -4004.0,
-    "green_days": 15,
+    "green_days": 16,
     "costs_modelled": false,
-    "t_stat": 1.43,
-    "top3_share": 73.8,
+    "t_stat": 1.51,
+    "top3_share": 69.8,
     "broker_trades": 0,
-    "sim_trades": 35,
+    "sim_trades": 36,
     "first": "2026-05-08",
-    "last": "2026-09-03"
+    "last": "2026-09-09"
    }
   },
   "i75wr": {
@@ -10692,12 +10782,12 @@
    "days": [
     {
      "date": "2026-09-09",
-     "trades": 1,
-     "wins": 1,
+     "trades": 2,
+     "wins": 2,
      "losses": 0,
-     "pnl": 1311.48,
-     "deployed": 98917.2,
-     "cum": 1999.55,
+     "pnl": 4059.55,
+     "deployed": 196950.2,
+     "cum": 4747.62,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -10713,6 +10803,20 @@
        "qty": 36,
        "hold_days": 7,
        "pnl_pct": 1.33,
+       "exit_reason": "SIGNAL_KC6_MID"
+      },
+      {
+       "symbol": "EICHERMOT",
+       "pnl": 2748.07,
+       "deployed": 98033.0,
+       "mode": "paper",
+       "origin": "sim",
+       "entry_date": "2026-09-02",
+       "entry_price": 7541.0,
+       "exit_price": 7752.39,
+       "qty": 13,
+       "hold_days": 7,
+       "pnl_pct": 2.8,
        "exit_reason": "SIGNAL_KC6_MID"
       }
      ]
@@ -10954,20 +11058,20 @@
     "basis": "KC6 mean reversion \u00b7 paper throughout",
     "max_position": 99990.8,
     "busiest_day": 199179.6,
-    "avg_trade": 99181.17,
+    "avg_trade": 99076.79,
     "days": 9,
-    "trades": 10,
-    "wins": 7,
-    "win_rate": 70.0,
-    "net": 1999.55,
+    "trades": 11,
+    "wins": 8,
+    "win_rate": 72.7,
+    "net": 4747.62,
     "best_day": 4338.76,
     "worst_day": -4999.54,
     "green_days": 6,
     "costs_modelled": null,
-    "t_stat": 0.22,
-    "top3_share": 406.2,
+    "t_stat": 0.5,
+    "top3_share": 181.8,
     "broker_trades": 0,
-    "sim_trades": 10,
+    "sim_trades": 11,
     "first": "2026-02-13",
     "last": "2026-09-09"
    }
@@ -10976,12 +11080,12 @@
    "days": [
     {
      "date": "2026-09-09",
-     "trades": 2,
-     "wins": 0,
-     "losses": 2,
-     "pnl": -2551.41,
-     "deployed": 49063.46,
-     "cum": -22579.51,
+     "trades": 4,
+     "wins": 1,
+     "losses": 3,
+     "pnl": -3165.93,
+     "deployed": 97979.85,
+     "cum": -23194.03,
      "mode": "paper",
      "origin": "sim",
      "rows": [
@@ -11005,6 +11109,28 @@
        "side": "SELL",
        "price": 23053.082000000002,
        "qty": 1.0081848774713211,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "BAJAJ-AUTO",
+       "pnl": 972.76,
+       "deployed": 25690.36,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 11754.472600000001,
+       "qty": 2.185581898973655,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "SBILIFE",
+       "pnl": -1587.28,
+       "deployed": 23226.03,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 1677.4966,
+       "qty": 13.845651544635867,
        "reason": "PATTERN"
       }
      ]
@@ -14373,20 +14499,20 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24599.27,
+    "avg_trade": 24598.22,
     "days": 35,
-    "trades": 267,
-    "wins": 92,
-    "win_rate": 34.5,
-    "net": -22579.48,
+    "trades": 269,
+    "wins": 93,
+    "win_rate": 34.6,
+    "net": -23194.0,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -1.89,
+    "t_stat": -1.91,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 267,
+    "sim_trades": 269,
     "first": "2026-07-23",
     "last": "2026-09-09"
    }
