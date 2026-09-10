@@ -219,6 +219,7 @@ def arm(cand, free, st, kite, dry=True):
 
     placed = []
     for sym, r in cand.iterrows():
+      try:
         if len(placed) >= free:
             break
         if sym in live_syms:
@@ -256,7 +257,10 @@ def arm(cand, free, st, kite, dry=True):
             except Exception as e:
                 # The exchange caps the limit-to-trigger spread per scrip and names the
                 # maximum in the rejection. Take it at its word once, rather than guessing.
-                m = re.search(r'below Rs\.?\s*([0-9.]+)', str(e))
+                # NOT [0-9.]+ : that is greedy over dots and captures the full stop
+                # that ends the exchange's sentence ("...below Rs. 303.70.") -> float()
+                # then raises inside the handler meant to recover from the rejection.
+                m = re.search(r'below Rs\.?\s*([0-9]+(?:\.[0-9]+)?)', str(e))
                 if attempt == 1 and m:
                     lim = round(math.floor((float(m.group(1)) - tick) / tick) * tick, 2)
                     print('       exchange caps the spread; retrying with ceiling %.2f' % lim)
@@ -269,7 +273,24 @@ def arm(cand, free, st, kite, dry=True):
                   % (oid, lim, (lim / trigger - 1) * 100))
             placed.append(dict(symbol=sym, qty=qty, trigger=trigger, limit=lim, order_id=oid))
         else:
-            e = locals().get('e_final', 'unknown')
+            err = locals().get('e_final', 'unknown')
+            try:
+                from services.oa_real import _alert
+                _alert('OA-REAL entry could not be armed: %s' % sym,
+                       'BUY %d %s at trigger %.2f was rejected: %s' % (qty, sym, trigger, err))
+            except Exception:
+                pass
+      except Exception as loop_e:
+        # A scan that arms N orders is not a transaction: one name the exchange dislikes
+        # is normal, and the rest must still go. Before this, a single bad price aborted
+        # the whole run and left the book under-deployed with nothing alerted.
+        print('  FAILED %-12s %s' % (sym, loop_e))
+        try:
+            from services.oa_real import _alert
+            _alert('OA-REAL entry failed: %s' % sym,
+                   'Arming %s raised %s. The rest of the scan continued.' % (sym, loop_e))
+        except Exception:
+            pass
             try:
                 from services.oa_real import _alert
                 _alert('OA-REAL entry could not be armed: %s' % sym,
