@@ -140,6 +140,22 @@ def send_whatsapp(text):
 
 
 
+# ── pacing ───────────────────────────────────────────────────────────────────
+# Android collapses notifications that arrive together, so a burst of alerts can show as
+# one or as none - proved on 10-Sep, when three messages sent inside three seconds all
+# reached the ntfy server and none reached the phone. Every push waits its turn.
+_PUSH_GAP = 2.5                 # seconds between pushes from this process
+_LAST_PUSH = [0.0]
+
+
+def _pace():
+    import time
+    wait = _PUSH_GAP - (time.monotonic() - _LAST_PUSH[0])
+    if wait > 0:
+        time.sleep(wait)
+    _LAST_PUSH[0] = time.monotonic()
+
+
 def send_ntfy(title, text):
     """Push via ntfy.sh - free, no account, works with the ntfy app on Android/iOS.
 
@@ -156,6 +172,7 @@ def send_ntfy(title, text):
     if not topic:
         return 'ntfy DORMANT (set NTFY_TOPIC in .env - any long random string)'
     import urllib.request
+    _pace()
     server = os.getenv('NTFY_SERVER', 'https://ntfy.sh').rstrip('/')
     req = urllib.request.Request(f'{server}/{topic}', data=text.encode('utf-8'))
     req.add_header('Title', title.encode('ascii', 'replace').decode())
@@ -183,6 +200,7 @@ def send_telegram(text):
         return 'telegram DORMANT (set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID in .env)'
     import urllib.parse
     import urllib.request
+    _pace()
     url = f'https://api.telegram.org/bot{tok}/sendMessage'
     data = urllib.parse.urlencode({
         'chat_id': chat,
