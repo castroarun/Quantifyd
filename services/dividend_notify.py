@@ -99,13 +99,27 @@ def render_email(d):
     return EMAIL_TEMPLATE.format(source_label=src, **{k: v for k, v in d.items() if k != 'source'})
 
 
+
+def _first_env(*names):
+    """The first of these variables that is set. Spellings drift; credentials should not."""
+    for n in names:
+        v = os.getenv(n)
+        if v:
+            return v
+    return None
+
+
 def send_email(subject, html):
-    host = os.getenv('EMAIL_SMTP_HOST')
-    user = os.getenv('EMAIL_SMTP_USER')
-    pw = os.getenv('EMAIL_SMTP_PASS')
-    to = os.getenv('EMAIL_TO')
+    pw = _first_env('EMAIL_SMTP_PASS', 'GMAIL_APP_PASSWORD')
+    to = _first_env('EMAIL_TO', 'EMAIL_SMTP_USER')
+    # With a Gmail app password on file the rest is inferable: Gmail's SMTP, and a sender
+    # that is the recipient. That reduces setup to one line, EMAIL_TO=<address>.
+    default_host = 'smtp.gmail.com' if os.getenv('GMAIL_APP_PASSWORD') else None
+    host = _first_env('EMAIL_SMTP_HOST') or default_host
+    user = _first_env('EMAIL_SMTP_USER', 'EMAIL_TO')
     if not all([host, user, pw, to]):
-        return 'email DORMANT (set EMAIL_SMTP_HOST/USER/PASS and EMAIL_TO in .env)'
+        missing = 'EMAIL_TO' if (pw and not to) else 'EMAIL_SMTP_* / GMAIL_APP_PASSWORD'
+        return 'email DORMANT (set %s in .env)' % missing
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = user
@@ -119,12 +133,18 @@ def send_email(subject, html):
 
 
 def send_whatsapp(text):
+    # The flag stays even though the credentials are on file: Twilio bills per WhatsApp
+    # message outside the sandbox, and having credentials is not consent to spend.
     if os.getenv('WHATSAPP_ENABLED') != '1':
-        return 'whatsapp DORMANT (set WHATSAPP_ENABLED=1 + TWILIO_* + WHATSAPP_TO in .env)'
-    sid = os.getenv('TWILIO_SID')
-    tok = os.getenv('TWILIO_TOKEN')
-    frm = os.getenv('TWILIO_WHATSAPP_FROM')   # e.g. whatsapp:+14155238886
-    to = os.getenv('WHATSAPP_TO')             # e.g. whatsapp:+91XXXXXXXXXX
+        have = all(_first_env(*n) for n in (('TWILIO_SID', 'TWILIO_ACCOUNT_SID'),
+                                            ('TWILIO_TOKEN', 'TWILIO_AUTH_TOKEN')))
+        return ('whatsapp OFF (credentials are present - set WHATSAPP_ENABLED=1 to use them; '
+                'Twilio bills per message)' if have
+                else 'whatsapp DORMANT (no TWILIO_* credentials)')
+    sid = _first_env('TWILIO_SID', 'TWILIO_ACCOUNT_SID')
+    tok = _first_env('TWILIO_TOKEN', 'TWILIO_AUTH_TOKEN')
+    frm = _first_env('TWILIO_WHATSAPP_FROM', 'TWILIO_FROM_WHATSAPP')
+    to = _first_env('WHATSAPP_TO', 'TWILIO_TO_WHATSAPP')
     if not all([sid, tok, frm, to]):
         return 'whatsapp DORMANT (missing TWILIO_SID/TOKEN/TWILIO_WHATSAPP_FROM/WHATSAPP_TO)'
     import urllib.parse
