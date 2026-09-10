@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-10 16:37:53.696612",
+ "generated": "2026-09-10 16:42:28.565943",
  "overall": "WARN",
  "books": [
   {
@@ -10,7 +10,7 @@
    "nav": 913991,
    "gain": null,
    "updated": "2026-09-10 16:34:23.663004",
-   "age_min": 4,
+   "age_min": 8,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -24,7 +24,7 @@
    "nav": 626341,
    "gain": 8703,
    "updated": "2026-09-10 16:34:08.950876",
-   "age_min": 4,
+   "age_min": 8,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -38,7 +38,7 @@
    "nav": 229931,
    "gain": 1220,
    "updated": "2026-09-10 16:32:45.476771",
-   "age_min": 5,
+   "age_min": 10,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -50,7 +50,7 @@
    "area": "True North",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 4 min ago"
+   "detail": "marked 8 min ago"
   },
   {
    "area": "True North",
@@ -80,7 +80,7 @@
    "area": "Open Alpha",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 4 min ago"
+   "detail": "marked 8 min ago"
   },
   {
    "area": "Open Alpha",
@@ -110,7 +110,7 @@
    "area": "IPO Base",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 5 min ago"
+   "detail": "marked 10 min ago"
   },
   {
    "area": "IPO Base",
@@ -204,9 +204,9 @@
   },
   {
    "area": "Alerts",
-   "name": "whatsapp",
-   "status": "WARN",
-   "detail": "DORMANT - set WHATSAPP_ENABLED=1 and TWILIO_*"
+   "name": "phone",
+   "status": "OK",
+   "detail": "ntfy"
   }
  ]
 }

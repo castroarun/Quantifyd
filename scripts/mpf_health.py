@@ -247,9 +247,16 @@ def check_channels(rep):
                     ('EMAIL_SMTP_HOST', 'EMAIL_SMTP_USER', 'EMAIL_SMTP_PASS', 'EMAIL_TO'))
     rep.add('Alerts', 'email', OK if have_mail else WARN,
             'configured' if have_mail else 'DORMANT - set EMAIL_SMTP_* and EMAIL_TO in .env')
-    wa = os.getenv('WHATSAPP_ENABLED') == '1'
-    rep.add('Alerts', 'whatsapp', OK if wa else WARN,
-            'configured' if wa else 'DORMANT - set WHATSAPP_ENABLED=1 and TWILIO_*')
+    phones = []
+    if os.getenv('NTFY_TOPIC'):
+        phones.append('ntfy')
+    if os.getenv('TELEGRAM_TOKEN') and os.getenv('TELEGRAM_CHAT_ID'):
+        phones.append('telegram')
+    if os.getenv('WHATSAPP_ENABLED') == '1':
+        phones.append('whatsapp')
+    rep.add('Alerts', 'phone', OK if phones else WARN,
+            ', '.join(phones) if phones
+            else 'DORMANT - no phone channel. NTFY_TOPIC is the free one, no account needed')
 
 
 def text_report(rep, books):
@@ -298,10 +305,10 @@ def main():
     send = '--send-always' in sys.argv or ('--send' in sys.argv and rep.worst != OK)
     if send:
         try:
-            from services.dividend_notify import send_email, send_whatsapp
+            from services.dividend_notify import send_email, send_push
             title = 'Quantifyd mpf check: %s' % rep.worst
             print('email:', send_email(title, '<pre>%s</pre>' % body))
-            print('whatsapp:', send_whatsapp(title + chr(10) + body[:1200]))
+            print('push:', send_push(title, body[:1200]))
         except Exception as e:
             print('notify failed:', e)
 

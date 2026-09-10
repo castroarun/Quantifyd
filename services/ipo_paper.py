@@ -137,9 +137,9 @@ def _alert(title, body, urgency='critical'):
     if urgency != 'critical':
         return
     try:
-        from services.dividend_notify import send_email, send_whatsapp
+        from services.dividend_notify import send_email, send_push
         print('  email:', send_email(title, '<pre>%s</pre>' % body))
-        print('  whatsapp:', send_whatsapp(title + chr(10) + body))
+        print('  push:', send_push(title, body))
     except Exception as e:
         # never let a notification failure break the run that produced the signal
         print('alert delivery failed:', e)

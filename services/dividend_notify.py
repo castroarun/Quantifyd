@@ -4,6 +4,7 @@ Dividend declaration notices — email (registrar-style), WhatsApp (Twilio), des
 Channels are configured via .env and stay DORMANT until credentials exist:
   EMAIL_SMTP_HOST / EMAIL_SMTP_PORT / EMAIL_SMTP_USER / EMAIL_SMTP_PASS / EMAIL_TO
   TWILIO_SID / TWILIO_TOKEN / TWILIO_WHATSAPP_FROM / WHATSAPP_TO / WHATSAPP_ENABLED=1
+  NTFY_TOPIC (free, no account)  |  TELEGRAM_TOKEN + TELEGRAM_CHAT_ID (free)
 
 The email is styled after Indian registrar/depository intimations (formal serif
 header, particulars table, record-date language) but branded QUANTIFYD FUND
@@ -137,6 +138,79 @@ def send_whatsapp(text):
     with urllib.request.urlopen(req, timeout=20) as r:
         return f'whatsapp sent (HTTP {r.status})'
 
+
+
+def send_ntfy(title, text):
+    """Push via ntfy.sh - free, no account, works with the ntfy app on Android/iOS.
+
+    Setup (about two minutes):
+      1. install "ntfy" from the Play Store / App Store
+      2. Subscribe to a topic - pick something long and unguessable, e.g.
+         quantifyd-mpf-7f3a9c21
+      3. put that same string in .env as NTFY_TOPIC
+
+    THE TOPIC NAME IS THE ONLY SECRET. Anyone who knows it can read your alerts and post
+    to them, so do not use "quantifyd" or anything guessable.
+    """
+    topic = os.getenv('NTFY_TOPIC')
+    if not topic:
+        return 'ntfy DORMANT (set NTFY_TOPIC in .env - any long random string)'
+    import urllib.request
+    server = os.getenv('NTFY_SERVER', 'https://ntfy.sh').rstrip('/')
+    req = urllib.request.Request(f'{server}/{topic}', data=text.encode('utf-8'))
+    req.add_header('Title', title.encode('ascii', 'replace').decode())
+    req.add_header('Priority', os.getenv('NTFY_PRIORITY', 'high'))
+    req.add_header('Tags', 'chart_with_upwards_trend')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return f'ntfy sent (HTTP {r.status})'
+    except Exception as e:
+        return f'ntfy FAILED: {e}'
+
+
+def send_telegram(text):
+    """Push via a Telegram bot - free, unlimited at this volume, with history.
+
+    Setup:
+      1. message @BotFather, /newbot, copy the token       -> TELEGRAM_TOKEN
+      2. message your new bot once (it cannot start a chat)
+      3. open https://api.telegram.org/bot<TOKEN>/getUpdates and read result[0].message
+         .chat.id                                          -> TELEGRAM_CHAT_ID
+    """
+    tok = os.getenv('TELEGRAM_TOKEN')
+    chat = os.getenv('TELEGRAM_CHAT_ID')
+    if not (tok and chat):
+        return 'telegram DORMANT (set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID in .env)'
+    import urllib.parse
+    import urllib.request
+    url = f'https://api.telegram.org/bot{tok}/sendMessage'
+    data = urllib.parse.urlencode({
+        'chat_id': chat,
+        'text': text[:4000],                 # Telegram caps a message at 4096
+        'disable_web_page_preview': 'true',
+    }).encode()
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, data=data), timeout=15) as r:
+            return f'telegram sent (HTTP {r.status})'
+    except Exception as e:
+        return f'telegram FAILED: {e}'
+
+
+def send_push(title, text):
+    """Every configured phone channel, in order of setup cost. Returns what each did.
+
+    Callers should use THIS rather than a specific channel, so adding or dropping one is a
+    change in .env and not in every engine.
+    """
+    out = []
+    for fn in (lambda: send_ntfy(title, text),
+               lambda: send_telegram(title + chr(10) + text),
+               lambda: send_whatsapp(title + chr(10) + text)):
+        try:
+            out.append(fn())
+        except Exception as e:
+            out.append('channel failed: %s' % e)
+    return ' | '.join(out)
 
 def desktop_alert(title, body):
     with open(ALERT_FEED, 'a') as f:

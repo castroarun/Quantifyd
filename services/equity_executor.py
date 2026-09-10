@@ -206,14 +206,14 @@ def flush_failures(arm):
     alert(title, body)
     try:
         sys.path.insert(0, str(ROOT))
-        from services.dividend_notify import send_email, send_whatsapp
+        from services.dividend_notify import send_email, send_push
         html = ('<h3>%s</h3><p>Quantifyd executor, %s IST</p><ul>%s</ul>'
                 '<p>These trades are NOT in the account. The book will not hold them '
                 'unless they are placed.</p>'
                 % (title, ist().strftime('%d-%b-%Y %H:%M'),
                    ''.join('<li>%s</li>' % l for l in lines)))
         print('  email:', send_email('Quantifyd: ' + title, html))
-        print('  whatsapp:', send_whatsapp('Quantifyd - ' + title + chr(10) + body))
+        print('  push:', send_push('Quantifyd - ' + title, body))
     except Exception as e:
         print('  notification failed:', e)
     # surface on the book pages: each feed carries what failed for that book
