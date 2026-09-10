@@ -1,0 +1,212 @@
+{
+ "generated": "2026-09-10 16:37:53.696612",
+ "overall": "WARN",
+ "books": [
+  {
+   "id": "tn",
+   "label": "True North",
+   "held": 5,
+   "slots": 8,
+   "nav": 913991,
+   "gain": null,
+   "updated": "2026-09-10 16:34:23.663004",
+   "age_min": 4,
+   "due": [],
+   "unplaced": [],
+   "failed": 0,
+   "unreconciled": 1
+  },
+  {
+   "id": "oa",
+   "label": "Open Alpha",
+   "held": 14,
+   "slots": 16,
+   "nav": 626341,
+   "gain": 8703,
+   "updated": "2026-09-10 16:34:08.950876",
+   "age_min": 4,
+   "due": [],
+   "unplaced": [],
+   "failed": 0,
+   "unreconciled": 0
+  },
+  {
+   "id": "ipo",
+   "label": "IPO Base",
+   "held": 1,
+   "slots": 8,
+   "nav": 229931,
+   "gain": 1220,
+   "updated": "2026-09-10 16:32:45.476771",
+   "age_min": 5,
+   "due": [],
+   "unplaced": [],
+   "failed": 0,
+   "unreconciled": 0
+  }
+ ],
+ "checks": [
+  {
+   "area": "True North",
+   "name": "feed fresh",
+   "status": "OK",
+   "detail": "marked 4 min ago"
+  },
+  {
+   "area": "True North",
+   "name": "slots",
+   "status": "OK",
+   "detail": "5/8 held, 3 free - refills at the rebalance in 20d"
+  },
+  {
+   "area": "True North",
+   "name": "exits due",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "True North",
+   "name": "order failures",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "True North",
+   "name": "ledger square",
+   "status": "OK",
+   "detail": "unreconciled Rs +1"
+  },
+  {
+   "area": "Open Alpha",
+   "name": "feed fresh",
+   "status": "OK",
+   "detail": "marked 4 min ago"
+  },
+  {
+   "area": "Open Alpha",
+   "name": "slots",
+   "status": "OK",
+   "detail": "14/16 held, 2 free - tonight's scan arms them"
+  },
+  {
+   "area": "Open Alpha",
+   "name": "exits due",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "Open Alpha",
+   "name": "order failures",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "Open Alpha",
+   "name": "ledger square",
+   "status": "OK",
+   "detail": "unreconciled Rs +0"
+  },
+  {
+   "area": "IPO Base",
+   "name": "feed fresh",
+   "status": "OK",
+   "detail": "marked 5 min ago"
+  },
+  {
+   "area": "IPO Base",
+   "name": "slots",
+   "status": "OK",
+   "detail": "1/8 held, 7 free - listings are scarce by design"
+  },
+  {
+   "area": "IPO Base",
+   "name": "exits due",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "IPO Base",
+   "name": "order failures",
+   "status": "OK",
+   "detail": "none"
+  },
+  {
+   "area": "IPO Base",
+   "name": "ledger square",
+   "status": "OK",
+   "detail": "unreconciled Rs -0"
+  },
+  {
+   "area": "Jobs",
+   "name": "True North marks",
+   "status": "OK",
+   "detail": "ran 15:59"
+  },
+  {
+   "area": "Jobs",
+   "name": "True North state",
+   "status": "OK",
+   "detail": "ran 15:57"
+  },
+  {
+   "area": "Jobs",
+   "name": "Open Alpha marks",
+   "status": "OK",
+   "detail": "ran 15:59"
+  },
+  {
+   "area": "Jobs",
+   "name": "Open Alpha exits",
+   "status": "OK",
+   "detail": "ran 15:18"
+  },
+  {
+   "area": "Jobs",
+   "name": "Open Alpha entries",
+   "status": "OK",
+   "detail": "due later today (last 09-Sep 18:51)"
+  },
+  {
+   "area": "Jobs",
+   "name": "Open Alpha recon",
+   "status": "OK",
+   "detail": "ran 15:50"
+  },
+  {
+   "area": "Jobs",
+   "name": "IPO marks",
+   "status": "OK",
+   "detail": "ran 15:59"
+  },
+  {
+   "area": "Jobs",
+   "name": "IPO engine",
+   "status": "OK",
+   "detail": "due later today (last 09-Sep 18:45)"
+  },
+  {
+   "area": "Jobs",
+   "name": "Cash executor",
+   "status": "OK",
+   "detail": "ran 09:20"
+  },
+  {
+   "area": "Jobs",
+   "name": "Universe refresh",
+   "status": "OK",
+   "detail": "due later today (last 09-Sep 18:05)"
+  },
+  {
+   "area": "Alerts",
+   "name": "email",
+   "status": "WARN",
+   "detail": "DORMANT - set EMAIL_SMTP_* and EMAIL_TO in .env"
+  },
+  {
+   "area": "Alerts",
+   "name": "whatsapp",
+   "status": "WARN",
+   "detail": "DORMANT - set WHATSAPP_ENABLED=1 and TWILIO_*"
+  }
+ ]
+}

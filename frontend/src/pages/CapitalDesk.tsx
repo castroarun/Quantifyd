@@ -904,6 +904,84 @@ function MoneyCard({ tnLive, oa, ipo, ipoLive }:
   );
 }
 
+/* DAILY CHECK — what actually ran, as against What happens next, which is what will.
+ *
+ * It exists because of 09-Sep: the entry scan crashed on a regex, nothing was watching, and
+ * Open Alpha sat at 14 of 16 slots with about Rs78,000 idle until Arun happened to look at
+ * the page. Every part of this system already alerts on its own failures; what was missing
+ * was something asking, once a day, whether the parts ran at all.
+ *
+ * Reads static/app/mpf_health.json, written by scripts/mpf_health.py at 19:15 on the VPS -
+ * after the evening scan, the engine run and the reconcile, so it judges a finished day.
+ *
+ * Failures are shown expanded; everything else collapses behind a count, because a health
+ * panel that demands attention when healthy is a panel that gets ignored when it is not.
+ */
+type Check = { area: string; name: string; status: 'OK' | 'WARN' | 'FAIL'; detail: string };
+type Health = { generated: string; overall: 'OK' | 'WARN' | 'FAIL'; checks: Check[] };
+
+function HealthCard() {
+  const [h, setH] = useState<Health | null>(null);
+  const [openAll, setOpenAll] = useState(false);
+  useEffect(() => {
+    fetch('/app/mpf_health.json?t=' + Date.now(), { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).then(setH).catch(() => setH(null));
+  }, []);
+  if (!h) return null;
+
+  const bad = h.checks.filter((c) => c.status !== 'OK');
+  const shown = openAll ? h.checks : bad;
+  const tone = (s: string) => (s === 'FAIL' ? styles.neg : s === 'WARN' ? styles.warnTxt : styles.pos);
+  const age = (() => {
+    const t = Date.parse(String(h.generated).replace(' ', 'T'));
+    if (isNaN(t)) return '';
+    const hrs = (Date.now() - t) / 3.6e6;
+    return hrs < 1 ? `${Math.round(hrs * 60)} min ago`
+      : hrs < 24 ? `${Math.round(hrs)}h ago` : `${Math.round(hrs / 24)}d ago`;
+  })();
+
+  return (
+    <div className={styles.card}>
+      <button type="button" className={`${styles.cardTitle} ${styles.cardTitleTog}`}
+              aria-expanded={openAll} onClick={() => setOpenAll((v) => !v)}>
+        Daily check
+        <span className={styles.cardCount}>
+          <b className={tone(h.overall)}>{h.overall}</b>
+          {' · '}{h.checks.length - bad.length} of {h.checks.length} clear · ran {age}
+        </span>
+        <span className={styles.caret} aria-hidden="true">{'▾'}</span>
+      </button>
+
+      {bad.length === 0 && !openAll && (
+        <p className={styles.note} style={{ marginTop: 0 }}>
+          Everything ran and every book reconciles. Open it for the full list.
+        </p>
+      )}
+
+      {shown.length > 0 && (
+        <table className={styles.table}>
+          <tbody>
+            {shown.map((c, i) => (
+              <tr key={c.area + c.name + i}>
+                <td style={{ width: 96 }} className={styles.muted}>{c.area}</td>
+                <td style={{ width: 130 }}>{c.name}</td>
+                <td style={{ width: 52 }}><b className={tone(c.status)}>{c.status}</b></td>
+                <td className={styles.muted}>{c.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <p className={styles.note}>
+        What <b>ran</b>, as against <b>What happens next</b> below, which is what will. Written
+        on the VPS at 19:15 — after the evening scan, the engine run and the reconcile — so it
+        judges a finished day, and emailed to you when anything is not OK.
+      </p>
+    </div>
+  );
+}
+
 /* WHAT HAPPENS NEXT — the desk's answer to "should I be doing something?"
  *
  * The page showed the portfolio's state but never its next move, so the only way to know
@@ -1180,6 +1258,8 @@ export default function CapitalDesk() {
       </div>
 
       <MoneyCard tnLive={tnLive} oa={oa} ipo={ipo} ipoLive={ipoLive} />
+
+      <HealthCard />
 
       <NextUp />
 

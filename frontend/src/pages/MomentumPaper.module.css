@@ -387,3 +387,6 @@ button.curveKeyOn { opacity: 1; }
 
 /* A breached rule: the row says who acts next, because "due" alone reads as a failure. */
 .roomDue { color: var(--accent-neg, #A32D2D); font-weight: 600; }
+
+/* amber for a check that is neither clean nor broken */
+.warnTxt { color: var(--accent-warn, #B45309); }
