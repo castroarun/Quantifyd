@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-10 16:14:10.305253",
+ "updated": "2026-09-10 16:32:45.476771",
  "asof": "2026-09-10",
  "mode": "live",
  "positions": [
@@ -26,13 +26,13 @@
   }
  ],
  "capital": 228711,
- "cash": 185963,
+ "cash": 185856,
  "value": 44075,
- "nav": 230038,
+ "nav": 229931,
  "pnl": 1327,
  "realized": 0,
- "gain": 1327,
- "return_pct": 0.58,
+ "gain": 1220,
+ "return_pct": 0.53,
  "invested_pct": 19.2,
  "slots": 8,
  "slots_used": 1,

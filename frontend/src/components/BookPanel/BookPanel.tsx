@@ -129,7 +129,9 @@ export function pnlBreakdown(o: {
   rows.push({ k: 'Costs & fees', v: costs,
               hint: `modelled at ${(COST_PCT * 100).toFixed(2)}% a side on ${'\u20b9'}${Math.round(o.invested).toLocaleString('en-IN')} of open positions` });
   const gap = o.gain - (o.unrealised + o.realised + (o.yieldRs ?? 0) + costs);
-  if (Math.abs(gap) >= 1) {
+  // Rs250: below that this is rounding across three books, and a row that cries wolf at
+  // rounding is a row nobody reads when it finally matters.
+  if (Math.abs(gap) >= 250) {
     rows.push({ k: 'Unreconciled', v: gap,
                 hint: 'what the parts above do not explain. Mostly modelled charges the cash ledger never paid; it shrinks as trades reconcile through the corrected path. If it grows, something is wrong.' });
   }

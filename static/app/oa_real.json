@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-10 15:59:02.754143",
+ "updated": "2026-09-10 16:34:08.950876",
  "positions": [
   {
    "symbol": "INDSWFTLAB",
@@ -89,7 +89,7 @@
    "trail": 2915.38,
    "to_stop_pct": 5.0,
    "to_trail_pct": 0.0,
-   "weight": 6.0
+   "weight": 6.1
   },
   {
    "symbol": "SBCL",
@@ -257,13 +257,13 @@
  "invested": 533325,
  "capital": 617638,
  "value": 546424,
- "cash": 81537,
- "nav": 627961,
+ "cash": 79917,
+ "nav": 626341,
  "pnl": 13099,
  "realized": -3063,
- "gain": 10324,
+ "gain": 8703,
  "pnl_pct": 2.46,
- "return_pct": 1.67,
+ "return_pct": 1.41,
  "slots": 16,
  "slots_used": 14,
  "inception": "04-Sep-2026",
@@ -286,6 +286,11 @@
    "d": "2026-09-09",
    "nav": 620625,
    "capital": 617638
+  },
+  {
+   "d": "2026-09-10",
+   "nav": 626341,
+   "capital": 617638
   }
  ],
  "flows": [
@@ -301,6 +306,22 @@
    "kind": "deposit",
    "amount": 171289.0,
    "via": "capital desk",
+   "positions_touched": false
+  },
+  {
+   "ts": "2026-09-10 16:32:43.834960",
+   "kind": "fees",
+   "amount": 1720.36,
+   "via": "recon_cash",
+   "note": "modelled 25bps/side on turnover to date, never debited before 10-Sep-2026",
+   "positions_touched": false
+  },
+  {
+   "ts": "2026-09-10 16:34:08.433060",
+   "kind": "fees",
+   "amount": -99.69,
+   "via": "trueup",
+   "note": "ledger trued up to the book's own P&L model, 10-Sep-2026",
    "positions_touched": false
   }
  ],

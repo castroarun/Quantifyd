@@ -2,7 +2,7 @@
  "book": "IPO-BASE",
  "mode": "live",
  "capital": 228711.0,
- "cash": 185962.8,
+ "cash": 185855.93,
  "positions": [
   {
    "symbol": "KISSHT",
@@ -37,5 +37,16 @@
    "listed": "2026-03-13"
   }
  ],
- "failed_orders": []
+ "failed_orders": [],
+ "fees_charged": 106.87,
+ "fund_flows": [
+  {
+   "ts": "2026-09-10 16:32:43.835901",
+   "kind": "fees",
+   "amount": 106.87,
+   "via": "recon_cash",
+   "note": "modelled 25bps/side on turnover to date, never debited before 10-Sep-2026",
+   "positions_touched": false
+  }
+ ]
 }
