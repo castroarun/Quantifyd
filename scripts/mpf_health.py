@@ -243,10 +243,16 @@ def check_jobs(rep):
 
 
 def check_channels(rep):
-    have_mail = all(os.getenv(k) for k in
-                    ('EMAIL_SMTP_HOST', 'EMAIL_SMTP_USER', 'EMAIL_SMTP_PASS', 'EMAIL_TO'))
+    # Ask the sender what it can do; do not re-derive its rules here and drift from them.
+    try:
+        from services.dividend_notify import _first_env
+        pw = _first_env('EMAIL_SMTP_PASS', 'GMAIL_APP_PASSWORD')
+        to = _first_env('EMAIL_TO', 'EMAIL_SMTP_USER')
+        have_mail = bool(pw and to)
+    except Exception:
+        have_mail = False
     rep.add('Alerts', 'email', OK if have_mail else WARN,
-            'configured' if have_mail else 'DORMANT - set EMAIL_SMTP_* and EMAIL_TO in .env')
+            'configured' if have_mail else 'DORMANT - set EMAIL_TO (a Gmail app password is already on file)')
     phones = []
     if os.getenv('NTFY_TOPIC'):
         phones.append('ntfy')

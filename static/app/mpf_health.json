@@ -1,6 +1,6 @@
 {
- "generated": "2026-09-10 16:42:28.565943",
- "overall": "WARN",
+ "generated": "2026-09-10 17:06:39.043078",
+ "overall": "OK",
  "books": [
   {
    "id": "tn",
@@ -10,7 +10,7 @@
    "nav": 913991,
    "gain": null,
    "updated": "2026-09-10 16:34:23.663004",
-   "age_min": 8,
+   "age_min": 32,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -24,7 +24,7 @@
    "nav": 626341,
    "gain": 8703,
    "updated": "2026-09-10 16:34:08.950876",
-   "age_min": 8,
+   "age_min": 33,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -38,7 +38,7 @@
    "nav": 229931,
    "gain": 1220,
    "updated": "2026-09-10 16:32:45.476771",
-   "age_min": 10,
+   "age_min": 34,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -50,7 +50,7 @@
    "area": "True North",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 8 min ago"
+   "detail": "marked 32 min ago"
   },
   {
    "area": "True North",
@@ -80,7 +80,7 @@
    "area": "Open Alpha",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 8 min ago"
+   "detail": "marked 33 min ago"
   },
   {
    "area": "Open Alpha",
@@ -110,7 +110,7 @@
    "area": "IPO Base",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 10 min ago"
+   "detail": "marked 34 min ago"
   },
   {
    "area": "IPO Base",
@@ -199,8 +199,8 @@
   {
    "area": "Alerts",
    "name": "email",
-   "status": "WARN",
-   "detail": "DORMANT - set EMAIL_SMTP_* and EMAIL_TO in .env"
+   "status": "OK",
+   "detail": "configured"
   },
   {
    "area": "Alerts",
