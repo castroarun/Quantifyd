@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
-import BookPanel, { pnlBreakdown } from '../components/BookPanel/BookPanel';
+import BookPanel, { pnlBreakdown, todayPnl } from '../components/BookPanel/BookPanel';
 import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
 import type { HoldingsRecord } from '../api/types';
 
@@ -243,6 +243,7 @@ export default function BlueskyPaper() {
           {cs.dd != null && <> · worst drawdown <b>{cs.dd.toFixed(1)}%</b></>}
         </>}
         updated={r.updated}
+        today={todayPnl(r.positions as never)}
         tickLabel="marks"
         segs={segs}
         pnl={pnlRows}

@@ -6,7 +6,7 @@ import { getStudy } from '../data/backtests';
 import type { HoldingsRecord } from '../api/types';
 import styles from './MomentumPaper.module.css';
 import LiveTick, { Tick } from '../components/LiveTick/LiveTick';
-import BookPanel, { pnlBreakdown } from '../components/BookPanel/BookPanel';
+import BookPanel, { pnlBreakdown, todayPnl } from '../components/BookPanel/BookPanel';
 import DailyPerformance from '../components/DailyPerformance/DailyPerformance';
 
 type Holding = {
@@ -200,6 +200,7 @@ export default function MomentumPaper() {
           capital={live.capital}
           capitalWord="of capital"
           updated={live.updated}
+          today={todayPnl(live.positions)}
           segs={[
             { k: 'Stocks', v: live.value, c: '#2563EB' },
             { k: 'Liquid fund', v: live.swept, c: '#0891B2' },
@@ -290,7 +291,7 @@ export default function MomentumPaper() {
           </div>
         </div>
       </div>
-      <BookSummary s={s} updatedAt={live?.updated} />
+      <BookSummary s={s} updatedAt={live?.updated} today={todayPnl(live?.positions)} />
 
       {s.holdings.length > 0 && (
         <div className={styles.card}>
@@ -565,7 +566,8 @@ const fmtD = (x?: string | null) => {
 
 /** Headline block. Hierarchy, not a row of equal tiles: what the book is worth, where that value
  *  sits, then the P&L parts before the total they add up to. */
-function BookSummary({ s, updatedAt }: { s: State; updatedAt?: string | null }) {
+function BookSummary({ s, updatedAt, today }:
+                     { s: State; updatedAt?: string | null; today?: number | null }) {
   const gain = s.nav - s.capital;
   // CAGR / max-drawdown subline (display-only) from the book's own nav curve —
   // same headline language as the Open Alpha page (Arun, 02-Sep-2026).
@@ -615,6 +617,7 @@ function BookSummary({ s, updatedAt }: { s: State; updatedAt?: string | null }) 
           {' '}· max drawdown <b>{pct(mdd)}</b></>
       ) : null}
       updated={updatedAt ?? null}
+      today={today}
       segs={segs}
       pnl={rows}
       bookId="momentum-3l"

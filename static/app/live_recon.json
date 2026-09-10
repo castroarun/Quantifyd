@@ -1,91 +1,91 @@
 {
- "generated_at": "2026-09-09T14:00:02",
+ "generated_at": "2026-09-10T14:00:02",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 39.55,
-   "pnl": -12960.0,
+   "ltp": 37.0,
+   "pnl": -13470.0,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "BSE26SEP3700CE": {
-   "qty": -400,
-   "avg": 32.325,
-   "ltp": 14.7,
-   "pnl": 7050.0,
+  "BSE26SEP3600CE": {
+   "qty": -600,
+   "avg": 22.466666666666665,
+   "ltp": 22.6,
+   "pnl": -80.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 202.5,
-   "pnl": 20857.5,
+   "ltp": 141.0,
+   "pnl": 2407.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 140.3,
-   "pnl": -14490.0,
+   "ltp": 90.8,
+   "pnl": 360.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 1.14,
-   "pnl": 42170.2,
+   "ltp": 0.56,
+   "pnl": 714.8,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.29,
-   "pnl": -12150.8,
+   "ltp": 0.14,
+   "pnl": -1429.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.16,
-   "pnl": -6432.7,
+   "ltp": 0.09,
+   "pnl": -1429.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP20CE": {
    "qty": 71475,
    "avg": 0.04,
-   "ltp": 0.06,
-   "pnl": 1429.5,
+   "ltp": 0.03,
+   "pnl": -714.8,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "LUMAXIND": {
-   "qty": 2,
-   "avg": 6259.5,
-   "ltp": 6237.5,
-   "pnl": -44.0,
+  "AYMSYNTEX": {
+   "qty": 34,
+   "avg": 300.0,
+   "ltp": 299.25,
+   "pnl": -25.5,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "SMSPHARMA": {
-   "qty": 25,
-   "avg": 408.4,
-   "ltp": 410.8,
-   "pnl": 60.0,
+  "EMMVEE": {
+   "qty": 30,
+   "avg": 344.35,
+   "ltp": 341.45,
+   "pnl": -87.0,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "SPORTKING": {
-   "qty": -174,
-   "avg": 215.99,
-   "ltp": 216.48,
-   "pnl": -85.3,
+  "ENTERO": {
+   "qty": 1,
+   "avg": 1828.6,
+   "ltp": 1786.7,
+   "pnl": -41.9,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -103,10 +103,10 @@
   {
    "level": "ALERT",
    "kind": "ORPHAN",
-   "symbol": "BSE26SEP3700CE",
-   "broker_qty": -400,
+   "symbol": "BSE26SEP3600CE",
+   "broker_qty": -600,
    "app_qty": 0,
-   "detail": "broker holds -400 that no book claims (no order tag)"
+   "detail": "broker holds -600 that no book claims (no order tag)"
   },
   {
    "level": "ALERT",
@@ -159,32 +159,32 @@
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "LUMAXIND",
-   "broker_qty": 2,
+   "symbol": "AYMSYNTEX",
+   "broker_qty": 34,
    "app_qty": 0,
-   "detail": "manual holding, 2 \u2014 no book tracks it"
+   "detail": "manual holding, 34 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "SMSPHARMA",
-   "broker_qty": 25,
+   "symbol": "EMMVEE",
+   "broker_qty": 30,
    "app_qty": 0,
-   "detail": "manual holding, 25 \u2014 no book tracks it"
+   "detail": "manual holding, 30 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MULTI-BOOK",
-   "symbol": "SPORTKING",
-   "broker_qty": -174,
+   "symbol": "ENTERO",
+   "broker_qty": 1,
    "app_qty": 0,
-   "detail": "broker -174 = OA-EXIT -174 \u2014 placed by our books, not visible in the page feed"
+   "detail": "broker 1 = OA-TOPUP +1 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "WARN",
    "kind": "NAKED",
-   "symbol": "BSE26SEP3700CE",
-   "broker_qty": -400,
+   "symbol": "BSE26SEP3600CE",
+   "broker_qty": -600,
    "app_qty": 0,
    "detail": "short option with no SL resting at the exchange (software-side stop only)"
   },
@@ -214,8 +214,8 @@
   }
  ],
  "filled_by_tag": {
-  "OA-EXIT": 174,
-  "untagged": 27
+  "untagged": 264,
+  "OA-TOPUP": 1
  },
  "alerts": 8,
  "warns": 4,

@@ -1,19 +1,19 @@
 {
- "updated": "2026-09-08 18:41:00.883274",
- "nav": 1038402.0,
+ "updated": "2026-09-09 18:41:26.731995",
+ "nav": 1041243.0,
  "capital": 274067.0,
  "cash": 5000.0,
- "swept_value": 121715.0,
- "sweep_units": 112.8,
- "invested_pct": 87.8,
- "unrealized": 85249.0,
- "ret_pct": 278.89,
- "cagr_pct": 22.0,
+ "swept_value": 113885.0,
+ "sweep_units": 105.6,
+ "invested_pct": 88.6,
+ "unrealized": 85347.0,
+ "ret_pct": 279.92,
+ "cagr_pct": 22.1,
  "max_dd_pct": -22.36,
  "gate_weak": true,
- "gate_nb": 270.1,
- "gate_sma": 278.8,
- "gate_gap_pct": -3.12,
+ "gate_nb": 268.25,
+ "gate_sma": 278.67,
+ "gate_gap_pct": -3.74,
  "positions": [
   {
    "symbol": "BLISSGVS",
@@ -27,7 +27,7 @@
    "value": 38842.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 159,
+   "days": 160,
    "stop": 212.7,
    "to_stop_pct": null,
    "trail": null,
@@ -46,7 +46,7 @@
    "value": 38068.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 154,
+   "days": 155,
    "stop": 3502.26,
    "to_stop_pct": null,
    "trail": null,
@@ -65,7 +65,7 @@
    "value": 40261.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 153,
+   "days": 154,
    "stop": 227.24,
    "to_stop_pct": null,
    "trail": null,
@@ -84,7 +84,7 @@
    "value": 39462.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 118,
+   "days": 119,
    "stop": 6050.84,
    "to_stop_pct": null,
    "trail": null,
@@ -103,7 +103,7 @@
    "value": 44005.0,
    "pnl": 0.0,
    "pnl_pct": null,
-   "days": 118,
+   "days": 119,
    "stop": 254.62,
    "to_stop_pct": null,
    "trail": null,
@@ -117,16 +117,16 @@
    "entry_date": "2026-07-17",
    "pivot": 83.8,
    "src": "backtest",
-   "ltp": 141.0,
-   "day_move_pct": 0.07,
-   "value": 83754.0,
-   "pnl": 32997.0,
-   "pnl_pct": 65.0,
-   "days": 53,
+   "ltp": 142.8,
+   "day_move_pct": 1.36,
+   "value": 84823.0,
+   "pnl": 34066.0,
+   "pnl_pct": 67.1,
+   "days": 54,
    "stop": 78.61,
-   "to_stop_pct": 79.4,
-   "trail": 138.94,
-   "to_trail_pct": 1.5,
+   "to_stop_pct": 81.7,
+   "trail": 139.69,
+   "to_trail_pct": 2.2,
    "weight": 8.1
   },
   {
@@ -136,36 +136,17 @@
    "entry_date": "2026-08-12",
    "pivot": 1848.5,
    "src": "backtest",
-   "ltp": 2600.0,
-   "day_move_pct": 0.08,
-   "value": 72800.0,
-   "pnl": 21042.0,
-   "pnl_pct": 40.7,
-   "days": 27,
+   "ltp": 2605.0,
+   "day_move_pct": 0.21,
+   "value": 72940.0,
+   "pnl": 21182.0,
+   "pnl_pct": 40.9,
+   "days": 28,
    "stop": 1700.62,
-   "to_stop_pct": 52.9,
-   "trail": 2399.7,
-   "to_trail_pct": 8.3,
+   "to_stop_pct": 53.2,
+   "trail": 2441.87,
+   "to_trail_pct": 6.7,
    "weight": 7.0
-  },
-  {
-   "symbol": "KTKBANK",
-   "qty": 174,
-   "buy": 313.25,
-   "entry_date": "2026-08-19",
-   "pivot": 313.25,
-   "src": "backtest",
-   "ltp": 334.5,
-   "day_move_pct": 0.27,
-   "value": 58203.0,
-   "pnl": 3698.0,
-   "pnl_pct": 6.8,
-   "days": 20,
-   "stop": 288.19,
-   "to_stop_pct": 16.1,
-   "trail": 333.09,
-   "to_trail_pct": 0.4,
-   "weight": 5.6
   },
   {
    "symbol": "TFCILTD",
@@ -174,17 +155,17 @@
    "entry_date": "2026-08-25",
    "pivot": 132.76,
    "src": "backtest",
-   "ltp": 141.0,
-   "day_move_pct": 0.07,
-   "value": 58374.0,
-   "pnl": 3411.0,
-   "pnl_pct": 6.2,
-   "days": 14,
+   "ltp": 142.8,
+   "day_move_pct": 1.36,
+   "value": 59119.0,
+   "pnl": 4157.0,
+   "pnl_pct": 7.6,
+   "days": 15,
    "stop": 122.14,
-   "to_stop_pct": 15.4,
-   "trail": 138.94,
-   "to_trail_pct": 1.5,
-   "weight": 5.6
+   "to_stop_pct": 16.9,
+   "trail": 139.69,
+   "to_trail_pct": 2.2,
+   "weight": 5.7
   },
   {
    "symbol": "TMB",
@@ -193,17 +174,17 @@
    "entry_date": "2026-08-26",
    "pivot": 893.65,
    "src": "backtest",
-   "ltp": 929.9,
-   "day_move_pct": -0.7,
-   "value": 56724.0,
-   "pnl": 2211.0,
-   "pnl_pct": 4.1,
-   "days": 13,
+   "ltp": 920.0,
+   "day_move_pct": -0.73,
+   "value": 56120.0,
+   "pnl": 1607.0,
+   "pnl_pct": 2.9,
+   "days": 14,
    "stop": 822.16,
-   "to_stop_pct": 13.1,
-   "trail": 899.98,
-   "to_trail_pct": 3.3,
-   "weight": 5.5
+   "to_stop_pct": 11.9,
+   "trail": 905.18,
+   "to_trail_pct": 1.6,
+   "weight": 5.4
   },
   {
    "symbol": "RATNAVEER",
@@ -212,16 +193,16 @@
    "entry_date": "2026-08-26",
    "pivot": 270.23,
    "src": "backtest",
-   "ltp": 297.8,
-   "day_move_pct": -2.82,
-   "value": 61049.0,
-   "pnl": 5652.0,
-   "pnl_pct": 10.2,
-   "days": 13,
+   "ltp": 299.0,
+   "day_move_pct": 0.4,
+   "value": 61295.0,
+   "pnl": 5898.0,
+   "pnl_pct": 10.6,
+   "days": 14,
    "stop": 248.61,
-   "to_stop_pct": 19.8,
-   "trail": 284.33,
-   "to_trail_pct": 4.7,
+   "to_stop_pct": 20.3,
+   "trail": 287.63,
+   "to_trail_pct": 4.0,
    "weight": 5.9
   },
   {
@@ -231,17 +212,17 @@
    "entry_date": "2026-08-28",
    "pivot": 825.85,
    "src": "backtest",
-   "ltp": 894.4,
-   "day_move_pct": -0.85,
-   "value": 59925.0,
-   "pnl": 4593.0,
-   "pnl_pct": 8.3,
-   "days": 11,
+   "ltp": 892.25,
+   "day_move_pct": -0.64,
+   "value": 59781.0,
+   "pnl": 4449.0,
+   "pnl_pct": 8.0,
+   "days": 12,
    "stop": 759.78,
-   "to_stop_pct": 17.7,
-   "trail": 854.55,
-   "to_trail_pct": 4.7,
-   "weight": 5.8
+   "to_stop_pct": 17.4,
+   "trail": 859.61,
+   "to_trail_pct": 3.8,
+   "weight": 5.7
   },
   {
    "symbol": "RISHABH",
@@ -250,17 +231,17 @@
    "entry_date": "2026-09-02",
    "pivot": 705.45,
    "src": "backtest",
-   "ltp": 810.0,
-   "day_move_pct": 0.01,
-   "value": 64800.0,
-   "pnl": 8364.0,
-   "pnl_pct": 14.8,
-   "days": 6,
+   "ltp": 816.85,
+   "day_move_pct": 1.06,
+   "value": 65348.0,
+   "pnl": 8912.0,
+   "pnl_pct": 15.8,
+   "days": 7,
    "stop": 649.01,
-   "to_stop_pct": 24.8,
-   "trail": 716.46,
-   "to_trail_pct": 13.1,
-   "weight": 6.2
+   "to_stop_pct": 25.9,
+   "trail": 724.47,
+   "to_trail_pct": 12.8,
+   "weight": 6.3
   },
   {
    "symbol": "INDSWFTLAB",
@@ -269,16 +250,16 @@
    "entry_date": "2026-09-04",
    "pivot": 368.15,
    "src": "live",
-   "ltp": 389.0,
-   "day_move_pct": 5.51,
-   "value": 66908.0,
-   "pnl": 2735.0,
-   "pnl_pct": 4.3,
-   "days": 4,
+   "ltp": 385.1,
+   "day_move_pct": -0.82,
+   "value": 66237.0,
+   "pnl": 2064.0,
+   "pnl_pct": 3.2,
+   "days": 5,
    "stop": 343.25,
-   "to_stop_pct": 13.3,
-   "trail": 354.1,
-   "to_trail_pct": 9.9,
+   "to_stop_pct": 12.2,
+   "trail": 358.25,
+   "to_trail_pct": 7.5,
    "weight": 6.4
   },
   {
@@ -288,17 +269,17 @@
    "entry_date": "2026-09-04",
    "pivot": 387.05,
    "src": "live",
-   "ltp": 405.6,
-   "day_move_pct": 4.39,
-   "value": 66113.0,
-   "pnl": 1728.0,
-   "pnl_pct": 2.7,
-   "days": 4,
+   "ltp": 424.7,
+   "day_move_pct": 4.99,
+   "value": 69226.0,
+   "pnl": 4841.0,
+   "pnl_pct": 7.5,
+   "days": 5,
    "stop": 363.4,
-   "to_stop_pct": 11.6,
-   "trail": 353.78,
-   "to_trail_pct": 14.6,
-   "weight": 6.4
+   "to_stop_pct": 16.9,
+   "trail": 361.38,
+   "to_trail_pct": 17.5,
+   "weight": 6.6
   },
   {
    "symbol": "WELCORP",
@@ -307,194 +288,118 @@
    "entry_date": "2026-09-04",
    "pivot": 2553.6,
    "src": "live",
-   "ltp": 2600.0,
-   "day_move_pct": 0.08,
-   "value": 62400.0,
-   "pnl": -1181.0,
-   "pnl_pct": -1.9,
-   "days": 4,
+   "ltp": 2605.0,
+   "day_move_pct": 0.21,
+   "value": 62520.0,
+   "pnl": -1061.0,
+   "pnl_pct": -1.7,
+   "days": 5,
    "stop": 2437.26,
-   "to_stop_pct": 6.7,
-   "trail": 2399.7,
-   "to_trail_pct": 8.3,
+   "to_stop_pct": 6.9,
+   "trail": 2441.87,
+   "to_trail_pct": 6.7,
    "weight": 6.0
+  },
+  {
+   "symbol": "INDSWFTLAB",
+   "qty": 167,
+   "buy": 389.7,
+   "entry_date": "2026-09-09",
+   "pivot": 372.7,
+   "src": "live",
+   "ltp": 385.1,
+   "day_move_pct": -0.82,
+   "value": 64312.0,
+   "pnl": -768.0,
+   "pnl_pct": -1.2,
+   "days": 0,
+   "stop": 358.52,
+   "to_stop_pct": 7.4,
+   "trail": 358.25,
+   "to_trail_pct": 7.5,
+   "weight": 6.2
   },
   {
    "symbol": "CASHIETF",
    "is_cash": true,
-   "qty": 112.8,
+   "qty": 105.6,
    "buy": null,
    "entry_date": null,
    "pivot": null,
    "src": "sweep",
-   "ltp": 1078.61,
-   "value": 121715.0,
-   "pnl": 68.0,
+   "ltp": 1078.74,
+   "value": 113885.0,
+   "pnl": 82.0,
    "pnl_pct": null,
    "days": null,
    "stop": null,
    "to_stop_pct": null,
    "trail": null,
    "to_trail_pct": null,
-   "weight": 11.7
+   "weight": 10.9
   }
  ],
  "pending": [
   {
-   "symbol": "ANTHEM",
-   "pivot": 950.7,
-   "rs": 72.2,
-   "signal_date": "2026-09-08"
+   "symbol": "ARTEMISMED",
+   "pivot": 343.5,
+   "rs": 79.0,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "ASIANENE",
-   "pivot": 523.0,
-   "rs": 88.3,
-   "signal_date": "2026-09-08"
+   "symbol": "EBGNG",
+   "pivot": 674.85,
+   "rs": 95.1,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "BODALCHEM",
-   "pivot": 178.6,
-   "rs": 99.6,
-   "signal_date": "2026-09-08"
+   "symbol": "KINGFA",
+   "pivot": 6087.5,
+   "rs": 77.1,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "CHENNPETRO",
-   "pivot": 1452.2,
-   "rs": 85.9,
-   "signal_date": "2026-09-08"
+   "symbol": "REDINGTON",
+   "pivot": 378.2,
+   "rs": 87.8,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "CYIENTDLM",
-   "pivot": 869.8,
-   "rs": 98.0,
-   "signal_date": "2026-09-08"
+   "symbol": "RISHABH",
+   "pivot": 809.95,
+   "rs": 93.9,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "DATAPATTNS",
-   "pivot": 4866.2,
-   "rs": 79.5,
-   "signal_date": "2026-09-08"
+   "symbol": "SBC",
+   "pivot": 46.87,
+   "rs": 90.8,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "DEEPINDS",
-   "pivot": 786.45,
-   "rs": 92.4,
-   "signal_date": "2026-09-08"
+   "symbol": "SETL",
+   "pivot": 408.95,
+   "rs": 99.4,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "DIVISLAB",
-   "pivot": 9467.0,
-   "rs": 84.2,
-   "signal_date": "2026-09-08"
+   "symbol": "SHILPAMED",
+   "pivot": 964.15,
+   "rs": 98.8,
+   "signal_date": "2026-09-09"
   },
   {
-   "symbol": "INDSWFTLAB",
-   "pivot": 372.7,
-   "rs": 99.7,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "KABRAEXTRU",
-   "pivot": 635.75,
-   "rs": 99.3,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "LAURUSLABS",
-   "pivot": 1938.5,
-   "rs": 92.9,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "MON100",
-   "pivot": 342.55,
-   "rs": 77.3,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "NAVINFLUOR",
-   "pivot": 8697.0,
-   "rs": 85.0,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "NEULANDLAB",
-   "pivot": 23650.0,
-   "rs": 87.5,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "NITINSPIN",
-   "pivot": 640.25,
-   "rs": 89.6,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "NRBBEARING",
-   "pivot": 486.1,
-   "rs": 85.8,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "QPOWER",
-   "pivot": 1495.3,
-   "rs": 92.3,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "ROSSTECH",
-   "pivot": 1150.5,
-   "rs": 80.0,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "SAILIFE",
-   "pivot": 1587.0,
-   "rs": 89.9,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "SANSERA",
-   "pivot": 4018.0,
-   "rs": 96.3,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "SHANTIGEAR",
-   "pivot": 685.05,
-   "rs": 79.1,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "UNIMECH",
-   "pivot": 1522.6,
-   "rs": 85.6,
-   "signal_date": "2026-09-08"
-  },
-  {
-   "symbol": "WHEELS",
-   "pivot": 1786.0,
-   "rs": 94.4,
-   "signal_date": "2026-09-08"
+   "symbol": "SMLMAH",
+   "pivot": 6393.5,
+   "rs": 91.0,
+   "signal_date": "2026-09-09"
   }
  ],
  "provenance": "History BACKFILLED from the adopted-spec backtest (2026-09-03 spec: trail-15 SMA, -8% stop, 16 slots @6.25%, NO gate; median seed 8, 2020-01-01 -> 2026-09-03, 1718 trades); LIVE paper from 2026-09-02, re-seeded 03-Sep-2026 after the gate audit (research/142 gate bake-off: SMA200 gate refuted + was NaN-dead since Apr-26; 16 slots halves path dependence). Backfill uses backtest fills (at-pivot) - live entries use the stricter next-day buy-stop. Rupee scale rebased to the momentum book NAV so the two sleeves stay equal-sized.",
- "n_live_trades": 1,
- "interest_earned": 68.0,
+ "n_live_trades": 2,
+ "interest_earned": 82.0,
  "cash_yield_pct": 5.2,
  "trades": [
-  {
-   "symbol": "PRECWIRE",
-   "entry_date": "2026-03-05",
-   "exit_date": "2026-03-13",
-   "buy": 322.85,
-   "sell": 283.15,
-   "qty": null,
-   "ret_pct": -12.3,
-   "reason": "stop_8pct",
-   "src": "backtest"
-  },
   {
    "symbol": "SBC",
    "entry_date": "2026-03-05",
@@ -1364,16 +1269,23 @@
    "ret_pct": 35.7,
    "reason": "trail_sma15",
    "src": "live"
+  },
+  {
+   "symbol": "KTKBANK",
+   "entry_date": "2026-08-19",
+   "exit_date": "2026-09-09",
+   "buy": 313.25,
+   "sell": 330.7,
+   "qty": 174,
+   "net_pnl": 2756.0,
+   "ret_pct": 5.57,
+   "reason": "trail_sma15",
+   "src": "live"
   }
  ],
- "n_trades": 1719,
- "win_pct": 48.9,
+ "n_trades": 1720,
+ "win_pct": 49.0,
  "nav_curve": [
-  {
-   "date": "2023-08-31",
-   "nav": 259884.0,
-   "bench": 212.77
-  },
   {
    "date": "2023-09-01",
    "nav": 262750.0,
@@ -5117,155 +5029,162 @@
   {
    "date": "2026-09-08",
    "nav": 1038402.0,
-   "bench": 270.1
+   "bench": 270.05
+  },
+  {
+   "date": "2026-09-09",
+   "nav": 1041243.0,
+   "bench": 268.25
   }
  ],
  "missed_tail": [
   {
-   "symbol": "CRAFTSMAN",
-   "pivot": 11253.0,
-   "rs": 85.0,
-   "signal_date": "2026-09-04",
+   "symbol": "CYIENTDLM",
+   "pivot": 869.8,
+   "rs": 98.0,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "ACMESOLAR",
-   "pivot": 409.15,
-   "rs": 84.2,
-   "signal_date": "2026-09-04",
+   "symbol": "SANSERA",
+   "pivot": 4018.0,
+   "rs": 96.3,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "ROSSTECH",
-   "pivot": 1136.2,
-   "rs": 79.7,
-   "signal_date": "2026-09-04",
+   "symbol": "WHEELS",
+   "pivot": 1786.0,
+   "rs": 94.4,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "MOREPENLAB",
-   "pivot": 117.45,
-   "rs": 99.3,
-   "signal_date": "2026-09-07",
+   "symbol": "LAURUSLABS",
+   "pivot": 1938.5,
+   "rs": 92.9,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "KABRAEXTRU",
-   "pivot": 635.75,
-   "rs": 99.0,
-   "signal_date": "2026-09-07",
+   "symbol": "DEEPINDS",
+   "pivot": 786.45,
+   "rs": 92.4,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "AEROFLEX",
-   "pivot": 552.05,
-   "rs": 98.5,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "UNIPARTS",
-   "pivot": 901.15,
-   "rs": 94.3,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "MANINDS",
-   "pivot": 793.4,
-   "rs": 93.9,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "ENTERO",
-   "pivot": 1848.0,
+   "symbol": "QPOWER",
+   "pivot": 1495.3,
    "rs": 92.3,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "RISHABH",
-   "pivot": 746.0,
-   "rs": 91.8,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "KRN",
-   "pivot": 1609.7,
-   "rs": 91.5,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "SYRMA",
-   "pivot": 1516.4,
-   "rs": 90.7,
-   "signal_date": "2026-09-07",
-   "why": "book_full"
-  },
-  {
-   "symbol": "AEROENTER",
-   "pivot": 146.29,
-   "rs": 90.6,
-   "signal_date": "2026-09-07",
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
    "symbol": "SAILIFE",
    "pivot": 1587.0,
-   "rs": 90.3,
-   "signal_date": "2026-09-07",
+   "rs": 89.9,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "REDINGTON",
-   "pivot": 372.45,
-   "rs": 87.1,
-   "signal_date": "2026-09-07",
+   "symbol": "NITINSPIN",
+   "pivot": 640.25,
+   "rs": 89.6,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "SOLARINDS",
-   "pivot": 21500.0,
-   "rs": 82.0,
-   "signal_date": "2026-09-07",
+   "symbol": "ASIANENE",
+   "pivot": 523.0,
+   "rs": 88.3,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "WINDLAS",
-   "pivot": 1137.06,
+   "symbol": "NEULANDLAB",
+   "pivot": 23650.0,
+   "rs": 87.5,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "CHENNPETRO",
+   "pivot": 1452.2,
+   "rs": 85.9,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "NRBBEARING",
+   "pivot": 486.1,
+   "rs": 85.8,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "UNIMECH",
+   "pivot": 1522.6,
+   "rs": 85.6,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "NAVINFLUOR",
+   "pivot": 8697.0,
+   "rs": 85.0,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "DIVISLAB",
+   "pivot": 9467.0,
+   "rs": 84.2,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "ROSSTECH",
+   "pivot": 1150.5,
+   "rs": 80.0,
+   "signal_date": "2026-09-08",
+   "why": "book_full"
+  },
+  {
+   "symbol": "DATAPATTNS",
+   "pivot": 4866.2,
    "rs": 79.5,
-   "signal_date": "2026-09-07",
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "ARTEMISMED",
-   "pivot": 339.89,
-   "rs": 78.7,
-   "signal_date": "2026-09-07",
+   "symbol": "SHANTIGEAR",
+   "pivot": 685.05,
+   "rs": 79.1,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "WOCKPHARMA",
-   "pivot": 2152.9,
-   "rs": 77.8,
-   "signal_date": "2026-09-07",
+   "symbol": "MON100",
+   "pivot": 342.55,
+   "rs": 77.3,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   },
   {
-   "symbol": "CENTUM",
-   "pivot": 3861.2,
-   "rs": 76.6,
-   "signal_date": "2026-09-07",
+   "symbol": "ANTHEM",
+   "pivot": 950.7,
+   "rs": 72.2,
+   "signal_date": "2026-09-08",
    "why": "book_full"
   }
  ],
  "spec": "trail-15 SMA; -8% stop; 16 slots @6.25%; NO gate (retired 03-Sep-2026); no mcap floor; 25bps",
  "study": "/app/backtest/bluesky-ath-breakout-research142",
  "log": [
-  "SCAN 23 new signals (gate retired \u2014 info-only: weak)",
-  "SWEEP Rs 121,715 -> 112.844 CASHIETF @ 1078.61"
+  "EXIT KTKBANK trail_sma15 @330.70 (+5.6%)",
+  "ENTRY INDSWFTLAB x167 @389.70 (pivot 372.7)",
+  "SCAN 9 new signals (gate retired \u2014 info-only: weak)",
+  "SWEEP Rs 113,885 -> 105.572 CASHIETF @ 1078.74"
  ]
 }

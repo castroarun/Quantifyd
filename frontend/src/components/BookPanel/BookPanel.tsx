@@ -70,11 +70,39 @@ export interface BookPanelProps {
   curveLabel?: string;
   /** Remembers open/closed for THIS book. */
   storageKey: string;
+  /** Today's move, shown beside the total. Omit and the line is left out. */
+  today?: number | null;
 }
 
 
 /** The cost rate every book is modelled at: 25 bps a side, the r/142 study assumption. */
 export const COST_PCT = 0.0025;
+
+/** A position priced well enough to know what it did today. */
+export type DayRow = { qty?: number | null; ltp?: number | null;
+                       prev_close?: number | null; day_move_pct?: number | null;
+                       value?: number | null };
+
+/**
+ * Today's P&L: sum of qty x (last price - previous close).
+ *
+ * Falls back to day_move_pct against the position's value where a previous close is not
+ * published, which is the same quantity by another route. Returns null when NOTHING could
+ * be priced - a blank is honest, where a zero would read as "flat today".
+ */
+export function todayPnl(rows: DayRow[] | undefined | null): number | null {
+  let tot = 0, n = 0;
+  for (const r of rows ?? []) {
+    if (r.qty != null && r.ltp != null && r.prev_close) {
+      tot += r.qty * (r.ltp - r.prev_close);
+      n++;
+    } else if (r.day_move_pct != null && r.value) {
+      tot += r.value - r.value / (1 + r.day_move_pct / 100);
+      n++;
+    }
+  }
+  return n ? tot : null;
+}
 
 /**
  * The P&L parts, with costs MEASURED rather than left over.
@@ -192,7 +220,18 @@ export default function BookPanel(p: BookPanelProps) {
             </div>
           ))}
           <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
-            <span>Total return</span>
+            <span>
+              Total return
+              {p.today != null && (
+                /* on the row, not in the list above: a day is a slice of TIME, while the
+                   rows are a decomposition by KIND. Listing it would imply it adds up
+                   with them. */
+                <span className={styles.pnlWas}>
+                  today <b style={{ color: tone(p.today), fontWeight: 600 }}>
+                    {signed(p.today)}</b>
+                </span>
+              )}
+            </span>
             <b style={{ color: tone(p.gain) }}>{signed(p.gain)} · {pct(p.returnPct)}</b>
           </div>
         </div>

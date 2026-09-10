@@ -708,16 +708,27 @@ def _kite():
 
 
 def _live_px(kite, syms):
-    """Last traded price per held symbol; missing quotes simply fall back to the book."""
-    out = {}
+    """-> (ltp, previous close) per held symbol. Missing quotes fall back to the book.
+
+    The previous close comes from the quote's own OHLC block, which is what makes a
+    today's-P&L figure possible at all: value minus what the same shares were worth at
+    last night's close.
+    """
+    px, prev = {}, {}
     for i in range(0, len(syms), 200):
         try:
             q = kite.quote(['NSE:' + s for s in syms[i:i + 200]])
             for k, v in q.items():
-                out[k.split(':', 1)[1]] = float(v.get('last_price') or 0)
+                s = k.split(':', 1)[1]
+                lp = float(v.get('last_price') or 0)
+                if lp > 0:
+                    px[s] = lp
+                pc = float((v.get('ohlc') or {}).get('close') or 0)
+                if pc > 0:
+                    prev[s] = pc
         except Exception as e:
             print('quote batch failed:', e)
-    return {k: v for k, v in out.items() if v > 0}
+    return px, prev
 
 
 def _sma20_proxy(syms, live):
@@ -751,7 +762,7 @@ def mark():
         print('mark: nothing held')
         return
     kite = _kite()
-    live = _live_px(kite, syms)
+    live, prev = _live_px(kite, syms)
     smas = _sma20_proxy(syms, live)
 
     rows, tot_val, tot_pnl = [], 0.0, 0.0
@@ -763,8 +774,11 @@ def mark():
         tot_val += val
         tot_pnl += pnl
         tr = smas.get(p['symbol'])
+        pc = prev.get(p['symbol'])
         rows.append(dict(**p, ltp=round(lp, 2), value=round(val), pnl=round(pnl),
                          pnl_pct=round((lp / p['buy'] - 1) * 100, 2),
+                         prev_close=round(pc, 2) if pc else None,
+                         day_move_pct=round((lp / pc - 1) * 100, 2) if pc else None,
                          trail=round(tr, 2) if tr else None,
                          target=round(p['buy'] * (1 + TARGET), 2),
                          to_stop_pct=round((lp / p['stop'] - 1) * 100, 1),

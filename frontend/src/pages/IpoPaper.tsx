@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getStudy } from '../data/backtests';
 import styles from './MomentumPaper.module.css';
 import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
-import BookPanel, { pnlBreakdown } from '../components/BookPanel/BookPanel';
+import BookPanel, { pnlBreakdown, todayPnl } from '../components/BookPanel/BookPanel';
 import type { HoldingsRecord } from '../api/types';
 
 /* IPO BASE (/app/ipo-paper) — research/153's adopted spec, run forward on real prices.
@@ -191,6 +191,7 @@ export default function IpoPaper() {
         inception={r.started}
         extraSub={r.asof ? <> · marks {fmtD(r.asof)} close</> : null}
         updated={r.updated}
+        today={todayPnl(r.positions as never)}
         tickLabel="marks"
         segs={segs}
         pnl={pnlBreakdown({ gain: r.gain, unrealised: r.pnl, realised: r.realized,

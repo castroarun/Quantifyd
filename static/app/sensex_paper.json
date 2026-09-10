@@ -6,19 +6,19 @@
  "lots": 2,
  "qty": 40,
  "lot_size": 20,
- "updated": "2026-09-09 15:58:05",
- "today_day": "2026-09-09",
+ "updated": "2026-09-10 15:58:02",
+ "today_day": "2026-09-10",
  "variants": {
   "straddle": {
    "all": {
-    "n": 40,
-    "pnl": -20422,
-    "win": 65
+    "n": 41,
+    "pnl": -16366,
+    "win": 66
    },
    "system": {
-    "n": 16,
-    "pnl": 5982,
-    "win": 81
+    "n": 17,
+    "pnl": 10038,
+    "win": 82
    },
    "observational": {
     "n": 24,
@@ -89,6 +89,10 @@
     [
      "2026-09-09",
      5982
+    ],
+    [
+     "2026-09-10",
+     10038
     ]
    ],
    "curve_all": [
@@ -251,19 +255,23 @@
     [
      "2026-09-09",
      -20422
+    ],
+    [
+     "2026-09-10",
+     -16366
     ]
    ]
   },
   "strangle": {
    "all": {
-    "n": 40,
-    "pnl": 26960,
-    "win": 65
+    "n": 41,
+    "pnl": 28918,
+    "win": 66
    },
    "system": {
-    "n": 16,
-    "pnl": 17538,
-    "win": 75
+    "n": 17,
+    "pnl": 19496,
+    "win": 76
    },
    "observational": {
     "n": 24,
@@ -334,6 +342,10 @@
     [
      "2026-09-09",
      17538
+    ],
+    [
+     "2026-09-10",
+     19496
     ]
    ],
    "curve_all": [
@@ -496,11 +508,93 @@
     [
      "2026-09-09",
      26960
+    ],
+    [
+     "2026-09-10",
+     28918
     ]
    ]
   }
  },
  "history": [
+  {
+   "day": "2026-09-10",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "strangle",
+   "entry_spot": 74846.33,
+   "ce_strike": 75100,
+   "pe_strike": 74500,
+   "ce_entry": 87.3,
+   "pe_entry": 65.2,
+   "credit": 152.5,
+   "ce_exit": 27.5,
+   "pe_exit": 75.05,
+   "exit_reason": "time1445",
+   "entry_time": "09:20",
+   "exit_time": "14:45",
+   "pnl": 1958,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 75100,
+     "qty": 40,
+     "entry": 87.3,
+     "ltp": 27.5,
+     "pnl": 2392
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 74500,
+     "qty": 40,
+     "entry": 65.2,
+     "ltp": 75.05,
+     "pnl": -394
+    }
+   ]
+  },
+  {
+   "day": "2026-09-10",
+   "weekday": "Thu",
+   "dte": 0,
+   "signal_class": "system",
+   "variant": "straddle",
+   "entry_spot": 74846.33,
+   "ce_strike": 74800,
+   "pe_strike": 74800,
+   "ce_entry": 209.35,
+   "pe_entry": 163.2,
+   "credit": 372.55,
+   "ce_exit": 57.85,
+   "pe_exit": 212.3,
+   "exit_reason": "SL",
+   "entry_time": "09:20",
+   "exit_time": "15:15",
+   "pnl": 4056,
+   "legs": [
+    {
+     "type": "CE",
+     "side": "SELL",
+     "strike": 74800,
+     "qty": 40,
+     "entry": 209.35,
+     "ltp": 57.85,
+     "pnl": 6060
+    },
+    {
+     "type": "PE",
+     "side": "SELL",
+     "strike": 74800,
+     "qty": 40,
+     "entry": 163.2,
+     "ltp": 212.3,
+     "pnl": -1964
+    }
+   ]
+  },
   {
    "day": "2026-09-09",
    "weekday": "Wed",

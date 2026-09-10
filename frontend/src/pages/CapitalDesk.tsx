@@ -3,7 +3,7 @@ import { apiGet } from '../api/client';
 import styles from './MomentumPaper.module.css';
 import LiveTick from '../components/LiveTick/LiveTick';
 import BookCurve from '../components/BookPanel/BookCurve';
-import { pnlBreakdown } from '../components/BookPanel/BookPanel';
+import { pnlBreakdown, todayPnl } from '../components/BookPanel/BookPanel';
 
 /* CAPITAL DESK (/app/capital) — the one page that owns every rupee in and out.
    Renamed from "Sleeves 50-50" on 05-Sep-2026: the book is three systems on a
@@ -648,7 +648,9 @@ type LiveOA = { updated: string; nav: number; capital: number; value: number; ca
   pnl: number; realized: number; gain: number; return_pct: number;
   navcurve: { d: string; nav: number }[]; slots?: number;
   positions: { symbol: string; to_stop_pct?: number | null;
-               to_trail_pct?: number | null }[] };
+               to_trail_pct?: number | null; qty?: number; ltp?: number;
+               prev_close?: number | null; day_move_pct?: number | null;
+               value?: number }[] };
 type LiveIPO = { updated: string; mode: string; nav: number; capital: number; value: number;
   cash: number; pnl: number; realized: number; gain: number; return_pct: number;
   slots_used: number; slots: number; navcurve: { d: string; nav: number }[];
@@ -1047,7 +1049,12 @@ export default function CapitalDesk() {
   const portNav = navTN + navOA + navIPOreal;
   const portCap = capTN + capOA + capIPOreal;
   const gain = portNav - portCap;
-  const dayPnl = (tnLive?.pnl ?? 0) + (oa?.pnl ?? 0) + (ipoLive ? (ipo?.pnl ?? 0) : 0);
+  /* Today's move, measured exactly as each book measures it: qty x (last - prev close).
+     What was here before summed UNREALISED P&L since entry and called it the day - the
+     same mislabel corrected on True North's first paint and in the panel's own P&L list. */
+  const dayParts = [todayPnl(tnLive?.positions as never), todayPnl(oa?.positions as never),
+                    ipoLive ? todayPnl(ipo?.positions as never) : null].filter((x) => x != null);
+  const dayPnl = dayParts.length ? (dayParts as number[]).reduce((a, b) => a + b, 0) : null;
   /* Same three colours the books use for their own allocation bars, so a segment means
      the same thing wherever it appears. */
   const segs = [
@@ -1149,7 +1156,16 @@ export default function CapitalDesk() {
             ));
           })()}
           <div className={`${styles.pnlRow} ${styles.pnlTotal}`}>
-            <span>Total return</span>
+            <span>
+              Total return
+              {dayPnl != null && (
+                <span className={styles.pnlWas}>
+                  today <b className={dayPnl >= 0 ? styles.pos : styles.neg}
+                           style={{ fontWeight: 600 }}>
+                    {dayPnl >= 0 ? '+' : '−'}{rup(Math.abs(dayPnl)).slice(1)}</b>
+                </span>
+              )}
+            </span>
             <b className={gain >= 0 ? styles.pos : styles.neg}>
               {gain >= 0 ? '+' : '−'}{rup(Math.abs(gain)).slice(1)}
               {portCap ? ' · ' + pct((gain / portCap) * 100) : ''}</b>
