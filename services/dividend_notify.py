@@ -140,6 +140,34 @@ def send_whatsapp(text):
 
 
 
+
+def _load_dotenv():
+    """Fill missing settings from .env, so a bare cron environment still finds them.
+
+    Only ONE of the fourteen mpf cron jobs sourced .env, so every engine that raises an
+    alert ran without the credentials it needed. Doing it here means any caller works -
+    cron, systemd or a shell - and an already-set variable always wins, so systemd's
+    EnvironmentFile and an inline override keep their precedence.
+    """
+    env = Path(__file__).resolve().parents[1] / '.env'
+    if not env.exists():
+        return
+    try:
+        for line in env.read_text(encoding='utf-8').splitlines():
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
+    except Exception:
+        pass                       # a malformed .env must never stop an alert being tried
+
+
+_load_dotenv()
+
+
 # ── pacing ───────────────────────────────────────────────────────────────────
 # Android collapses notifications that arrive together, so a burst of alerts can show as
 # one or as none - proved on 10-Sep, when three messages sent inside three seconds all
