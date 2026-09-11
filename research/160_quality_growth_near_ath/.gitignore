@@ -1,2 +1,10 @@
 # the 791 MB price panel cache is rebuilt by qg_panel.py in ~105s - never committed
 results/panel_*.npz
+
+# DATA leg: 2,116 raw Screener pages parsed to JSON (17 MB). Not committed because a
+# re-fetch is 2 1/4 hours of polite scraping, not a lost result:
+#   venv/bin/python3 scripts/screener_fetch_full.py   (resumable, skips what is cached)
+results/screener_cache/
+
+__pycache__/
+*.pyc

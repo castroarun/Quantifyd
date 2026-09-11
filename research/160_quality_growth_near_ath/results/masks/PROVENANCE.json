@@ -1,0 +1,9 @@
+{
+ "built_at": "2026-09-11T18:25:23",
+ "tickers_expected": 2116,
+ "tickers_cached": 2116,
+ "fetch_complete": true,
+ "panel_rows": 256828,
+ "panel_symbols": 2131,
+ "universe_symbols": 2158
+}
