@@ -2,6 +2,29 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-11 — research/159: rounding base → shelf breakout near the ATH — CONCLUDED, not deployed
+
+Arun's own chart pattern (semi-circle base + volume accumulation + breakout, near the all-time high).
+Built causally in three versions after two rejections from him; v3 reproduces his KMEW trade to the day.
+
+**Verdict: SIGNAL, not STRATEGY — and no incremental value to the book.** Per-trade edge is real
+(+11.45%/trade, beats a date-matched near-ATH control by +4.73pp) and it beats NIFTYBEES on both return
+and drawdown (14.60% / −24.94% vs 12.29% / −59.71%). It FAILS two pre-registered criteria: the 20% CAGR
+floor, and the pre-2016 window (8.64% vs the index's 12.68%). Ten of 472 trades carry the result, the
+16-slot book is only ~40% invested at ~40 events a year, and correlation to Open Alpha (0.468 daily)
+means every blend weight makes the book worse.
+
+**Nothing to do.** No deployment, no paper book. The detector is kept and its live-candidate list is a
+reasonable watchlist input to the existing Open Alpha process.
+
+- Study: `/app/backtest/rounding-base-shelf-breakout-research159`
+- STATUS: `research/159_rounding_base_breakout/ROUNDING_BASE_BREAKOUT_DAILY_SCREEN_STATUS.md`
+- Results: `research/159_rounding_base_breakout/results/RESULTS.md`
+- **Open question for Arun/coordinator:** research number **159 is claimed twice** — this study and
+  `research/159_oa_honest_reoptimization`. Next free number is 161. Not renamed unilaterally.
+
+---
+
 ## ⏳ 2026-09-11 — research/160: Arun's Screener quality-growth screen + near-ATH buy, as a SYSTEM (in flight)
 
 Arun's own process: Screener query (sales & profit growth 3y > 20, avg ROE 3y > 15, ROCE > 15,

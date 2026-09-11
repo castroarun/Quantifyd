@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-11 13:15:08",
+ "asof": "2026-09-11 16:20:37",
  "upcoming": [
   {
    "expiry": "2026-11-23",
@@ -35,17 +35,17 @@
  "bhav_through": "2026-09-10",
  "realised": 142559.80425250003,
  "unrealised": 0,
- "nav": 1342999.4664459745,
+ "nav": 1342978.1416710792,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 10856.161472500004,
  "unrealised_plan": 0,
  "unrealised_off": 0,
- "nav_plan": 1332143.3049734747,
+ "nav_plan": 1332121.9801985794,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
- "idle_earned": 4439.66,
+ "idle_earned": 4418.34,
  "idle_spans": [
   {
    "frm": "2026-06-09",
@@ -76,13 +76,13 @@
    "to": "2026-09-11",
    "days": 3,
    "px_from": 1121.7,
-   "px_to": 1122.54,
-   "gain": 895.64
+   "px_to": 1122.52,
+   "gain": 874.32
   }
  ],
  "capital_deployed": null,
  "capital_deployed_peak": null,
- "margin_asof": "2026-09-11 13:15",
+ "margin_asof": "2026-09-11 16:20",
  "running_pnl": 142559.80425250003,
  "running_pnl_pct": null,
  "n_closed": 4,

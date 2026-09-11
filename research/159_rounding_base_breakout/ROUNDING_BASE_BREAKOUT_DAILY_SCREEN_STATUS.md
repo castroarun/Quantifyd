@@ -904,3 +904,81 @@ number is **161**. This folder was **not** renamed: it is already committed unde
 six commits and reported to Arun under that path, and renaming mid-flight would invalidate
 every path already handed over. **Arun / the coordinator should decide** whether this study
 or the OA one gets renumbered.
+
+
+---
+
+# 12. Backtest phase — live run log (11-Sep-2026, after market close)
+
+| Time (IST) | Event | Notes |
+|---|---|---|
+| 15:47 | Market confirmed CLOSED (`TZ=Asia/Kolkata date` on the VPS = 15:47 Fri). Phase A relaunched, `nice -n 10` | 18 entry variants, sequential; ~6 min each under box contention → ETA ~17:35 |
+| 15:52 | `bt_core.py` written — book engine: 16 slots @ 6.25%, Rs10L, next-open fills both sides, seeded slot draw, 5.5% idle cash, FY loss-netted tax | exits as CLOSE signals filled at the NEXT open, stated so neither leg gets look-ahead |
+| 15:55 | **Engine smoke PASSED.** 0.3 s per 21.7-year simulation | 889 v3 events, 579 symbols, all 889 land on the calendar |
+| 15:55 | **NIFTYBEES buy-and-hold measured: CAGR 12.29%, MaxDD −59.71%, Calmar 0.206** (2005-01-03 → 2026-09-11, 21.7 yrs). Pre-2016 12.68% / −59.71%; 2016+ 11.86% / −36.34% | this is the bar |
+| 15:57 | Null controls built: **11,862 near-ATH volume-thrust events** (no saucer, no shelf) + liquid matrix (2,491 × 5,378) | **v3’s 889 events are a 7.5% subset of this population** — exactly the "is it just Open Alpha?" question |
+| 16:00 | 30-seed decisive comparison launched (V3 vs CTRL_ATH vs CTRL_DM vs CTRL_RND, all 7 exits × stop) | |
+| 16:02 | **First cell, ST(7,3):** V3 10.82% / −20.9% / Calmar 0.518 · CTRL_ATH 15.98% / −39.3% / 0.411 · **CTRL_DM 8.41%** / −22.4% / 0.369 | V3 **beats** the date-matched control by **+2.4pp**, but **loses to NIFTYBEES on CAGR** with this exit |
+
+## 12.1 Early finding — the binding constraint is utilisation, not per-trade edge
+
+V3’s 30-seed CAGR range on ST(7,3) is **10.82% – 10.83%**: essentially **zero seed variance**.
+That is diagnostic. Seed variance only appears when more candidates compete than there are
+free slots; with **889 events across 21.7 years (≈41/yr) and 16 slots**, the book is almost
+never contended and therefore **sits largely in cash**, earning 5.5% instead of equity returns.
+
+The same pattern shows in the control: CTRL_ATH has **1,477 trades** against V3’s 583 and
+earns **15.98%** — more *because it is more fully invested*, not because each trade is better
+(V3’s Calmar 0.518 beats CTRL_ATH’s 0.411, and V3’s drawdown is half as deep).
+
+This matters for the verdict: the pre-registered book (16 slots @ 6.25%) is the right
+*honest* test of the spec as written, but it structurally caps what a 41-events-per-year
+signal can return. Slot count was **not** in the pre-registered grid, so any slot-sensitivity
+result will be reported **explicitly as post-hoc**, never as the headline.
+
+
+## 12.2 Progress log (continued)
+
+| Time (IST) | Event | Notes |
+|---|---|---|
+| 16:22 | **30-seed decisive comparison COMPLETE** (`compare_v3_vs_controls.csv`) | V3 beats the date-matched control in **10 of 14** exit configs |
+| 16:26 | **Full final analysis** on ST(14,4), 16 slots, 25 bps, 30 seeds | cost ladder, two windows, YoY, outliers, blend vs OA |
+| 16:30 | **Post-hoc slot sensitivity** (4 → 20 slots) | CAGR peaks at **15.96% (10 slots)**; the 20% floor is unreachable at ANY slot count |
+
+## 12.3 Results as they stand — the adoption bar, criterion by criterion
+
+Best configuration found: **ST(14,4) trail, no hard stop, shelf S=15, K=3×, ATH ≥ 0.90,
+16 slots @ 6.25%, 25 bps, after tax, 30 seeds.**
+
+| # | Pre-registered criterion | Result | Verdict |
+|---|---|---|---|
+| 1 | after-tax net CAGR > NIFTYBEES | **14.60%** vs **12.29%** | **PASS** |
+| 2 | MaxDD no worse than NIFTYBEES | **−24.94%** vs **−59.71%** | **PASS** (less than half) |
+| 3 | **≥ 20% after-tax CAGR** (Arun’s floor) | **14.60%** | **FAIL** |
+| 4 | worst of 30 seeds still beats NIFTYBEES | **14.57%** > 12.29% | **PASS** |
+| 5 | **both windows pass** | pre-2016 **8.64%** vs NIFTYBEES **12.68%** | **FAIL** |
+| 6 | beats the date-matched near-ATH control | **+4.73pp** (14.60 vs 9.87) | **PASS** |
+
+**Two criteria fail, so the verdict cannot be STRATEGY.**
+
+### The per-trade signal is genuinely strong
+Win rate **46.3%**, average win **+37.9%**, average loss **−11.3%**, **expectancy +11.45% per
+trade**, 21.8 trades/yr, max losing streak 14. Cost ladder is nearly flat (14.60 / 14.25 /
+13.62% at 25 / 40 / 60 bps) because turnover is low. This is a real edge at the trade level.
+
+### But four things stop it being a system
+1. **It is a post-2016 phenomenon.** 2016+ CAGR **20.98%**; pre-2016 **8.64%** while NIFTYBEES
+   made 12.68%. Textbook regime dependence.
+2. **Extreme outlier dependence.** Compounding the median seed’s 472 trade returns gives
+   8.8e11; **removing the ten best trades collapses it to 7.0e6** — a factor of ~125,000.
+   Capping winners at +50% gives 3.4e5. The growth is a handful of lottery tickets. (Open
+   Alpha, by contrast, keeps ~90% of its growth rate with its ten best trades deleted.)
+3. **The book cannot be filled.** 889 events over 21.7 years (~41/yr) against 16 slots leaves
+   the book ~40% invested; the 30-seed CAGR band is **14.57-14.75%**, i.e. essentially zero
+   seed variance, because slots are almost never contended. Post-hoc, slot count does not
+   rescue it: 4 / 6 / 8 / 10 / 12 / 16 / 20 slots give 15.09 / 15.87 / 15.76 / **15.96** /
+   15.36 / 14.60 / 13.48%. **A plateau at ~15-16%, never 20%.**
+4. **It dilutes Open Alpha rather than adding to it.** Daily correlation **0.468**, monthly
+   **0.617** (the complement bar is < ~0.4). OA alone over the shared window: **34.90% CAGR,
+   −25.10% DD, Calmar 1.390**. Adding V3 makes every blend worse, monotonically:
+   90/10 → 34.24% / 1.368 · 80/20 → 33.51% / 1.344 · 67/33 → 32.43% / 1.310.

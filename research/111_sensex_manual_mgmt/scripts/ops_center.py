@@ -128,6 +128,16 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/159 rounding-base shelf breakout - re-check the post-2016-only verdict",
+     "2027-03-12", "PENDING",
+     "r/159 was killed as SIGNAL-not-STRATEGY on two legs: it misses the 20% CAGR floor "
+     "(14.60% after tax, 30-seed median) and it FAILS the pre-2016 window (8.64% vs NIFTYBEES 12.68%) "
+     "while making 20.98% from 2016 on. The pre-2016 window is also the thinnest (12-36 events/yr vs "
+     "143 in 2023), so the failure may be a sample-size artefact rather than a regime. Re-check with "
+     "six more months of live data: has the event rate held up, and does the out-of-sample stretch "
+     "since Sep-2026 look like the 2016+ regime or the pre-2016 one? PASS CRITERION: only revisit the "
+     "verdict if out-of-sample expectancy per trade stays above +8% AND correlation to Open Alpha has "
+     "fallen below 0.40. Otherwise close it permanently."),
     ("straddle45 LIVE - first-fire review (order path never exercised)",
      "2026-09-12", "PENDING",
      "The executor ships fully tested UP TO order placement; the fill path itself is "

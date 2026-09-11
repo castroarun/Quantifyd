@@ -10,7 +10,7 @@ for S in 15 20; do
         echo "skip $OUT (exists)"; continue
       fi
       echo "=== $(TZ=Asia/Kolkata date +%H:%M) generating S=$S K=$K ATH=$A ==="
-      nice -n 19 venv/bin/python -u \
+      nice -n 10 venv/bin/python -u \
         research/159_rounding_base_breakout/scripts/detect_rounding_base_v3.py \
         --shelf=$S --k=$K --ath=$A --out="$OUT" 2>&1 | tail -3
     done

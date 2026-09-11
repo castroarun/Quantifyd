@@ -127,6 +127,236 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'rounding-base-shelf-breakout-research159',
+    title: 'The saucer under the high — Arun’s rounding-base shelf breakout, taken apart',
+    verdict:
+      'SIGNAL, NOT STRATEGY — and NO INCREMENTAL VALUE TO THE BOOK. Arun drew a pattern from two of his own charts: a semi-circular base with volume accumulating through its right half, sitting just under the all-time high, breaking out of a tight shelf into near-blue-sky. He forbade the obvious cheat — identifying the breakout first and fitting a base backwards to it — so the detector is strictly causal: the base is recognised and its levels frozen using only bars up to that day, and the entry is the first close through a shelf that was already there. It took three versions and two rejections from him to get the definition right. v1 triggered on the LEFT RIM of the decline and bought 15% into the move; v2 triggered on a 60-day high, which fires over and over while price simply walks up the right side of a saucer (he rejected CHOLAHLDNG with \'the base is correct, I don’t see any breakout from the base\'); v3 requires a SHELF — the prior 15 closes inside a 12% band — and requires the whole thing to sit within 10% of the all-time high, which is what threw out SKFINDIA at 34% below its own high. v3 reproduces his KMEW trade to the day and the rupee and passes all nine of his expected checks. THE EDGE IS REAL AT TRADE LEVEL. Expectancy is +11.45% per trade over 472 trades, 46.3% win rate, average win +37.9% against average loss −11.3%, and it beats a date-matched control that buys the same volume thrust near the same all-time highs with no saucer and no shelf in 10 of 14 exit configurations — by +4.73pp on a slow SuperTrend(14,4) trail and by nothing at all on fast trails, because the shape’s whole contribution is earning the trade room to run. IT IS STILL NOT A SYSTEM. Best honest configuration returns 14.60% CAGR after tax at −24.94% drawdown against NIFTYBEES buy-and-hold at 12.29% and −59.71%. It beats the index on both counts and on Calmar (0.585 vs 0.206), and the worst of 30 seeds still beats it — but it FAILS the 20% CAGR floor Arun set, and it FAILS the pre-2016 window, making 8.64% while the index made 12.68%. It is a post-2016 phenomenon: 20.98% in the second window, 8.64% in the first. Removing the ten best of 472 trades collapses compounded growth by a factor of 125,000, so the result is a handful of lottery tickets rather than a broad edge. The book cannot even be filled — 889 events in 21.7 years against 16 slots leaves it about 40% invested, and the 30-seed CAGR band is 14.57 to 14.75%, almost no variance, because slots are never contended. Post-hoc, sizing does not rescue it: 4, 6, 8, 10, 12, 16 and 20 slots give 15.09, 15.87, 15.76, 15.96, 15.36, 14.60 and 13.48% — a plateau at 15 to 16%, never 20. AND IT DILUTES THE BOOK. This pattern is by construction a SUBSET of Open Alpha’s all-time-high breakout entries. Daily correlation to Open Alpha is 0.468 and monthly 0.617 against a complement bar of 0.40. Open Alpha alone over the shared window returns 34.90% at −25.10% for a Calmar of 1.390; adding this at 10, 20 or 33% gives 34.24, 33.51 and 32.43% with Calmar 1.368, 1.344 and 1.310 — monotonically worse on every weight. A mediocre standalone that lifts the blend is a win; this is a mediocre standalone that lowers it. Do not deploy, do not paper-trade. Keep the screen — it is a good watchlist input to the Open Alpha process, which already trades this family better.',
+    status: 'COMPLETE',
+    date: '2026-09-11',
+    cardBlurb:
+      'Arun’s semi-circle-at-the-high pattern, built causally and tested honestly. The detector reproduces his KMEW trade to the day, the per-trade edge is large and real, and it still fails: below the 20% floor, negative before 2016, carried by ten trades out of 472, and correlated enough to Open Alpha that every blend weight makes the book worse.',
+    cardStats: [
+      { label: 'Verdict', value: 'SIGNAL, not STRATEGY — do not deploy' },
+      { label: 'Best config vs NIFTYBEES', value: '14.60% vs 12.29% CAGR; −24.9% vs −59.7% DD' },
+      { label: 'Blend vs Open Alpha', value: 'every weight WORSE — Calmar 1.390 to 1.310' },
+    ],
+
+    systemRules: {
+      intro:
+        'The rule Arun set first: the entry process cannot be backwards from a green close. So on every day t the detector sees only bars dated t or earlier; the saucer is recognised, its levels frozen, and only then is a breakout looked for. A breakout day is never found first and a base fitted to it afterwards. Three versions were built because he rejected the first two on his own charts; v3 is what is tested here, and v1 and v2 are kept in the repo for the record.',
+      sharedCoreTitle: 'The v3 system as traded',
+      sharedCore: [
+        { k: 'Saucer recognition', v: 'Fit a quadratic to log(close) over the base window: curvature must be positive (a bowl, not a dome) and R-squared at least 0.70. The trough must sit in the middle 30 to 70% of the window. Depth from the window’s left-rim close to the trough must be 20 to 70%. A no-V test requires at least 40% of the window’s bars to close in the bottom third of its vertical range — a linear V spends exactly 33.3% there and an ideal parabola 57.7%, so the threshold separates U from V on geometry, not on any one example.' },
+        { k: 'Windows', v: 'Four in parallel — fixed 120, 180 and 250-bar lookbacks, plus a variable window running from the highest close of the last 250 bars. A declared IPO-age exception lets a young listing use its whole post-listing history; KMEW needs it, having only 208 bars at its breakout.' },
+        { k: 'Base completion', v: 'Close at least 15% of the way up from the trough toward the rim. The base only has to be recognisable, not recovered — this is what v2 corrected, since v1 waited for a full return to the rim and therefore always bought late.' },
+        { k: 'THE SHELF (the v3 correction)', v: 'Over the prior 15 bars the closes must sit inside a band no wider than 12% of the band’s high. The entry is the first close ABOVE that shelf high. This is what Arun meant by a breakout from the base, and it is what v2 lacked: a 60-day-high trigger fires continuously while price climbs the right side of a saucer.' },
+        { k: 'NEAR THE ALL-TIME HIGH (the v3 correction)', v: 'The breakout close must be at least 0.90 times the all-time-high close. The ATH is the running maximum of closes strictly BEFORE that day, and because market_data.db is not retroactively split adjusted, it is computed only from bars after the last day-over-day fall worse than −35%.' },
+        { k: 'Volume and candle', v: 'Volume at least 3 times the prior 20-bar median, and the day must close up.' },
+        { k: 'Fill', v: 'Next-day open, on BOTH sides. Exits are close-based signals filled at the next open, so neither leg gets a look-ahead advantage a real desk would not have.' },
+        { k: 'Book', v: '16 slots at 6.25% of NAV, Rs 10 lakh, NSE cash CNC, 20-day median traded value at least Rs 2 crore, idle cash 5.5% a year, costs 25 bps per side, after tax at 20% short-term and 12.5% long-term with Indian financial-year loss netting and carry-forward.' },
+        { k: 'Exit', v: 'SuperTrend(14,4) on the close won the joint sweep. Arun’s own complaint about SuperTrend(7,3) cutting KMEW in half turns out to be mostly an ENTRY problem: v3’s earlier entry more than doubles what ST(7,3) captures on that trade, from +30.3% to +65.6%.' },
+      ],
+      riskLayer: {
+        title: 'The adoption bar, pre-registered before a single cell was run',
+        caption:
+          'Fixed in the STATUS doc in advance precisely so it could not be moved afterwards. Arun added the 20% floor himself. Two criteria fail.',
+        columns: ['#', 'Criterion', 'Result', 'Outcome'],
+        rows: [
+          ['1', 'After-tax net CAGR above NIFTYBEES buy-and-hold', '14.60% vs 12.29%', 'PASS'],
+          ['2', 'Max drawdown no worse than NIFTYBEES', '−24.94% vs −59.71%', 'PASS'],
+          ['3', 'At least 20% after-tax CAGR, 30-seed median', '14.60% (worst seed 14.57%)', 'FAIL'],
+          ['4', 'Worst of 30 seeds still beats NIFTYBEES', '14.57% vs 12.29%', 'PASS'],
+          ['5', 'Both windows pass', 'pre-2016 8.64% vs index 12.68%', 'FAIL'],
+          ['6', 'Beats the date-matched near-ATH control', '+4.73pp (14.60 vs 9.87)', 'PASS'],
+        ],
+        highlightRows: [2, 4],
+      },
+    },
+
+    system: {
+      intro:
+        'Economic hypothesis, stated before testing: a rounding base is the visible fingerprint of a change in the marginal holder. The left rim is where the last cohort of buyers gave up; a smooth rather than V-shaped decline says the selling was patient and supply-driven, not a panic. A long flat bottom with rising on-balance volume says someone is absorbing that supply without moving the price, which is what a patient buyer with size actually does. By the time price returns near the high the willing sellers are exhausted, so the level clears on light effort. The counterparty is the trapped cohort selling back at breakeven plus the bottom-fishers taking profit. The decay risk is that this is a textbook pattern with a name, so whatever edge exists should live where institutional attention is thin — which is exactly where capacity and our data quality are worst.',
+      rows: [
+        { k: 'Universe', v: '2,905 daily symbols in market_data.db, 03-Jan-2000 to 10-Sep-2026; 2,492 after excluding ETFs and index series. Backtest calendar 03-Jan-2005 to 11-Sep-2026 (NIFTYBEES trading days).' },
+        { k: 'Events', v: '889 de-duplicated v3 events across 579 symbols, about 40 a year. The funnel is 7,874 saucer bases qualified, 1,437 triggered, 5,842 expired without ever producing a shelf breakout.' },
+        { k: 'Versions', v: 'v1 (left-rim trigger) 1,513 events — rejected by Arun. v2 (60-day-high trigger) 4,372 events — rejected. v3 (shelf near ATH) 889 events — the version tested here.' },
+        { k: 'Grid disclosed', v: '2,016 cells: 7 exits x hard stop on/off x time stop on/off x shelf 15/20 x volume 2/3/5x x ATH 0.90/0.95/above x OBV filter on/off x NIFTY-above-100-SMA gate on/off, each on a 10-seed scan, survivors re-run on 30 seeds.' },
+        { k: 'What the ATH condition fixed', v: 'The 2009 post-crash pile-up that dominated v1 and v2 (203 events) collapses to 23 in v3. That removes most of the market-beta-wearing-a-saucer-costume population which was the single biggest worry about this family.' },
+      ],
+    },
+
+    conditions: {
+      intro:
+        'The pattern came from Arun’s charts rather than a published tearsheet, so the replication gate is his own two trades and his own rejections. All nine expected checks pass.',
+      rows: [
+        { k: 'KMEW, his primary example', v: 'Detector fires 12-Sep-2025 at Rs 1,090.55 off a shelf high of Rs 972.85, 8.33% below the all-time high, on 29.9 times median volume. Base rim Rs 1,189.70 on 05-Dec-2024, trough Rs 657.65 on 07-Apr-2025, depth −44.7%. Matches his read to the day and the rupee.' },
+        { k: 'His two rejections, both honoured', v: 'CHOLAHLDNG April 2025 does NOT fire (its prior 20 closes spanned 20%, so there was no shelf). SKFINDIA May 2025 does NOT fire (34% below its own June-2024 high). SKFINDIA still fires in March 2021 and June 2023, when it WAS near its high — which is the correct behaviour.' },
+        { k: 'Other expected fires', v: 'CENTURYPLY 30-Mar-2017, JAYSREETEA 12-Aug-2009, MONARCH 06-Oct-2023, NAM-INDIA 06-Jun-2025, SAPPHIRE 06-Oct-2022, COROMANDEL 29-Sep-2009 — all present on their expected days.' },
+        { k: 'Causality audit', v: 'All events re-checked against date-ordering and threshold invariants — rim before trough before base-qualify before trigger before entry, close strictly above the shelf, volume multiple at or above K on every row. Zero violations.' },
+        { k: 'Duplicate series', v: 'All 2,686 symbols hashed on their full and recent close series. Exactly one true duplicate exists — CRESTO equals SILLYMONKS — and SILLYMONKS is dropped. The pair flagged to us as duplicates, JSWDULUX and AKZOINDIA, are NOT identical in this database: 5,362 overlapping dates with differing closes.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'The decisive control — does the saucer and shelf add anything to simply buying strength near the high?',
+        caption:
+          'Same book, same exits, 30 seeds. CTRL_ATH is every near-ATH volume thrust with no saucer and no shelf (11,862 events, of which v3’s 889 are a 7.5% subset). CTRL_DM draws the same number of those signals on the same dates as v3. CTRL_RND is date-matched random entries.',
+        columns: ['Exit', 'v3 CAGR', 'CTRL_DM CAGR', 'v3 minus CTRL_DM', 'v3 MaxDD', 'CTRL_ATH CAGR', 'CTRL_ATH MaxDD'],
+        rows: [
+          ['SuperTrend(14,4)', '14.60%', '9.87%', '+4.73pp', '−24.94%', '14.47%', '−43.30%'],
+          ['SuperTrend(10,3)', '10.80%', '8.23%', '+2.57pp', '−21.33%', '—', '—'],
+          ['SuperTrend(7,3)', '10.82%', '8.41%', '+2.41pp', '−20.89%', '15.98%', '−39.27%'],
+          ['EMA-50 trail', '10.48%', '8.91%', '+1.57pp', '−21.59%', '—', '—'],
+          ['Donchian-20 low', '8.99%', '8.63%', '+0.36pp', '−18.33%', '14.78%', '−41.86%'],
+          ['SMA-15 trail', '5.23%', '5.54%', '−0.30pp', '−12.36%', '—', '—'],
+          ['Donchian-10 low', '5.34%', '6.23%', '−0.89pp', '−17.13%', '10.15%', '−40.95%'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Sizing is not the problem — post-hoc slot sweep',
+        caption:
+          'NOT pre-registered: slot count was not in the grid, so this is reported as post-hoc and never as the headline. Everything else held fixed at the winning configuration. The 20% floor is missed on a plateau, not by a sizing choice.',
+        columns: ['Slots', '4', '6', '8', '10', '12', '16 (spec)', '20'],
+        rows: [
+          ['CAGR', '15.09%', '15.87%', '15.76%', '15.96%', '15.36%', '14.60%', '13.48%'],
+          ['MaxDD', '−38.80%', '−43.54%', '−32.55%', '−27.16%', '−26.41%', '−24.94%', '−20.55%'],
+          ['Calmar', '0.389', '0.364', '0.484', '0.588', '0.582', '0.585', '0.656'],
+        ],
+      },
+      {
+        title: 'Portfolio fit — it dilutes Open Alpha at every weight',
+        caption:
+          'Against the research/154 Open Alpha 30-seed median NAV over the shared window. Daily correlation 0.468, monthly 0.617, against a pre-registered complement bar of 0.40. This pattern is by construction a subset of Open Alpha’s entries.',
+        columns: ['Allocation', 'CAGR', 'MaxDD', 'Calmar'],
+        rows: [
+          ['Open Alpha alone', '34.90%', '−25.10%', '1.390'],
+          ['OA 90% + v3 10%', '34.24%', '−25.02%', '1.368'],
+          ['OA 80% + v3 20%', '33.51%', '−24.93%', '1.344'],
+          ['OA 67% + v3 33%', '32.43%', '−24.76%', '1.310'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Year by year, after tax and net of 25 bps, against NIFTYBEES',
+        caption:
+          'Each cell is the annual return with the intra-year maximum drawdown beneath it, measured from the running peak of the FULL curve rather than the year’s first bar. The shape of the record is the finding: flat-to-poor through 2016, then 2017 and 2021 carry everything.',
+        columns: ['Year', 'v3 book', 'NIFTYBEES'],
+        rows: [
+          ['2005', '+4.3% (−5.6%)', '+32.8% (−14.0%)'],
+          ['2006', '+7.2% (−15.8%)', '+41.3% (−29.9%)'],
+          ['2007', '+35.9% (−17.1%)', '+53.0% (−14.9%)'],
+          ['2008', '−19.5% (−24.9%)', '−52.1% (−59.7%)'],
+          ['2009', '+23.2% (−21.5%)', '+75.6% (−59.1%)'],
+          ['2010', '+8.4% (−9.6%)', '+18.6% (−25.0%)'],
+          ['2011', '−7.5% (−15.8%)', '−24.0% (−27.3%)'],
+          ['2012', '+5.8% (−15.8%)', '+26.5% (−26.0%)'],
+          ['2013', '−2.5% (−15.1%)', '+7.2% (−16.0%)'],
+          ['2014', '+39.0% (−14.9%)', '+31.6% (−6.2%)'],
+          ['2015', '+14.8% (−9.2%)', '−4.3% (−15.0%)'],
+          ['2016', '−1.7% (−11.8%)', '+4.0% (−21.6%)'],
+          ['2017', '+69.5% (−7.7%)', '+29.9% (−8.5%)'],
+          ['2018', '−14.6% (−21.1%)', '+4.8% (−14.1%)'],
+          ['2019', '+13.5% (−18.9%)', '+13.6% (−10.5%)'],
+          ['2020', '+25.7% (−10.9%)', '+15.4% (−36.3%)'],
+          ['2021', '+86.1% (−10.0%)', '+26.0% (−9.5%)'],
+          ['2022', '−5.2% (−18.6%)', '+5.5% (−16.1%)'],
+          ['2023', '+43.2% (−18.5%)', '+21.0% (−9.7%)'],
+          ['2024', '+30.5% (−18.2%)', '+10.4% (−10.5%)'],
+          ['2025', '+13.7% (−14.9%)', '+11.7% (−15.2%)'],
+          ['2026', '+1.5% (−15.2%)', '−9.6% (−14.8%)'],
+          ['FULL', '14.60% / −24.94% / Calmar 0.585', '12.29% / −59.71% / Calmar 0.206'],
+        ],
+        highlightRows: [22],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'CAGR (after tax, 25 bps, 30-seed median)', value: '14.60%', tone: 'pos' },
+        { label: 'Worst seed', value: '14.57%' },
+        { label: 'Max drawdown', value: '−24.94%', tone: 'pos' },
+        { label: 'Calmar', value: '0.585' },
+        { label: 'NIFTYBEES buy-and-hold', value: '12.29% / −59.71%' },
+        { label: 'Expectancy per trade', value: '+11.45%', tone: 'pos' },
+        { label: 'Win rate', value: '46.3%' },
+        { label: 'Max losing streak', value: '14 trades' },
+        { label: 'Trades per year', value: '21.8' },
+        { label: 'Correlation to Open Alpha', value: '0.468 daily / 0.617 monthly', tone: 'neg' },
+        { label: 'Pre-2016 CAGR', value: '8.64% vs index 12.68%', tone: 'neg' },
+        { label: '2016+ CAGR', value: '20.98%', tone: 'pos' },
+      ],
+      tables: [
+        {
+          title: 'Cost ladder and the two windows',
+          caption: 'Turnover is low, so cost sensitivity is mild. The window split is what kills it.',
+          columns: ['Measure', '25 bps', '40 bps', '60 bps'],
+          rows: [
+            ['CAGR', '14.60%', '14.25%', '13.62%'],
+            ['MaxDD', '−24.94%', '−25.05%', '−25.20%'],
+            ['Calmar', '0.585', '0.569', '0.540'],
+          ],
+        },
+        {
+          title: 'Outlier dependence — the result is ten trades',
+          caption: 'Compounded product of the median seed’s 472 trade returns. Open Alpha, for contrast, keeps about 90% of its growth rate with its ten best trades of two decades deleted.',
+          columns: ['Treatment', 'Compounded product of (1+r)'],
+          rows: [
+            ['All 472 trades', '8.8e11'],
+            ['Top 10 trades removed', '7.0e6'],
+            ['Winners capped at +100%', '3.8e9'],
+            ['Winners capped at +50%', '3.4e5'],
+          ],
+          highlightRows: [1],
+        },
+      ],
+      charts: [
+        { src: '/app/rounding-base-shelf-breakout-research159.png',
+          caption: 'Factsheet: growth of capital against NIFTYBEES with Open Alpha overlaid, underwater drawdown, annual bars, monthly heatmap and rolling 12-month return. 16 slots, 25 bps, after tax, 30-seed median path.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'SuperTrend(14,4) trail, no hard stop, shelf S=15, volume 3x, ATH at least 0.90 — the best of 2,016 cells, and still not adoptable',
+        summary:
+          'It beats the index on return AND on drawdown, and it beats the control that strips the saucer and the shelf. It fails Arun’s 20% floor, fails the pre-2016 window, is carried by ten trades, cannot fill its own book, and makes the existing book worse at every blend weight. The honest label is SIGNAL.',
+        metrics: [
+          { k: 'Standalone', v: '14.60% CAGR / −24.94% MaxDD / Calmar 0.585, 30-seed median, worst seed 14.57%' },
+          { k: 'Benchmark', v: 'NIFTYBEES 12.29% / −59.71% / Calmar 0.206' },
+          { k: 'Incremental over the near-ATH control', v: '+4.73pp CAGR — the shape IS worth something, on a slow trail' },
+          { k: 'What it costs the book', v: 'Open Alpha Calmar 1.390 falls to 1.368, 1.344 and 1.310 at 10, 20 and 33% weight' },
+          { k: 'Worth keeping', v: 'The detector itself. As a watchlist input to the existing Open Alpha process it costs nothing and surfaces exactly the names that process wants.' },
+        ],
+        rejected: [
+          'Every fast trail — SMA-15 and Donchian-10 both LOSE to the date-matched control, because they cut the trade before the shape pays.',
+          'The hard −8% close stop — it lowers CAGR in every exit family tested and only slightly improves drawdown.',
+          'Every slot count from 4 to 20 — a plateau at 15 to 16% CAGR, never 20%.',
+          'All three blend weights against Open Alpha — monotonically worse on both CAGR and Calmar.',
+          'v1 (left-rim trigger) and v2 (60-day-high trigger) — rejected by Arun on his own charts before any backtest was run.',
+        ],
+      },
+    ],
+
+    caveats: [
+      'SURVIVORSHIP. The universe is the symbols present in the database today; delisted names never appear. The bias is unusually sharp here because the pattern REQUIRES a recovery back to an all-time high — the companies whose saucer never completed are precisely the ones that went away.',
+      'THE DATABASE IS NOT RETROACTIVELY SPLIT-ADJUSTED. Pre-split rows keep the old price scale, which would fake an unreachable all-time high. The ATH is therefore computed only from bars after the last day-over-day fall worse than −35%, and 1,399 saucer windows were rejected by the same guard — which also throws away genuine bases on names that split mid-base. How many is unknowable without a re-fetch.',
+      'TWO DEGREES OF FREEDOM WERE SPENT ON THE DEFINITION, both logged in the STATUS doc. The no-V threshold was re-derived after v1 failed to fire on KMEW at all, and the vertex bound was widened after v2 rejected Arun’s own SKFINDIA date by 0.004. Both were re-derived from geometry rather than fitted to the examples, and the first change was net STRICTER — but both were made after seeing a failure, and the multiple-testing haircut must account for them alongside the 2,016 cells.',
+      'ACCENTMIC-SM, Arun’s second chart example and the one where SuperTrend(7,3) HELD the whole move, is on the NSE SME board and absent from our data entirely. It could never be tested.',
+      'THE LIQUIDITY FLOOR IS Rs 2 CRORE, deliberately looser than our usual Rs 5 crore so that small caps like KMEW stay in scope. Any deployment would meet a capacity wall, and no impact model beyond the 25/40/60 bps ladder was run.',
+      'THE FAILING WINDOW IS ALSO THE THINNEST. Pre-2016 produces 12 to 36 events a year against 143 in 2023. That is an explanation for the weak first window, not an excuse: a system that cannot trade in half its history is not deployable.',
+      'A 14-TRADE LOSING STREAK ON 21.8 TRADES A YEAR means roughly eight months of nothing but losers is a normal event, on a book that is already only 40% invested. That is a tradeability problem independent of the arithmetic.',
+      'NOTHING WAS DEPLOYED. No live engine, executor, crontab or spec was touched, no order was placed, and no backend restart was required or performed. The heavy compute was deliberately held until after the 15:40 IST close.',
+    ],
+    githubLinks: [{ label: 'research/159 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/159_rounding_base_breakout' }],
+    projectPaths: [
+      'research\\159_rounding_base_breakout\\ROUNDING_BASE_BREAKOUT_DAILY_SCREEN_STATUS.md',
+      'research\\159_rounding_base_breakout\\results\\RESULTS.md',
+      'research\\159_rounding_base_breakout\\results\\verify_list_v3.csv',
+    ],
+  },
+  {
     slug: 'ipo-idle-cash-redeployment-research155',
     title: 'Should the IPO sleeve’s idle cash be working? — redeploying it into Open Alpha and True North',
     verdict:

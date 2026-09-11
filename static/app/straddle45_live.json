@@ -1,5 +1,5 @@
 {
- "asof": "2026-09-11 12:18:00",
+ "asof": "2026-09-11 15:30:21",
  "mode": "LIVE",
  "armed": true,
  "killed": false,
@@ -11,8 +11,47 @@
  "dte_in": 45,
  "dte_out": 21,
  "decide_window": "15:20-15:29 IST",
- "open_positions": [],
+ "open_positions": [
+  {
+   "id": 1,
+   "expiry": "2026-10-27",
+   "strike": 23450.0,
+   "qty": 195,
+   "lots": 3,
+   "ce_symbol": "NIFTY26OCT23450CE",
+   "pe_symbol": "NIFTY26OCT23450PE",
+   "entry_date": "2026-09-11",
+   "entry_time": "15:20:31",
+   "entry_spot": 23435.1,
+   "ce_entry": 449.0,
+   "pe_entry": 295.81666667,
+   "credit": 744.81666667,
+   "vix_level": 12.22,
+   "vix_rank": 35.714285714285715,
+   "exit_date": null,
+   "exit_time": null,
+   "exit_spot": null,
+   "ce_exit": null,
+   "pe_exit": null,
+   "exit_prem": null,
+   "exit_reason": null,
+   "gross_pts": null,
+   "net_rs": null,
+   "status": "OPEN",
+   "ce_order": "260911151398732",
+   "pe_order": "260911151398770",
+   "notes": "",
+   "mark_prem": 752.8,
+   "mtm_rs": -1556.7499993499878
+  }
+ ],
  "closed_trades": [],
  "realised_rs": 0,
- "events": []
+ "events": [
+  {
+   "ts": "2026-09-11 15:20:31",
+   "kind": "ENTRY",
+   "detail": "2026-10-27 K 23450 credit 744.82"
+  }
+ ]
 }
