@@ -14,6 +14,7 @@ weak-market gate (NIFTYBEES < SMA200 blocks entries), ETF exclusion, NIFTYBEES
 benchmark, coverage-by-year print, numpy sim core.
 """
 import argparse
+import json
 import re
 import sqlite3
 import sys
@@ -33,6 +34,25 @@ SIZE_PCT, CAP_PCT = 0.1875, 0.30
 STOP = 0.08
 TV_FLOOR = 5e7
 ETF_RE = re.compile(r'(BEES|ETF|LIQUID|GILT|SENSEX|NIF[A-Z]*50)')
+
+# The ticker regex above was written against the ETF names that existed when r/142 was
+# built. The 2023-2025 wave of gold and silver funds is named nothing like any of them, so
+# 221 non-companies were reaching an EQUITY momentum book: EGOLD, GOLD1, GROWWGOLD,
+# HDFCGOLD, TATAGOLD, ESILVER, SILVERBETA, MON100, MAFANG, ICICIB22 and the rest. The
+# durable test is the instrument's long NAME - every fund says ETF, no operating company
+# does - and the result is committed so backtests reproduce without a network call.
+_EXCL_FILE = Path(__file__).resolve().parents[3] / 'backtest_data' / 'etf_exclusions.json'
+if not _EXCL_FILE.exists():
+    raise SystemExit(
+        'missing %s - run research/158_oa_arming_width/scripts/build_etf_list.py first. '
+        'Falling back to the ticker regex would silently reproduce the defect this file '
+        'exists to fix.' % _EXCL_FILE)
+ETF_EXCL = set(json.load(open(_EXCL_FILE))['symbols'])
+
+
+def is_etf(sym):
+    """True for funds. Name-based list first, ticker regex as the net for delisted funds."""
+    return sym in ETF_EXCL or bool(ETF_RE.search(sym))
 
 
 def load_frames(base_start, trail_sma=50):
@@ -244,7 +264,9 @@ def main():
         d0 = close.index[close.index.searchsorted(pd.Timestamp(f'{y}-01-05'))]
         print(f'coverage {y}: {int(close.loc[d0].notna().sum())} symbols priced', flush=True)
 
-    etf_cols = [c for c in close.columns if ETF_RE.search(c)]
+    etf_cols = [c for c in close.columns if is_etf(c)]
+    print('universe: %d symbols, %d excluded as funds' %
+          (len(close.columns), len(etf_cols)), flush=True)
     tv_prev = tv20.shift(1)
     prev_close = close.shift(1)
     eligible = tv_prev >= TV_FLOOR

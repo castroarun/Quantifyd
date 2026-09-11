@@ -2,6 +2,65 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-09-11 — OPEN ALPHA WAS BUYING GOLD ETFs: the universe filter never excluded them
+
+**Found while auditing the entry, and separate from it.** `services/oa_entry.py` filters the
+universe with a TICKER regex, `(BEES|ETF|LIQUID|GILT|SENSEX|NIF[A-Z]*50)`. It was written
+against the ETF names that existed when research/142 was built. The 2023-2025 wave of gold
+and silver funds is named nothing like any of them, so **221 instruments that are not
+companies were reaching an Indian EQUITY momentum book**:
+
+| Kind | Symbols |
+|---|---|
+| Gold / silver funds | EGOLD, ESILVER, GOLD1, GOLD360, GOLDADD, GOLDAXIS, GOLDBETA, GOLDCASE, GROWWGOLD, HDFCGOLD, HDFCSILVER, LICMFGOLD, QGOLDHALF, SBISILVER, SILVER, SILVER1, SILVER360, SILVERADD, SILVERAG, SILVERBETA, TATAGOLD, TATSILV, AONEGOLD, AONESILVER, BBNPPGOLD, CHOICEGOLD, HSBCGOLD, IVZINGOLD, MOGOLD, MOSILVER, UNIONGOLD, GOLDBND, SILVERBND, SILVERCASE, GROWWSLVR |
+| Index / sector funds | MON100 (Nasdaq 100), MAFANG (FANG+), ICICIB22 (Bharat 22), METAL, MODEFENCE, and ~180 more sector and index ETFs |
+
+**Why it matters beyond tidiness.** Gold ran hard through 2024-2026. The fundamental-overlay
+arm that treated missing data as eligible printed **+32% CAGR** — it was not measuring
+Arun's screen at all, it was buying gold funds, which have no fundamentals because they are
+not companies. That number is void and was never reported as a result.
+
+**THE FIX — by what the instrument is CALLED, not by its ticker.** A longer ticker blacklist
+works until the next fund launches, which is not a fix. The Kite instrument dump carries a
+long name, and it separates the two cleanly:
+
+```
+HDFCGOLD    EQ   HDFC GOLD ETF                <- fund
+CHOICEGOLD  EQ   CHOICE GOLD ETF              <- fund
+AONESILVER  EQ   AONEAMC - AONESILVER         <- fund (AMC-dash naming)
+SKYGOLD     EQ   SKY GOLD AND DIAMONDS        <- company
+DECNGOLD    EQ   DECCAN GOLD MINES            <- company
+SILVERTUC   EQ   SILVER TOUCH TECHNO          <- company
+```
+
+Every fund says so in its name; no operating company does. Built to
+`backtest_data/etf_exclusions.json` by
+`research/158_oa_arming_width/scripts/build_etf_list.py`:
+
+| | Old ticker filter | New name-based list |
+|---|---|---|
+| Instruments excluded | 125 | **346** |
+| Real companies wrongly excluded | — | **none** |
+| Gold/silver-named symbols left in the universe | 21 | 6, all genuine companies |
+
+The six kept are DECNGOLD, GOLDIAM, GOLDTECH-BE, SHANTIGOLD, SILVERTUC, SKYGOLD. The old
+ticker regex is retained as a second net for funds that have since DELISTED and are absent
+from today's dump. The list is committed so backtests reproduce without a network call.
+
+**Still to do:**
+- **`services/oa_entry.py` still has the old filter.** Only the research fork
+  (`research/158_oa_arming_width/scripts/oa_entry_mechanics.py`) is fixed. OA entries are
+  paused so nothing is at risk today, but the scanner MUST be fixed before they restart.
+- **research/142's published numbers carry the same contamination** in their recent years,
+  since that engine uses the same regex. Re-run owed if those figures are ever cited again.
+- **Check True North and IPO Base for the same class of defect.** TN builds its universe from
+  a point-in-time top-200-by-traded-value list and IPO Base from a vetted listing table, so
+  both are probably clean, but neither was checked for fund contamination specifically.
+- Rebuild `etf_exclusions.json` periodically — new funds list constantly. Candidate for the
+  Ops & Review Centre as a dated recurring job.
+
+---
+
 ## 🔴 2026-09-11 — OPEN ALPHA BUYING IS PAUSED: the entry cannot be placed (research/158)
 
 **Arun action needed: decide what Open Alpha does next.** Selling is untouched and running,
