@@ -192,10 +192,13 @@ defect, Open Alpha paused, IPO halved, True North clean.
 
 ## 7. OPEN ITEMS — what is NOT done
 
-**Still running when this was written** (`/tmp/mpf/aftertax2.log`, 23 of 57 cells):
-after-tax re-runs of the trail surface, null control and gate bake-off, so the roster page
-can be 100% post-tax. Resumable — `/tmp/mpf/run_aftertax.sh` skips finished cells from
-`research/159_.../results/after_tax_tables.csv`.
+**COMPLETED after this file was first written:** the after-tax re-run finished (70
+cells, `research/159_.../results/after_tax_tables.csv`) and **the roster page is now 100%
+post-tax** — zero pre-tax figures remain on it, and its three evidence tables are generated
+from that CSV rather than retyped. Committed `c92a4749`. Every conclusion survived the tax
+layer unchanged in direction: the breakout rule still beats random name selection by +9.9
+points after tax (was +11.1 pre-tax), and the VIX 70th-percentile gate still adds +0.137 of
+Calmar (was +0.208).
 
 **Owed, in priority order:**
 
