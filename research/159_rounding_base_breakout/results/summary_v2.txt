@@ -1,0 +1,155 @@
+====================================================================================================
+research/159 v2 — ROUNDING BASE -> BASE-CEILING BREAKOUT ON VOLUME
+Entry = first close above the prior 60-bar high, on >=3x the prior 20-bar median
+volume, as an up-candle, after the saucer base is recognised. Fill = next-day open.
+====================================================================================================
+raw events (symbol x window-mode): 6109
+de-duplicated events (symbol x trigger date): 4372
+distinct symbols: 1252
+pass the OBV/volume accumulation filter: 1771 (41%)
+
+--- EVENTS PER YEAR (de-duplicated) ---
+year        all   OBV_ON
+2001          2        2   
+2003          1        0   
+2004          3        1   
+2005         32        8   ########
+2006         63       20   ###############
+2007         66       22   ################
+2008         19        8   ####
+2009        203      143   ##################################################
+2010         66       23   ################
+2011         57       16   ##############
+2012         93       41   #######################
+2013         74       27   ##################
+2014        110       61   ###########################
+2015         81       24   ####################
+2016        153       51   ######################################
+2017        196       76   #################################################
+2018         78       31   ###################
+2019        140       53   ###################################
+2020        449      261   ############################################################
+2021        151       81   #####################################
+2022        396       93   ############################################################
+2023        599      223   ############################################################
+2024        259       99   ############################################################
+2025        738      261   ############################################################
+2026        343      146   ############################################################
+TOTAL      4372     1771
+mean 174.9 events/year across 25 years
+
+--- VOLUME MULTIPLE AT THE TRIGGER (the K axis, for later filtering) ---
+  median 5.4x   p10 3.3x   p90 19.2x
+  events with volume >= 3x : 4372 (100%)
+  events with volume >= 5x : 2383 (55%)
+  events with volume >= 9x : 1172 (27%)
+
+--- DISTANCE FROM ENTRY TO THE OLD v1 LEFT RIM (overhead supply ahead) ---
+  median +14.9%   p10 -12.1%   p90 +34.0%   (positive = entry BELOW the left rim)
+  entries below the left rim: 3558 of 4372 (81%) — v2 buys the base, not the recovery
+
+--- CONFIRMATION ON THE NAMED EXAMPLES ---
+
+  SKFINDIA — 4 event(s) total
+    2020-12-28  close Rs799.5     ceiling Rs789.8     vol 6.67x  | base q=2020-08-28 rim Rs1063.3 (2020-01-16) trough Rs583.2 (2020-03-23) depth 45.15%
+        entry 2020-12-29 @ Rs813.4 | distToLeftRim 24.81% | score 0.4204 | [info] fwd250=114.14% ST(7,3) 70.35%
+    2023-06-27  close Rs2344.2    ceiling Rs2319.5    vol 7.57x  | base q=2023-06-07 rim Rs2402.1 (2022-11-21) trough Rs1903.9 (2023-03-27) depth 20.74%
+        entry 2023-06-28 @ Rs2364.0 | distToLeftRim 2.41% | score 0.174 | [info] fwd250=29.59% ST(7,3) -1.16%
+    2025-05-16  close Rs2144.7    ceiling Rs2027.3    vol 9.45x  | base q=2025-05-15 rim Rs2408.7 (2024-12-04) trough Rs1705.9 (2025-03-13) depth 29.18%
+        entry 2025-05-19 @ Rs2161.8 | distToLeftRim 10.96% | score 0.6187 | [info] fwd250=-25.28% ST(7,3) -0.97%
+    2025-06-30  close Rs2257.6    ceiling Rs2238.4    vol 11.06x  | base q=2025-06-05 rim Rs2559.4 (2024-09-16) trough Rs1705.9 (2025-03-13) depth 33.35%
+        entry 2025-07-01 @ Rs2278.4 | distToLeftRim 11.79% | score 0.405 | [info] fwd250=-29.51% ST(7,3) -6.04%
+
+  KMEW — 1 event(s) total
+    2025-08-19  close Rs944.3     ceiling Rs912.85    vol 8.78x  | base q=2025-06-16 rim Rs1170.6 (2024-12-27) trough Rs657.65 (2025-04-07) depth 43.82%
+        entry 2025-08-20 @ Rs937.5 | distToLeftRim 19.33% | score 0.6239 | [info] fwd250=186.41% ST(7,3) 65.55%
+
+  CENTURYPLY — 8 event(s) total
+    2014-07-03  close Rs87.35     ceiling Rs82.9      vol 5.43x  | base q=2014-06-20 rim Rs53.0 (2013-07-17) trough Rs22.15 (2014-02-26) depth 58.21%
+        entry 2014-07-04 @ Rs87.75 | distToLeftRim -64.81% | score 0.4388 | [info] fwd250=116.92% ST(7,3) 133.16%
+    2017-03-30  close Rs257.3     ceiling Rs250.15    vol 3.55x  | base q=2017-03-09 rim Rs262.55 (2016-10-19) trough Rs155.1 (2016-12-22) depth 40.93%
+        entry 2017-03-31 @ Rs258.0 | distToLeftRim 2.0% | score 0.4198 | [info] fwd250=35.37% ST(7,3) -6.57%
+    2017-11-27  close Rs315.55    ceiling Rs298.7     vol 3.26x  | base q=2017-10-26 rim Rs308.35 (2017-06-14) trough Rs239.1 (2017-09-06) depth 22.46%
+        entry 2017-11-28 @ Rs322.0 | distToLeftRim -2.34% | score 0.3236 | [info] fwd250=-44.7% ST(7,3) -0.26%
+    2020-08-24  close Rs153.15    ceiling Rs142.85    vol 5.99x  | base q=2020-07-20 rim Rs171.85 (2020-01-24) trough Rs101.7 (2020-05-29) depth 40.82%
+        entry 2020-08-25 @ Rs154.5 | distToLeftRim 10.88% | score 0.5933 | [info] fwd250=157.67% ST(7,3) 146.96%
+    2020-09-14  close Rs180.7     ceiling Rs162.3     vol 3.38x  | base q=2020-09-04 rim Rs171.85 (2020-01-24) trough Rs101.7 (2020-05-29) depth 40.82%
+        entry 2020-09-15 @ Rs181.75 | distToLeftRim -5.15% | score 0.3884 | [info] fwd250=130.18% ST(7,3) 109.93%
+    2022-08-02  close Rs607.5     ceiling Rs594.55    vol 3.11x  | base q=2022-07-29 rim Rs719.7 (2022-03-23) trough Rs496.1 (2022-05-12) depth 31.07%
+        entry 2022-08-03 @ Rs610.9 | distToLeftRim 15.59% | score 0.505 | [info] fwd250=3.02% ST(7,3) 3.0%
+    2023-12-11  close Rs737.15    ceiling Rs691.35    vol 26.38x  | base q=2023-06-23 rim Rs697.6 (2022-09-13) trough Rs442.15 (2023-03-28) depth 36.62%
+        entry 2023-12-12 @ Rs746.0 | distToLeftRim -5.67% | score 0.4641 | [info] fwd250=14.3% ST(7,3) -1.59%
+    2024-06-27  close Rs747.65    ceiling Rs724.15    vol 3.95x  | base q=2024-06-20 rim Rs804.35 (2024-01-20) trough Rs626.1 (2024-03-27) depth 22.16%
+        entry 2024-06-28 @ Rs756.0 | distToLeftRim 7.05% | score 0.5568 | [info] fwd250=0.53% ST(7,3) -9.31%
+
+  DIXON — 4 event(s) total
+    2023-05-24  close Rs3514.3    ceiling Rs3275.65   vol 19.11x  | base q=2023-05-23 rim Rs4385.35 (2022-12-01) trough Rs2644.2 (2023-02-22) depth 39.7%
+        entry 2023-05-25 @ Rs3509.65 | distToLeftRim 19.86% | score 0.7275 | [info] fwd250=163.98% ST(7,3) 14.39%
+    2023-08-07  close Rs4690.35   ceiling Rs4655.15   vol 5.54x  | base q=2023-07-03 rim Rs4591.45 (2022-11-14) trough Rs2644.2 (2023-02-22) depth 42.41%
+        entry 2023-08-08 @ Rs4707.0 | distToLeftRim -2.15% | score 0.472 | [info] fwd250=149.43% ST(7,3) 8.43%
+    2026-06-17  close Rs12833.0   ceiling Rs12235.0   vol 3.8x  | base q=2026-05-25 rim Rs14643.0 (2025-11-27) trough Rs9673.0 (2026-03-30) depth 33.94%
+        entry 2026-06-18 @ Rs12860.0 | distToLeftRim 12.36% | score 0.4343 | [info] fwd250=4.26% ST(7,3) 4.26%
+    2026-07-16  close Rs14498.0   ceiling Rs13595.0   vol 4.31x  | base q=2026-06-19 rim Rs18202.0 (2025-09-25) trough Rs9673.0 (2026-03-30) depth 46.86%
+        entry 2026-07-17 @ Rs14499.0 | distToLeftRim 20.35% | score 0.5474 | [info] fwd250=-7.52% ST(7,3) -7.52%
+
+  SRF — 7 event(s) total
+    2006-08-16  close Rs47.9      ceiling Rs47.7      vol 3.1x  | base q=2006-08-14 rim Rs72.65 (2006-04-05) trough Rs28.05 (2006-06-13) depth 61.39%
+        entry 2006-08-17 @ Rs48.35 | distToLeftRim 34.07% | score 0.5846 | [info] fwd250=-46.43% ST(7,3) -9.72%
+    2006-10-30  close Rs51.9      ceiling Rs51.1      vol 10.21x  | base q=2006-09-15 rim Rs72.65 (2006-04-05) trough Rs28.05 (2006-06-13) depth 61.39%
+        entry 2006-10-31 @ Rs52.0 | distToLeftRim 28.56% | score 0.2725 | [info] fwd250=-47.21% ST(7,3) -16.06%
+    2008-07-31  close Rs26.45     ceiling Rs26.4      vol 3.63x  | base q=2008-05-29 rim Rs39.85 (2008-01-03) trough Rs18.45 (2008-03-24) depth 53.7%
+        entry 2008-08-01 @ Rs26.8 | distToLeftRim 33.63% | score 0.3197 | [info] fwd250=20.52% ST(7,3) -6.53%
+    2009-07-27  close Rs28.9      ceiling Rs28.65     vol 13.29x  | base q=2009-04-29 rim Rs29.4 (2008-08-05) trough Rs12.7 (2009-02-03) depth 56.8%
+        entry 2009-07-28 @ Rs29.6 | distToLeftRim 1.7% | score 0.5926 | [info] fwd250=63.18% ST(7,3) 30.91%
+    2017-10-12  close Rs351.95    ceiling Rs348.8     vol 5.31x  | base q=2017-10-10 rim Rs368.25 (2017-05-16) trough Rs287.1 (2017-08-09) depth 22.04%
+        entry 2017-10-13 @ Rs350.2 | distToLeftRim 4.43% | score 0.3217 | [info] fwd250=0.19% ST(7,3) 5.07%
+    2017-11-23  close Rs373.1     ceiling Rs356.1     vol 7.89x  | base q=2017-10-31 rim Rs368.25 (2017-05-16) trough Rs287.1 (2017-08-09) depth 22.04%
+        entry 2017-11-24 @ Rs372.0 | distToLeftRim -1.32% | score 0.4412 | [info] fwd250=16.37% ST(7,3) -1.09%
+    2023-05-09  close Rs2587.4    ceiling Rs2568.75   vol 3.42x  | base q=2023-03-28 rim Rs2826.05 (2022-09-13) trough Rs2105.2 (2023-01-20) depth 25.51%
+        entry 2023-05-10 @ Rs2573.0 | distToLeftRim 8.44% | score 0.4593 | [info] fwd250=-11.46% ST(7,3) -5.61%
+
+--- SHORT-LIST (ranked by pattern_quality ONLY; info_* never consulted) ---
+eligible pool: 1562 events / 768 distinct symbols
+
+  [1] HUHTAMAKI  mode=L120  score=0.8655  liquidity=small(<Rs10cr)
+      left rim (supply): 2024-12-13 @ Rs305.05   trough: 2025-02-28 @ Rs176.06 (depth 42.28%, 120 bars)
+      base recognised  : 2025-06-03
+      BASE CEILING     : Rs220.87   BREAKOUT 2025-07-07 close Rs231.73 on 5.37x volume (24 bars after q)
+      ENTRY            : 2025-07-08 @ Rs233.0 (next-day open)   still 24.04% below the left rim
+      shape            : R2=0.936 vertex=0.694 no-V=0.642 volRatio=2.313 obvGain=0.292
+      [INFO ONLY] fwd60=0.55% fwd120=-11.03% fwd250=-4.92% | ST(7,3) exit 2025-08-08 ret -10.95% bars 24 | MFE 17.02% MAE -36.22%
+
+  [2] DELTACORP  mode=VAR  score=0.7839  liquidity=large(>=Rs50cr)
+      left rim (supply): 2022-04-04 @ Rs333.65   trough: 2022-06-16 @ Rs163.9 (depth 50.88%, 95 bars)
+      base recognised  : 2022-08-19
+      BASE CEILING     : Rs214.45   BREAKOUT 2022-09-15 close Rs221.5 on 3.52x volume (18 bars after q)
+      ENTRY            : 2022-09-16 @ Rs223.8 (next-day open)   still 33.61% below the left rim
+      shape            : R2=0.957 vertex=0.698 no-V=0.632 volRatio=1.441 obvGain=0.3699
+      [INFO ONLY] fwd60=-0.54% fwd120=-9.18% fwd250=-20.91% | ST(7,3) exit 2022-09-28 ret -12.91% bars 9 | MFE 16.15% MAE -22.39%
+
+  [3] KIRLOSBROS  mode=VAR  score=0.7344  liquidity=mid(Rs10-50cr)
+      left rim (supply): 2024-07-05 @ Rs2603.15   trough: 2024-09-16 @ Rs1613.35 (depth 38.02%, 90 bars)
+      base recognised  : 2024-11-12
+      BASE CEILING     : Rs2117.4   BREAKOUT 2024-11-19 close Rs2187.15 on 5.54x volume (4 bars after q)
+      ENTRY            : 2024-11-21 @ Rs2179.05 (next-day open)   still 15.98% below the left rim
+      shape            : R2=0.849 vertex=0.61 no-V=0.611 volRatio=1.57 obvGain=0.407
+      [INFO ONLY] fwd60=-16.98% fwd120=-13.46% fwd250=-21.88% | ST(7,3) exit 2024-12-23 ret -7.26% bars 23 | MFE 13.58% MAE -34.73%
+
+--- next 12 by pattern_quality (context only) ---
+  HUHTAMAKI      2025-07-07  score 0.8655  ceiling Rs220.87    vol 5.37x  depth 42.28%  R2 0.936  tv20 4.32 cr
+  CENTURYPLY     2017-03-30  score 0.8238  ceiling Rs250.15    vol 3.55x  depth 40.93%  R2 0.909  tv20 4.43 cr
+  MAHSEAMLES     2020-08-20  score 0.7998  ceiling Rs117.35    vol 4.12x  depth 55.96%  R2 0.907  tv20 1.71 cr
+  DELTACORP      2022-09-15  score 0.7839  ceiling Rs214.45    vol 3.52x  depth 50.88%  R2 0.957  tv20 84.39 cr
+  GPPL           2025-05-30  score 0.7754  ceiling Rs142.65    vol 36.62x  depth 37.11%  R2 0.898  tv20 14.22 cr
+  JMFINANCIL     2012-10-03  score 0.7683  ceiling Rs16.65     vol 5.74x  depth 36.86%  R2 0.862  tv20 2.45 cr
+  TORNTPOWER     2013-11-26  score 0.7658  ceiling Rs107.35    vol 11.51x  depth 51.01%  R2 0.887  tv20 6.28 cr
+  JKLAKSHMI      2020-07-13  score 0.7592  ceiling Rs284.85    vol 5.42x  depth 51.45%  R2 0.871  tv20 7.83 cr
+  NAVA           2006-03-23  score 0.7569  ceiling Rs16.8      vol 3.57x  depth 42.31%  R2 0.839  tv20 2.4 cr
+  APEX           2024-01-03  score 0.7555  ceiling Rs223.16    vol 12.91x  depth 46.47%  R2 0.938  tv20 2.22 cr
+  DOLLAR         2023-09-08  score 0.7555  ceiling Rs441.98    vol 4.22x  depth 41.84%  R2 0.876  tv20 4.82 cr
+  JSWHL          2013-01-07  score 0.7527  ceiling Rs629.95    vol 4.65x  depth 50.99%  R2 0.839  tv20 6.18 cr
+
+--- INFORMATION ONLY: +250-bar return from the fill, all 4365 events ---
+  NOT a backtest: no costs, no taxes, no sizing, no slot limit, no market gate,
+  and a survivorship-biased universe.
+  median +8.2%  mean +24.4%  p10 -36.7%  p90 +102.9%  frac>0 57%

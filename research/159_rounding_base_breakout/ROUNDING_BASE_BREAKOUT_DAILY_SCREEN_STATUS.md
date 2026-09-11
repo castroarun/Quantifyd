@@ -1,6 +1,7 @@
 # Rounding-Base (Saucer) + Volume Accumulation → Rim Breakout — Causal Daily Screen Across 2,905 NSE Symbols
 
-**STATUS: DONE for this stage — awaiting Arun’s manual chart verification. No backtest run, nothing deployed.**
+**STATUS: v2 DONE — entry redefined after Arun’s manual check; awaiting his verification of the v2 dates. No backtest run, nothing deployed.**
+**v1 is superseded but kept in full for the record (sections 1-8). v2 is section 9.**
 **Stage gate:** G0 (hypothesis + implementability) → G1 probe is *identification only*. No sweep, no exits, no CAGR/Calmar. Nothing is deployed.
 **Research number:** 159 · **Opened:** 11-Sep-2026 12:45 IST · **Owner:** quant-researcher agent
 **Canonical copy:** the **VPS** (`/home/arun/quantifyd/research/159_rounding_base_breakout/`). The laptop folder
@@ -467,3 +468,173 @@ other ST settings, 20-day-low Donchian, 50-EMA and an ATR trail, swept **jointly
 entry, never in isolation; **(c)** costs at 25 / 40 / 60 bps and after-tax; **(d)** portfolio
 construction with a seed ensemble; **(e)** correlation and blend value against True North and
 Open Alpha. **None of that has been run.**
+
+
+---
+
+# 9. v2 — entry redefined after Arun’s manual check (11-Sep-2026)
+
+## 9.1 What he rejected, and why he is right
+
+Arun checked the v1 short-list against his own charts and **rejected the entry definition**
+on SKFINDIA. v1 entered **03-Jul-2025 at Rs2,352**. The real breakout was **16-May-2025 at
+Rs2,144.70** — a gap-up on **9.5x** the 20-day median volume that cleared the flat Mar-May
+shelf at Rs1,750-1,860. **v1 entered +15% into the move.**
+
+The diagnosis is a conceptual error in v1, not a threshold problem:
+
+> **v1 triggered on the LEFT RIM — the far left lip of the decline. That is the wrong level.
+> The breakout Arun trades is out of the BASE CEILING: the top of the consolidation at the
+> BOTTOM of the saucer.**
+
+The left rim is not the trigger. It is the **first overhead supply** the trade has to chew
+through *after* entry. v1 waited for price to climb all the way back to it and only then
+bought — by construction, always late. v2 keeps the left rim purely as an information column
+(`dist_to_left_rim_pct`) measuring how much overhead supply still sits above the entry.
+
+The evidence that this is the real defect, not a preference: **81% of v2 entries sit below
+the old v1 left rim, a median 14.9% below it.** v2 buys the base; v1 bought the recovery.
+
+## 9.2 The v2 spec (changes from v1 only — everything unlisted is unchanged)
+
+**Kept exactly:** quadratic curvature > 0, R² ≥ 0.70, trough in the middle 30-70%,
+depth-relative no-V ≥ 0.40, depth 20-70% measured left-rim-close → trough, split guard,
+phantom-row purge, IPO-age exception, liquidity floor Rs2 cr, ETF/index exclusion,
+`pattern_quality` as the only ranking metric.
+
+| | v1 | **v2** |
+|---|---|---|
+| **Base completion** | close back **within 5% of the left rim** | **minimal lift-off**: `close ≥ trough + 0.15 × (rim − trough)`. The base only has to be *recognisable*, not *recovered* |
+| **Entry trigger** | first close **above the left rim** | first close **above the highest close of the prior N bars** (the base ceiling), **N = 60** default, with `fired_n40` / `fired_n60` / `fired_n100` recorded per event |
+| **Volume gate** | none at the trigger | **volume ≥ K × median volume of the prior 20 bars**, **K = 3** default; the actual `vol_multiple` is recorded so K = 2 / 5 / 9 can be filtered later |
+| **Candle** | none | trigger day must be an **up-candle** (`close > prior close`) |
+| **Wait window** | 60 bars from q | **120 bars** from q |
+| **Fill** | next-day open **and** buy-stop at the rim | **next-day open** |
+| **Left rim** | the entry level | **information only** — `dist_to_left_rim_pct` |
+
+Still strictly causal: the trigger compares `close[t]` against the prior N bars and the prior
+20-bar volume median, both shifted back one bar. Nothing at or after `t` is consulted.
+
+## 9.3 v2 deviation log
+
+| # | Change | Why | Cost / effect |
+|---|---|---|---|
+| **D4** | **Vertex bound widened from 0.33-0.67 to 0.30-0.70**, aligning it with the trough-position bound | With the v1 bound the detector **rejected Arun’s own 16-May-2025 SKFINDIA breakout by 0.004** (vertex 0.674 vs the 0.67 ceiling) while `trough_pos` sat at a comfortable 0.664 and R² at 0.903. The two gates test **the same geometric property** — where the bottom of the bowl sits — and having two different tolerances for it was an inconsistency; the fitted vertex is the noisier estimator, drifting monotonically as bars are appended | **This is not cosmetic: D4 admits 47.4% of all de-duplicated v2 events** (2,072 of 4,372). The vertex distribution is piled up against the old boundary because it sweeps through the band as the window grows. Every event carries `vertex_frac`, so the stricter screen is recoverable with `0.33 ≤ vertex_frac ≤ 0.67`. **Disclosed rather than buried — this is the single loosest choice in v2** |
+| **D5** | Base expiry is now checked **before** the trigger each bar | The original order let 9 events fire on bar 121 of a stated 120-bar window | Wait window is now a hard ≤ 120 bars; event count moved 6,118 → 6,109 |
+
+## 9.4 Confirmation on the named examples — both exact
+
+| | Arun / coordinator expected | **v2 detector** |
+|---|---|---|
+| **SKFINDIA** | 16-May-2025 @ Rs2,144.70, 9.5x volume | **16-May-2025, close Rs2,144.70, 9.45x**, base ceiling Rs2,027.30, entry **19-May-2025 @ Rs2,161.80** |
+| **KMEW** (K=3) | 19-Aug-2025 @ Rs944.30, 8.8x | **19-Aug-2025, close Rs944.30, 8.78x**, base ceiling Rs912.85, entry **20-Aug-2025 @ Rs937.50** |
+| **KMEW** (K≥9) | 12-Sep-2025 @ Rs1,090.55, 29.9x | **12-Sep-2025, close Rs1,090.55, 29.90x**, entry 15-Sep-2025 @ Rs1,127.05 |
+
+**v2 gets a materially better entry than v1 on every example, and the trail outcome improves
+with it** (`info_*` columns, descriptive only — not a backtest):
+
+| Symbol | v1 entry | v2 entry | Entry improvement | ST(7,3) v1 → v2 | fwd250 v1 → v2 |
+|---|---|---|---|---|---|
+| KMEW | Rs1,191.00 | **Rs937.50** | **21.3% cheaper** | +30.3% → **+65.6%** | +144.5% → **+186.4%** |
+| SKFINDIA | Rs2,356.20 | **Rs2,161.80** | **8.3% cheaper** | −9.1% → **−1.0%** | −34.1% → −25.3% |
+| DIXON | Rs4,207.85 | **Rs3,509.65** | **16.6% cheaper** | −4.6% → **+14.4%** | +158.0% → **+164.0%** |
+
+KMEW is the clearest vindication of his correction: the earlier entry **more than doubles**
+what SuperTrend(7,3) captures, from +30% to +66%. His complaint that "ST 7,3 cuts KMEW half
+way through" was substantially an **entry** problem, not only a trail problem.
+
+## 9.5 Do the other v1 names survive? Yes, all three — with earlier entries
+
+| Symbol | v1 breakout / entry | **v2 nearest event** | v2 entry | v2 events in total |
+|---|---|---|---|---|
+| **CENTURYPLY** | 11-Apr-2017 / Rs269.60 | **30-Mar-2017**, close Rs257.30, ceiling Rs250.15, 3.55x | **31-Mar-2017 @ Rs258.00** | 8 |
+| **DIXON** | 12-Jun-2023 / Rs4,207.85 | **24-May-2023**, close Rs3,514.30, ceiling Rs3,275.65, 19.11x | **25-May-2023 @ Rs3,509.65** | 4 |
+| **SRF** | 03-Jun-2009 / Rs27.20 | **27-Jul-2009**, close Rs28.90, ceiling Rs28.65, 13.29x | **28-Jul-2009 @ Rs29.60** | 7 |
+
+**SRF is the honest exception: v2 enters LATER and ~8.8% higher than v1 did.** SRF’s 2009
+recovery was a near-vertical V off the crash low, so the base ceiling was still being made
+new every few days and the 60-bar high was not cleared on 3x volume until late July. v2 is
+not uniformly better — it is better on saucers with a real shelf, worse on V-recoveries.
+
+## 9.6 Frequency — v2 is far denser than v1, and that matters
+
+| | v1 | **v2** |
+|---|---|---|
+| Raw events | 1,698 | **6,109** |
+| De-duplicated | 1,513 | **4,372** |
+| Distinct symbols | 793 | **1,252** |
+| Mean per year | 63 | **175** |
+| Pass OBV accumulation | 55% | **41%** |
+
+Per-year (de-duplicated): 2025 **738**, 2023 **599**, 2020 **449**, 2022 396, 2026 343,
+2024 259, 2017 196, 2009 203 — against 2019 140, 2011 57, 2008 19.
+
+**This is a real caution.** v2 is ~2.9x denser than v1 and the recent years are approaching
+the 500/year mark that section 3.9(b) pre-registered as the "this is a generic screen, not a
+rare formation" bound — 2025 and 2023 are already past it. Three things drive the density:
+the looser base completion (a base arms near the low instead of near the rim), the 120-bar
+wait, and D4. The screen is **still not a coin flip** — 1,252 names out of 2,492 over 25
+years — but it is no longer the rare formation v1 described, and the null control at G1
+proper is now *more* important, not less.
+
+Other v2 distributions:
+- **Volume multiple at the trigger:** median **5.4x**, p10 3.3x, p90 19.2x. 55% of events are
+  ≥ 5x and 27% are ≥ 9x, so K is a live tightening axis without re-running the screen.
+- **Days from base recognition to trigger:** median **21 bars**, p10 2, p90 87 — no event
+  fires on day q itself, so base-then-breakout separation is always visible on the chart.
+- **Fill slippage**, next-day open vs the trigger close: median **+0.53%**, p10 −0.69%,
+  p90 +1.97%. The fill mechanic is not decisive.
+
+## 9.7 v2 causality self-audit — 0 violations across 14 checks
+
+All 6,109 v2 events re-checked: `left_rim < trough ≤ q ≤ trigger < entry`; trigger close
+strictly above the base ceiling; volume multiple ≥ K on every event; the `fired_n60` flag set
+on every event; depth, R², no-V, trough-position and vertex each inside their stated bounds;
+wait within 0-120 bars. **Zero violations.**
+
+## 9.8 v2 short-list — and it is three losers
+
+Selected by `pattern_quality` only, one per year and per liquidity bucket, from the
+1,563-event clean pool. Forward returns never consulted.
+
+| # | Symbol | Left rim (supply) | Trough (depth) | Base ceiling | Breakout (vol) | Entry |
+|---|---|---|---|---|---|---|
+| 1 | **HUHTAMAKI** | 13-Dec-2024 @ Rs305.05 | 28-Feb-2025 @ Rs176.06 (−42.3%) | Rs220.87 | **07-Jul-2025** @ Rs231.73 (5.4x) | 08-Jul-2025 @ **Rs233.00** |
+| 2 | **DELTACORP** | 04-Apr-2022 @ Rs333.65 | 16-Jun-2022 @ Rs163.90 (−50.9%) | Rs214.45 | **15-Sep-2022** @ Rs221.50 (3.5x) | 16-Sep-2022 @ **Rs223.80** |
+| 3 | **KIRLOSBROS** | 05-Jul-2024 @ Rs2,603.15 | 16-Sep-2024 @ Rs1,613.35 (−38.0%) | Rs2,117.40 | **19-Nov-2024** @ Rs2,187.15 (5.5x) | 21-Nov-2024 @ **Rs2,179.05** |
+
+**All three subsequently lost** (fwd250: −4.9%, −20.9%, −21.9%; ST(7,3): −11.0%, −12.9%,
+−7.3%). Stated plainly because the selection was blind — that is what blind selection is for.
+It is a caution about the family, and a reminder that v1’s short-list happened to contain
+DIXON’s +158% while v2’s top three contain nothing of the sort. **Neither outcome is evidence
+of edge in either direction at n = 3.** Only the G1 null control settles that.
+
+Note also that **two of the three top picks (HUHTAMAKI 0.694, DELTACORP 0.698) sit in the band
+D4 opened** — the loosest choice in v2 is disproportionately represented at the top of the
+ranking, which is worth Arun’s attention when he looks at the charts.
+
+## 9.9 v2 files
+
+| File | Purpose |
+|---|---|
+| `scripts/detect_rounding_base_v2.py` | the v2 detector (`--symbols=`, `--k=`, `--n=` for probes) |
+| `scripts/summarise_events_v2.py` | per-year counts, example confirmation, blind short-list |
+| `scripts/make_verify_list_v2.py` | the simplified verification list |
+| `scripts/audit_v2.py` | causality self-audit + D4 cost |
+| `scripts/debug_skfindia_v2.py` | per-gate day-by-day trace (this found the D4 vertex block) |
+| `scripts/probe_triggers.py` | the trigger probe on the two examples |
+| `results/rounding_base_events_v2.csv` | **v2 event table** — 6,109 events × 49 columns |
+| `results/verify_list_v2.csv` | **4,372 rows**, dd-Mon-yyyy, one per symbol+entry day |
+| `results/summary_v2.txt` | rendered v2 summary |
+| `results/rounding_base_events.csv`, `results/verify_list.csv`, `results/summary.txt` | **v1, untouched** |
+
+**v2 re-run:** `cd /home/arun/quantifyd && setsid nohup venv/bin/python -u research/159_rounding_base_breakout/scripts/detect_rounding_base_v2.py > /tmp/r159v2.log 2>&1 < /dev/null &` (~3.5 min), then `summarise_events_v2.py`, `make_verify_list_v2.py`, `audit_v2.py`.
+
+## 9.10 What has NOT changed
+
+No backtest, no exit sweep, no CAGR / Sharpe / Calmar / drawdown, no portfolio construction,
+no costs or taxes, no correlation or blend test, no app page, nothing deployed, no live engine
+or service touched. Forward-return and SuperTrend columns remain **information only** and were
+not used to select or rank anything. The v1 caveats in 8.5 all still apply to v2 — survivorship,
+split artifacts, ACCENTMIC-SM absent, the Rs2 cr liquidity floor and its capacity wall — plus
+the two new ones above: **D4’s 47% share** and **v2’s much higher event density**.
