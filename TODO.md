@@ -8,14 +8,14 @@ Arun's own process: Screener query (sales & profit growth 3y > 20, avg ROE 3y > 
 D/E <= 0.2, price >= 0.9 x ATH, mcap > 1000 cr) -> manual liquidity + OPM-steadiness check ->
 buy near the ATH -> NO exit rule. He beats NIFTY discretionarily; ask = test and optimise it
 mechanically, minimum bar 25% CAGR after tax. Three agents, folder
-:
+`research/160_quality_growth_near_ath/`:
 
 - DATA leg — full-universe Screener point-in-time panel (annual + quarterly OPM + face value
   -> PIT mcap), masks in the r/158 npz contract, coverage/survivorship audit, his real
-  holdings (holdings_snapshots.db) vs the screen. STATUS: .
+  holdings (holdings_snapshots.db) vs the screen. STATUS: `QUALITY_GROWTH_NEAR_ATH_DATA_LEG_STATUS.md`.
 - ENGINE leg — close-decided / next-open-filled positional engine (rebalance, first-qualify,
   ATH-breakout reference), all exit families, tax/cost/idle cash, offsets+seeds, house YoY
-  table. STATUS: .
+  table. STATUS: `QUALITY_GROWTH_NEAR_ATH_ENGINE_BUILD_STATUS.md`.
 - STUDY leg (after both) — G1 decomposition (fundamentals vs near-ATH vs both vs nulls),
   exit optimisation (the missing piece of his process), robustness, blend vs TN+OA, publish.
 
