@@ -201,9 +201,12 @@ backtest_data/dad_access_token.json
 .env.bak*
 _stage/
 
-# never commit env backups (push-protection incident 2026-09-02)
-.env.bak*
-.env.*.bak
+# Never commit anything env-shaped. The 2026-09-02 incident added the two exact
+# patterns it had just seen (.env.bak*, .env.*.bak), which is why .env.fixbak walked
+# straight past them on 11-Sep and tripped push protection on a Twilio SID. Deny the
+# whole family and allow back only the template.
+.env*
+!.env.example
 
 # research/152 multi-year breakout: 81 MB wide-frame cache (rebuildable in ~1 min)
 research/152_multiyear_breakout/results/frames_cache.npz
