@@ -1,0 +1,123 @@
+====================================================================================================
+research/159 — ROUNDING BASE (SAUCER) + VOLUME ACCUMULATION -> RIM BREAKOUT
+Causal detector event summary.  Source: rounding_base_events.csv
+====================================================================================================
+raw events (symbol x window-mode): 1698
+de-duplicated events (symbol x breakout date): 1513
+distinct symbols: 793
+of which pass the OBV/volume accumulation filter (OBV_ON): 837  (55%)
+ipo_short_window events (young listings, declared exception): 34
+
+--- EVENTS PER YEAR (de-duplicated) ---
+year        all   OBV_ON   
+2003          3        1   ###
+2004          1        1   #
+2005         18        6   ##################
+2006         25       14   #########################
+2007         26       11   ##########################
+2008          7        5   #######
+2009        160      127   ############################################################
+2010         32       14   ################################
+2011         10        6   ##########
+2012         23       12   #######################
+2013         25       15   #########################
+2014         52       36   ####################################################
+2015         27       12   ###########################
+2016         57       30   #########################################################
+2017         96       49   ############################################################
+2018         37       23   #####################################
+2019         17       10   #################
+2020         80       49   ############################################################
+2021         70       47   ############################################################
+2022        149       62   ############################################################
+2023        215      111   ############################################################
+2024        110       58   ############################################################
+2025        182       78   ############################################################
+2026         91       60   ############################################################
+TOTAL      1513      837
+mean 63.0 events/year across 24 years with at least one event
+
+--- BY WINDOW MODE (raw, before de-dup) ---
+  L120  586
+  L180  430
+  VAR   348
+  L250  334
+
+--- KMEW REPLICATION CHECK (Arun's own example; expected breakout ~Sep-2025) ---
+  mode=VAR   q=2025-09-15  rim=1189.7 @ 2024-12-05  trough=657.65 @ 2025-04-07  depth=44.72%  baselen=194
+        BREAKOUT 2025-09-16 close 1198.5 | fill(a) next open 1191.0 on 2025-09-17 | fill(b) buy-stop 1191.0
+        R2=0.817 vertex=0.56 flat=0.464 volratio=1.534 obv_pass=1 ipo_short=1 score=0.5624
+        [info only] fwd250=144.5%  ST(7,3) exit 2026-02-23 ret 30.31% after 108 bars
+  mode=L250  q=2025-09-15  rim=1189.7 @ 2024-12-05  trough=657.65 @ 2025-04-07  depth=44.72%  baselen=207
+        BREAKOUT 2025-09-16 close 1198.5 | fill(a) next open 1191.0 on 2025-09-17 | fill(b) buy-stop 1191.0
+        R2=0.748 vertex=0.582 flat=0.435 volratio=1.514 obv_pass=1 ipo_short=1 score=0.4902
+        [info only] fwd250=144.5%  ST(7,3) exit 2026-02-23 ret 30.31% after 108 bars
+  mode=L180  q=2025-09-15  rim=1170.6 @ 2024-12-27  trough=657.65 @ 2025-04-07  depth=43.82%  baselen=180
+        BREAKOUT 2025-09-16 close 1198.5 | fill(a) next open 1191.0 on 2025-09-17 | fill(b) buy-stop 1191.0
+        R2=0.764 vertex=0.53 flat=0.461 volratio=1.696 obv_pass=1 ipo_short=0 score=0.4654
+        [info only] fwd250=144.5%  ST(7,3) exit 2026-02-23 ret 30.31% after 108 bars
+
+--- FILL MECHANIC: next-day open vs the frozen rim (1513 events) ---
+  median +4.63%   p10 +0.60%   p90 +32.51%   (positive = open above the rim)
+
+--- SHORT-LIST FOR MANUAL VERIFICATION (ranked by pattern_quality ONLY) ---
+eligible pool: 318 events / 246 distinct symbols
+  fill gap WITHIN this clean pool: median +2.20%  p10 +0.16%  p90 +6.51%
+
+  [1] CENTURYPLY   mode=VAR   pattern_quality=0.8227   liquidity=small(<Rs10cr)
+      left rim   : 2016-10-19  @ Rs 262.55
+      trough     : 2016-12-22  @ Rs 155.1   (depth 40.93%, base 91 bars, trough at 0.489 of base)
+      base qualif: 2017-02-28  (close first back within 5% of the rim; rim frozen here)
+      BREAKOUT   : 2017-04-11  close Rs 267.5   (28 bars after qualify)
+      entry fills: (a) next-day open Rs 269.6 on 2017-04-12   (b) buy-stop at rim Rs 269.6
+      shape      : R2=0.911  curvature=2.276e-04  vertex=0.506  no-V=0.571  vol_ratio=1.388  obv_gain=0.4447
+      [INFO ONLY, not used to select] fwd60=7.12% fwd120=-8.14% fwd250=25.5% | ST(7,3) exit 2017-05-24 ret -10.59% bars 29 | MFE250 34.83% MAE250 -12.74%
+
+  [2] SKFINDIA   mode=L120   pattern_quality=0.7902   liquidity=mid(Rs10-50cr)
+      left rim   : 2024-12-11  @ Rs 2336.5
+      trough     : 2025-03-13  @ Rs 1705.9   (depth 26.99%, base 120 bars, trough at 0.555 of base)
+      base qualif: 2025-06-04  (close first back within 5% of the rim; rim frozen here)
+      BREAKOUT   : 2025-07-03  close Rs 2352.1   (21 bars after qualify)
+      entry fills: (a) next-day open Rs 2356.2 on 2025-07-04   (b) buy-stop at rim Rs 2356.2
+      shape      : R2=0.923  curvature=7.532e-05  vertex=0.53  no-V=0.575  vol_ratio=2.33  obv_gain=0.389
+      [INFO ONLY, not used to select] fwd60=-7.98% fwd120=-24.51% fwd250=-34.11% | ST(7,3) exit 2025-08-07 ret -9.14% bars 25 | MFE250 0.95% MAE250 -40.41%
+
+  [3] DIXON   mode=L120   pattern_quality=0.6816   liquidity=large(>=Rs50cr)
+      left rim   : 2022-12-08  @ Rs 4164.25
+      trough     : 2023-02-22  @ Rs 2644.2   (depth 36.5%, base 120 bars, trough at 0.445 of base)
+      base qualif: 2023-06-02  (close first back within 5% of the rim; rim frozen here)
+      BREAKOUT   : 2023-06-12  close Rs 4185.05   (6 bars after qualify)
+      entry fills: (a) next-day open Rs 4207.85 on 2023-06-13   (b) buy-stop at rim Rs 4207.85
+      shape      : R2=0.802  curvature=1.027e-04  vertex=0.577  no-V=0.625  vol_ratio=1.416  obv_gain=0.4975
+      [INFO ONLY, not used to select] fwd60=18.78% fwd120=43.33% fwd250=157.99% | ST(7,3) exit 2023-07-24 ret -4.59% bars 29 | MFE250 158.77% MAE250 -6.06%
+
+--- ADDENDUM: longest-base example (base >= 150 bars, same blind ranking) ---
+  [4] SRF   mode=L180   pattern_quality=0.7539   liquidity=small(<Rs10cr)
+      left rim   : 2008-09-08  @ Rs 27.65
+      trough     : 2009-02-03  @ Rs 12.7   (depth 54.07%, base 180 bars, trough at 0.575 of base)
+      base qualif: 2009-06-02
+      BREAKOUT   : 2009-06-03  close Rs 27.75   (1 bars after qualify)
+      entry fills: (a) next-day open Rs 27.2 on 2009-06-04   (b) buy-stop at rim Rs 27.65
+      shape      : R2=0.901  vertex=0.531  no-V=0.7  vol_ratio=3.154  obv_gain=0.4362  tv20=4.56 cr
+      [INFO ONLY] fwd60=11.21% fwd120=36.4% fwd250=64.15% | ST(7,3) exit 2009-06-18 ret -18.57% bars 11
+
+--- next 10 by pattern_quality (context only) ---
+  CENTURYPLY     2017-04-11  score 0.8227  depth 40.93%  R2 0.911  base 91 bars  tv20 5.56 cr
+  SKFINDIA       2025-07-03  score 0.7902  depth 26.99%  R2 0.923  base 120 bars  tv20 17.94 cr
+  SRF            2009-06-03  score 0.7539  depth 54.07%  R2 0.901  base 180 bars  tv20 4.56 cr
+  ABAN-BE        2013-11-25  score 0.7482  depth 32.83%  R2 0.863  base 120 bars  tv20 17.53 cr
+  HONDAPOWER     2025-07-10  score 0.713  depth 38.74%  R2 0.82  base 120 bars  tv20 2.22 cr
+  NAVA           2006-04-19  score 0.7108  depth 49.52%  R2 0.847  base 147 bars  tv20 3.41 cr
+  CONFIPET       2023-08-21  score 0.7042  depth 30.55%  R2 0.891  base 120 bars  tv20 6.65 cr
+  STCINDIA       2023-08-25  score 0.7031  depth 37.96%  R2 0.877  base 183 bars  tv20 2.14 cr
+  AJANTPHARM     2018-01-19  score 0.7023  depth 26.99%  R2 0.904  base 120 bars  tv20 26.09 cr
+  BAJAJHCARE     2023-09-22  score 0.702  depth 38.21%  R2 0.802  base 178 bars  tv20 20.56 cr
+  JUSTDIAL       2017-11-13  score 0.7003  depth 33.38%  R2 0.837  base 120 bars  tv20 132.68 cr
+  RADICO         2016-09-28  score 0.698  depth 30.7%  R2 0.836  base 180 bars  tv20 9.82 cr
+  LINCOLN        2016-10-21  score 0.695  depth 47.83%  R2 0.852  base 180 bars  tv20 3.24 cr
+  JTEKTINDIA     2023-07-12  score 0.6896  depth 36.27%  R2 0.853  base 120 bars  tv20 5.29 cr
+
+--- INFORMATION ONLY: distribution of +250-bar return from fill (a), all 1512 events ---
+  This is NOT a backtest: no costs, no taxes, no position sizing, no slot limit,
+  no market gate, and it is measured on a survivorship-biased universe.
+  median +12.7%  mean +26.0%  p10 -38.3%  p90 +100.5%  frac>0 61%
