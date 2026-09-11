@@ -111,8 +111,24 @@ def prev_session(days, target):
     not-yet-reached exit onto today, which closes positions early and invents
     entries for long-dated contracts. Unknown must stay unknown.
     """
-    if not days or target > days[-1]:
+    if not days:
         return None
+    if target > days[-1]:
+        # Refuse only when a session we have NOT seen could still be the answer.
+        # "Any future date" is too blunt: when every calendar day between the
+        # last known session and the target is a weekend, the last session IS
+        # the answer. That distinction cost the book a campaign on 2026-09-11 -
+        # the 45-day mark for the 2026-10-27 expiry fell on Saturday the 12th
+        # with the last session on Friday the 11th, so monthly_expiries() got
+        # None, dropped October entirely, and the entry never seeded.
+        # Holidays stay unknowable, so any weekday in the gap keeps the refusal.
+        d = dparse(days[-1]) + timedelta(days=1)
+        end = dparse(target)
+        while d <= end:
+            if d.weekday() < 5:
+                return None
+            d += timedelta(days=1)
+        return days[-1]
     i = bisect_left(days, target)
     if i < len(days) and days[i] == target:
         return target
