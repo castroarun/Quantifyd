@@ -1,7 +1,7 @@
 # Rounding-Base (Saucer) + Volume Accumulation → Rim Breakout — Causal Daily Screen Across 2,905 NSE Symbols
 
-**STATUS: v2 DONE — entry redefined after Arun’s manual check; awaiting his verification of the v2 dates. No backtest run, nothing deployed.**
-**v1 is superseded but kept in full for the record (sections 1-8). v2 is section 9.**
+**STATUS: v3 screen DONE — all 9 expected checks pass. Backtest phase PRE-REGISTERED (section 11) and starting.**
+**v1 = sections 1-8, v2 = section 9, v3 = section 10, backtest plan = section 11. v1 and v2 are superseded but kept in full for the record.**
 **Stage gate:** G0 (hypothesis + implementability) → G1 probe is *identification only*. No sweep, no exits, no CAGR/Calmar. Nothing is deployed.
 **Research number:** 159 · **Opened:** 11-Sep-2026 12:45 IST · **Owner:** quant-researcher agent
 **Canonical copy:** the **VPS** (`/home/arun/quantifyd/research/159_rounding_base_breakout/`). The laptop folder
@@ -638,3 +638,228 @@ or service touched. Forward-return and SuperTrend columns remain **information o
 not used to select or rank anything. The v1 caveats in 8.5 all still apply to v2 — survivorship,
 split artifacts, ACCENTMIC-SM absent, the Rs2 cr liquidity floor and its capacity wall — plus
 the two new ones above: **D4’s 47% share** and **v2’s much higher event density**.
+
+
+---
+
+# 10. v3 — shelf breakout near the all-time high (11-Sep-2026)
+
+## 10.1 Arun’s two further corrections
+
+**(1) The pattern must sit at or near the all-time high.** The saucer forms just under the
+ATH and the breakout goes into, or close to, blue sky. **SKFINDIA was 34% below its Jun-2024
+ATH, so it never qualified in the first place** — v2 was happily finding saucers part-way
+down a long decline, which is a different (and much weaker) animal.
+
+**(2) The trigger needs a SHELF.** On CHOLAHLDNG 21-Apr-2025 he said: *"the base is correct,
+I don’t see any breakout from the base."* He is right. v2’s "close above the prior 60-day
+high" fires **continuously** while price simply walks up the right-hand side of a saucer —
+there was no consolidation under Rs1,958; the prior 20 closes spanned Rs1,559-1,873, a **20%
+range**. That is a rising price, not a breakout. **A breakout needs something tight to break
+out of.**
+
+## 10.2 The v3 spec
+
+Saucer recognition is **unchanged from v2** (curvature > 0, R² ≥ 0.70, trough centred
+0.30-0.70, no-V ≥ 0.40, depth 20-70%, 15% minimal lift-off, split guard, phantom purge,
+IPO-age exception, liquidity ≥ Rs2 cr). The **trigger** is replaced:
+
+| Condition | Rule |
+|---|---|
+| **Shelf** | over the prior **S = 15** bars, `(max close − min close) / max close ≤ 12%`; flags recorded for S = 20 and S = 30 |
+| **Breakout** | `close > shelf high` |
+| **Near ATH** | `close ≥ 0.90 × ATH`, where ATH is the running max of closes **strictly before** day t; `dist_to_ath_pct` recorded, plus flags for ≥ 0.95×ATH and a new high |
+| **Volume** | `≥ 3 ×` the prior 20-bar median; the actual multiple is recorded |
+| **Candle** | `close > previous close` |
+| **Base** | the saucer must have qualified **earlier** (q < t), within **150 bars** |
+| **Fill** | next-day open |
+
+**ATH split guard.** `market_data.db` is not retroactively split-adjusted, so a pre-split row
+sits at the old price scale and would fake an unreachable ATH. If the close series contains
+any day-over-day move < −35%, the series is **truncated to the bars after the last such
+move** and the ATH is computed only from those. `hist_bars` records how much history backs
+each ATH, and `split_cut` flags whether truncation happened. **19 symbols were skipped
+entirely** for having too little history left after truncation.
+
+## 10.3 Expected checks — 9 of 9 PASS
+
+| Symbol | Expected | Result | Detail |
+|---|---|---|---|
+| **KMEW** | fire 12-Sep-2025 @ Rs1,090.55, shelf Rs972.85, −8.3% vs ATH, 29.9x | **PASS** | close Rs1,090.55, shelf Rs972.85, dATH **−8.33%**, **29.9x**, entry 15-Sep-2025 @ Rs1,127.05 |
+| **CENTURYPLY** | fire 30-Mar-2017 @ Rs257.30 | **PASS** | shelf Rs249.85 (range 3.2%), dATH −2.0%, 3.55x, entry 31-Mar-2017 @ Rs258.00 |
+| **JAYSREETEA** | fire 12-Aug-2009 | **PASS** | close Rs102.97, shelf Rs101.92, dATH −2.93%, 6.1x |
+| **MONARCH** | fire 06-Oct-2023 | **PASS** | close Rs193.67, shelf Rs171.02, dATH −2.95%, 7.48x |
+| **NAM-INDIA** | fire 06-Jun-2025 | **PASS** | close Rs790.50, shelf Rs748.95, dATH −1.91%, 4.28x |
+| **SAPPHIRE** | fire 06-Oct-2022 | **PASS** | close Rs300.30, shelf Rs297.75, dATH +0.86%, 3.37x |
+| **COROMANDEL** | fire 29-Sep-2009 | **PASS** | close Rs103.62, shelf Rs100.95, dATH −7.96%, 4.2x |
+| **CHOLAHLDNG** | must NOT fire Apr-2025 | **PASS** | correctly absent (its only event is 24-Oct-2025) |
+| **SKFINDIA** | must NOT fire May-2025 | **PASS** | correctly absent (its events are 04-Mar-2021 and 27-Jun-2023, both near ATH at the time) |
+
+**Note on KMEW.** `probe_shelf.py` reports "no shelf breakout" for KMEW because it tests the
+**shelf high** against the ATH (972.85 / 1,189.70 = 18% below). The v3 spec tests the
+**close** (1,090.55 / 1,189.70 = 8.3% below), which is what makes it fire. The two are
+deliberately different conditions; v3 implements the spec.
+
+## 10.4 Frequency — v3 is the tightest of the three screens
+
+| | v1 | v2 | **v3** |
+|---|---|---|---|
+| Raw events | 1,698 | 6,109 | **1,437** |
+| De-duplicated | 1,513 | 4,372 | **889** |
+| Distinct symbols | 793 | 1,252 | **579** |
+| Mean per year | 63 | 175 | **40** |
+
+**Funnel:** 7,874 saucer bases qualified → **1,437 triggered**, **5,842 expired without a
+shelf breakout**. The shelf + ATH requirement rejects ~79% of the bases that v2 would have
+traded, which is precisely the point of both corrections.
+
+Per-year: 2023 **143**, 2025 **121**, 2024 96, 2017 64, 2022 60, 2021 59, 2026 54 (partial),
+2020 38, against 2008 **1**, 2012 9, 2013 11. The 2009 pile-up that dominated v1 and v2
+(160 / 203 events) collapses to **23** — the ATH condition removes most of the post-crash
+bounce population, which was the single biggest "market beta wearing a saucer costume"
+worry in 8.2. That is a real improvement in the construct, though it does **not** remove the
+need for the null control.
+
+Other distributions: distance to ATH median **−5.2%** (25% of events are at a **new** ATH,
+49% within 5%); shelf range median **7.8%**; volume multiple median **5.0x** (445 events
+≥ 5x, 192 ≥ 9x).
+
+## 10.5 Duplicate series — the named pair is NOT a duplicate here
+
+Scanned **all 2,686** daily symbols by md5 of the full (date, close) series, and again on the
+last 250 shared bars to catch renamed tickers whose histories differ in length.
+
+- **Only one true duplicate group exists: `CRESTO` = `SILLYMONKS`** (1,829 bars,
+  05-Jan-2015 → 10-Sep-2026, identical). **SILLYMONKS is dropped**, CRESTO kept.
+- **`JSWDULUX` / `AKZOINDIA` are NOT identical in our DB** — 5,362 overlapping dates and the
+  closes do **not** match (JSWDULUX 5,824 bars from 27-Jan-2003; AKZOINDIA 5,361 from
+  03-Jan-2005). The pair was flagged as a known duplicate, and in this data it is not one.
+  Reported rather than silently applied.
+- Written to `results/duplicate_series.csv`.
+
+## 10.6 v3 sample list — 8 blind picks
+
+Ranked by `pattern_quality` only, at most one per year, spread across caps. Forward returns
+and SuperTrend outcomes computed but **never consulted**.
+
+| # | Symbol | Breakout | Close | Shelf high | Shelf rng | dATH | Entry | Entry px | Score |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | **CENTURYPLY** | 30-Mar-2017 | 257.30 | 249.85 | 3.2% | −2.0% | 31-Mar-2017 | 258.00 | 0.824 |
+| 2 | **TRACXN** | 04-Jul-2023 | 90.35 | 87.10 | 9.2% | −9.7% | 05-Jul-2023 | 90.70 | 0.808 |
+| 3 | **RBZJEWEL** | 06-Jan-2025 | 228.29 | 217.42 | 10.7% | −1.7% | 07-Jan-2025 | 235.01 | 0.736 |
+| 4 | **SAPPHIRE** | 06-Oct-2022 | 300.30 | 297.75 | 5.3% | +0.9% | 07-Oct-2022 | 300.00 | 0.733 |
+| 5 | **MANYAVAR** | 23-Sep-2024 | 1,341.69 | 1,278.66 | 5.5% | −6.4% | 24-Sep-2024 | 1,341.69 | 0.694 |
+| 6 | **GESHIP** | 05-Mar-2026 | 1,389.40 | 1,354.60 | 5.0% | −4.5% | 06-Mar-2026 | 1,395.60 | 0.660 |
+| 7 | **ADANIGREEN** | 08-Nov-2021 | 1,226.00 | 1,206.55 | 4.9% | −9.9% | 09-Nov-2021 | 1,215.00 | 0.586 |
+| 8 | **ICICIBANK** | 29-Oct-2018 | 349.40 | 327.10 | 6.4% | −3.6% | 30-Oct-2018 | 347.45 | 0.552 |
+
+**Live candidates (triggered in the last 10 trading days, ≥ 28-Aug-2026)** — these are
+screen output, **not recommendations**, and nothing has been backtested yet:
+TBOTEK (31-Aug, Rs1,745.10), GUFICBIO (02-Sep, Rs438.80), COFORGE (28-Aug, Rs2,014.60,
+**at a new ATH**), SMLMAH (04-Sep, Rs6,298.50, +8.5% above ATH), INNOVACAP (04-Sep),
+NAZARA (28-Aug), SMCGLOBAL (07-Sep), WINDLAS (02-Sep), KPRMILL (31-Aug).
+
+## 10.7 v3 files
+
+| File | Purpose |
+|---|---|
+| `scripts/detect_rounding_base_v3.py` | the v3 detector |
+| `scripts/summarise_events_v3.py` | per-year, expected checks, blind short-list, live candidates |
+| `scripts/make_verify_list_v3.py` | verification list + duplicate drop |
+| `scripts/dup_series_scan.py` | universe-wide duplicate-series scan |
+| `scripts/probe_shelf.py`, `scripts/ath_filter_v2.py` | Arun’s probes (kept) |
+| `results/rounding_base_events_v3.csv` | v3 event table, 1,437 events × 52 columns |
+| `results/verify_list_v3.csv` | **889 rows**, dd-Mon-yyyy |
+| `results/summary_v3.txt`, `results/duplicate_series.csv` | summary and duplicate list |
+
+---
+
+# 11. Backtest phase — PRE-REGISTERED BEFORE RUNNING (11-Sep-2026)
+
+**The question:** *can the v3 pattern become a trading system whose returns beat holding
+NIFTYBEES?* Everything below is fixed **before** a single sweep cell runs, exactly so the bar
+cannot be moved after seeing results.
+
+## 11.1 Ranking metric and adoption bar (pre-registered)
+
+**Ranking metric:** **after-tax net CAGR**, with **Calmar** as the tie-break.
+
+**Adoption bar — ALL of the following must hold:**
+
+1. **After-tax net CAGR > NIFTYBEES buy-and-hold** over the same window, **and**
+2. **Max drawdown no worse than NIFTYBEES’s** over that window, **and**
+3. **≥ 20% after-tax net CAGR** (25 bps costs, 30-seed **median**; the **worst seed** is
+   stated alongside) — *Arun’s addendum, 11-Sep-2026*, **and**
+4. **Robust across 30 seeds**: the **worst seed still beats NIFTYBEES on CAGR**, **and**
+5. **Both windows pass** (pre-2016 and 2016+), **and**
+6. **Beats the date-matched null control** (11.4) after tax.
+
+**Verdict labels:** clears every criterion → **STRATEGY**. Beats NIFTYBEES but lands **below
+20% CAGR** → **SIGNAL, not STRATEGY** (explicitly, per Arun’s addendum). Fails to beat
+NIFTYBEES, or fails the null → **NO EDGE**. Fails only the incremental test vs the ATH
+control → **NO INCREMENTAL EDGE OVER OPEN ALPHA**.
+
+## 11.2 Book construction
+
+v3 entries, **next-open fill**, **16 slots at 6.25% of NAV**, **Rs10L** book, **NSE cash CNC**,
+liquidity ≥ Rs2 cr 20-day median traded value at the trigger, **SILLYMONKS dropped** as a
+duplicate series. Slot contention resolved by a **random-selection seed ensemble — 30 seeds
+for anything reported as a decision**, reported as **median [min..max] plus the worst seed**.
+Costs **25 / 40 / 60 bps per side**; **idle cash at 5.5% p.a.**; **after-tax with Indian FY
+loss-netting**, 20% STCG / 12.5% LTCG above 365 days.
+
+## 11.3 The grid (cell count disclosed up front)
+
+| Axis | Values | n |
+|---|---|---|
+| Exit | ST(7,3), ST(10,3), ST(14,4), Donchian-20-low, Donchian-10-low, 15-SMA trail, 50-EMA trail | 7 |
+| Hard stop | none, −8% close | 2 |
+| Time stop | none, 120 bars | 2 |
+| Shelf S | 15, 20 | 2 |
+| Volume K | 2, 3, 5 | 3 |
+| ATH proximity | ≥ 0.90×, ≥ 0.95×, > ATH | 3 |
+| OBV filter | off, on | 2 |
+| Market gate | none, NIFTY > 100-SMA | 2 |
+
+**7 × 2 × 2 × 2 × 3 × 3 × 2 × 2 = 2,016 cells**, each on a 10-seed scan, with the
+survivors re-run on **30 seeds**. The multiple-testing haircut applies to 2,016 — stated now
+so the eventual winner is discounted honestly. **Plateau, not peak**: the neighbourhood of
+any winner is reported, and a winner whose neighbours disagree is treated as noise.
+
+## 11.4 Null controls — the decisive one
+
+This pattern is **a subset of Open Alpha’s ATH-breakout entries**, so the question that
+actually matters is not "does it make money" but "does the saucer + shelf shape add anything
+to simply buying strength near the ATH".
+
+- **(a) Date-matched ATH control** — "close within 10% of ATH on ≥ 3× volume", **no saucer,
+  no shelf**, same book, same exits, same seeds. **If v3 does not beat this after tax, the
+  verdict is "no incremental edge over Open Alpha" and is reported as such, plainly.**
+- **(b) Random entries, date-matched** — same number of entries on the same dates, drawn from
+  the liquid universe.
+- **(c) Promotion-shrinkage check** per the brief.
+
+## 11.5 Benchmarks and portfolio fit
+
+Every table carries **NIFTYBEES buy-and-hold** (with the NIFTY 50 index as the proxy where
+NIFTYBEES history is missing — **which one is used will be stated explicitly**), plus
+**Open Alpha** and **True North** at equal size from `research/154_multi_system_blends/scripts/export_curves.py`,
+plus the **TN + OA 50-50 blend**. Correlation (daily and monthly) and blend value per section 8
+of the agent brief.
+
+## 11.6 Report package
+
+House-format **YoY table** (year cells with intra-year drawdown beneath, BEST CAGR / LEAST DD /
+BEST OVERALL columns), **log growth-of-Rs100** vs NIFTY 50 / Midcap 150 / Smallcap 250 with a
+**drawdown panel**, **cost ladder** (25/40/60), **tradeability gate** (win rate, avg win/loss,
+expectancy net of costs, max losing streak, trades/yr, capacity), **outlier dependence**
+(top-10 trades removed; winners capped at +50% and +100%), **two windows**, **seed band**.
+Tearsheet via `research/_utilities/tearsheet.py`. `results/RESULTS.md` with the bold verdict.
+Then the app study page, `research/INDEX.md`, `TODO.md`, and a dated review in `ops_center.py`.
+
+## 11.7 Falsification plan
+
+The idea is **killed** if: after-tax net CAGR does not beat NIFTYBEES on the 30-seed median;
+**or** the worst seed loses to NIFTYBEES; **or** either window fails; **or** it does not beat
+the date-matched ATH control (11.4a) — in which case it is redundant with Open Alpha and is
+**not** deployed regardless of its standalone numbers.

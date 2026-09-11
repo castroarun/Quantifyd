@@ -1,0 +1,103 @@
+====================================================================================================
+research/159 v3 — SAUCER -> SHELF BREAKOUT NEAR THE ALL-TIME HIGH
+Trigger: close > shelf high (prior 15 bars, range <=12%) AND close >= 0.90 x causal ATH
+         AND volume >= 3x prior-20-bar median AND up-candle, after the saucer qualified.
+Fill: next-day open.   Duplicate series dropped: SILLYMONKS (= CRESTO).
+====================================================================================================
+raw events (symbol x window-mode): 1437
+de-duplicated events (symbol x trigger date): 889
+distinct symbols: 579
+pass OBV accumulation filter: 319 (36%)
+
+funnel: 7874 bases qualified -> 1437 triggered, 5842 expired without a shelf breakout
+
+--- EVENTS PER YEAR (de-duplicated) ---
+2005       12   ############
+2006       22   ######################
+2007       26   ##########################
+2008        1   #
+2009       23   #######################
+2010       19   ###################
+2011       13   #############
+2012        9   #########
+2013       11   ###########
+2014       27   ###########################
+2015       20   ####################
+2016       36   ####################################
+2017       64   ################################################################
+2018       18   ##################
+2019       17   #################
+2020       38   ######################################
+2021       59   ###########################################################
+2022       60   ############################################################
+2023      143   ######################################################################
+2024       96   ######################################################################
+2025      121   ######################################################################
+2026       54   ######################################################
+TOTAL     889
+mean 40.4 events/year across 22 years
+
+--- DISTANCE TO ATH AT THE TRIGGER ---
+  median -5.2%  p10 -9.3%  p90 +3.8%
+  at a NEW all-time high: 220 (25%) | within 5% of ATH: 432 (49%)
+  shelf range: median 7.8%  p10 4.3%  p90 10.9%
+  volume multiple: median 5.0x  p90 15.1x  (>=5x: 445, >=9x: 192)
+
+--- EXPECTED-CHECK TABLE ---
+  symbol       expected       result   detail
+  KMEW         2025-09-12     PASS     close Rs1090.55 shelf Rs972.85 dATH -8.33% vol 29.9x entry 2025-09-15 @ Rs1127.05
+  CENTURYPLY   2017-03-30     PASS     close Rs257.3 shelf Rs249.85 dATH -2.0% vol 3.55x entry 2017-03-31 @ Rs258.0
+  JAYSREETEA   2009-08-12     PASS     close Rs102.97 shelf Rs101.92 dATH -2.93% vol 6.1x entry 2009-08-13 @ Rs104.7
+  MONARCH      2023-10-06     PASS     close Rs193.67 shelf Rs171.02 dATH -2.95% vol 7.48x entry 2023-10-09 @ Rs192.15
+  NAM-INDIA    2025-06-06     PASS     close Rs790.5 shelf Rs748.95 dATH -1.91% vol 4.28x entry 2025-06-09 @ Rs802.0
+  SAPPHIRE     2022-10-06     PASS     close Rs300.3 shelf Rs297.75 dATH 0.86% vol 3.37x entry 2022-10-07 @ Rs300.0
+  COROMANDEL   2009-09-29     PASS     close Rs103.62 shelf Rs100.95 dATH -7.96% vol 4.2x entry 2009-09-30 @ Rs104.0
+  CHOLAHLDNG   2025-04        PASS     correctly absent; other events: 2025-10-24
+  SKFINDIA     2025-05        PASS     correctly absent; other events: 2021-03-04, 2023-06-27
+  ==> ALL EXPECTED CHECKS PASS
+
+--- SHORT-LIST: 8 SAMPLE TRADES (ranked by pattern_quality ONLY) ---
+    diversified: at most one per year and per liquidity bucket until exhausted
+
+  symbol       breakout     close      shelf_hi  shlfRng  dATH    entry        entryPx    score
+  CENTURYPLY   2017-03-30   257.3      249.85    3.22%    -2.0%   2017-03-31   258.0      0.8238
+  TRACXN       2023-07-04   90.35      87.1      9.18%    -9.74%  2023-07-05   90.7       0.8076
+  RBZJEWEL     2025-01-06   228.29     217.42    10.69%   -1.66%  2025-01-07   235.01     0.7362
+  SAPPHIRE     2022-10-06   300.3      297.75    5.31%    0.86%   2022-10-07   300.0      0.7331
+  MANYAVAR     2024-09-23   1341.69    1278.66   5.46%    -6.36%  2024-09-24   1341.69    0.6943
+  GESHIP       2026-03-05   1389.4     1354.6    4.98%    -4.45%  2026-03-06   1395.6     0.6604
+  ADANIGREEN   2021-11-08   1226.0     1206.55   4.92%    -9.92%  2021-11-09   1215.0     0.5855
+  ICICIBANK    2018-10-29   349.4      327.1     6.37%    -3.56%  2018-10-30   347.45     0.5523
+
+  detail (info_* columns are NOT used in selection):
+   [1] CENTURYPLY  trough 2016-12-22 @ Rs155.1 (depth 40.93%)  ATH Rs262.55  vol 3.55x  hist 2715 bars  small cap
+       [INFO] fwd250 35.37%  ST(7,3) -6.57% over 36 bars  MFE 40.7%  MAE -8.82%
+   [2] TRACXN  trough 2023-03-28 @ Rs61.4 (depth 38.66%)  ATH Rs100.1  vol 4.45x  hist 173 bars  small cap
+       [INFO] fwd250 6.78%  ST(7,3) -9.81% over 14 bars  MFE 36.93%  MAE -26.9%
+   [3] RBZJEWEL  trough 2024-06-05 @ Rs123.1 (depth 46.97%)  ATH Rs232.15  vol 3.74x  hist 251 bars  small cap
+       [INFO] fwd250 -34.02%  ST(7,3) -15.23% over 5 bars  MFE 7.09%  MAE -46.6%
+   [4] SAPPHIRE  trough 2022-06-08 @ Rs186.75 (depth 37.0%)  ATH Rs297.75  vol 3.37x  hist 219 bars  mid cap
+       [INFO] fwd250 -6.23%  ST(7,3) -10.23% over 23 bars  MFE 4.52%  MAE -26.5%
+   [5] MANYAVAR  trough 2024-03-20 @ Rs873.92 (depth 39.01%)  ATH Rs1432.87  vol 4.82x  hist 639 bars  mid cap
+       [INFO] fwd250 -47.6%  ST(7,3) -4.2% over 61 bars  MFE 11.5%  MAE -47.91%
+   [6] GESHIP  trough 2025-02-28 @ Rs810.7 (depth 41.59%)  ATH Rs1454.05  vol 3.85x  hist 5220 bars  large cap
+       [INFO] fwd250 0.67%  ST(7,3) 1.67% over 55 bars  MFE 28.83%  MAE -9.64%
+   [7] ADANIGREEN  trough 2021-08-02 @ Rs876.15 (depth 35.62%)  ATH Rs1360.95  vol 6.22x  hist 836 bars  mid cap
+       [INFO] fwd250 79.09%  ST(7,3) 78.73% over 127 bars  MFE 151.03%  MAE -0.98%
+   [8] ICICIBANK  trough 2018-04-02 @ Rs261.85 (depth 27.73%)  ATH Rs362.3  vol 3.43x  hist 3892 bars  large cap
+       [INFO] fwd250 37.73%  ST(7,3) -1.12% over 61 bars  MFE 39.27%  MAE -3.3%
+
+--- LIVE CANDIDATES: triggered in the last 10 trading days (>= 2026-08-28) ---
+  TBOTEK       trigger 2026-08-31 close Rs1745.1    shelf Rs1725.1    rng 7.45%  dATH -9.51%  vol 3.07  x entry 2026-09-01 @ Rs1750.0  score 0.5533
+  GUFICBIO     trigger 2026-09-02 close Rs438.8     shelf Rs431.5     rng 5.84%  dATH -9.61%  vol 6.66  x entry 2026-09-03 @ Rs443.0  score 0.5208
+  COFORGE      trigger 2026-08-28 close Rs2014.6    shelf Rs1901.8    rng 7.01%  dATH 1.86%   vol 3.29  x entry 2026-08-31 @ Rs2015.0  score 0.4864
+  SMLMAH       trigger 2026-09-04 close Rs6298.5    shelf Rs5726.0    rng 10.79% dATH 8.45%   vol 4.97  x entry 2026-09-07 @ Rs6339.0  score 0.4241
+  INNOVACAP    trigger 2026-09-04 close Rs1175.4    shelf Rs1125.4    rng 9.23%  dATH -4.93%  vol 4.71  x entry 2026-09-07 @ Rs1198.9  score 0.3822
+  NAZARA       trigger 2026-08-28 close Rs374.6     shelf Rs357.1     rng 2.62%  dATH -6.42%  vol 4.9   x entry 2026-08-31 @ Rs376.6  score 0.3501
+  SMCGLOBAL    trigger 2026-09-07 close Rs84.95     shelf Rs81.33     rng 3.34%  dATH -7.08%  vol 10.94 x entry 2026-09-08 @ Rs86.0  score 0.3471
+  WINDLAS      trigger 2026-09-02 close Rs1096.6    shelf Rs1008.35   rng 11.27% dATH -3.56%  vol 19.71 x entry 2026-09-03 @ Rs1105.35  score 0.3283
+  KPRMILL      trigger 2026-08-31 close Rs1177.6    shelf Rs1152.2    rng 6.38%  dATH -9.85%  vol 5.62  x entry 2026-09-01 @ Rs1185.0  score 0.1847
+
+--- INFORMATION ONLY: +250-bar return from the fill, all 889 events ---
+  NOT a backtest: no costs, taxes, sizing, slot limit or market gate; survivorship-biased.
+  median +9.5%  mean +25.2%  p10 -29.6%  p90 +96.0%  frac>0 60%
