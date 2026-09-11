@@ -128,6 +128,16 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/161 ATH base-age breakout - portfolio-fit test vs an HONEST Open Alpha",
+     "2026-09-26", "PENDING",
+     "r/161 cleared all five pre-registered criteria standalone (21.26% after tax, -34.80% DD, "
+     "beats NIFTYBEES in both windows) but its portfolio-fit test could NOT be run: Open Alpha's "
+     "published ~34.9% rests on a same-bar look-ahead fill (found by r/159_oa_honest_reoptimization), "
+     "so the r/154 OA curve is unusable as a benchmark. WHEN that study lands, run the blend test: "
+     "daily and monthly correlation to the honest OA curve, and the 10/20/33% weight sweep on paired "
+     "seeds. PASS CRITERION: correlation below 0.40 to the honest OA AND +0.10 Calmar at some weight. "
+     "Also re-check whether the ST(14,4) exit (worth +11.85pp over OA's 15-SMA+8% pair on the same "
+     "entries) should be proposed as a change to the live OA book - that would be its own study."),
     ("research/159 rounding-base shelf breakout - re-check the post-2016-only verdict",
      "2027-03-12", "PENDING",
      "r/159 was killed as SIGNAL-not-STRATEGY on two legs: it misses the 20% CAGR floor "

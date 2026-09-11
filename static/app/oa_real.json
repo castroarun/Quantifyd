@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-11 15:59:03.709625",
+ "updated": "2026-09-11 18:52:01.601570",
  "positions": [
   {
    "symbol": "INDSWFTLAB",
@@ -14,9 +14,9 @@
    "value": 38150,
    "pnl": 2279,
    "pnl_pct": 6.35,
-   "trail": 365.23,
+   "trail": 369.25,
    "to_stop_pct": 15.6,
-   "to_trail_pct": 5.5,
+   "to_trail_pct": 4.4,
    "weight": 6.1
   },
   {
@@ -50,7 +50,7 @@
    "value": 37472,
    "pnl": 1123,
    "pnl_pct": 3.09,
-   "trail": 2537.26,
+   "trail": 2537.91,
    "to_stop_pct": 12.1,
    "to_trail_pct": 5.5,
    "weight": 6.0
@@ -68,9 +68,9 @@
    "value": 38446,
    "pnl": -48,
    "pnl_pct": -0.13,
-   "trail": 929.27,
+   "trail": 929.06,
    "to_stop_pct": 8.6,
-   "to_trail_pct": 3.4,
+   "to_trail_pct": 3.5,
    "weight": 6.2
   },
   {
@@ -86,7 +86,7 @@
    "value": 36958,
    "pnl": -968,
    "pnl_pct": -2.55,
-   "trail": 1082.0,
+   "trail": 1082.1,
    "to_stop_pct": 5.9,
    "to_trail_pct": 0.5,
    "weight": 6.0
@@ -104,9 +104,9 @@
    "value": 38972,
    "pnl": -583,
    "pnl_pct": -1.47,
-   "trail": 59.74,
+   "trail": 60.03,
    "to_stop_pct": 7.1,
-   "to_trail_pct": 2.9,
+   "to_trail_pct": 2.4,
    "weight": 6.3
   },
   {
@@ -122,7 +122,7 @@
    "value": 38192,
    "pnl": 172,
    "pnl_pct": 0.45,
-   "trail": 2158.08,
+   "trail": 2158.13,
    "to_stop_pct": 9.2,
    "to_trail_pct": 4.1,
    "weight": 6.1
@@ -140,7 +140,7 @@
    "value": 40707,
    "pnl": 3098,
    "pnl_pct": 8.24,
-   "trail": 789.43,
+   "trail": 789.26,
    "to_stop_pct": 17.6,
    "to_trail_pct": 9.7,
    "weight": 6.6
@@ -158,9 +158,9 @@
    "value": 39289,
    "pnl": 1309,
    "pnl_pct": 3.45,
-   "trail": 337.32,
+   "trail": 342.39,
    "to_stop_pct": 12.4,
-   "to_trail_pct": 9.9,
+   "to_trail_pct": 8.3,
    "weight": 6.3
   },
   {
@@ -176,9 +176,9 @@
    "value": 38123,
    "pnl": -595,
    "pnl_pct": -1.54,
-   "trail": 1798.79,
+   "trail": 1794.98,
    "to_stop_pct": 7.0,
-   "to_trail_pct": 0.9,
+   "to_trail_pct": 1.1,
    "weight": 6.1
   },
   {
@@ -194,9 +194,9 @@
    "value": 39714,
    "pnl": 878,
    "pnl_pct": 2.26,
-   "trail": 631.72,
+   "trail": 636.34,
    "to_stop_pct": 11.2,
-   "to_trail_pct": 3.1,
+   "to_trail_pct": 2.3,
    "weight": 6.4
   }
  ],
@@ -236,6 +236,11 @@
   {
    "d": "2026-09-10",
    "nav": 626341,
+   "capital": 617638
+  },
+  {
+   "d": "2026-09-11",
+   "nav": 621068,
    "capital": 617638
   }
  ],

@@ -1,30 +1,30 @@
 {
- "generated": "2026-09-11 10:39:59.524801",
- "overall": "OK",
+ "generated": "2026-09-11 19:15:09.200550",
+ "overall": "FAIL",
  "books": [
   {
    "id": "tn",
    "label": "True North",
    "held": 5,
    "slots": 8,
-   "nav": 915425,
+   "nav": 916924,
    "gain": null,
-   "updated": "2026-09-11 10:39:13.421632",
-   "age_min": 1,
+   "updated": "2026-09-11 15:07:09.501331",
+   "age_min": 248,
    "due": [],
    "unplaced": [],
    "failed": 0,
-   "unreconciled": 2
+   "unreconciled": -552
   },
   {
    "id": "oa",
    "label": "Open Alpha",
-   "held": 12,
+   "held": 11,
    "slots": 16,
-   "nav": 623191,
-   "gain": 5553,
-   "updated": "2026-09-11 10:39:05.478847",
-   "age_min": 1,
+   "nav": 621068,
+   "gain": 3430,
+   "updated": "2026-09-11 18:52:01.601570",
+   "age_min": 23,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -35,10 +35,10 @@
    "label": "IPO Base",
    "held": 1,
    "slots": 8,
-   "nav": 228789,
-   "gain": 78,
-   "updated": "2026-09-11 10:39:06.963162",
-   "age_min": 1,
+   "nav": 229244,
+   "gain": 533,
+   "updated": "2026-09-11 15:59:04.781428",
+   "age_min": 196,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -50,7 +50,7 @@
    "area": "True North",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 1 min ago"
+   "detail": "marked 248 min ago"
   },
   {
    "area": "True North",
@@ -73,20 +73,20 @@
   {
    "area": "True North",
    "name": "ledger square",
-   "status": "OK",
-   "detail": "unreconciled Rs +2"
+   "status": "WARN",
+   "detail": "unreconciled Rs -552"
   },
   {
    "area": "Open Alpha",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 1 min ago"
+   "detail": "marked 23 min ago"
   },
   {
    "area": "Open Alpha",
    "name": "slots",
-   "status": "OK",
-   "detail": "12/16 held, 4 armed for the next session"
+   "status": "FAIL",
+   "detail": "11/16 held, 5 free and NOTHING armed after the evening scan"
   },
   {
    "area": "Open Alpha",
@@ -110,7 +110,7 @@
    "area": "IPO Base",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 1 min ago"
+   "detail": "marked 196 min ago"
   },
   {
    "area": "IPO Base",
@@ -140,25 +140,25 @@
    "area": "Jobs",
    "name": "True North marks",
    "status": "OK",
-   "detail": "ran 10:39"
+   "detail": "ran 18:47"
   },
   {
    "area": "Jobs",
    "name": "True North state",
    "status": "OK",
-   "detail": "ran 10:39"
+   "detail": "ran 18:49"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha marks",
    "status": "OK",
-   "detail": "ran 10:39"
+   "detail": "ran 18:46"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha recon",
    "status": "OK",
-   "detail": "ran 09:35"
+   "detail": "ran 18:52"
   },
   {
    "area": "Jobs",
@@ -170,37 +170,37 @@
    "area": "Jobs",
    "name": "IPO marks",
    "status": "OK",
-   "detail": "ran 10:39"
+   "detail": "ran 15:59"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha exits",
    "status": "OK",
-   "detail": "due at 15:18 (last ran 10-Sep 15:18)"
+   "detail": "ran 15:18"
   },
   {
    "area": "Jobs",
    "name": "Universe refresh",
    "status": "OK",
-   "detail": "due at 18:05 (last ran 10-Sep 18:01)"
+   "detail": "ran 18:02"
   },
   {
    "area": "Jobs",
    "name": "IPO engine",
-   "status": "OK",
-   "detail": "due at 18:45 (last ran 10-Sep 18:45)"
+   "status": "FAIL",
+   "detail": "ERRORED: NameError: name 'SEEN_ORDERS' is not defined"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha entries",
-   "status": "OK",
-   "detail": "due at 18:50 (last ran 10-Sep 18:50)"
+   "status": "FAIL",
+   "detail": "ERRORED: ValueError: could not convert string to float: '303.70.'"
   },
   {
    "area": "Universe",
    "name": "tradeable",
    "status": "OK",
-   "detail": "154 of 2905 scanner-eligible symbols no longer trade under that name (110 merely renamed); the scanner refuses them and the history stays for the backtests"
+   "detail": "154 of 2906 scanner-eligible symbols no longer trade under that name (110 merely renamed); the scanner refuses them and the history stays for the backtests"
   },
   {
    "area": "Alerts",

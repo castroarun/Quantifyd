@@ -127,6 +127,200 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'ath-base-age-breakout-research161',
+    title: 'How old is the last high? — base age, volume and the all-time-high breakout',
+    verdict:
+      'STRATEGY (candidate). Arun asked three things after research/159 came back SIGNAL: should we look at ALL-TIME-HIGH closes only, does it matter how many candles ago the last all-time high was set, and does volume have to confirm. ANSWERS: age YES, volume NO, saucer NO — and the biggest lever is none of the three. THE EXIT IS THE BIG WIN. A plain new-all-time-high-close book run with Open Alpha’s own exits (15-day SMA trail plus an 8% close stop) makes 6.81% after tax on honest next-open fills. The SAME entries with a SuperTrend(14,4) trail make 18.66%. That single swap is worth 11.85 points, which is more than everything else in this study combined. BASE AGE IS A REAL SECOND IMPROVEMENT. Requiring the previous all-time high to be at least 60 trading bars old AND the stock to have fallen at least 20% below it in between lifts the book from 18.66% to 21.26% and cuts drawdown from -41.59% to -34.80% — Calmar 0.449 to 0.618. It survives 30 seeds (19.87 to 21.89%), the 25/40/60 bps cost ladder (21.26 / 20.34 / 19.35%), a stricter Rs5 crore liquidity floor (20.62%) and BOTH windows: 19.33% pre-2016 and 23.24% from 2016, against NIFTYBEES at 12.68% and 11.88%. It beats a date-matched random-entry control by 9.15 points and the honest Open Alpha proxy by 14.45. X=40 and X=60 are indistinguishable (21.23 vs 21.26%), so the winner is a plateau, not a spike. VOLUME CONFIRMATION SHOULD NOT BE ADDED. It does exactly what a trader expects at trade level — expectancy per trade rises monotonically with the volume multiple, from +12.37% to +15.12% at long base ages — and it makes the BOOK worse: CAGR 21.26% to 20.51% and drawdown -34.80% to -44.14%, because a 3x filter throws away 40% of the opportunities and a 5x filter 60%. A 16-slot book cannot afford that. Volume is a good filter for a discretionary trader picking a handful of names and a bad one for a mechanical book; both halves of that sentence are true at once. THE SAUCER FROM RESEARCH/159 IS A KILL. Run through the identical engine it yields 5.6 trades a year and 5.90% CAGR. WHAT STOPS THIS BEING A DEPLOY DECISION: the worst of 30 seeds is 19.87%, a whisker under the 20% floor; removing the ten best of 687 trades collapses compounded growth by a factor of 133,000, so it is still heavily tail-carried; the drawdown is -34.8% in absolute terms with a 14-trade losing streak; and the portfolio-fit test cannot be run until Open Alpha has been honestly re-measured, because its published 34.9% rests on a same-bar look-ahead fill.',
+    status: 'COMPLETE',
+    date: '2026-09-11',
+    cardBlurb:
+      'Three questions from Arun about all-time-high breakouts, answered on one engine with honest next-open fills. Age of the previous high helps, volume confirmation hurts the book while helping each trade, and the saucer shape is a kill — but the exit swap is worth more than all of them put together.',
+    cardStats: [
+      { label: 'Verdict', value: 'STRATEGY candidate — 21.26% CAGR / -34.80% DD' },
+      { label: 'Base age adds', value: '+2.60pp CAGR, -6.79pp drawdown' },
+      { label: 'Volume adds', value: 'NOTHING — better trades, worse book' },
+    ],
+
+    systemRules: {
+      intro:
+        'One engine, one set of fills, seven cells. Every number below is after tax, net of 25 bps a side, on next-day-open fills on BOTH legs, from a 30-seed slot-contention ensemble. The comparison cells are not quoted from other studies — they are re-run here so the only thing that differs between rows is the rule being tested.',
+      sharedCoreTitle: 'The winning system as traded',
+      sharedCore: [
+        { k: 'Signal', v: 'The first close above the prior ALL-TIME-HIGH CLOSE, where the all-time high is the running maximum of closes strictly BEFORE that day.' },
+        { k: 'Base age X', v: 'That prior all-time high must be at least 60 trading bars old. This is the axis Arun asked about and it is the one that pays.' },
+        { k: 'Base depth', v: 'Price must have fallen at least 20% below the prior high at some point in the gap. Age without depth is a shallow pause; age WITH depth is a real base.' },
+        { k: 'Volume', v: 'NO volume filter. Tested at 2x, 3x and 5x the prior 20-bar median and rejected — see the X-by-K table.' },
+        { k: 'Exit', v: 'SuperTrend(14,4) on the close, no hard stop. This is the single largest contributor in the whole study.' },
+        { k: 'Fill', v: 'Next-day open on both legs. Nothing is filled on the bar that generated the signal.' },
+        { k: 'Book', v: '16 slots at 6.25% of NAV, Rs 10 lakh, NSE cash CNC, liquidity at least Rs 2 crore of 20-day median traded value, idle cash 5.5% a year, after tax at 20% short-term and 12.5% long-term with Indian financial-year loss netting.' },
+        { k: 'Split guard', v: 'market_data.db is not retroactively split adjusted, so the all-time high is computed only from bars after the last day-over-day fall worse than -35%.' },
+      ],
+      riskLayer: {
+        title: 'The adoption bar, pre-registered before any cell ran',
+        caption: 'All five pass. The worst-seed figure is stated rather than rounded away: it is 0.13 points under 20%.',
+        columns: ['#', 'Criterion', 'Result', 'Outcome'],
+        rows: [
+          ['1', 'At least 20% after-tax CAGR, 30-seed median', '21.26% (worst seed 19.87%)', 'PASS'],
+          ['2', 'Beats NIFTYBEES on CAGR and drawdown in BOTH windows', 'pre-2016 19.33% / -32.45% vs 12.68% / -59.71%; 2016+ 23.24% / -32.43% vs 11.88% / -36.34%', 'PASS'],
+          ['3', 'Beats the honest in-engine plain-ATH Open Alpha proxy', '21.26% vs 6.81% (+14.45pp)', 'PASS'],
+          ['4', 'Beats a date-matched random-entry control', '21.26% vs 12.11% (+9.15pp)', 'PASS'],
+          ['5', 'The winning X sits on a plateau', 'X=40 gives 21.23%, X=60 gives 21.26%', 'PASS'],
+        ],
+        highlightRows: [0],
+      },
+    },
+
+    system: {
+      intro:
+        'Economic hypothesis: a new all-time high is not one event but two different ones. The fiftieth new high of a melt-up has no overhead supply because nobody above is trapped, and no coiled energy either. A new high set after the stock has spent a year going nowhere and fallen 20% has both — a cohort that gave up, and a level that has repeatedly rejected price. X, the age of the previous high, is the dial that separates them, and nothing in this repo had ever swept it.',
+      rows: [
+        { k: 'Universe', v: '2,492 NSE daily symbols after excluding ETFs and index series, and after dropping SILLYMONKS as an exact duplicate of CRESTO. Calendar 03-Jan-2005 to 11-Sep-2026.' },
+        { k: 'Raw events', v: '82,848 new-all-time-high closes at the Rs2 crore liquidity floor, across 1,698 symbols. No re-arm and no filtering applied at detection — the 60-bar re-arm is applied AFTER each filter, because which high is "first" depends on the filter.' },
+        { k: 'Cells disclosed', v: '864 = X (0/20/40/60/120/250) x base depth (any/10%/20%) x volume K (none/2x/3x/5x) x saucer (off/on) x exit (6). 810 completed; 54 skipped for having fewer than 20 events.' },
+        { k: 'Why the saucer cells are sparse', v: 'The research/159 base recognition needs a 90-to-400-bar window from the prior high, so requiring the saucer implicitly forces X of at least 89. Recorded rather than hidden.' },
+        { k: 'What was deliberately NOT swept', v: 'Entry mechanic, slots, relative-strength ranking and the market gate — the parallel study research/159_oa_honest_reoptimization owns those axes. This study adds only base age and volume.' },
+      ],
+    },
+
+    conditions: {
+      intro:
+        'One external finding reframes the whole comparison and is stated up front rather than buried.',
+      rows: [
+        { k: 'Open Alpha’s published numbers are not placeable', v: 'The parallel study research/159_oa_honest_reoptimization found that Open Alpha’s ~34.9% CAGR, and research/142’s 40.8%, rest on a same-bar look-ahead fill: the signal is close-above-pivot and the fill is max(pivot, open) on THAT SAME BAR. Their own sweep labels that cell placeable: NO. Their placeable short-trail cells come out negative.' },
+        { k: 'So this study does not use the research/154 Open Alpha curve', v: 'The Open Alpha comparator here is an in-engine cell — plain new-ATH-close entries, no age or volume filter, Open Alpha’s own 15-SMA trail and -8% close stop, Rs5 crore liquidity — run through the same engine with the same honest fills. It scores 6.81%, which independently corroborates the ~9.5% range their study reports.' },
+        { k: 'A dated caveat was added to research/159', v: 'That study’s blend test compared an honest book against the inflated Open Alpha curve. Its "dilutes Open Alpha at every weight" limb is weakened, not withdrawn. Its verdict is unaffected: it failed on the 20% floor and the pre-2016 window, neither of which involves Open Alpha.' },
+        { k: 'Causality', v: 'On day t only bars dated t or earlier are used; the all-time high excludes t itself, the volume median and liquidity are shifted back one bar, and the fill is the next open.' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'The decision table — 30 seeds each, identical engine, identical costs',
+        caption: 'Only the rule named in the row differs. Win rate, average win, average loss and expectancy are shown because Arun asked for them in every table.',
+        columns: ['Cell', 'CAGR med', 'Worst seed', 'MaxDD', 'Calmar', 'WR', 'Avg win', 'Avg loss', 'Expectancy', 'Trades/yr'],
+        rows: [
+          ['WINNER — X>=60, depth>=20%, no volume', '21.26%', '19.87%', '-34.80%', '0.618', '49.2%', '+37.23%', '-11.56%', '+12.43%', '31.7'],
+          ['NEIGHBOUR — X>=40, depth>=20%', '21.23%', '19.72%', '-34.36%', '0.617', '48.5%', '+37.96%', '-11.80%', '+12.35%', '32.3'],
+          ['WINNER at Rs5 cr liquidity', '20.62%', '19.26%', '-36.20%', '0.583', '49.2%', '+35.85%', '-11.31%', '+11.90%', '30.7'],
+          ['WINNER + volume K>=2', '20.51%', '19.76%', '-44.14%', '0.465', '47.1%', '+41.69%', '-12.48%', '+13.04%', '29.6'],
+          ['Plain ATH (X=0) + ST(14,4)', '18.66%', '16.80%', '-41.59%', '0.449', '47.0%', '+34.35%', '-11.49%', '+10.12%', '37.6'],
+          ['OPEN ALPHA PROXY — plain ATH + 15-SMA + -8%', '6.81%', '5.72%', '-40.67%', '0.165', '36.2%', '+10.93%', '-5.28%', '+0.60%', '171.4'],
+          ['WINNER + the research/159 saucer', '5.90%', '5.90%', '-18.34%', '0.322', '40.5%', '+28.95%', '-11.98%', '+4.59%', '5.6'],
+          ['Date-matched RANDOM control', '12.11%', '8.75%', '-36.13%', '0.356', '39.1%', '—', '—', '+4.13%', '—'],
+          ['NIFTYBEES buy-and-hold', '12.30%', '—', '-59.71%', '0.206', '—', '—', '—', '—', '—'],
+        ],
+        highlightRows: [0],
+      },
+      {
+        title: 'Where the improvement actually comes from',
+        caption: 'The honest decomposition. Anyone reading this study as "base age is the big win" would be wrong.',
+        columns: ['Step', 'CAGR', 'MaxDD', 'What it is worth'],
+        rows: [
+          ['Plain ATH entries with Open Alpha’s exits', '6.81%', '-40.67%', 'the starting point'],
+          ['Swap the exit to SuperTrend(14,4)', '18.66%', '-41.59%', '+11.85pp — by far the largest lever'],
+          ['Add base age >=60 bars and depth >=20%', '21.26%', '-34.80%', '+2.60pp CAGR and -6.79pp drawdown'],
+          ['Add volume confirmation K>=2', '20.51%', '-44.14%', '-0.75pp CAGR and +9.34pp WORSE drawdown'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'X by K — the table Arun asked for (best exit, depth any, saucer off)',
+        caption: 'CAGR in the body. Volume confirmation raises expectancy per trade and lowers book return, because it throws away the opportunities a 16-slot book needs. Event counts are shown beneath.',
+        columns: ['X (bars since prior ATH)', 'K none', 'K>=2x', 'K>=3x', 'K>=5x'],
+        rows: [
+          ['0  · CAGR', '18.88', '18.36', '19.55', '19.00'],
+          ['20 · CAGR', '18.07', '19.71', '18.04', '18.12'],
+          ['40 · CAGR', '20.68', '18.66', '18.84', '17.81'],
+          ['60 · CAGR', '18.85', '18.10', '17.79', '16.00'],
+          ['120 · CAGR', '18.03', '18.09', '17.34', '15.29'],
+          ['250 · CAGR', '19.02', '17.68', '17.20', '14.77'],
+          ['250 · expectancy per trade', '+12.37', '+14.01', '+15.12', '+14.53'],
+          ['250 · win rate', '47.0', '47.2', '46.4', '42.4'],
+          ['0 · events', '10,293', '9,064', '7,743', '5,572'],
+          ['60 · events', '4,651', '3,483', '2,744', '1,897'],
+          ['250 · events', '1,806', '1,357', '1,062', '728'],
+        ],
+        highlightRows: [6],
+      },
+      {
+        title: 'Robustness',
+        caption: 'Cost ladder, the idle-cash contribution Arun asked to see separately, both windows, and the outlier test.',
+        columns: ['Test', 'Result'],
+        rows: [
+          ['Cost ladder 25 / 40 / 60 bps', '21.26% / 20.34% / 19.35% — shallow slope, low turnover'],
+          ['With vs without the 5.5% idle-cash yield', '21.26% with, 19.27% without — the cash carry contributes about 2.0pp'],
+          ['Window pre-2016', '19.33% at -32.45% vs NIFTYBEES 12.68% at -59.71%'],
+          ['Window 2016+', '23.24% at -32.43% vs NIFTYBEES 11.88% at -36.34%'],
+          ['30-seed band', '19.87 to 21.89%, median 21.26%'],
+          ['Liquidity Rs5 crore', '20.62% / -36.20% / Calmar 0.583'],
+          ['Outlier dependence', 'all trades 1.36e21, top-10 removed 1.02e16, winners capped at +50% 5.67e11 — a 133,000x collapse'],
+          ['Sweep', '810 of 864 cells; 16 reach 20%; 350 (43%) beat NIFTYBEES on both; 361 (45%) beat the Open Alpha proxy'],
+        ],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'CAGR (after tax, 25 bps, 30-seed median)', value: '21.26%', tone: 'pos' },
+        { label: 'Worst seed', value: '19.87%' },
+        { label: 'Max drawdown', value: '-34.80%' },
+        { label: 'Calmar', value: '0.618', tone: 'pos' },
+        { label: 'NIFTYBEES buy-and-hold', value: '12.30% / -59.71%' },
+        { label: 'Honest Open Alpha proxy', value: '6.81% / -40.67%', tone: 'neg' },
+        { label: 'Win rate', value: '49.2%', tone: 'pos' },
+        { label: 'Expectancy per trade', value: '+12.43%', tone: 'pos' },
+        { label: 'Trades per year', value: '31.7' },
+        { label: 'Max losing streak', value: '14 trades', tone: 'neg' },
+        { label: 'pre-2016 / 2016+ CAGR', value: '19.33% / 23.24%', tone: 'pos' },
+        { label: 'Base age is worth', value: '+2.60pp CAGR, -6.79pp DD' },
+      ],
+      tables: [],
+      charts: [
+        { src: '/app/ath-base-age-breakout-research161.png',
+          caption: 'Factsheet: growth of capital against NIFTYBEES with the honest plain-ATH Open Alpha proxy overlaid, underwater drawdown, annual bars, monthly heatmap and rolling 12-month return. 16 slots, 25 bps, after tax, 30-seed median path.' },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'X >= 60 bars since the prior all-time high, base at least 20% deep, NO volume filter, SuperTrend(14,4) close trail, no hard stop',
+        summary:
+          'Clears all five pre-registered criteria: 21.26% after tax against NIFTYBEES 12.30%, a shallower drawdown in both windows, beating the honest Open Alpha proxy by 14.45 points and a date-matched random control by 9.15, on a plateau where X=40 and X=60 are indistinguishable.',
+        metrics: [
+          { k: 'Standalone', v: '21.26% CAGR [19.87 .. 21.89] / -34.80% MaxDD / Calmar 0.618' },
+          { k: 'Both windows', v: '19.33% pre-2016 and 23.24% from 2016 — index-beating in each' },
+          { k: 'The honest answer on base age', v: 'worth +2.60pp of CAGR and -6.79pp of drawdown on top of the exit change' },
+          { k: 'The honest answer on volume', v: 'do not add it — better trades, worse book' },
+          { k: 'The bigger lever', v: 'the exit. Swapping the 15-SMA-plus-8%-stop for SuperTrend(14,4) is worth 11.85pp on its own' },
+        ],
+        rejected: [
+          'Volume confirmation at 2x, 3x and 5x — raises expectancy per trade, lowers book CAGR and deepens drawdown by up to 9.3pp.',
+          'The research/159 saucer shape — 5.6 trades a year, 5.90% CAGR. A kill on its own engine.',
+          'Open Alpha’s own exit pair (15-SMA trail + -8% close stop) — 6.81% on these entries, and 171 trades a year.',
+          'Base depth filters below 20% — inert; the 20% floor is where depth starts to matter.',
+          'X = 120 and X = 250 — real but thinner: the book cannot be filled and CAGR falls back to 18-19%.',
+        ],
+      },
+    ],
+
+    caveats: [
+      'THE WORST OF 30 SEEDS IS 19.87%, 0.13 POINTS UNDER THE 20% FLOOR. The bar was written as a 30-seed median with the worst seed stated, and on that reading it passes. Anyone who meant every path must clear 20% should read this as a narrow fail. Stated rather than rounded away.',
+      'OUTLIER DEPENDENCE IS SEVERE. Removing the ten best of 687 trades collapses compounded growth by a factor of 133,000. This is the same weakness research/159 had and the better entry does not fix it: the book makes its money in a few names.',
+      'THE DRAWDOWN IS -34.8% IN ABSOLUTE TERMS even though it is far shallower than the index. A 14-trade losing streak on about 32 trades a year is roughly five months of nothing but losers.',
+      'THE OPEN ALPHA COMPARATOR IS A PROXY, NOT A RE-SIMULATION of the live book, and it rests on a parallel study that was still running when this was written. It is our own in-engine number and it happens to corroborate their range closely, but the portfolio-fit test proper cannot be run until that study lands.',
+      'SURVIVORSHIP. The universe is the symbols present in the database today; delisted names never appear. That bias is sharp for a rule that requires a new all-time high.',
+      'THE DATABASE IS NOT RETROACTIVELY SPLIT-ADJUSTED. The all-time high is computed only from bars after the last day-over-day fall worse than -35%, which loses genuine highs on names that split along with the fake ones.',
+      '864 CELLS DISCLOSED, 810 completed. The winner is discounted for multiple testing and is reported as a plateau — X=40 and X=60 are indistinguishable and K=none wins at every X — rather than as a peak.',
+      'NOTHING WAS DEPLOYED. No paper book, no live engine, no crontab, no orders, and no backend restart. All compute was held until after the 15:40 IST close.',
+    ],
+    githubLinks: [{ label: 'research/161 (repo)', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/161_ath_base_age_breakout' }],
+    projectPaths: [
+      'research\\161_ath_base_age_breakout\\ATH_BASE_AGE_VOLUME_BREAKOUT_DAILY_SWEEP_STATUS.md',
+      'research\\161_ath_base_age_breakout\\results\\RESULTS.md',
+      'research\\161_ath_base_age_breakout\\results\\sweep161.csv',
+    ],
+  },
+  {
     slug: 'rounding-base-shelf-breakout-research159',
     title: 'The saucer under the high — Arun’s rounding-base shelf breakout, taken apart',
     verdict:

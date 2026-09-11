@@ -227,3 +227,41 @@ already only 40% invested.
 **Recommendation: do not deploy, do not paper-trade.** Keep the detector — it is a good
 screen and the live-candidate list has standalone value as a watchlist input to the existing
 Open Alpha process, which already trades this family better.
+
+---
+
+## ADDENDUM, 11-Sep-2026 18:55 IST — the "dilutes Open Alpha" limb is WEAKENED, not withdrawn
+
+A parallel study, `research/159_oa_honest_reoptimization` (a different session, running the
+same evening), found that **Open Alpha’s published ~34.9% CAGR — and research/142’s 40.8% —
+rests on a same-bar look-ahead fill**: the signal is `close > pivot` and the fill is
+`max(pivot, open)` **on that same bar**, i.e. the entry price is taken from a bar whose close
+is what generated the signal. Their own sweep marks that cell `placeable: NO`
+(`open_same_REFERENCE`, 43.97% CAGR in their stage A), and their **placeable** short-trail
+cells come out **negative** (−2.25% to −2.54% CAGR); with much longer trails their honest
+cells reach roughly **18–23%** (their stage A2 `close_same` trail-75 cell: 23.20% CAGR,
+−45.4% drawdown, Calmar 0.502, 39.3% win rate — and their stage B figures are **pre-tax**).
+
+**What this does to section 3.4 of this document.** The blend test here compared *this*
+book — honest next-open fills on both legs, after tax — against the **research/154 Open Alpha
+NAV curve**, which inherits that look-ahead. So the comparison was **an honest book against an
+inflated one**, and the conclusion that adding this sleeve "dilutes Open Alpha at every
+weight" is **not safe as stated**. Against an honest OA curve, this sleeve’s relative
+standing would improve, possibly materially.
+
+**What this does NOT change.** The verdict rests on two failures that never touch Open Alpha:
+
+- **criterion 3** — 14.60% after-tax CAGR against Arun’s **20% floor**, with **0 of 2,016
+  cells** reaching it and a 4-to-20-slot plateau at 15–16%; and
+- **criterion 5** — the **pre-2016 window** (8.64% against NIFTYBEES’ 12.68%).
+
+Both are measured against NIFTYBEES and against the study’s own sweep, not against Open
+Alpha. The outlier dependence (ten trades of 472 carrying the result) and the under-filled
+book are likewise independent. **The verdict stands: SIGNAL, not STRATEGY.** What is now
+open is only whether it would *complement* an honestly-measured Open Alpha — and that
+question is deferred to `research/161_ath_base_age_breakout`, which builds its own honest
+in-engine OA proxy rather than reusing the r/154 curve.
+
+**Correlation is unaffected** by the fill assumption in direction: 0.468 daily / 0.617 monthly
+is a co-movement measurement, and this pattern remains by construction a **subset** of
+all-time-high breakout entries.

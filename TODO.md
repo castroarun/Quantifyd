@@ -2,6 +2,28 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-11 — research/161: ATH base-age breakout — STRATEGY candidate, awaiting Arun
+
+Arun's follow-up to r/159. Three answers: **base age YES** (X≥60 bars + depth≥20% → 21.26% CAGR /
+−34.80% DD, +2.60pp and −6.79pp over plain ATH), **volume NO** (better trades, worse book),
+**saucer NO** (5.6 trades/yr). All five pre-registered criteria pass.
+
+**The headline finding is about the EXIT, not the entry**: swapping OA's 15-SMA+−8% pair for
+ST(14,4) on the SAME plain-ATH entries is worth **+11.85pp** (6.81% → 18.66%). Base age adds
++2.60pp on top of that.
+
+**Open for Arun:**
+- Adopt the ST(14,4) exit for the ATH-breakout family? That is the single biggest lever found.
+- Add the base-age + depth entry filter (X≥60, depth≥20%)?
+- **Blocked:** the portfolio-fit test vs Open Alpha cannot run until `research/159_oa_honest_reoptimization`
+  lands — OA's published 34.9% rests on a same-bar look-ahead fill, so the r/154 OA curve is unusable
+  as a benchmark. A dated caveat was added to r/159's RESULTS.md and STATUS for the same reason.
+
+- Study: `/app/backtest/ath-base-age-breakout-research161`
+- STATUS: `research/161_ath_base_age_breakout/ATH_BASE_AGE_VOLUME_BREAKOUT_DAILY_SWEEP_STATUS.md`
+
+---
+
 ## ✅ 2026-09-11 — research/159: rounding base → shelf breakout near the ATH — CONCLUDED, not deployed
 
 Arun's own chart pattern (semi-circle base + volume accumulation + breakout, near the all-time high).
