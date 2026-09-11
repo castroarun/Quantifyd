@@ -149,6 +149,26 @@ function KVList({ rows }: { rows: KV[] }) {
   );
 }
 
+/** Split one CSV line, honouring double-quoted fields that contain commas
+ *  (the exit_reason column is "SuperTrend(14,4) trail"). */
+function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i += 1; } else { inQ = false; }
+      } else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
 /** Backtested trade list, fetched from a CSV served under /app/.
  *  Sortable by any column, scrollable, with a download link. */
 function TradeTable({
@@ -167,8 +187,8 @@ function TradeTable({
       .then((txt) => {
         if (!alive) return;
         const lines = txt.trim().split(/\r?\n/);
-        setHead(lines[0].split(','));
-        setRows(lines.slice(1).map((l) => l.split(',')));
+        setHead(splitCsvLine(lines[0]));
+        setRows(lines.slice(1).map(splitCsvLine));
       })
       .catch((e) => alive && setErr(String(e)));
     return () => { alive = false; };
