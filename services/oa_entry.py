@@ -193,6 +193,20 @@ def split_suspect(sym, con=None, worst=-0.40):
     return False, ''
 
 
+def _variety():
+    """'regular' inside market hours, 'amo' outside.
+
+    Kite refuses an AMO between 09:15 and 15:30 ("AMOs can only be placed after
+    trading hours") and refuses a regular order outside them. The evening scan needs
+    amo; the 09:25 re-arm needs regular. Reading the clock is the whole difference.
+    """
+    from datetime import datetime as _dt
+    n = _dt.now()
+    mins = n.hour * 60 + n.minute
+    intraday = n.weekday() < 5 and (9 * 60 + 15) <= mins <= (15 * 60 + 30)
+    return 'regular' if intraday else 'amo'
+
+
 def arm(cand, free, st, kite, dry=True):
     """Place a resting buy-stop at the pivot for the top `free` candidates.
 
@@ -222,10 +236,18 @@ def arm(cand, free, st, kite, dry=True):
         print('instrument dump failed, cannot vet symbols:', e)
         tradeable = None
 
-    placed = []
+    placed, failures, consecutive = [], [], 0
+    print('  placing as %s orders' % _variety())
     for sym, r in cand.iterrows():
       try:
         if len(placed) >= free:
+            break
+        if consecutive >= 4:
+            # Four refusals in a row is a systemic cause - the wrong variety, a dead
+            # session, a margin block - not four unlucky names. Walking the rest of
+            # the list places nothing and alerts on every attempt.
+            print('  STOP after %d consecutive rejections; the cause is not the '
+                  'symbol' % consecutive)
             break
         if sym in live_syms:
             print('  skip %-12s an order is already live' % sym)
@@ -271,67 +293,84 @@ def arm(cand, free, st, kite, dry=True):
             placed.append(dict(symbol=sym, qty=qty, trigger=trigger, limit=limit, dry=True))
             continue
         oid, lim = None, limit
-        for attempt in (1, 2):
+        # Four attempts, because the two caps can be hit in sequence: the SL spread cap
+        # first, then the circuit cap on the tightened price. Two attempts discarded
+        # BLISSGVS-BE on 11-Sep after the exchange had already named a workable price.
+        for attempt in range(1, 5):
             try:
-                oid = kite.place_order(variety='amo', exchange='NSE', tradingsymbol=sym,
+                oid = kite.place_order(variety=_variety(), exchange='NSE', tradingsymbol=sym,
                                        transaction_type='BUY', quantity=qty, product='CNC',
                                        order_type='SL', trigger_price=trigger, price=lim,
                                        validity='DAY', tag=ENTRY_TAG)
                 break
             except Exception as e:
-                # The exchange caps the limit-to-trigger spread per scrip and names the
-                # maximum in the rejection. Take it at its word once, rather than guessing.
-                # The exchange refuses in two different sentences - the SL spread cap
-                # ("below Rs. 303.70.") and the circuit cap ("with Price below 735.45") -
-                # and both name the price that would work. One pattern takes either.
-                # NOT [0-9.]+ : greedy over dots, it swallows the full stop and float()
-                # then raises inside the handler meant to recover from the rejection.
-                m = re.search(r'below\s+(?:Rs\.?\s*)?([0-9]+(?:\.[0-9]+)?)', str(e))
-                if attempt == 1 and m:
-                    cap = float(m.group(1))
+                msg, e_final = str(e), e
+                # NOT [0-9.]+ anywhere below: greedy over dots, it swallows the full stop
+                # that ends the sentence ("below Rs. 303.70.") and float() then raises
+                # INSIDE the handler meant to recover from the rejection.
+                NUM = r'(?:Rs\.?\s*)?([0-9]+(?:\.[0-9]+)?)'
+                # Trigger first: "trigger price below 526.30" also contains "price below",
+                # and matching the looser pattern is what lowered the wrong field.
+                mt = re.search(r'trigger\s+price\s+below\s+' + NUM, msg, re.I)
+                if mt:
+                    # The trigger IS the pivot - the level at which the breakout is defined
+                    # to have happened. Lowering it to fit the band buys a move that has
+                    # not occurred. If the pivot sits outside today's circuit, no breakout
+                    # is possible today and the slot belongs to the next ranked candidate.
+                    print('       trigger cap %.2f is below the pivot %.2f - no breakout '
+                          'can happen in today\'s band, next candidate'
+                          % (float(mt.group(1)), trigger))
+                    break
+                mp = re.search(r'(?:limit\s+)?price\s+below\s+' + NUM, msg, re.I)
+                if mp and attempt < 4:
+                    cap = float(mp.group(1))
                     if cap <= trigger:
-                        # Even the pivot is outside the band: no breakout can happen today,
-                        # so the slot is better spent on the next candidate than on an
-                        # order that cannot fill.
-                        print('       ceiling %.2f is at or below the trigger %.2f - '
-                              'the breakout cannot happen in today\'s band, skipping'
+                        print('       price cap %.2f is at or below the trigger %.2f - '
+                              'the order could never fill, next candidate'
                               % (cap, trigger))
                         break
-                    lim = round(math.floor((cap - tick) / tick) * tick, 2)
-                    print('       exchange caps the price; retrying with ceiling %.2f' % lim)
+                    new_lim = round(math.floor((cap - tick) / tick) * tick, 2)
+                    if new_lim >= lim:
+                        # The named cap does not tighten what we already sent; retrying
+                        # would repeat the same rejection.
+                        print('       cap %.2f does not tighten the ceiling %.2f, giving up'
+                              % (cap, lim))
+                        break
+                    lim = new_lim
+                    print('       exchange caps the price at %.2f; retrying with ceiling '
+                          '%.2f' % (cap, lim))
                     continue
-                print('       REJECTED: %s' % e)
-                e_final = e
+                print('       REJECTED: %s' % msg)
                 break
         if oid:
             print('       placed, order id %s (ceiling %.2f, +%.2f%%)'
                   % (oid, lim, (lim / trigger - 1) * 100))
             placed.append(dict(symbol=sym, qty=qty, trigger=trigger, limit=lim, order_id=oid))
+            consecutive = 0
         else:
             err = locals().get('e_final', 'unknown')
-            try:
-                from services.oa_real import _alert
-                _alert('OA-REAL entry could not be armed: %s' % sym,
-                       'BUY %d %s at trigger %.2f was rejected: %s' % (qty, sym, trigger, err))
-            except Exception:
-                pass
+            failures.append('%s @%.2f: %s' % (sym, trigger, str(err)[:110]))
+            consecutive += 1
       except Exception as loop_e:
         # A scan that arms N orders is not a transaction: one name the exchange dislikes
         # is normal, and the rest must still go. Before this, a single bad price aborted
         # the whole run and left the book under-deployed with nothing alerted.
         print('  FAILED %-12s %s' % (sym, loop_e))
+        failures.append('%s: %s' % (sym, str(loop_e)[:110]))
+        consecutive += 1
+    # ONE alert for the run, not one per name: a systemic refusal used to send an
+    # email and a push for every candidate walked through, which mutes a channel.
+    if failures and not dry:
         try:
             from services.oa_real import _alert
-            _alert('OA-REAL entry failed: %s' % sym,
-                   'Arming %s raised %s. The rest of the scan continued.' % (sym, loop_e))
+            body = ('Slots free: %d. Placed: %s.'
+                    % (free, ', '.join(x['symbol'] for x in placed) or 'none'))
+            body += chr(10) + chr(10) + 'Rejected:' + chr(10) + '  '
+            body += (chr(10) + '  ').join(failures[:8])
+            _alert('OA-REAL: %d entry order(s) rejected, %d placed'
+                   % (len(failures), len(placed)), body)
         except Exception:
             pass
-            try:
-                from services.oa_real import _alert
-                _alert('OA-REAL entry could not be armed: %s' % sym,
-                       'BUY %d %s at trigger %.2f was rejected: %s' % (qty, sym, trigger, e))
-            except Exception:
-                pass
     return placed
 
 
