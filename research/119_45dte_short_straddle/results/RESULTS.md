@@ -658,6 +658,65 @@ the paper book all strike at the close, and an early manual entry breaks the
 live-versus-paper comparison on that campaign — which is most of the reason for
 running both while the order path is still unproven.
 
+## 5d. If the VIX filter fails on the entry day but passes later — take it? (Phase I)
+
+**Verdict: NO. Late entries earn +10 points against the on-time trades' +99.5,
+at t ≈ 0.11 — indistinguishable from zero — while nearly DOUBLING the book's max
+drawdown. Miss the entry day and the cycle is gone; that is the correct rule.**
+
+Arun's question, and a genuine gap: the rule checks India VIX rank ONCE, on the
+45-DTE entry session. Rank ≤ 25 and the whole monthly cycle is skipped. But
+volatility is regime-y, so a cycle that misses by a whisker on the entry day may
+clear the bar a session or two later. Nobody had tested taking those.
+
+Arms: **BASE** is the rule of record. **WAIT-N** scans forward up to N sessions
+after a failed entry day and enters on the first that clears rank 25. The strike
+is re-picked from that day's spot and the credit re-read from that day's closes.
+The exit is ALWAYS the 21-DTE close, so a late entry simply holds for less time.
+
+| Arm | trades | extra | net/camp | t | total | win % | MaxDD |
+|---|---|---|---|---|---|---|---|
+| **BASE** | 40 | — | **99.5** | **2.79** | 3981 | 75.0% | **−564.8** |
+| WAIT-1 | 41 | +1 | 95.1 | 2.71 | 3899 | 73.2% | −564.8 |
+| WAIT-2 | 45 | +5 | 79.4 | 2.12 | 3575 | 73.3% | −978.5 |
+| WAIT-3 | 45 | +5 | 79.4 | 2.12 | 3575 | 73.3% | −978.5 |
+| WAIT-5 | 48 | +8 | 84.9 | 2.41 | 4077 | 75.0% | −978.5 |
+| WAIT-10 | 50 | +10 | 81.6 | 2.39 | 4080 | 74.0% | −1074.3 |
+
+**Every arm lowers net per campaign and lowers the t-stat.** The only arms that
+raise the total at all are WAIT-5 and WAIT-10, by **2.5%** — bought with a
+drawdown that goes from −564.8 to −1074.3, close to double.
+
+### The number that decides it
+
+Blending late entries with the 40 the baseline already takes hides them. On their
+own:
+
+| Arm | late entries | mean | t | win % | avg hold |
+|---|---|---|---|---|---|
+| WAIT-5 | 8 | **+12.0** | **+0.10** | 75% | 21 d |
+| WAIT-10 | 10 | **+9.9** | **+0.11** | 70% | 19 d |
+| *(on-time trades)* | 40 | *+99.5* | *2.79* | *75%* | *24 d* |
+
+Late entries earn about **a tenth** of what an on-time entry earns, at a t-stat
+of 0.11. They are not a smaller version of the edge — they are noise carrying
+full tail risk. One of the ten is **−763.4** (the Dec-2023 campaign that is the
+worst trade in the whole study).
+
+**Mechanism.** A late entry holds 19–22 days instead of 24. The edge in this book
+IS sitting through the move and collecting decay — Phase E measured a cycle run
+to 21 DTE earning +83 points against −28.6 for one cut short. Entering late
+shortens the decay window while leaving the exposure to a move untouched. You
+take the same risk for less of the thing that pays.
+
+### Limit
+
+The BASE arm here prices 40 campaigns, against 61 on the filtered book in the
+study proper, because this run requires both the entry and exit chains to clear
+the liquidity gate at a re-picked strike. BASE net/campaign is 99.5 here against
+104.2 there, so the subset looks representative, but the absolute totals are not
+comparable to the headline study.
+
 ## 6. Robustness
 
 **Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
