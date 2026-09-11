@@ -2,6 +2,28 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-09-11 — research/160: Arun's Screener quality-growth screen + near-ATH buy, as a SYSTEM (in flight)
+
+Arun's own process: Screener query (sales & profit growth 3y > 20, avg ROE 3y > 15, ROCE > 15,
+D/E <= 0.2, price >= 0.9 x ATH, mcap > 1000 cr) -> manual liquidity + OPM-steadiness check ->
+buy near the ATH -> NO exit rule. He beats NIFTY discretionarily; ask = test and optimise it
+mechanically, minimum bar 25% CAGR after tax. Three agents, folder
+:
+
+- DATA leg — full-universe Screener point-in-time panel (annual + quarterly OPM + face value
+  -> PIT mcap), masks in the r/158 npz contract, coverage/survivorship audit, his real
+  holdings (holdings_snapshots.db) vs the screen. STATUS: .
+- ENGINE leg — close-decided / next-open-filled positional engine (rebalance, first-qualify,
+  ATH-breakout reference), all exit families, tax/cost/idle cash, offsets+seeds, house YoY
+  table. STATUS: .
+- STUDY leg (after both) — G1 decomposition (fundamentals vs near-ATH vs both vs nulls),
+  exit optimisation (the missing piece of his process), robustness, blend vs TN+OA, publish.
+
+Prior evidence: r/158 measured the same screen as an OVERLAY on the (unplaceable) Open Alpha
+entry over Aug-2024->Sep-2026: strict mask, missing=fail lifted that arm from -7.2% to +9.3%
+CAGR [0.7..18.8], DD -30.4%; ROCE was inert; ~9.7% of breakout candidates pass. Two-year window,
+not a verdict. Screener lacks delisted names -> the fundamentals leg carries survivorship.
+
 ## 🔴 2026-09-11 — OPEN ALPHA WAS BUYING GOLD ETFs: the universe filter never excluded them
 
 **Found while auditing the entry, and separate from it.** `services/oa_entry.py` filters the
