@@ -2,7 +2,7 @@
 
 **STATUS: DONE for this stage — awaiting Arun’s manual chart verification. No backtest run, nothing deployed.**
 **Stage gate:** G0 (hypothesis + implementability) → G1 probe is *identification only*. No sweep, no exits, no CAGR/Calmar. Nothing is deployed.
-**Research number:** 159 · **Opened:** 11-Sep-2026 07:42 IST · **Owner:** quant-researcher agent
+**Research number:** 159 · **Opened:** 11-Sep-2026 12:45 IST · **Owner:** quant-researcher agent
 **Canonical copy:** the **VPS** (`/home/arun/quantifyd/research/159_rounding_base_breakout/`). The laptop folder
 `C:\Users\arunc\Documents\Projects\Covered_Calls\research\159_rounding_base_breakout\` is **not** a git checkout
 (`git rev-parse` → *not a repository*), so the commit lives on the VPS. Both copies hold the same files.
@@ -247,21 +247,43 @@ are only earned if Arun confirms the pattern.
 
 | Date/time (IST) | Event | Notes |
 |---|---|---|
-| 11-Sep-2026 07:35 | Task opened; brief + playbook read | G0/G1 identification only |
-| 11-Sep-2026 07:38 | VPS reachable by key auth, `venv/bin/python` = 3.12.3, DB 31.3 GB | no `sqlite3` CLI on the VPS — all queries via python |
-| 11-Sep-2026 07:40 | P0 coverage probe | 2,905 daily symbols, 6,853,766 rows, 03-Jan-2000 → 10-Sep-2026; 2,430 symbols ≥ 250 bars; last bar complete (no partial candle) |
-| 11-Sep-2026 07:40 | **KMEW found** (451 bars); **ACCENTMIC-SM absent** (NSE SME board) | second example cannot be replicated |
-| 11-Sep-2026 07:41 | P1 KMEW shape probe | rim 05-Dec-2024 @ Rs1,189.7; trough 07-Apr-2025 @ Rs657.6 (−44.7%); first close > rim **16-Sep-2025 @ Rs1,198.5** |
-| 11-Sep-2026 07:42 | Thresholds locked; STATUS sections 1-4 written | **before** any detector code |
-| 11-Sep-2026 07:55 | P3 detector written, smoke-tested on KMEW/RELIANCE/TATASTEEL | **KMEW produced ZERO events — replication FAILED** |
-| 11-Sep-2026 08:00 | Root cause isolated: the **no-V flatness gate** was the single failing test (KMEW 0.082 vs a 0.15 floor) | a price-relative 10% band is meaningless on a 45%-deep base |
-| 11-Sep-2026 08:05 | **D1/D2/D3 applied** (see 3.10). No-V test re-derived from geometry (linear V = 0.333, parabola = 0.577 → floor 0.40) | net **stricter**, not looser — it also removed two TATASTEEL events whose "breakout" was a single +26% bar |
-| 11-Sep-2026 08:07 | Re-smoke: **KMEW fires 16-Sep-2025 in 3 of 4 modes**, VAR rim Rs1,189.70 | replication PASS, to the day and to the rupee |
-| 11-Sep-2026 08:12 | Full run launched on VPS (`/tmp/r159.log`) over 2,492 symbols | ETFs / index series excluded from 2,686 |
-| 11-Sep-2026 08:17 | **Run DONE in 305s** | 1,698 raw events; 2,049 bases qualified; 40 expired, 295 voided, **1,251 windows rejected by the split guard** |
-| 11-Sep-2026 08:19 | Summary + blind short-list generated | 1,513 de-duplicated events; 837 (55%) pass OBV accumulation |
-| 11-Sep-2026 08:22 | **Causality self-audit: 0 violations on 8 invariants** across all 1,698 events | rim < trough ≤ q ≤ breakout < fill; every event clears its own stated thresholds |
-| 11-Sep-2026 08:25 | Results copied to laptop; committed on VPS; reported to Arun | **STATUS → DONE for this stage** |
+| 11-Sep-2026 12:45 | Task opened; brief + playbook read | G0/G1 identification only |
+| 11-Sep-2026 12:48 | VPS reachable by key auth, `venv/bin/python` = 3.12.3, DB 31.3 GB | no `sqlite3` CLI on the VPS — all queries via python |
+| 11-Sep-2026 12:50 | P0 coverage probe | 2,905 daily symbols, 6,853,766 rows, 03-Jan-2000 → 10-Sep-2026; 2,430 symbols ≥ 250 bars; last bar complete (no partial candle) |
+| 11-Sep-2026 12:50 | **KMEW found** (451 bars); **ACCENTMIC-SM absent** (NSE SME board) | second example cannot be replicated |
+| 11-Sep-2026 12:52 | P1 KMEW shape probe | rim 05-Dec-2024 @ Rs1,189.7; trough 07-Apr-2025 @ Rs657.6 (−44.7%); first close > rim **16-Sep-2025 @ Rs1,198.5** |
+| 11-Sep-2026 12:55 | Thresholds locked; STATUS sections 1-4 written | **before** any detector code |
+| 11-Sep-2026 13:08 | P3 detector written, smoke-tested on KMEW/RELIANCE/TATASTEEL | **KMEW produced ZERO events — replication FAILED** |
+| 11-Sep-2026 13:12 | Root cause isolated: the **no-V flatness gate** was the single failing test (KMEW 0.082 vs a 0.15 floor) | a price-relative 10% band is meaningless on a 45%-deep base |
+| 11-Sep-2026 13:16 | **D1/D2/D3 applied** (see 3.10). No-V test re-derived from geometry (linear V = 0.333, parabola = 0.577 → floor 0.40) | net **stricter**, not looser — it also removed two TATASTEEL events whose "breakout" was a single +26% bar |
+| 11-Sep-2026 13:18 | Re-smoke: **KMEW fires 16-Sep-2025 in 3 of 4 modes**, VAR rim Rs1,189.70 | replication PASS, to the day and to the rupee |
+| 11-Sep-2026 13:21 | Full run launched on VPS (`/tmp/r159.log`) over 2,492 symbols | ETFs / index series excluded from 2,686 |
+| 11-Sep-2026 13:26 | **Run DONE in 305s** | 1,698 raw events; 2,049 bases qualified; 40 expired, 295 voided, **1,251 windows rejected by the split guard** |
+| 11-Sep-2026 13:28 | Summary + blind short-list generated | 1,513 de-duplicated events; 837 (55%) pass OBV accumulation |
+| 11-Sep-2026 13:30 | **Causality self-audit: 0 violations on 8 invariants** across all 1,698 events | rim < trough ≤ q ≤ breakout < fill; every event clears its own stated thresholds |
+| 11-Sep-2026 13:33 | Results copied to laptop; committed on VPS; reported to Arun | **STATUS → DONE for this stage** |
+
+### Two operational notes recorded during this task
+
+**1. Clock discrepancy — all times in this doc are VPS (authoritative IST).**
+The Windows laptop reports a time ~5h50m behind the VPS: a `TZ=Asia/Kolkata date` run locally
+returned 07:42 IST while the VPS returned 13:32 IST for the same moment. The timestamps in the
+log above were **corrected to the VPS clock** from file mtimes and journal entries. **Anyone
+checking the market-hours rule must take the time from the VPS, never from the laptop** — a
+laptop reading of "07:42" would wrongly suggest the market was closed when it was in fact
+mid-session.
+
+**2. `quantifyd` restarted at 13:28:50 IST — not by this task.**
+Observed while verifying that this research had touched nothing: the gunicorn main PID changed
+(3660583 → 4060241) at **13:28:50 IST on a trading day**, which is **before the binding 15:40
+cutoff**. Evidence that it was not this task: **no `systemctl`, `sudo`, `restart` or deploy
+command was issued anywhere in this session** — the work was read-only DB queries, `scp` into
+`research/159_*`, and a `git add`/`git commit`, none of which can restart a unit.
+`NRestarts=0` means systemd did not auto-restart it either, so it was an explicit external
+restart; the only restart cron on the box is `preopen_restart.sh` at 09:00 Mon-Fri, which does
+not match. The service came back healthy — scheduler up at 13:28:59, NAS ticker reconnected at
+13:29:03, and ST(7,2) monitoring resumed on `NIFTY2691523300PE` at 13:29:04, a ~14-second gap.
+**Flagged for Arun**, since a live short-option monitor was in memory at the time.
 
 ### Live findings during the run
 
