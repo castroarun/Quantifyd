@@ -1,91 +1,131 @@
 {
- "generated_at": "2026-09-10T14:00:02",
+ "generated_at": "2026-09-11T11:00:06",
  "broker_legs": {
   "BSE26SEP3500CE": {
    "qty": 200,
    "avg": 104.35,
-   "ltp": 37.0,
-   "pnl": -13470.0,
+   "ltp": 26.0,
+   "pnl": -15670.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "BSE26SEP3600CE": {
    "qty": -600,
-   "avg": 22.466666666666665,
-   "ltp": 22.6,
-   "pnl": -80.0,
+   "avg": 22.466667,
+   "ltp": 16.5,
+   "pnl": 3580.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP4900CE": {
    "qty": 300,
    "avg": 132.975,
-   "ltp": 141.0,
-   "pnl": 2407.5,
+   "ltp": 111.25,
+   "pnl": -6517.5,
    "product": "NRML",
    "exchange": "NFO"
   },
   "HAL26SEP5000CE": {
    "qty": -300,
    "avg": 92.0,
-   "ltp": 90.8,
-   "pnl": 360.0,
+   "ltp": 70.4,
+   "pnl": 6480.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP15CE": {
    "qty": 71475,
    "avg": 0.55,
-   "ltp": 0.56,
-   "pnl": 714.8,
+   "ltp": 0.62,
+   "pnl": 5003.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP17CE": {
    "qty": -71475,
    "avg": 0.12,
-   "ltp": 0.14,
-   "pnl": -1429.5,
+   "ltp": 0.16,
+   "pnl": -2859.0,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP18CE": {
    "qty": -71475,
    "avg": 0.07,
-   "ltp": 0.09,
-   "pnl": -1429.5,
+   "ltp": 0.1,
+   "pnl": -2144.2,
    "product": "NRML",
    "exchange": "NFO"
   },
   "IDEA26SEP20CE": {
    "qty": 71475,
    "avg": 0.04,
-   "ltp": 0.03,
-   "pnl": -714.8,
+   "ltp": 0.04,
+   "pnl": 0.0,
    "product": "NRML",
    "exchange": "NFO"
   },
-  "AYMSYNTEX": {
-   "qty": 34,
-   "avg": 300.0,
-   "ltp": 299.25,
-   "pnl": -25.5,
+  "ANTHEM": {
+   "qty": 52,
+   "avg": 949.75,
+   "ltp": 940.0,
+   "pnl": -507.0,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "INDNIPPON": {
+   "qty": 37,
+   "avg": 1314.0972972972972,
+   "ltp": 1318.4,
+   "pnl": 159.2,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "KMEW": {
+   "qty": -13,
+   "avg": 2835.6692307692306,
+   "ltp": 2823.3,
+   "pnl": 160.8,
    "product": "CNC",
    "exchange": "NSE"
   },
-  "EMMVEE": {
-   "qty": 30,
-   "avg": 344.35,
-   "ltp": 341.45,
-   "pnl": -87.0,
-   "product": "CNC",
+  "PAISALO": {
+   "qty": 606,
+   "avg": 82.4,
+   "ltp": 83.71,
+   "pnl": 793.9,
+   "product": "MTF",
    "exchange": "NSE"
   },
-  "ENTERO": {
-   "qty": 1,
-   "avg": 1828.6,
-   "ltp": 1786.7,
-   "pnl": -41.9,
+  "PRICOLLTD": {
+   "qty": 66,
+   "avg": 751.4,
+   "ltp": 756.0,
+   "pnl": 303.6,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "RPEL": {
+   "qty": 28,
+   "avg": 1778.857142857143,
+   "ltp": 1793.3,
+   "pnl": 404.4,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "SMSPHARMA": {
+   "qty": 167,
+   "avg": 455.63473053892216,
+   "ltp": 440.95,
+   "pnl": -2452.4,
+   "product": "MTF",
+   "exchange": "NSE"
+  },
+  "TMB": {
+   "qty": -41,
+   "avg": 906.9536585365853,
+   "ltp": 909.2,
+   "pnl": -92.1,
    "product": "CNC",
    "exchange": "NSE"
   }
@@ -159,26 +199,66 @@
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "AYMSYNTEX",
-   "broker_qty": 34,
+   "symbol": "ANTHEM",
+   "broker_qty": 52,
    "app_qty": 0,
-   "detail": "manual holding, 34 \u2014 no book tracks it"
+   "detail": "manual holding, 52 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MANUAL",
-   "symbol": "EMMVEE",
-   "broker_qty": 30,
+   "symbol": "INDNIPPON",
+   "broker_qty": 37,
    "app_qty": 0,
-   "detail": "manual holding, 30 \u2014 no book tracks it"
+   "detail": "manual holding, 37 \u2014 no book tracks it"
   },
   {
    "level": "INFO",
    "kind": "MULTI-BOOK",
-   "symbol": "ENTERO",
-   "broker_qty": 1,
+   "symbol": "KMEW",
+   "broker_qty": -13,
    "app_qty": 0,
-   "detail": "broker 1 = OA-TOPUP +1 \u2014 placed by our books, not visible in the page feed"
+   "detail": "broker -13 = OA-EXIT -13 \u2014 placed by our books, not visible in the page feed"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "PAISALO",
+   "broker_qty": 606,
+   "app_qty": 0,
+   "detail": "manual holding, 606 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "PRICOLLTD",
+   "broker_qty": 66,
+   "app_qty": 0,
+   "detail": "manual holding, 66 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "RPEL",
+   "broker_qty": 28,
+   "app_qty": 0,
+   "detail": "manual holding, 28 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MANUAL",
+   "symbol": "SMSPHARMA",
+   "broker_qty": 167,
+   "app_qty": 0,
+   "detail": "manual holding, 167 \u2014 no book tracks it"
+  },
+  {
+   "level": "INFO",
+   "kind": "MULTI-BOOK",
+   "symbol": "TMB",
+   "broker_qty": -41,
+   "app_qty": 0,
+   "detail": "broker -41 = OA-EXIT -41 \u2014 placed by our books, not visible in the page feed"
   },
   {
    "level": "WARN",
@@ -214,10 +294,10 @@
   }
  ],
  "filled_by_tag": {
-  "untagged": 264,
-  "OA-TOPUP": 1
+  "untagged": 956,
+  "OA-EXIT": 54
  },
  "alerts": 8,
  "warns": 4,
- "infos": 3
+ "infos": 8
 }

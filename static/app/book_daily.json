@@ -1,8 +1,51 @@
 {
- "generated_at": "2026-09-11T10:00:05",
+ "generated_at": "2026-09-11T13:00:04",
  "books": {
   "orb": {
    "days": [
+    {
+     "date": "2026-09-11",
+     "trades": 2,
+     "wins": 0,
+     "losses": 2,
+     "pnl": -6460.85,
+     "deployed": 513938.9,
+     "cum": -39667.87,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "TRENT",
+       "pnl": -3184.2,
+       "deployed": 240546.3,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 87,
+       "entry_price": 2764.9,
+       "exit_price": 2801.5,
+       "entry_time": "2026-09-11T09:40:05.519870",
+       "exit_time": "2026-09-11T11:32:52.541052",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "B"
+      },
+      {
+       "symbol": "BPCL",
+       "pnl": -3276.65,
+       "deployed": 273392.6,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "SHORT",
+       "qty": 923,
+       "entry_price": 296.2,
+       "exit_price": 299.75,
+       "entry_time": "2026-09-11T10:00:05.626854",
+       "exit_time": "2026-09-11T11:18:51.822240",
+       "exit_reason": "SL_HIT",
+       "conviction_grade": "B"
+      }
+     ]
+    },
     {
      "date": "2026-09-10",
      "trades": 5,
@@ -2863,26 +2906,56 @@
     "basis": "\u20b93L deposit \u00b7 MIS 5x \u2192 \u20b915L buying power \u00b7 5 concurrent",
     "max_position": 299993.6,
     "busiest_day": 3426791.15,
-    "avg_trade": 215528.11,
-    "days": 21,
-    "trades": 172,
+    "avg_trade": 216004.44,
+    "days": 22,
+    "trades": 174,
     "wins": 65,
-    "win_rate": 37.8,
-    "net": -33207.02,
+    "win_rate": 37.4,
+    "net": -39667.87,
     "best_day": 3123.4,
     "worst_day": -13754.43,
     "green_days": 9,
     "costs_modelled": false,
-    "t_stat": -1.39,
+    "t_stat": -1.63,
     "top3_share": null,
     "broker_trades": 46,
-    "sim_trades": 126,
+    "sim_trades": 128,
     "first": "2026-04-27",
-    "last": "2026-09-10"
+    "last": "2026-09-11"
    }
   },
   "n500m": {
    "days": [
+    {
+     "date": "2026-09-11",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 3442.5,
+     "deployed": 116672.4,
+     "cum": 22627.64,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "COCHINSHIP",
+       "pnl": 3442.5,
+       "deployed": 116672.4,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": "short",
+       "signal_type": "volbo",
+       "timeframe": "15min",
+       "qty": 81,
+       "entry_price": 1440.4,
+       "exit_price": 1397.9,
+       "entry_time": "2026-09-11T09:25:00",
+       "exit_time": "2026-09-11T10:56:00.003619",
+       "exit_reason": "TARGET",
+       "exit_policy": "T_R_TARGET_1.0R"
+      }
+     ]
+    },
     {
      "date": "2026-09-09",
      "trades": 1,
@@ -3892,22 +3965,22 @@
     "basis": "risk-sized \u00b7 \u20b93,000 risk/trade \u00b7 5 concurrent",
     "max_position": 204576.0,
     "busiest_day": 305348.4,
-    "avg_trade": 133702.44,
-    "days": 30,
-    "trades": 36,
-    "wins": 21,
-    "win_rate": 58.3,
-    "net": 19185.14,
+    "avg_trade": 133242.17,
+    "days": 31,
+    "trades": 37,
+    "wins": 22,
+    "win_rate": 59.5,
+    "net": 22627.64,
     "best_day": 8551.8,
     "worst_day": -4004.0,
-    "green_days": 16,
+    "green_days": 17,
     "costs_modelled": false,
-    "t_stat": 1.51,
-    "top3_share": 69.8,
+    "t_stat": 1.74,
+    "top3_share": 59.2,
     "broker_trades": 0,
-    "sim_trades": 36,
+    "sim_trades": 37,
     "first": "2026-05-08",
-    "last": "2026-09-09"
+    "last": "2026-09-11"
    }
   },
   "i75wr": {
@@ -14946,6 +15019,31 @@
   "ohol-paper": {
    "days": [
     {
+     "date": "2026-09-11",
+     "trades": 1,
+     "wins": 1,
+     "losses": 0,
+     "pnl": 336.16,
+     "deployed": 314569.34,
+     "cum": -21361.37,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "RELIANCE",
+       "pnl": 336.16,
+       "deployed": 314569.34,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "BUY",
+       "price": 1258.27737,
+       "lots": 1,
+       "lot_size": 250,
+       "reason": "ST_FLIP"
+      }
+     ]
+    },
+    {
      "date": "2026-09-10",
      "trades": 4,
      "wins": 1,
@@ -15873,22 +15971,22 @@
     "basis": "open-high / open-low \u00b7 1 lot",
     "max_position": 1875374.94,
     "busiest_day": 4383202.38,
-    "avg_trade": 798558.16,
-    "days": 21,
-    "trades": 54,
-    "wins": 18,
-    "win_rate": 33.3,
-    "net": -21697.54,
+    "avg_trade": 789758.36,
+    "days": 22,
+    "trades": 55,
+    "wins": 19,
+    "win_rate": 34.5,
+    "net": -21361.38,
     "best_day": 21357.88,
     "worst_day": -7458.98,
-    "green_days": 5,
+    "green_days": 6,
     "costs_modelled": null,
-    "t_stat": -0.66,
+    "t_stat": -0.65,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 54,
+    "sim_trades": 55,
     "first": "2026-08-07",
-    "last": "2026-09-10"
+    "last": "2026-09-11"
    }
   },
   "orb-paper": {

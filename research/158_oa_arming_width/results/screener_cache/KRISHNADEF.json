@@ -1,0 +1,111 @@
+{
+ "symbol": "KRISHNADEF",
+ "source": "standalone",
+ "fy": {
+  "2025-03-31": {
+   "sales": 190.0,
+   "operating_profit": 31.0,
+   "net_profit": 22.0,
+   "equity_capital": 14.0,
+   "reserves": 117.0,
+   "borrowings": 10.0,
+   "total_assets": 164.0,
+   "roce_pct": 24.0,
+   "equity": 131.0,
+   "roe_pct": 16.793893129770993,
+   "de": 0.07633587786259542
+  },
+  "2026-03-31": {
+   "sales": 245.0,
+   "operating_profit": 53.0,
+   "net_profit": 38.0,
+   "equity_capital": 15.0,
+   "reserves": 175.0,
+   "borrowings": 2.0,
+   "total_assets": 214.0,
+   "roce_pct": 31.0,
+   "equity": 190.0,
+   "roe_pct": 20.0,
+   "de": 0.010526315789473684
+  },
+  "2019-03-31": {
+   "sales": 58.0,
+   "operating_profit": 6.0,
+   "net_profit": 2.0,
+   "equity_capital": 4.0,
+   "reserves": 11.0,
+   "borrowings": 27.0,
+   "total_assets": 66.0,
+   "equity": 15.0,
+   "roe_pct": 13.333333333333334,
+   "de": 1.8
+  },
+  "2020-03-31": {
+   "sales": 25.0,
+   "operating_profit": 4.0,
+   "net_profit": 1.0,
+   "equity_capital": 4.0,
+   "reserves": 12.0,
+   "borrowings": 26.0,
+   "total_assets": 61.0,
+   "roce_pct": 8.0,
+   "equity": 16.0,
+   "roe_pct": 6.25,
+   "de": 1.625
+  },
+  "2021-03-31": {
+   "sales": 35.0,
+   "operating_profit": 5.0,
+   "net_profit": 2.0,
+   "equity_capital": 4.0,
+   "reserves": 14.0,
+   "borrowings": 26.0,
+   "total_assets": 56.0,
+   "roce_pct": 11.0,
+   "equity": 18.0,
+   "roe_pct": 11.11111111111111,
+   "de": 1.4444444444444444
+  },
+  "2022-03-31": {
+   "sales": 50.0,
+   "operating_profit": 7.0,
+   "net_profit": 2.0,
+   "equity_capital": 8.0,
+   "reserves": 16.0,
+   "borrowings": 23.0,
+   "total_assets": 68.0,
+   "roce_pct": 12.0,
+   "equity": 24.0,
+   "roe_pct": 8.333333333333334,
+   "de": 0.9583333333333334
+  },
+  "2023-03-31": {
+   "sales": 63.0,
+   "operating_profit": 9.0,
+   "net_profit": 5.0,
+   "equity_capital": 11.0,
+   "reserves": 29.0,
+   "borrowings": 19.0,
+   "total_assets": 85.0,
+   "roce_pct": 15.0,
+   "equity": 40.0,
+   "roe_pct": 12.5,
+   "de": 0.475
+  },
+  "2024-03-31": {
+   "sales": 106.0,
+   "operating_profit": 16.0,
+   "net_profit": 10.0,
+   "equity_capital": 14.0,
+   "reserves": 93.0,
+   "borrowings": 9.0,
+   "total_assets": 133.0,
+   "roce_pct": 17.0,
+   "equity": 107.0,
+   "roe_pct": 9.345794392523365,
+   "de": 0.08411214953271028
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

@@ -1,0 +1,111 @@
+{
+ "symbol": "AFSL",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1380.0,
+   "operating_profit": 152.0,
+   "net_profit": 89.0,
+   "equity_capital": 10.0,
+   "reserves": 921.0,
+   "borrowings": 929.0,
+   "total_assets": 2896.0,
+   "roce_pct": 9.0,
+   "equity": 931.0,
+   "roe_pct": 9.559613319011815,
+   "de": 0.9978517722878625
+  },
+  "2025-03-31": {
+   "sales": 3281.0,
+   "operating_profit": 190.0,
+   "net_profit": 109.0,
+   "equity_capital": 10.0,
+   "reserves": 1064.0,
+   "borrowings": 834.0,
+   "total_assets": 3060.0,
+   "roce_pct": 10.0,
+   "equity": 1074.0,
+   "roe_pct": 10.148975791433893,
+   "de": 0.776536312849162
+  },
+  "2026-03-31": {
+   "sales": 23874.0,
+   "operating_profit": 159.0,
+   "net_profit": 105.0,
+   "equity_capital": 10.0,
+   "reserves": 1240.0,
+   "borrowings": 754.0,
+   "total_assets": 2901.0,
+   "roce_pct": 8.0,
+   "equity": 1250.0,
+   "roe_pct": 8.4,
+   "de": 0.6032
+  },
+  "2019-03-31": {
+   "sales": 4377.0,
+   "operating_profit": 57.0,
+   "net_profit": 36.0,
+   "equity_capital": 0.01,
+   "reserves": 370.0,
+   "borrowings": 384.0,
+   "total_assets": 1086.0,
+   "equity": 370.01,
+   "roe_pct": 9.729466771168347,
+   "de": 1.0378097889246236
+  },
+  "2020-03-31": {
+   "sales": 2771.0,
+   "operating_profit": 96.0,
+   "net_profit": 39.0,
+   "equity_capital": 3.0,
+   "reserves": 497.0,
+   "borrowings": 319.0,
+   "total_assets": 1213.0,
+   "roce_pct": 11.0,
+   "equity": 500.0,
+   "roe_pct": 7.8,
+   "de": 0.638
+  },
+  "2021-03-31": {
+   "sales": 1331.0,
+   "operating_profit": 81.0,
+   "net_profit": 46.0,
+   "equity_capital": 9.0,
+   "reserves": 553.0,
+   "borrowings": 268.0,
+   "total_assets": 1182.0,
+   "roce_pct": 9.0,
+   "equity": 562.0,
+   "roe_pct": 8.185053380782918,
+   "de": 0.47686832740213525
+  },
+  "2022-03-31": {
+   "sales": 645.0,
+   "operating_profit": 91.0,
+   "net_profit": 62.0,
+   "equity_capital": 9.0,
+   "reserves": 622.0,
+   "borrowings": 86.0,
+   "total_assets": 1169.0,
+   "roce_pct": 10.0,
+   "equity": 631.0,
+   "roe_pct": 9.8256735340729,
+   "de": 0.13629160063391443
+  },
+  "2023-03-31": {
+   "sales": 1163.0,
+   "operating_profit": 86.0,
+   "net_profit": 70.0,
+   "equity_capital": 10.0,
+   "reserves": 817.0,
+   "borrowings": 441.0,
+   "total_assets": 1863.0,
+   "roce_pct": 8.0,
+   "equity": 827.0,
+   "roe_pct": 8.464328899637243,
+   "de": 0.5332527206771464
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

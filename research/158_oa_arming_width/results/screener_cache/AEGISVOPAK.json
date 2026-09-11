@@ -1,0 +1,109 @@
+{
+ "symbol": "AEGISVOPAK",
+ "source": "standalone",
+ "fy": {
+  "2025-03-31": {
+   "sales": 518.0,
+   "operating_profit": 401.0,
+   "net_profit": 108.0,
+   "equity_capital": 989.0,
+   "reserves": 871.0,
+   "borrowings": 3879.0,
+   "total_assets": 5892.0,
+   "roce_pct": 7.0,
+   "equity": 1860.0,
+   "roe_pct": 5.806451612903226,
+   "de": 2.085483870967742
+  },
+  "2026-03-31": {
+   "sales": 642.0,
+   "operating_profit": 493.0,
+   "net_profit": 273.0,
+   "equity_capital": 1108.0,
+   "reserves": 3742.0,
+   "borrowings": 3607.0,
+   "total_assets": 8703.0,
+   "roce_pct": 7.0,
+   "equity": 4850.0,
+   "roe_pct": 5.628865979381444,
+   "de": 0.7437113402061856
+  },
+  "2016-03-31": {
+   "sales": 0.0,
+   "operating_profit": 0.0,
+   "net_profit": 0.0,
+   "equity_capital": 0.05,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.05,
+   "roe_pct": 0.0,
+   "de": 0.0
+  },
+  "2018-03-31": {
+   "sales": 0.0,
+   "operating_profit": 0.0,
+   "net_profit": 0.0,
+   "equity_capital": 0.05,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.05,
+   "roe_pct": 0.0,
+   "de": 0.0
+  },
+  "2021-03-31": {
+   "sales": 0.0,
+   "operating_profit": 0.0,
+   "net_profit": 0.0,
+   "equity_capital": 0.05,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.05,
+   "roe_pct": 0.0,
+   "de": 0.0
+  },
+  "2022-03-31": {
+   "sales": 0.0,
+   "operating_profit": -1.0,
+   "net_profit": -1.0,
+   "equity_capital": 0.61,
+   "reserves": -1.0,
+   "borrowings": 98.0,
+   "total_assets": 98.0,
+   "roce_pct": -1.0,
+   "equity": -0.39,
+   "roe_pct": 256.4102564102564,
+   "de": -251.28205128205127
+  },
+  "2023-03-31": {
+   "sales": 290.0,
+   "operating_profit": 210.0,
+   "net_profit": 5.0,
+   "equity_capital": 1.0,
+   "reserves": 954.0,
+   "borrowings": 2374.0,
+   "total_assets": 3445.0,
+   "roce_pct": 8.0,
+   "equity": 955.0,
+   "roe_pct": 0.5235602094240838,
+   "de": 2.48586387434555
+  },
+  "2024-03-31": {
+   "sales": 418.0,
+   "operating_profit": 307.0,
+   "net_profit": 47.0,
+   "equity_capital": 1.0,
+   "reserves": 955.0,
+   "borrowings": 3174.0,
+   "total_assets": 4332.0,
+   "roce_pct": 6.0,
+   "equity": 956.0,
+   "roe_pct": 4.916317991631799,
+   "de": 3.3200836820083683
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

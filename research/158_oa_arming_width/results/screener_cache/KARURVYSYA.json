@@ -1,0 +1,116 @@
+{
+ "symbol": "KARURVYSYA",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 8213.0,
+   "net_profit": 1605.0,
+   "equity_capital": 161.0,
+   "reserves": 9879.0,
+   "total_assets": 105453.0,
+   "equity": 10040.0,
+   "roe_pct": 15.98605577689243
+  },
+  "2025-03-31": {
+   "sales": 9678.0,
+   "net_profit": 1942.0,
+   "equity_capital": 161.0,
+   "reserves": 11769.0,
+   "total_assets": 119367.0,
+   "equity": 11930.0,
+   "roe_pct": 16.27829002514669
+  },
+  "2026-03-31": {
+   "sales": 11074.0,
+   "net_profit": 2510.0,
+   "equity_capital": 193.0,
+   "reserves": 13915.0,
+   "total_assets": 136603.0,
+   "equity": 14108.0,
+   "roe_pct": 17.791324071448823
+  },
+  "2015-03-31": {
+   "sales": 5396.0,
+   "net_profit": 464.0,
+   "equity_capital": 122.0,
+   "reserves": 4124.0,
+   "total_assets": 53152.0,
+   "equity": 4246.0,
+   "roe_pct": 10.927932171455488
+  },
+  "2016-03-31": {
+   "sales": 5443.0,
+   "net_profit": 568.0,
+   "equity_capital": 122.0,
+   "reserves": 4451.0,
+   "total_assets": 58985.0,
+   "equity": 4573.0,
+   "roe_pct": 12.42073037393396
+  },
+  "2017-03-31": {
+   "sales": 5622.0,
+   "net_profit": 606.0,
+   "equity_capital": 122.0,
+   "reserves": 4914.0,
+   "total_assets": 61808.0,
+   "equity": 5036.0,
+   "roe_pct": 12.033359809372518
+  },
+  "2018-03-31": {
+   "sales": 5700.0,
+   "net_profit": 346.0,
+   "equity_capital": 145.0,
+   "reserves": 6119.0,
+   "total_assets": 66941.0,
+   "equity": 6264.0,
+   "roe_pct": 5.5236270753512136
+  },
+  "2019-03-31": {
+   "sales": 5816.0,
+   "net_profit": 211.0,
+   "equity_capital": 160.0,
+   "reserves": 6263.0,
+   "total_assets": 69340.0,
+   "equity": 6423.0,
+   "roe_pct": 3.2850692822668535
+  },
+  "2020-03-31": {
+   "sales": 5990.0,
+   "net_profit": 235.0,
+   "equity_capital": 160.0,
+   "reserves": 6440.0,
+   "total_assets": 68278.0,
+   "equity": 6600.0,
+   "roe_pct": 3.5606060606060606
+  },
+  "2021-03-31": {
+   "sales": 5470.0,
+   "net_profit": 359.0,
+   "equity_capital": 160.0,
+   "reserves": 6800.0,
+   "total_assets": 74623.0,
+   "equity": 6960.0,
+   "roe_pct": 5.158045977011494
+  },
+  "2022-03-31": {
+   "sales": 5588.0,
+   "net_profit": 673.0,
+   "equity_capital": 160.0,
+   "reserves": 7436.0,
+   "total_assets": 80071.0,
+   "equity": 7596.0,
+   "roe_pct": 8.859926276987888
+  },
+  "2023-03-31": {
+   "sales": 6517.0,
+   "net_profit": 1106.0,
+   "equity_capital": 160.0,
+   "reserves": 8424.0,
+   "total_assets": 90179.0,
+   "equity": 8584.0,
+   "roe_pct": 12.884436160298229
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

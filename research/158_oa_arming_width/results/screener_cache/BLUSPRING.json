@@ -1,0 +1,42 @@
+{
+ "symbol": "BLUSPRING",
+ "source": "consolidated",
+ "fy": {
+  "2025-03-31": {
+   "sales": 801.51,
+   "operating_profit": 4.75,
+   "net_profit": -23.24,
+   "equity_capital": 149.0,
+   "reserves": 546.0,
+   "borrowings": 140.0,
+   "total_assets": 1530.0,
+   "roce_pct": 4.0,
+   "equity": 695.0,
+   "roe_pct": -3.343884892086331,
+   "de": 0.2014388489208633
+  },
+  "2026-03-31": {
+   "sales": 3382.0,
+   "operating_profit": 54.0,
+   "net_profit": -23.0,
+   "equity_capital": 149.0,
+   "reserves": 519.0,
+   "borrowings": 136.0,
+   "total_assets": 1686.0,
+   "roce_pct": 5.0,
+   "equity": 668.0,
+   "roe_pct": -3.44311377245509,
+   "de": 0.20359281437125748
+  },
+  "2024-03-31": {
+   "equity_capital": 0.0,
+   "reserves": 569.0,
+   "borrowings": 160.0,
+   "total_assets": 1532.0,
+   "equity": 569.0,
+   "de": 0.281195079086116
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

@@ -1,0 +1,98 @@
+{
+ "symbol": "ACMESOLAR",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1319.0,
+   "operating_profit": 1094.0,
+   "net_profit": 698.0,
+   "equity_capital": 104.0,
+   "reserves": 2486.0,
+   "borrowings": 8536.0,
+   "total_assets": 13207.0,
+   "roce_pct": 8.0,
+   "equity": 2590.0,
+   "roe_pct": 26.94980694980695,
+   "de": 3.2957528957528957
+  },
+  "2025-03-31": {
+   "sales": 1405.0,
+   "operating_profit": 1237.0,
+   "net_profit": 251.0,
+   "equity_capital": 121.0,
+   "reserves": 4390.0,
+   "borrowings": 10976.0,
+   "total_assets": 18140.0,
+   "roce_pct": 8.0,
+   "equity": 4511.0,
+   "roe_pct": 5.564176457548215,
+   "de": 2.4331633784083353
+  },
+  "2026-03-31": {
+   "sales": 2023.0,
+   "operating_profit": 1781.0,
+   "net_profit": 498.0,
+   "equity_capital": 121.0,
+   "reserves": 4940.0,
+   "borrowings": 19896.0,
+   "total_assets": 28540.0,
+   "roce_pct": 9.0,
+   "equity": 5061.0,
+   "roe_pct": 9.83995257854179,
+   "de": 3.931238885595732
+  },
+  "2020-03-31": {
+   "sales": 1777.0,
+   "operating_profit": 1649.0,
+   "net_profit": 86.0,
+   "equity_capital": 104.0,
+   "reserves": 1088.0,
+   "borrowings": 10593.0,
+   "total_assets": 15460.0,
+   "equity": 1192.0,
+   "roe_pct": 7.214765100671141,
+   "de": 8.886744966442953
+  },
+  "2021-03-31": {
+   "sales": 1692.0,
+   "operating_profit": 1553.0,
+   "net_profit": 15.0,
+   "equity_capital": 104.0,
+   "reserves": 1753.0,
+   "borrowings": 9732.0,
+   "total_assets": 12489.0,
+   "roce_pct": 9.0,
+   "equity": 1857.0,
+   "roe_pct": 0.8077544426494345,
+   "de": 5.240710823909532
+  },
+  "2022-03-31": {
+   "sales": 1488.0,
+   "operating_profit": 1240.0,
+   "net_profit": 62.0,
+   "equity_capital": 104.0,
+   "reserves": 1804.0,
+   "borrowings": 7915.0,
+   "total_assets": 10797.0,
+   "roce_pct": 7.0,
+   "equity": 1908.0,
+   "roe_pct": 3.249475890985325,
+   "de": 4.14832285115304
+  },
+  "2023-03-31": {
+   "sales": 1295.0,
+   "operating_profit": 1173.0,
+   "net_profit": -3.0,
+   "equity_capital": 104.0,
+   "reserves": 1796.0,
+   "borrowings": 9014.0,
+   "total_assets": 12027.0,
+   "roce_pct": 7.0,
+   "equity": 1900.0,
+   "roe_pct": -0.15789473684210525,
+   "de": 4.74421052631579
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

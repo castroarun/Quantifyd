@@ -20,8 +20,8 @@
         "side": "SELL",
         "qty": 650,
         "entry": 70.4,
-        "ltp": 10.6,
-        "pnl": 38870,
+        "ltp": 15.5,
+        "pnl": 35685,
         "entry_time": "15:10"
       },
       {
@@ -30,8 +30,8 @@
         "side": "SELL",
         "qty": 650,
         "entry": 43.4,
-        "ltp": 115.7,
-        "pnl": -46995,
+        "ltp": 84.0,
+        "pnl": -26390,
         "entry_time": "15:10"
       },
       {
@@ -40,8 +40,8 @@
         "side": "BUY",
         "qty": 650,
         "entry": 17.85,
-        "ltp": 3.95,
-        "pnl": -9035,
+        "ltp": 4.25,
+        "pnl": -8840,
         "entry_time": "15:10"
       },
       {
@@ -50,14 +50,14 @@
         "side": "BUY",
         "qty": 650,
         "entry": 15.45,
-        "ltp": 31.85,
-        "pnl": 10660,
+        "ltp": 23.75,
+        "pnl": 5395,
         "entry_time": "15:10"
       }
     ],
     "entry_time": "15:10",
-    "cur_value": 90.5,
-    "day_pnl": -6580
+    "cur_value": 71.5,
+    "day_pnl": 5770
   },
   "closed_total_pnl": 63743,
   "closed_trades": 8,
@@ -487,5 +487,5 @@
       "recorded_lots": 2
     }
   ],
-  "updated": "2026-09-11 10:05:04"
+  "updated": "2026-09-11 13:06:02"
 }

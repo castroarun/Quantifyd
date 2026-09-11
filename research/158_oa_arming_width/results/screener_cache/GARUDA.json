@@ -1,0 +1,98 @@
+{
+ "symbol": "GARUDA",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 154.0,
+   "operating_profit": 50.0,
+   "net_profit": 36.0,
+   "equity_capital": 37.0,
+   "reserves": 82.0,
+   "borrowings": 0.0,
+   "total_assets": 228.0,
+   "roce_pct": 49.0,
+   "equity": 119.0,
+   "roe_pct": 30.252100840336134,
+   "de": 0.0
+  },
+  "2025-03-31": {
+   "sales": 225.0,
+   "operating_profit": 66.0,
+   "net_profit": 50.0,
+   "equity_capital": 47.0,
+   "reserves": 285.0,
+   "borrowings": 0.0,
+   "total_assets": 406.0,
+   "roce_pct": 30.0,
+   "equity": 332.0,
+   "roe_pct": 15.060240963855422,
+   "de": 0.0
+  },
+  "2026-03-31": {
+   "sales": 531.0,
+   "operating_profit": 164.0,
+   "net_profit": 123.0,
+   "equity_capital": 47.0,
+   "reserves": 408.0,
+   "borrowings": 12.0,
+   "total_assets": 641.0,
+   "roce_pct": 42.0,
+   "equity": 455.0,
+   "roe_pct": 27.032967032967033,
+   "de": 0.026373626373626374
+  },
+  "2020-03-31": {
+   "sales": 124.0,
+   "operating_profit": 4.0,
+   "net_profit": 1.0,
+   "equity_capital": 11.0,
+   "reserves": 3.0,
+   "borrowings": 31.0,
+   "total_assets": 157.0,
+   "equity": 14.0,
+   "roe_pct": 7.142857142857143,
+   "de": 2.2142857142857144
+  },
+  "2021-03-31": {
+   "sales": 72.0,
+   "operating_profit": 15.0,
+   "net_profit": 9.0,
+   "equity_capital": 12.0,
+   "reserves": 11.0,
+   "borrowings": 15.0,
+   "total_assets": 133.0,
+   "roce_pct": 43.0,
+   "equity": 23.0,
+   "roe_pct": 39.130434782608695,
+   "de": 0.6521739130434783
+  },
+  "2022-03-31": {
+   "sales": 77.0,
+   "operating_profit": 27.0,
+   "net_profit": 19.0,
+   "equity_capital": 12.0,
+   "reserves": 29.0,
+   "borrowings": 12.0,
+   "total_assets": 111.0,
+   "roce_pct": 58.0,
+   "equity": 41.0,
+   "roe_pct": 46.34146341463415,
+   "de": 0.2926829268292683
+  },
+  "2023-03-31": {
+   "sales": 161.0,
+   "operating_profit": 56.0,
+   "net_profit": 41.0,
+   "equity_capital": 12.0,
+   "reserves": 70.0,
+   "borrowings": 0.0,
+   "total_assets": 176.0,
+   "roce_pct": 81.0,
+   "equity": 82.0,
+   "roe_pct": 50.0,
+   "de": 0.0
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

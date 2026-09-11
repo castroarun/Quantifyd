@@ -1,0 +1,23 @@
+{
+ "symbol": "CASTROLIND",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1325.0,
+   "operating_profit": 294.0,
+   "net_profit": 216.0
+  },
+  "2025-03-31": {
+   "sales": 1422.0,
+   "operating_profit": 307.0,
+   "net_profit": 233.0
+  },
+  "2026-03-31": {
+   "sales": 1545.0,
+   "operating_profit": 329.0,
+   "net_profit": 242.0
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

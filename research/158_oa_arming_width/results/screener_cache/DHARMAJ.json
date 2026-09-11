@@ -1,0 +1,111 @@
+{
+ "symbol": "DHARMAJ",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 654.0,
+   "operating_profit": 63.0,
+   "net_profit": 44.0,
+   "equity_capital": 34.0,
+   "reserves": 326.0,
+   "borrowings": 112.0,
+   "total_assets": 563.0,
+   "roce_pct": 15.0,
+   "equity": 360.0,
+   "roe_pct": 12.222222222222221,
+   "de": 0.3111111111111111
+  },
+  "2025-03-31": {
+   "sales": 951.0,
+   "operating_profit": 75.0,
+   "net_profit": 35.0,
+   "equity_capital": 34.0,
+   "reserves": 361.0,
+   "borrowings": 116.0,
+   "total_assets": 733.0,
+   "roce_pct": 12.0,
+   "equity": 395.0,
+   "roe_pct": 8.860759493670885,
+   "de": 0.2936708860759494
+  },
+  "2026-03-31": {
+   "sales": 1138.0,
+   "operating_profit": 102.0,
+   "net_profit": 55.0,
+   "equity_capital": 34.0,
+   "reserves": 415.0,
+   "borrowings": 132.0,
+   "total_assets": 841.0,
+   "roce_pct": 17.0,
+   "equity": 449.0,
+   "roe_pct": 12.249443207126948,
+   "de": 0.29398663697104677
+  },
+  "2019-03-31": {
+   "sales": 136.0,
+   "operating_profit": 10.0,
+   "net_profit": 5.0,
+   "equity_capital": 2.0,
+   "reserves": 9.0,
+   "borrowings": 20.0,
+   "total_assets": 48.0,
+   "equity": 11.0,
+   "roe_pct": 45.45454545454545,
+   "de": 1.8181818181818181
+  },
+  "2020-03-31": {
+   "sales": 193.0,
+   "operating_profit": 18.0,
+   "net_profit": 11.0,
+   "equity_capital": 16.0,
+   "reserves": 19.0,
+   "borrowings": 20.0,
+   "total_assets": 93.0,
+   "roce_pct": 39.0,
+   "equity": 35.0,
+   "roe_pct": 31.428571428571427,
+   "de": 0.5714285714285714
+  },
+  "2021-03-31": {
+   "sales": 298.0,
+   "operating_profit": 31.0,
+   "net_profit": 21.0,
+   "equity_capital": 16.0,
+   "reserves": 40.0,
+   "borrowings": 27.0,
+   "total_assets": 129.0,
+   "roce_pct": 42.0,
+   "equity": 56.0,
+   "roe_pct": 37.5,
+   "de": 0.48214285714285715
+  },
+  "2022-03-31": {
+   "sales": 388.0,
+   "operating_profit": 44.0,
+   "net_profit": 29.0,
+   "equity_capital": 25.0,
+   "reserves": 60.0,
+   "borrowings": 37.0,
+   "total_assets": 220.0,
+   "roce_pct": 40.0,
+   "equity": 85.0,
+   "roe_pct": 34.11764705882353,
+   "de": 0.43529411764705883
+  },
+  "2023-03-31": {
+   "sales": 524.0,
+   "operating_profit": 41.0,
+   "net_profit": 27.0,
+   "equity_capital": 34.0,
+   "reserves": 281.0,
+   "borrowings": 52.0,
+   "total_assets": 432.0,
+   "roce_pct": 17.0,
+   "equity": 315.0,
+   "roe_pct": 8.571428571428571,
+   "de": 0.16507936507936508
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

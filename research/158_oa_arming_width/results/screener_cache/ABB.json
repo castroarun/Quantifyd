@@ -1,0 +1,23 @@
+{
+ "symbol": "ABB",
+ "source": "consolidated",
+ "fy": {
+  "2022-03-31": {
+   "sales": 1975.0,
+   "operating_profit": 188.0,
+   "net_profit": 80.0
+  },
+  "2025-03-31": {
+   "sales": 3010.0,
+   "operating_profit": 560.0,
+   "net_profit": 475.0
+  },
+  "2026-03-31": {
+   "sales": 3184.0,
+   "operating_profit": 408.0,
+   "net_profit": 1784.0
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

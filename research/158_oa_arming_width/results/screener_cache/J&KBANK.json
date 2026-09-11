@@ -1,0 +1,116 @@
+{
+ "symbol": "J&KBANK",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 11213.0,
+   "net_profit": 1771.0,
+   "equity_capital": 110.0,
+   "reserves": 12083.0,
+   "total_assets": 154505.0,
+   "equity": 12193.0,
+   "roe_pct": 14.524727302550644
+  },
+  "2025-03-31": {
+   "sales": 12541.0,
+   "net_profit": 2082.0,
+   "equity_capital": 110.0,
+   "reserves": 14098.0,
+   "total_assets": 169424.0,
+   "equity": 14208.0,
+   "roe_pct": 14.653716216216216
+  },
+  "2026-03-31": {
+   "sales": 13151.0,
+   "net_profit": 2360.0,
+   "equity_capital": 110.0,
+   "reserves": 16390.0,
+   "total_assets": 188960.0,
+   "equity": 16500.0,
+   "roe_pct": 14.303030303030303
+  },
+  "2015-03-31": {
+   "sales": 7061.0,
+   "net_profit": 508.0,
+   "equity_capital": 48.0,
+   "reserves": 6060.0,
+   "total_assets": 75910.0,
+   "equity": 6108.0,
+   "roe_pct": 8.316961362148003
+  },
+  "2016-03-31": {
+   "sales": 6844.0,
+   "net_profit": 414.0,
+   "equity_capital": 48.0,
+   "reserves": 6372.0,
+   "total_assets": 80254.0,
+   "equity": 6420.0,
+   "roe_pct": 6.4485981308411215
+  },
+  "2017-03-31": {
+   "sales": 6686.0,
+   "net_profit": -1633.0,
+   "equity_capital": 52.0,
+   "reserves": 5621.0,
+   "total_assets": 82012.0,
+   "equity": 5673.0,
+   "roe_pct": -28.785475057288913
+  },
+  "2018-03-31": {
+   "sales": 6621.0,
+   "net_profit": 203.0,
+   "equity_capital": 56.0,
+   "reserves": 6102.0,
+   "total_assets": 89684.0,
+   "equity": 6158.0,
+   "roe_pct": 3.2965248457291327
+  },
+  "2019-03-31": {
+   "sales": 7676.0,
+   "net_profit": 464.0,
+   "equity_capital": 56.0,
+   "reserves": 6566.0,
+   "total_assets": 101405.0,
+   "equity": 6622.0,
+   "roe_pct": 7.0069465418302626
+  },
+  "2020-03-31": {
+   "sales": 8446.0,
+   "net_profit": -1183.0,
+   "equity_capital": 71.0,
+   "reserves": 6274.0,
+   "total_assets": 108829.0,
+   "equity": 6345.0,
+   "roe_pct": -18.64460204885737
+  },
+  "2021-03-31": {
+   "sales": 8111.0,
+   "net_profit": 428.0,
+   "equity_capital": 71.0,
+   "reserves": 6731.0,
+   "total_assets": 120273.0,
+   "equity": 6802.0,
+   "roe_pct": 6.292266980299912
+  },
+  "2022-03-31": {
+   "sales": 8013.0,
+   "net_profit": 495.0,
+   "equity_capital": 93.0,
+   "reserves": 7984.0,
+   "total_assets": 130576.0,
+   "equity": 8077.0,
+   "roe_pct": 6.128513061780364
+  },
+  "2023-03-31": {
+   "sales": 9355.0,
+   "net_profit": 1181.0,
+   "equity_capital": 103.0,
+   "reserves": 9793.0,
+   "total_assets": 145913.0,
+   "equity": 9896.0,
+   "roe_pct": 11.934114793856104
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

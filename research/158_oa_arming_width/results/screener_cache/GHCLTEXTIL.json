@@ -1,0 +1,79 @@
+{
+ "symbol": "GHCLTEXTIL",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1054.0,
+   "operating_profit": 84.0,
+   "net_profit": 25.0,
+   "equity_capital": 19.0,
+   "reserves": 1367.0,
+   "borrowings": 72.0,
+   "total_assets": 1633.0,
+   "roce_pct": 6.0,
+   "equity": 1386.0,
+   "roe_pct": 1.8037518037518037,
+   "de": 0.05194805194805195
+  },
+  "2025-03-31": {
+   "sales": 1161.0,
+   "operating_profit": 111.0,
+   "net_profit": 56.0,
+   "equity_capital": 19.0,
+   "reserves": 1418.0,
+   "borrowings": 63.0,
+   "total_assets": 1703.0,
+   "roce_pct": 5.0,
+   "equity": 1437.0,
+   "roe_pct": 3.897007654836465,
+   "de": 0.04384133611691023
+  },
+  "2026-03-31": {
+   "sales": 1319.0,
+   "operating_profit": 141.0,
+   "net_profit": 70.0,
+   "equity_capital": 19.0,
+   "reserves": 1483.0,
+   "borrowings": 134.0,
+   "total_assets": 1870.0,
+   "roce_pct": 6.0,
+   "equity": 1502.0,
+   "roe_pct": 4.660452729693741,
+   "de": 0.08921438082556592
+  },
+  "2022-03-31": {
+   "sales": 0.0,
+   "operating_profit": 0.0,
+   "net_profit": 0.0,
+   "equity_capital": 0.01,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.01,
+   "roe_pct": 0.0,
+   "de": 0.0
+  },
+  "2023-03-31": {
+   "sales": 0.0,
+   "operating_profit": -0.0,
+   "net_profit": -0.0,
+   "equity_capital": 0.01,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.01,
+   "roe_pct": -0.0,
+   "de": 0.0
+  },
+  "2021-03-31": {
+   "equity_capital": 0.01,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.01,
+   "de": 0.0
+  }
+ },
+ "note": "",
+ "n_fy": 6
+}

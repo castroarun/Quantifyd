@@ -1,0 +1,94 @@
+{
+ "symbol": "GMRP&UI",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 779.0,
+   "operating_profit": 401.0,
+   "net_profit": 645.0,
+   "equity_capital": 302.0,
+   "reserves": 217.0,
+   "borrowings": 3918.0,
+   "total_assets": 6812.0,
+   "roce_pct": 10.0,
+   "equity": 519.0,
+   "roe_pct": 124.27745664739885,
+   "de": 7.5491329479768785
+  },
+  "2025-03-31": {
+   "sales": 481.0,
+   "operating_profit": 279.0,
+   "net_profit": 747.0,
+   "equity_capital": 357.0,
+   "reserves": 1297.0,
+   "borrowings": 1909.0,
+   "total_assets": 4685.0,
+   "roce_pct": 8.0,
+   "equity": 1654.0,
+   "roe_pct": 45.163240628778716,
+   "de": 1.1541717049576783
+  },
+  "2026-03-31": {
+   "sales": 367.0,
+   "operating_profit": 211.0,
+   "net_profit": -150.0,
+   "equity_capital": 391.0,
+   "reserves": 3204.0,
+   "borrowings": 1996.0,
+   "total_assets": 6061.0,
+   "roce_pct": 5.0,
+   "equity": 3595.0,
+   "roe_pct": -4.172461752433936,
+   "de": 0.5552155771905424
+  },
+  "2021-03-31": {
+   "sales": 1442.0,
+   "operating_profit": 431.0,
+   "net_profit": -1165.0,
+   "equity_capital": 302.0,
+   "reserves": 400.0,
+   "borrowings": 4764.0,
+   "total_assets": 8002.0,
+   "roce_pct": 16.0,
+   "equity": 702.0,
+   "roe_pct": -165.95441595441596,
+   "de": 6.786324786324786
+  },
+  "2022-03-31": {
+   "sales": 1568.0,
+   "operating_profit": 474.0,
+   "net_profit": -49.0,
+   "equity_capital": 302.0,
+   "reserves": 1122.0,
+   "borrowings": 4529.0,
+   "total_assets": 8564.0,
+   "roce_pct": 8.0,
+   "equity": 1424.0,
+   "roe_pct": -3.441011235955056,
+   "de": 3.1804775280898876
+  },
+  "2023-03-31": {
+   "sales": 1409.0,
+   "operating_profit": 319.0,
+   "net_profit": -283.0,
+   "equity_capital": 302.0,
+   "reserves": 101.0,
+   "borrowings": 3665.0,
+   "total_assets": 6835.0,
+   "roce_pct": 7.0,
+   "equity": 403.0,
+   "roe_pct": -70.22332506203475,
+   "de": 9.094292803970223
+  },
+  "2020-03-31": {
+   "equity_capital": 0.1,
+   "reserves": -0.0,
+   "borrowings": 0.0,
+   "total_assets": 0.0,
+   "equity": 0.1,
+   "de": 0.0
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

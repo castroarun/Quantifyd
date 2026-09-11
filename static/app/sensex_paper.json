@@ -6,14 +6,14 @@
  "lots": 2,
  "qty": 40,
  "lot_size": 20,
- "updated": "2026-09-11 10:04:02",
+ "updated": "2026-09-11 13:06:02",
  "today_day": "2026-09-11",
  "variants": {
   "straddle": {
    "all": {
     "n": 42,
-    "pnl": -15488,
-    "win": 67
+    "pnl": -20722,
+    "win": 64
    },
    "system": {
     "n": 17,
@@ -22,8 +22,8 @@
    },
    "observational": {
     "n": 25,
-    "pnl": -25526,
-    "win": 56
+    "pnl": -30760,
+    "win": 52
    },
    "curve": [
     [
@@ -262,15 +262,15 @@
     ],
     [
      "2026-09-11",
-     -15488
+     -20722
     ]
    ]
   },
   "strangle": {
    "all": {
     "n": 42,
-    "pnl": 29682,
-    "win": 67
+    "pnl": 24942,
+    "win": 64
    },
    "system": {
     "n": 17,
@@ -279,8 +279,8 @@
    },
    "observational": {
     "n": 25,
-    "pnl": 10186,
-    "win": 60
+    "pnl": 5446,
+    "win": 56
    },
    "curve": [
     [
@@ -519,7 +519,7 @@
     ],
     [
      "2026-09-11",
-     29682
+     24942
     ]
    ]
   }
@@ -537,12 +537,12 @@
    "ce_entry": 388.25,
    "pe_entry": 324.5,
    "credit": 712.75,
-   "ce_exit": 386.8,
-   "pe_exit": 305.85,
-   "exit_reason": "time1445",
+   "ce_exit": 574.9,
+   "pe_exit": 236.25,
+   "exit_reason": "move0.4%",
    "entry_time": "09:20",
-   "exit_time": "14:45",
-   "pnl": 764,
+   "exit_time": "11:17",
+   "pnl": -3976,
    "legs": [
     {
      "type": "CE",
@@ -550,8 +550,8 @@
      "strike": 74500,
      "qty": 40,
      "entry": 388.25,
-     "ltp": 386.8,
-     "pnl": 58
+     "ltp": 574.9,
+     "pnl": -7466
     },
     {
      "type": "PE",
@@ -559,8 +559,8 @@
      "strike": 73900,
      "qty": 40,
      "entry": 324.5,
-     "ltp": 305.85,
-     "pnl": 746
+     "ltp": 236.25,
+     "pnl": 3530
     }
    ]
   },
@@ -576,12 +576,12 @@
    "ce_entry": 537.85,
    "pe_entry": 444.7,
    "credit": 982.55,
-   "ce_exit": 541.55,
-   "pe_exit": 418.05,
-   "exit_reason": "time1515",
+   "ce_exit": 761.95,
+   "pe_exit": 328.5,
+   "exit_reason": "SL",
    "entry_time": "09:20",
    "exit_time": "15:15",
-   "pnl": 878,
+   "pnl": -4356,
    "legs": [
     {
      "type": "CE",
@@ -589,8 +589,8 @@
      "strike": 74200,
      "qty": 40,
      "entry": 537.85,
-     "ltp": 541.55,
-     "pnl": -148
+     "ltp": 761.95,
+     "pnl": -8964
     },
     {
      "type": "PE",
@@ -598,8 +598,8 @@
      "strike": 74200,
      "qty": 40,
      "entry": 444.7,
-     "ltp": 418.05,
-     "pnl": 1066
+     "ltp": 328.5,
+     "pnl": 4648
     }
    ]
   },

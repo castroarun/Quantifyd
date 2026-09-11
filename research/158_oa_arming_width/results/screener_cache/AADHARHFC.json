@@ -1,0 +1,80 @@
+{
+ "symbol": "AADHARHFC",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 2587.0,
+   "net_profit": 750.0,
+   "equity_capital": 395.0,
+   "reserves": 4055.0,
+   "total_assets": 19093.0,
+   "equity": 4450.0,
+   "roe_pct": 16.853932584269664
+  },
+  "2025-03-31": {
+   "sales": 3109.0,
+   "net_profit": 912.0,
+   "equity_capital": 431.0,
+   "reserves": 5941.0,
+   "total_assets": 23224.0,
+   "equity": 6372.0,
+   "roe_pct": 14.312617702448211
+  },
+  "2026-03-31": {
+   "sales": 3683.0,
+   "net_profit": 1096.0,
+   "equity_capital": 436.0,
+   "reserves": 7105.0,
+   "total_assets": 27399.0,
+   "equity": 7541.0,
+   "roe_pct": 14.53388144808381
+  },
+  "2019-03-31": {
+   "sales": 1266.0,
+   "net_profit": 162.0,
+   "equity_capital": 25.0,
+   "reserves": 834.0,
+   "total_assets": 9480.0,
+   "equity": 859.0,
+   "roe_pct": 18.859138533178115
+  },
+  "2020-03-31": {
+   "sales": 1388.0,
+   "net_profit": 189.0,
+   "equity_capital": 39.0,
+   "reserves": 2308.0,
+   "total_assets": 12366.0,
+   "equity": 2347.0,
+   "roe_pct": 8.052833404345973
+  },
+  "2021-03-31": {
+   "sales": 1575.0,
+   "net_profit": 340.0,
+   "equity_capital": 395.0,
+   "reserves": 2298.0,
+   "total_assets": 13630.0,
+   "equity": 2693.0,
+   "roe_pct": 12.625324916450056
+  },
+  "2022-03-31": {
+   "sales": 1728.0,
+   "net_profit": 445.0,
+   "equity_capital": 395.0,
+   "reserves": 2752.0,
+   "total_assets": 14376.0,
+   "equity": 3147.0,
+   "roe_pct": 14.140451223387354
+  },
+  "2023-03-31": {
+   "sales": 2043.0,
+   "net_profit": 545.0,
+   "equity_capital": 395.0,
+   "reserves": 3303.0,
+   "total_assets": 16618.0,
+   "equity": 3698.0,
+   "roe_pct": 14.737696051919956
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

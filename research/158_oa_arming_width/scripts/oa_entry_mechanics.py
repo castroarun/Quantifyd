@@ -70,7 +70,7 @@ def load_frames(base_start, trail_sma=50):
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
              fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT,
              stcg=0.0, ltcg=0.125, fill_close=False, cash_yield=0.0,
-             eod_abort=False):
+             eod_abort=False, abort_keeps_slot=False):
     """cash_yield: annualized liquid-ETF yield accrued daily on idle cash
     (default 0 = legacy behavior; the live book sweeps to CASHIETF ~5-6%)."""
     rng = np.random.default_rng(seed)
@@ -94,6 +94,7 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
             cur_year = yr
         # entries
         if not weak_arr[i]:
+            slots_burned = 0          # reset each day; see --abort-keeps-slot
             cand = np.nonzero(TRIG[i])[0]
             if len(cand):
                 mtm = sum(q * (C[i, c] if not np.isnan(C[i, c]) else b)
@@ -106,7 +107,7 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                 elif sel == 'random':
                     cand = rng.permutation(cand)
                 for c in cand:
-                    if len(positions) >= slots:
+                    if len(positions) + slots_burned >= slots:
                         passed_up += 1
                         continue
                     piv = float(ATH[i, c])
@@ -130,6 +131,11 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                         if stcg:
                             tax_yr_gain += stcg * qty * (cl_i - fill)
                         trades.append((c, i, i, fill, cl_i, 'eod_abort'))
+                        if abort_keeps_slot:
+                            # The slot is spent for today. Stops the loop from buying a
+                            # fresh name the instant this one is cut, which is what made
+                            # the recycling version bleed.
+                            slots_burned += 1
                         continue
                     positions.append((c, i, fill, qty))
         # exits at close
@@ -213,6 +219,8 @@ def main():
                          'bought (conservative, but selects for data coverage); pass = '
                          'left eligible (filter only removes what it has evidence '
                          'against). Report both.')
+    ap.add_argument('--abort-keeps-slot', action='store_true',
+                    help='with --eod-abort, a failed breakout still consumes the slot for the day instead of freeing it. The recycling is what turned the abort into -21%/yr: each abort is a certain small loss and the freed slot immediately buys another, hundreds of times a year. This separates Arun cut-it-same-day idea from the refill.')
     ap.add_argument('--eod-abort', action='store_true',
                     help='sell the same day at the close if the close did not finish '
                          'above the pivot: keeps the pivot fill AND the '
@@ -339,7 +347,8 @@ def main():
                                           stop=a.stop / 100.0, slots=a.slots,
                                           stcg=0.20 if a.stcg else 0.0,
                                           fill_close=a.fill_close,
-                                          eod_abort=a.eod_abort)
+                                          eod_abort=a.eod_abort,
+                                          abort_keeps_slot=a.abort_keeps_slot)
         st, e = stats_from(equity, dates_used, trades, CAPITAL)
         st['seed'] = seed
         all_stats.append(st)

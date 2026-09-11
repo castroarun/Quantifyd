@@ -1,0 +1,141 @@
+{
+ "symbol": "KRSNAA",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 590.0,
+   "operating_profit": 146.0,
+   "net_profit": 59.0,
+   "equity_capital": 16.0,
+   "reserves": 799.0,
+   "borrowings": 160.0,
+   "total_assets": 1172.0,
+   "roce_pct": 10.0,
+   "equity": 815.0,
+   "roe_pct": 7.2392638036809815,
+   "de": 0.19631901840490798
+  },
+  "2025-03-31": {
+   "sales": 682.0,
+   "operating_profit": 197.0,
+   "net_profit": 83.0,
+   "equity_capital": 16.0,
+   "reserves": 877.0,
+   "borrowings": 202.0,
+   "total_assets": 1283.0,
+   "roce_pct": 13.0,
+   "equity": 893.0,
+   "roe_pct": 9.29451287793953,
+   "de": 0.22620380739081747
+  },
+  "2026-03-31": {
+   "sales": 691.0,
+   "operating_profit": 213.0,
+   "net_profit": 103.0,
+   "equity_capital": 16.0,
+   "reserves": 976.0,
+   "borrowings": 531.0,
+   "total_assets": 1818.0,
+   "roce_pct": 13.0,
+   "equity": 992.0,
+   "roe_pct": 10.383064516129032,
+   "de": 0.5352822580645161
+  },
+  "2016-03-31": {
+   "sales": 36.0,
+   "operating_profit": 0.0,
+   "net_profit": -8.0,
+   "equity_capital": 5.0,
+   "reserves": 4.0,
+   "borrowings": 131.0,
+   "total_assets": 163.0,
+   "equity": 9.0,
+   "roe_pct": -88.88888888888889,
+   "de": 14.555555555555555
+  },
+  "2017-03-31": {
+   "sales": 57.0,
+   "operating_profit": 15.0,
+   "net_profit": 2.0,
+   "equity_capital": 5.0,
+   "reserves": 6.0,
+   "borrowings": 102.0,
+   "total_assets": 176.0,
+   "roce_pct": 7.0,
+   "equity": 11.0,
+   "roe_pct": 18.181818181818183,
+   "de": 9.272727272727273
+  },
+  "2018-03-31": {
+   "sales": 108.0,
+   "operating_profit": -62.0,
+   "net_profit": -60.0
+  },
+  "2019-03-31": {
+   "sales": 147.0,
+   "operating_profit": 60.0,
+   "net_profit": 12.0,
+   "equity_capital": 5.0,
+   "reserves": 43.0,
+   "borrowings": 330.0,
+   "total_assets": 493.0,
+   "equity": 48.0,
+   "roe_pct": 25.0,
+   "de": 6.875
+  },
+  "2020-03-31": {
+   "sales": 258.0,
+   "operating_profit": -114.0,
+   "net_profit": -112.0,
+   "equity_capital": 5.0,
+   "reserves": -217.0,
+   "borrowings": 246.0,
+   "total_assets": 630.0,
+   "roce_pct": -65.0,
+   "equity": -212.0,
+   "roe_pct": 52.83018867924528,
+   "de": -1.1603773584905661
+  },
+  "2021-03-31": {
+   "sales": 396.0,
+   "operating_profit": 94.0,
+   "net_profit": 185.0,
+   "equity_capital": 6.0,
+   "reserves": -17.0,
+   "borrowings": 474.0,
+   "total_assets": 609.0,
+   "roce_pct": 129.0,
+   "equity": -11.0,
+   "roe_pct": -1681.8181818181818,
+   "de": -43.09090909090909
+  },
+  "2022-03-31": {
+   "sales": 455.0,
+   "operating_profit": 135.0,
+   "net_profit": 71.0,
+   "equity_capital": 16.0,
+   "reserves": 671.0,
+   "borrowings": 41.0,
+   "total_assets": 877.0,
+   "roce_pct": 18.0,
+   "equity": 687.0,
+   "roe_pct": 10.334788937409025,
+   "de": 0.05967976710334789
+  },
+  "2023-03-31": {
+   "sales": 464.0,
+   "operating_profit": 124.0,
+   "net_profit": 64.0,
+   "equity_capital": 16.0,
+   "reserves": 727.0,
+   "borrowings": 32.0,
+   "total_assets": 909.0,
+   "roce_pct": 12.0,
+   "equity": 743.0,
+   "roe_pct": 8.613728129205922,
+   "de": 0.04306864064602961
+  }
+ },
+ "note": "",
+ "n_fy": 11
+}

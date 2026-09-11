@@ -1,0 +1,116 @@
+{
+ "symbol": "AUBANK",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 10555.0,
+   "net_profit": 1535.0,
+   "equity_capital": 669.0,
+   "reserves": 11890.0,
+   "total_assets": 109426.0,
+   "equity": 12559.0,
+   "roe_pct": 12.222310693526556
+  },
+  "2025-03-31": {
+   "sales": 16064.0,
+   "net_profit": 2106.0,
+   "equity_capital": 745.0,
+   "reserves": 16422.0,
+   "total_assets": 157846.0,
+   "equity": 17167.0,
+   "roe_pct": 12.26772295683579
+  },
+  "2026-03-31": {
+   "sales": 18636.0,
+   "net_profit": 2641.0,
+   "equity_capital": 748.0,
+   "reserves": 19225.0,
+   "total_assets": 191797.0,
+   "equity": 19973.0,
+   "roe_pct": 13.222850848645672
+  },
+  "2015-03-31": {
+   "sales": 704.0,
+   "net_profit": 140.0,
+   "equity_capital": 44.0,
+   "reserves": 767.0,
+   "total_assets": 4035.0,
+   "equity": 811.0,
+   "roe_pct": 17.26263871763255
+  },
+  "2016-03-31": {
+   "sales": 1010.0,
+   "net_profit": 212.0,
+   "equity_capital": 44.0,
+   "reserves": 965.0,
+   "total_assets": 6294.0,
+   "equity": 1009.0,
+   "roe_pct": 21.010901883052526
+  },
+  "2017-03-31": {
+   "sales": 1280.0,
+   "net_profit": 822.0,
+   "equity_capital": 284.0,
+   "reserves": 1703.0,
+   "total_assets": 9781.0,
+   "equity": 1987.0,
+   "roe_pct": 41.368897835933566
+  },
+  "2018-03-31": {
+   "sales": 1767.0,
+   "net_profit": 292.0,
+   "equity_capital": 286.0,
+   "reserves": 1995.0,
+   "total_assets": 18833.0,
+   "equity": 2281.0,
+   "roe_pct": 12.801402893467777
+  },
+  "2019-03-31": {
+   "sales": 2949.0,
+   "net_profit": 382.0,
+   "equity_capital": 292.0,
+   "reserves": 2871.0,
+   "total_assets": 32623.0,
+   "equity": 3163.0,
+   "roe_pct": 12.07714195384129
+  },
+  "2020-03-31": {
+   "sales": 4286.0,
+   "net_profit": 675.0,
+   "equity_capital": 304.0,
+   "reserves": 4073.0,
+   "total_assets": 42143.0,
+   "equity": 4377.0,
+   "roe_pct": 15.421521590130226
+  },
+  "2021-03-31": {
+   "sales": 4950.0,
+   "net_profit": 1171.0,
+   "equity_capital": 312.0,
+   "reserves": 5963.0,
+   "total_assets": 51591.0,
+   "equity": 6275.0,
+   "roe_pct": 18.661354581673308
+  },
+  "2022-03-31": {
+   "sales": 5922.0,
+   "net_profit": 1130.0,
+   "equity_capital": 315.0,
+   "reserves": 7199.0,
+   "total_assets": 69078.0,
+   "equity": 7514.0,
+   "roe_pct": 15.03859462336971
+  },
+  "2023-03-31": {
+   "sales": 8205.0,
+   "net_profit": 1428.0,
+   "equity_capital": 667.0,
+   "reserves": 10311.0,
+   "total_assets": 90216.0,
+   "equity": 10978.0,
+   "roe_pct": 13.007833849517215
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

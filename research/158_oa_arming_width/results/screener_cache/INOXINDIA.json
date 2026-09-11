@@ -1,0 +1,111 @@
+{
+ "symbol": "INOXINDIA",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1133.0,
+   "operating_profit": 252.0,
+   "net_profit": 196.0,
+   "equity_capital": 18.0,
+   "reserves": 631.0,
+   "borrowings": 16.0,
+   "total_assets": 1223.0,
+   "roce_pct": 43.0,
+   "equity": 649.0,
+   "roe_pct": 30.20030816640986,
+   "de": 0.02465331278890601
+  },
+  "2025-03-31": {
+   "sales": 1306.0,
+   "operating_profit": 285.0,
+   "net_profit": 226.0,
+   "equity_capital": 18.0,
+   "reserves": 856.0,
+   "borrowings": 43.0,
+   "total_assets": 1654.0,
+   "roce_pct": 38.0,
+   "equity": 874.0,
+   "roe_pct": 25.85812356979405,
+   "de": 0.04919908466819222
+  },
+  "2026-03-31": {
+   "sales": 1587.0,
+   "operating_profit": 343.0,
+   "net_profit": 258.0,
+   "equity_capital": 18.0,
+   "reserves": 1099.0,
+   "borrowings": 81.0,
+   "total_assets": 2012.0,
+   "roce_pct": 33.0,
+   "equity": 1117.0,
+   "roe_pct": 23.097582811101162,
+   "de": 0.07251566696508505
+  },
+  "2019-03-31": {
+   "sales": 650.0,
+   "operating_profit": 144.0,
+   "net_profit": 193.0,
+   "equity_capital": 9.0,
+   "reserves": 201.0,
+   "borrowings": 284.0,
+   "total_assets": 725.0,
+   "equity": 210.0,
+   "roe_pct": 91.9047619047619,
+   "de": 1.3523809523809525
+  },
+  "2020-03-31": {
+   "sales": 649.0,
+   "operating_profit": 133.0,
+   "net_profit": 97.0,
+   "equity_capital": 9.0,
+   "reserves": 270.0,
+   "borrowings": 145.0,
+   "total_assets": 629.0,
+   "roce_pct": 30.0,
+   "equity": 279.0,
+   "roe_pct": 34.76702508960574,
+   "de": 0.5197132616487455
+  },
+  "2021-03-31": {
+   "sales": 594.0,
+   "operating_profit": 135.0,
+   "net_profit": 96.0,
+   "equity_capital": 9.0,
+   "reserves": 362.0,
+   "borrowings": 68.0,
+   "total_assets": 687.0,
+   "roce_pct": 32.0,
+   "equity": 371.0,
+   "roe_pct": 25.87601078167116,
+   "de": 0.18328840970350405
+  },
+  "2022-03-31": {
+   "sales": 783.0,
+   "operating_profit": 168.0,
+   "net_profit": 130.0,
+   "equity_capital": 18.0,
+   "reserves": 484.0,
+   "borrowings": 55.0,
+   "total_assets": 897.0,
+   "roce_pct": 35.0,
+   "equity": 502.0,
+   "roe_pct": 25.89641434262948,
+   "de": 0.10956175298804781
+  },
+  "2023-03-31": {
+   "sales": 966.0,
+   "operating_profit": 205.0,
+   "net_profit": 155.0,
+   "equity_capital": 18.0,
+   "reserves": 531.0,
+   "borrowings": 9.0,
+   "total_assets": 1148.0,
+   "roce_pct": 37.0,
+   "equity": 549.0,
+   "roe_pct": 28.233151183970858,
+   "de": 0.01639344262295082
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

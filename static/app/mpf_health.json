@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-11 10:04:46.311630",
+ "generated": "2026-09-11 10:39:59.524801",
  "overall": "OK",
  "books": [
   {
@@ -7,9 +7,9 @@
    "label": "True North",
    "held": 5,
    "slots": 8,
-   "nav": 913424,
+   "nav": 915425,
    "gain": null,
-   "updated": "2026-09-11 10:04:10.273382",
+   "updated": "2026-09-11 10:39:13.421632",
    "age_min": 1,
    "due": [],
    "unplaced": [],
@@ -19,31 +19,25 @@
   {
    "id": "oa",
    "label": "Open Alpha",
-   "held": 14,
+   "held": 12,
    "slots": 16,
-   "nav": 621335,
-   "gain": 3698,
-   "updated": "2026-09-11 10:04:04.221854",
+   "nav": 623191,
+   "gain": 5553,
+   "updated": "2026-09-11 10:39:05.478847",
    "age_min": 1,
-   "due": [
-    "KMEW",
-    "TMB"
-   ],
-   "unplaced": [
-    "KMEW",
-    "TMB"
-   ],
+   "due": [],
+   "unplaced": [],
    "failed": 0,
-   "unreconciled": 0
+   "unreconciled": -1
   },
   {
    "id": "ipo",
    "label": "IPO Base",
    "held": 1,
    "slots": 8,
-   "nav": 228901,
-   "gain": 190,
-   "updated": "2026-09-11 10:04:05.383014",
+   "nav": 228789,
+   "gain": 78,
+   "updated": "2026-09-11 10:39:06.963162",
    "age_min": 1,
    "due": [],
    "unplaced": [],
@@ -92,13 +86,13 @@
    "area": "Open Alpha",
    "name": "slots",
    "status": "OK",
-   "detail": "14/16 held, 2 free - tonight's scan arms them"
+   "detail": "12/16 held, 4 armed for the next session"
   },
   {
    "area": "Open Alpha",
    "name": "exits due",
    "status": "OK",
-   "detail": "below the rule, 15:18 check will place if still there: KMEW, TMB"
+   "detail": "none"
   },
   {
    "area": "Open Alpha",
@@ -110,7 +104,7 @@
    "area": "Open Alpha",
    "name": "ledger square",
    "status": "OK",
-   "detail": "unreconciled Rs +0"
+   "detail": "unreconciled Rs -1"
   },
   {
    "area": "IPO Base",
@@ -146,19 +140,19 @@
    "area": "Jobs",
    "name": "True North marks",
    "status": "OK",
-   "detail": "ran 10:04"
+   "detail": "ran 10:39"
   },
   {
    "area": "Jobs",
    "name": "True North state",
    "status": "OK",
-   "detail": "ran 10:03"
+   "detail": "ran 10:39"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha marks",
    "status": "OK",
-   "detail": "ran 10:04"
+   "detail": "ran 10:39"
   },
   {
    "area": "Jobs",
@@ -176,7 +170,7 @@
    "area": "Jobs",
    "name": "IPO marks",
    "status": "OK",
-   "detail": "ran 10:04"
+   "detail": "ran 10:39"
   },
   {
    "area": "Jobs",
@@ -201,6 +195,12 @@
    "name": "Open Alpha entries",
    "status": "OK",
    "detail": "due at 18:50 (last ran 10-Sep 18:50)"
+  },
+  {
+   "area": "Universe",
+   "name": "tradeable",
+   "status": "OK",
+   "detail": "154 of 2905 scanner-eligible symbols no longer trade under that name (110 merely renamed); the scanner refuses them and the history stays for the backtests"
   },
   {
    "area": "Alerts",

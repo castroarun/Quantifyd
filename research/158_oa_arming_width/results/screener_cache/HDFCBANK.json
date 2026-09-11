@@ -1,0 +1,116 @@
+{
+ "symbol": "HDFCBANK",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 283649.0,
+   "net_profit": 65446.0,
+   "equity_capital": 760.0,
+   "reserves": 455636.0,
+   "total_assets": 4030194.0,
+   "equity": 456396.0,
+   "roe_pct": 14.339740050307189
+  },
+  "2025-03-31": {
+   "sales": 336367.0,
+   "net_profit": 73440.0,
+   "equity_capital": 765.0,
+   "reserves": 521024.0,
+   "total_assets": 4392110.0,
+   "equity": 521789.0,
+   "roe_pct": 14.074654697588489
+  },
+  "2026-03-31": {
+   "sales": 348615.0,
+   "net_profit": 79219.0,
+   "equity_capital": 1539.0,
+   "reserves": 584520.0,
+   "total_assets": 4907701.0,
+   "equity": 586059.0,
+   "roe_pct": 13.517239731835874
+  },
+  "2015-03-31": {
+   "sales": 50666.0,
+   "net_profit": 10703.0,
+   "equity_capital": 501.0,
+   "reserves": 62653.0,
+   "total_assets": 607097.0,
+   "equity": 63154.0,
+   "roe_pct": 16.947461760141877
+  },
+  "2016-03-31": {
+   "sales": 63162.0,
+   "net_profit": 12821.0,
+   "equity_capital": 506.0,
+   "reserves": 73798.0,
+   "total_assets": 762212.0,
+   "equity": 74304.0,
+   "roe_pct": 17.25479112833764
+  },
+  "2017-03-31": {
+   "sales": 73271.0,
+   "net_profit": 15317.0,
+   "equity_capital": 513.0,
+   "reserves": 91281.0,
+   "total_assets": 892344.0,
+   "equity": 91794.0,
+   "roe_pct": 16.686275791446064
+  },
+  "2018-03-31": {
+   "sales": 85288.0,
+   "net_profit": 18561.0,
+   "equity_capital": 519.0,
+   "reserves": 109080.0,
+   "total_assets": 1103186.0,
+   "equity": 109599.0,
+   "roe_pct": 16.935373497933377
+  },
+  "2019-03-31": {
+   "sales": 105161.0,
+   "net_profit": 22446.0,
+   "equity_capital": 545.0,
+   "reserves": 153128.0,
+   "total_assets": 1292806.0,
+   "equity": 153673.0,
+   "roe_pct": 14.606339435034132
+  },
+  "2020-03-31": {
+   "sales": 122189.0,
+   "net_profit": 27296.0,
+   "equity_capital": 548.0,
+   "reserves": 175810.0,
+   "total_assets": 1580830.0,
+   "equity": 176358.0,
+   "roe_pct": 15.47760804726749
+  },
+  "2021-03-31": {
+   "sales": 128552.0,
+   "net_profit": 31857.0,
+   "equity_capital": 551.0,
+   "reserves": 209259.0,
+   "total_assets": 1799507.0,
+   "equity": 209810.0,
+   "roe_pct": 15.183737667413373
+  },
+  "2022-03-31": {
+   "sales": 135936.0,
+   "net_profit": 38151.0,
+   "equity_capital": 555.0,
+   "reserves": 246772.0,
+   "total_assets": 2122934.0,
+   "equity": 247327.0,
+   "roe_pct": 15.425327602728371
+  },
+  "2023-03-31": {
+   "sales": 170754.0,
+   "net_profit": 46149.0,
+   "equity_capital": 558.0,
+   "reserves": 288880.0,
+   "total_assets": 2530432.0,
+   "equity": 289438.0,
+   "roe_pct": 15.944347321360706
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

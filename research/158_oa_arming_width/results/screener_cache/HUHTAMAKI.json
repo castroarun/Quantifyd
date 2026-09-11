@@ -1,0 +1,23 @@
+{
+ "symbol": "HUHTAMAKI",
+ "source": "consolidated",
+ "fy": {
+  "2014-03-31": {
+   "sales": 292.0,
+   "operating_profit": 32.0,
+   "net_profit": 17.0
+  },
+  "2015-03-31": {
+   "sales": 442.0,
+   "operating_profit": 54.0,
+   "net_profit": 21.0
+  },
+  "2016-03-31": {
+   "sales": 526.0,
+   "operating_profit": 79.0,
+   "net_profit": 35.0
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

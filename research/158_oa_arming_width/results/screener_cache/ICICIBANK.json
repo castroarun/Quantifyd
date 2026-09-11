@@ -1,0 +1,116 @@
+{
+ "symbol": "ICICIBANK",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 159516.0,
+   "net_profit": 46081.0,
+   "equity_capital": 1405.0,
+   "reserves": 254739.0,
+   "total_assets": 2364063.0,
+   "equity": 256144.0,
+   "roe_pct": 17.99027109750765
+  },
+  "2025-03-31": {
+   "sales": 186331.0,
+   "net_profit": 54569.0,
+   "equity_capital": 1425.0,
+   "reserves": 312481.0,
+   "total_assets": 2642241.0,
+   "equity": 313906.0,
+   "roe_pct": 17.38386650780807
+  },
+  "2026-03-31": {
+   "sales": 195218.0,
+   "net_profit": 57936.0,
+   "equity_capital": 1432.0,
+   "reserves": 361628.0,
+   "total_assets": 2914498.0,
+   "equity": 363060.0,
+   "roe_pct": 15.957692943315154
+  },
+  "2015-03-31": {
+   "sales": 54964.0,
+   "net_profit": 12942.0,
+   "equity_capital": 1160.0,
+   "reserves": 83545.0,
+   "total_assets": 826079.0,
+   "equity": 84705.0,
+   "roe_pct": 15.278909155303701
+  },
+  "2016-03-31": {
+   "sales": 59294.0,
+   "net_profit": 10927.0,
+   "equity_capital": 1163.0,
+   "reserves": 92948.0,
+   "total_assets": 918756.0,
+   "equity": 94111.0,
+   "roe_pct": 11.610757509749126
+  },
+  "2017-03-31": {
+   "sales": 60940.0,
+   "net_profit": 11340.0,
+   "equity_capital": 1165.0,
+   "reserves": 103467.0,
+   "total_assets": 985725.0,
+   "equity": 104632.0,
+   "roe_pct": 10.837984555394144
+  },
+  "2018-03-31": {
+   "sales": 62162.0,
+   "net_profit": 9100.0,
+   "equity_capital": 1286.0,
+   "reserves": 109344.0,
+   "total_assets": 1124281.0,
+   "equity": 110630.0,
+   "roe_pct": 8.225616921269095
+  },
+  "2019-03-31": {
+   "sales": 71982.0,
+   "net_profit": 5689.0,
+   "equity_capital": 1289.0,
+   "reserves": 112964.0,
+   "total_assets": 1238794.0,
+   "equity": 114253.0,
+   "roe_pct": 4.979300324717951
+  },
+  "2020-03-31": {
+   "sales": 84836.0,
+   "net_profit": 11225.0,
+   "equity_capital": 1295.0,
+   "reserves": 121665.0,
+   "total_assets": 1377292.0,
+   "equity": 122960.0,
+   "roe_pct": 9.128985035783995
+  },
+  "2021-03-31": {
+   "sales": 89163.0,
+   "net_profit": 20364.0,
+   "equity_capital": 1383.0,
+   "reserves": 156204.0,
+   "total_assets": 1573812.0,
+   "equity": 157587.0,
+   "roe_pct": 12.922385729787356
+  },
+  "2022-03-31": {
+   "sales": 95407.0,
+   "net_profit": 26538.0,
+   "equity_capital": 1390.0,
+   "reserves": 180663.0,
+   "total_assets": 1752637.0,
+   "equity": 182053.0,
+   "roe_pct": 14.577073709304432
+  },
+  "2023-03-31": {
+   "sales": 121067.0,
+   "net_profit": 35461.0,
+   "equity_capital": 1397.0,
+   "reserves": 213101.0,
+   "total_assets": 1958490.0,
+   "equity": 214498.0,
+   "roe_pct": 16.53208887728557
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

@@ -1,0 +1,116 @@
+{
+ "symbol": "MANCREDIT",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 33.0,
+   "net_profit": 11.0,
+   "equity_capital": 20.0,
+   "reserves": 108.0,
+   "total_assets": 274.0,
+   "equity": 128.0,
+   "roe_pct": 8.59375
+  },
+  "2025-03-31": {
+   "sales": 50.0,
+   "net_profit": 13.0,
+   "equity_capital": 20.0,
+   "reserves": 121.0,
+   "total_assets": 349.0,
+   "equity": 141.0,
+   "roe_pct": 9.21985815602837
+  },
+  "2026-03-31": {
+   "sales": 70.0,
+   "net_profit": 15.0,
+   "equity_capital": 21.0,
+   "reserves": 152.0,
+   "total_assets": 517.0,
+   "equity": 173.0,
+   "roe_pct": 8.670520231213873
+  },
+  "2015-03-31": {
+   "sales": 12.0,
+   "net_profit": 1.0,
+   "equity_capital": 1.0,
+   "reserves": 30.0,
+   "total_assets": 91.0,
+   "equity": 31.0,
+   "roe_pct": 3.225806451612903
+  },
+  "2016-03-31": {
+   "sales": 8.0,
+   "net_profit": 1.0,
+   "equity_capital": 16.0,
+   "reserves": 48.0,
+   "total_assets": 77.0,
+   "equity": 64.0,
+   "roe_pct": 1.5625
+  },
+  "2017-03-31": {
+   "sales": 9.0,
+   "net_profit": 3.0,
+   "equity_capital": 16.0,
+   "reserves": 51.0,
+   "total_assets": 89.0,
+   "equity": 67.0,
+   "roe_pct": 4.477611940298507
+  },
+  "2018-03-31": {
+   "sales": 10.0,
+   "net_profit": 5.0,
+   "equity_capital": 19.0,
+   "reserves": 61.0,
+   "total_assets": 90.0,
+   "equity": 80.0,
+   "roe_pct": 6.25
+  },
+  "2019-03-31": {
+   "sales": 10.0,
+   "net_profit": 6.0,
+   "equity_capital": 19.0,
+   "reserves": 66.0,
+   "total_assets": 89.0,
+   "equity": 85.0,
+   "roe_pct": 7.0588235294117645
+  },
+  "2020-03-31": {
+   "sales": 16.0,
+   "net_profit": 11.0,
+   "equity_capital": 19.0,
+   "reserves": 76.0,
+   "total_assets": 104.0,
+   "equity": 95.0,
+   "roe_pct": 11.578947368421053
+  },
+  "2021-03-31": {
+   "sales": 11.0,
+   "net_profit": 6.0,
+   "equity_capital": 19.0,
+   "reserves": 80.0,
+   "total_assets": 116.0,
+   "equity": 99.0,
+   "roe_pct": 6.0606060606060606
+  },
+  "2022-03-31": {
+   "sales": 15.0,
+   "net_profit": 6.0,
+   "equity_capital": 19.0,
+   "reserves": 87.0,
+   "total_assets": 138.0,
+   "equity": 106.0,
+   "roe_pct": 5.660377358490566
+  },
+  "2023-03-31": {
+   "sales": 21.0,
+   "net_profit": 8.0,
+   "equity_capital": 19.0,
+   "reserves": 93.0,
+   "total_assets": 203.0,
+   "equity": 112.0,
+   "roe_pct": 7.142857142857143
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

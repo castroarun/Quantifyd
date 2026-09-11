@@ -1,0 +1,98 @@
+{
+ "symbol": "JGCHEM",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 666.0,
+   "operating_profit": 46.0,
+   "net_profit": 32.0,
+   "equity_capital": 39.0,
+   "reserves": 359.0,
+   "borrowings": 14.0,
+   "total_assets": 449.0,
+   "roce_pct": 14.0,
+   "equity": 398.0,
+   "roe_pct": 8.040201005025125,
+   "de": 0.035175879396984924
+  },
+  "2025-03-31": {
+   "sales": 847.0,
+   "operating_profit": 87.0,
+   "net_profit": 67.0,
+   "equity_capital": 39.0,
+   "reserves": 426.0,
+   "borrowings": 0.0,
+   "total_assets": 498.0,
+   "roce_pct": 20.0,
+   "equity": 465.0,
+   "roe_pct": 14.408602150537634,
+   "de": 0.0
+  },
+  "2026-03-31": {
+   "sales": 973.0,
+   "operating_profit": 82.0,
+   "net_profit": 69.0,
+   "equity_capital": 39.0,
+   "reserves": 489.0,
+   "borrowings": 6.0,
+   "total_assets": 569.0,
+   "roce_pct": 18.0,
+   "equity": 528.0,
+   "roe_pct": 13.068181818181818,
+   "de": 0.011363636363636364
+  },
+  "2020-03-31": {
+   "sales": 398.0,
+   "operating_profit": 20.0,
+   "net_profit": 14.0,
+   "equity_capital": 1.0,
+   "reserves": 84.0,
+   "borrowings": 52.0,
+   "total_assets": 149.0,
+   "equity": 85.0,
+   "roe_pct": 16.470588235294116,
+   "de": 0.611764705882353
+  },
+  "2021-03-31": {
+   "sales": 434.0,
+   "operating_profit": 44.0,
+   "net_profit": 29.0,
+   "equity_capital": 1.0,
+   "reserves": 107.0,
+   "borrowings": 74.0,
+   "total_assets": 210.0,
+   "roce_pct": 27.0,
+   "equity": 108.0,
+   "roe_pct": 26.85185185185185,
+   "de": 0.6851851851851852
+  },
+  "2022-03-31": {
+   "sales": 611.0,
+   "operating_profit": 57.0,
+   "net_profit": 43.0,
+   "equity_capital": 1.0,
+   "reserves": 151.0,
+   "borrowings": 94.0,
+   "total_assets": 264.0,
+   "roce_pct": 28.0,
+   "equity": 152.0,
+   "roe_pct": 28.289473684210527,
+   "de": 0.618421052631579
+  },
+  "2023-03-31": {
+   "sales": 782.0,
+   "operating_profit": 76.0,
+   "net_profit": 57.0,
+   "equity_capital": 32.0,
+   "reserves": 176.0,
+   "borrowings": 70.0,
+   "total_assets": 298.0,
+   "roce_pct": 30.0,
+   "equity": 208.0,
+   "roe_pct": 27.403846153846153,
+   "de": 0.33653846153846156
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

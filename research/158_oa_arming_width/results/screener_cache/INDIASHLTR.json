@@ -1,0 +1,80 @@
+{
+ "symbol": "INDIASHLTR",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 829.0,
+   "net_profit": 247.0,
+   "equity_capital": 54.0,
+   "reserves": 2244.0,
+   "total_assets": 5793.0,
+   "equity": 2298.0,
+   "roe_pct": 10.748476936466492
+  },
+  "2025-03-31": {
+   "sales": 1165.0,
+   "net_profit": 377.0,
+   "equity_capital": 54.0,
+   "reserves": 2653.0,
+   "total_assets": 7746.0,
+   "equity": 2707.0,
+   "roe_pct": 13.926856298485408
+  },
+  "2026-03-31": {
+   "sales": 1530.0,
+   "net_profit": 505.0,
+   "equity_capital": 54.0,
+   "reserves": 3144.0,
+   "total_assets": 9615.0,
+   "equity": 3198.0,
+   "roe_pct": 15.791119449656035
+  },
+  "2019-03-31": {
+   "sales": 172.0,
+   "net_profit": 28.0,
+   "equity_capital": 42.0,
+   "reserves": 751.0,
+   "total_assets": 1362.0,
+   "equity": 793.0,
+   "roe_pct": 3.530895334174023
+  },
+  "2020-03-31": {
+   "sales": 230.0,
+   "net_profit": 47.0,
+   "equity_capital": 43.0,
+   "reserves": 805.0,
+   "total_assets": 1799.0,
+   "equity": 848.0,
+   "roe_pct": 5.5424528301886795
+  },
+  "2021-03-31": {
+   "sales": 317.0,
+   "net_profit": 87.0,
+   "equity_capital": 43.0,
+   "reserves": 894.0,
+   "total_assets": 2470.0,
+   "equity": 937.0,
+   "roe_pct": 9.28495197438634
+  },
+  "2022-03-31": {
+   "sales": 448.0,
+   "net_profit": 128.0,
+   "equity_capital": 44.0,
+   "reserves": 1032.0,
+   "total_assets": 3221.0,
+   "equity": 1076.0,
+   "roe_pct": 11.895910780669144
+  },
+  "2023-03-31": {
+   "sales": 584.0,
+   "net_profit": 155.0,
+   "equity_capital": 44.0,
+   "reserves": 1196.0,
+   "total_assets": 4295.0,
+   "equity": 1240.0,
+   "roe_pct": 12.5
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

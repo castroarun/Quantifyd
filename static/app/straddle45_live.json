@@ -1,7 +1,7 @@
 {
- "asof": "2026-09-10 15:30:14",
- "mode": "DRY-RUN (not armed)",
- "armed": false,
+ "asof": "2026-09-11 12:18:00",
+ "mode": "LIVE",
+ "armed": true,
  "killed": false,
  "lots": 3,
  "qty": 195,
