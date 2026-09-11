@@ -2,6 +2,103 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-09-11 — OPEN ALPHA BUYING IS PAUSED: the entry cannot be placed (research/158)
+
+**Arun action needed: decide what Open Alpha does next.** Selling is untouched and running,
+so the open positions keep their −8% stop and 15-SMA trail. Only the two jobs that OPEN
+positions are off (18:50 scan, 09:25 re-arm), commented out of the crontab with a backup at
+`/tmp/mpf/ct.bak.20260911-111828`. Arun cancelled the four resting buy-stops by hand.
+
+**What was found.** The published r/142 entry combines two things one order cannot have at
+once: the pivot price available the moment a breakout starts, AND the knowledge that the
+breakout will still be there at the closing bell. It counts a trade only when the CLOSE held
+above the pivot, but prices it at that day's OPEN.
+
+Proven on the source site's own 54 published trades, not on our simulation:
+
+| Test | Result |
+|---|---|
+| Their entry-day close finished above the pivot | 49 of 50 (98%) |
+| Their entry day opened above the price they booked | 9 of 50 |
+| Failed resting-order fills in the 120 days before each entry | **348, or 7.0 per published trade** |
+
+HCLTECH is the clearest case: their clean 10-Jan-2025 entry at 1972.20 follows twenty
+earlier days when the same level was touched and the close fell back. A live order was
+filled on 18-Dec-2024 and lost. The clean entry never happens.
+
+**Every placeable entry, 2006→2026, 30 seeds, same book (16 slots @6.25%, −8% stop,
+25bps):**
+
+| Entry | CAGR | After tax | Max DD |
+|---|---|---|---|
+| Published (not placeable) | 40.8% | — | −33.9% |
+| Stop above the breakout candle, trail-20 | 9.9% | — | −56.0% |
+| Buy at the breakout close (~15:10) | 8.5% | 5.5% | −57.3% |
+| Stop above the breakout candle, trail-15 | 6.5% | 3.7% | −71.1% |
+| Next-day stop at the pivot | 2.7% | −0.5% | −72.6% |
+| **Touch of the pivot (what the code does)** | **−1.4%** | — | **−81.8%** |
+| Same-day abort + slot recycling | −21.0% | −22.2% | −99.5% |
+| **NIFTYBEES held** | **11.5%** | — | **−59.7%** |
+
+Nothing placeable beats simply holding the index. RS selection is no better than random, so
+none of these understate the book. Zero costs and the inflated fill together still only
+reach 11.9%, so this is not a friction problem.
+
+**A second, separate defect in the same file.** `services/oa_entry.py` selects `close <
+pivot` — names that have NOT broken out — and rests a stop at the high. The designed
+rule (and the register, and the backtest) is `close > pivot`. The two can never pick the same
+name on the same day. The 04-Sep seed used the correct condition; only scanner entries from
+08-Sep did not.
+
+**Open:**
+- Arun's fundamental overlay (3y profit + sales growth >15%, D/E <=0.20, ROE and ROCE >15%,
+  no negatives) is measuring now on Screener point-in-time annuals over Aug-2024→Sep-2026.
+  It is the last idea on the table for rescuing the entry.
+- Same-day abort WITHOUT slot recycling: queued.
+- Two-year trade ledger on the app for manual verification: requested, not built.
+- If nothing clears the index bar, the decision is whether Open Alpha continues at all.
+
+Files: `research/158_oa_arming_width/` (STATUS-MD, scripts, all logs).
+Commits: `18066bfc`, `f68efc9c`, `677b696a`.
+
+---
+
+## ⏳ 2026-09-11 — IPO Base: honest number is half the published one (research/158)
+
+**No action forced; the book is sound and stays live.** IPO Base's live engine is CORRECT:
+it triggers on tonight's close and fills the next morning. The r/153 study that justified it
+is not — it enters on the same day the close clears the pivot, priced at that day's open,
+which needs the close known at the open.
+
+| IPO Base arm, 2006→2026, 30 seeds, 25bps, after tax | CAGR | Max DD | Calmar |
+|---|---|---|---|
+| Study headline (reproduced to within seed noise) | 31.5% | −20.9% | 1.52 |
+| Study's own close-fill control | 17.5% | −32.1% | 0.53 |
+| **Live engine: next-day stop at the broken pivot** | **15.0%** | **−37.6%** | **0.40** |
+| NIFTYBEES held (pre-tax) | 11.5% | −59.7% | 0.19 |
+
+It still beats the index on return AND on Calmar, and these are after-tax figures. Verdict:
+survives at about half its advertised strength. Caveat: the book sits ~2/3 in cash by design,
+so a standalone comparison with a fully invested index is not like for like.
+
+**Owed:** re-publish the r/153 study page with the honest entry arm shown alongside the
+headline, so `/app/backtest/ipo-base-breakout-research153` stops advertising 31%.
+
+---
+
+## ✅ 2026-09-11 — True North audited, no defect found (research/158)
+
+Checked for the same defect class and cleared. Its engine holds only closing prices, so a
+decide-at-the-close-fill-at-the-open mismatch is structurally impossible. The gate is
+NaN-robust (computed on the dropna'd series, then reindexed — the exact fix r/142 needed
+after phantom holiday rows silently disabled its gate for months). The universe is built
+point-in-time. Every live dial matches the study: 8 slots, 22-name buffer, 200-name universe,
+NIFTYBEES 100-SMA weekly gate to cash, 15-day Donchian, 0.3% round-trip, 6.5% idle cash,
+month-end rebalance. **Published numbers stand.** Not re-verified: survivorship and the RS
+formula, and a line-by-line implementation comparison (dials only).
+
+---
+
 ## PENDING 2026-09-09 -- 45-DTE straddle LIVE executor deployed, ARMING is Arun's call
 `services/straddle45_live.py` automates entry/management/exit for the research/119 book at
 3 lots real money. Cron `*/2 15:18-15:30 Mon-Fri`. **Unarmed** unless `STRADDLE45_LIVE=1` is
