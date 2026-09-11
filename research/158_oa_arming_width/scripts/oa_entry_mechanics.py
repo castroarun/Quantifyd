@@ -69,7 +69,8 @@ def load_frames(base_start, trail_sma=50):
 
 def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_arr,
              fill_realistic, cost, stop=STOP, slots=SLOTS, size_pct=SIZE_PCT,
-             stcg=0.0, ltcg=0.125, fill_close=False, cash_yield=0.0):
+             stcg=0.0, ltcg=0.125, fill_close=False, cash_yield=0.0,
+             eod_abort=False):
     """cash_yield: annualized liquid-ETF yield accrued daily on idle cash
     (default 0 = legacy behavior; the live book sweeps to CASHIETF ~5-6%)."""
     rng = np.random.default_rng(seed)
@@ -119,6 +120,17 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                         passed_up += 1
                         continue
                     cash -= qty * fill * (1 + cost)
+                    if eod_abort and not np.isnan(C[i, c]) and C[i, c] <= piv:
+                        # The stop filled, the breakout did not hold to the bell. Be
+                        # flat today instead of carrying it into a -8% stop. The slot
+                        # is NOT consumed, so the next candidate can use it the same
+                        # day - the recycle Arun asked for.
+                        cl_i = float(C[i, c])
+                        cash += qty * cl_i * (1 - cost)
+                        if stcg:
+                            tax_yr_gain += stcg * qty * (cl_i - fill)
+                        trades.append((c, i, i, fill, cl_i, 'eod_abort'))
+                        continue
                     positions.append((c, i, fill, qty))
         # exits at close
         still = []
@@ -190,14 +202,31 @@ def main():
                     help='point-in-time mcap floor in CRORES (shares-const proxy from snapshot)')
     ap.add_argument('--skip-weak', action='store_true')
     ap.add_argument('--poke-trigger', action='store_true')
-    ap.add_argument('--entry-mode', choices=('open_same', 'close_same', 'open_next'),
+    ap.add_argument('--base-start', dest='base_start_override', default=None,
+                    help='load price frames from this date instead of start-550d. REQUIRED for a short trading window: the pivot is a cummax over ALL history, so a panel that begins 18 months before the window turns an all-time high into an 18-month high and the signal silently changes.')
+    ap.add_argument('--fund-mask', default=None,
+                    help='npz of dates x symbols booleans; the trigger is ANDed with '
+                         'it, so a name can only be bought on days its fundamentals '
+                         'qualified')
+    ap.add_argument('--fund-missing', choices=('fail', 'pass'), default='fail',
+                    help='how to treat a symbol absent from the mask: fail = cannot be '
+                         'bought (conservative, but selects for data coverage); pass = '
+                         'left eligible (filter only removes what it has evidence '
+                         'against). Report both.')
+    ap.add_argument('--eod-abort', action='store_true',
+                    help='sell the same day at the close if the close did not finish '
+                         'above the pivot: keeps the pivot fill AND the '
+                         'breakout-held filter')
+    ap.add_argument('--entry-mode', choices=('open_same', 'close_same', 'open_next',
+                                            'stop_above_candle'),
                     default='open_same',
                     help='open_same = published, decides at the open using that day closing price (look-ahead); close_same = buy at the breakout day close (~15:10 in practice); open_next = stop resting at the broken pivot, filled the NEXT day')
     ap.add_argument('--tag', default='p3')
     a = ap.parse_args()
     cost = a.cost / 10000.0
 
-    base_start = (pd.Timestamp(a.start) - pd.Timedelta(days=550)).strftime('%Y-%m-%d')
+    base_start = (a.base_start_override
+                  or (pd.Timestamp(a.start) - pd.Timedelta(days=550)).strftime('%Y-%m-%d'))
     w = load_frames(base_start, trail_sma=a.trail_sma)
     close, high, open_, athcp, sma50, tv20 = (w[k] for k in
                                               ('close', 'high', 'open', 'athcp', 'sma50', 'tv20'))
@@ -239,8 +268,36 @@ def main():
         piv_prev = athcp.shift(1)
         trig = trig.shift(1).fillna(False).astype(bool) & (high >= piv_prev)
         athcp = piv_prev
+    if a.entry_mode == 'stop_above_candle':
+        # Having closed above the pivot, the stock must then exceed the breakout
+        # candle's own high before anything is bought. The stop rests at that high, so
+        # the fill is max(high[d], open[d+1]) - ordinary buy-stop behaviour.
+        hi_prev = high.shift(1)
+        trig = trig.shift(1).fillna(False).astype(bool) & (high > hi_prev)
+        athcp = hi_prev
     if a.entry_mode == 'close_same':
         a.fill_close = True
+
+    if a.fund_mask:
+        import numpy as _np
+        z = _np.load(a.fund_mask, allow_pickle=True)
+        mdates = [str(x) for x in z['dates']]
+        mcols = [str(x) for x in z['cols']]
+        mk = pd.DataFrame(z['mask'], index=pd.to_datetime(mdates), columns=mcols)
+        # Align by LABEL. Reindexing to the panel leaves NaN wherever the mask says
+        # nothing, which is exactly the 'missing' case the policy decides.
+        al = mk.reindex(index=trig.index, columns=trig.columns)
+        elig_f = al.ffill()
+        before = int(trig.values.sum())
+        if a.fund_missing == 'fail':
+            keep = elig_f.fillna(False).astype(bool)
+        else:
+            keep = elig_f.fillna(True).astype(bool)
+        trig = trig & keep
+        after = int(trig.values.sum())
+        print('fundamental mask (%s, missing=%s): %d of %d signals survive (%.1f%%)'
+              % (Path(a.fund_mask).name, a.fund_missing, after, before,
+                 100.0 * after / max(before, 1)), flush=True)
 
     nb = close.get('NIFTYBEES')
     if a.skip_weak:
@@ -281,7 +338,8 @@ def main():
                                           a.fill_realistic, cost,
                                           stop=a.stop / 100.0, slots=a.slots,
                                           stcg=0.20 if a.stcg else 0.0,
-                                          fill_close=a.fill_close)
+                                          fill_close=a.fill_close,
+                                          eod_abort=a.eod_abort)
         st, e = stats_from(equity, dates_used, trades, CAPITAL)
         st['seed'] = seed
         all_stats.append(st)
