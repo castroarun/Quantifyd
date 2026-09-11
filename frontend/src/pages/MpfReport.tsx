@@ -411,7 +411,7 @@ function SystemCard({ s, r, window2018 }: { s: SystemReport; r?: Row; window2018
       <div className={styles.cardFoot}>
         {r
           ? 'On the full 20.4-year window, after tax.'
-          : 'On the 2018 window only — it cannot be measured earlier.'}
+          : 'WINDOW: Aug-2018 → Sep-2026 ONLY, after tax — it cannot be measured earlier (needs four filed fiscal years; Screener history starts FY2015). Not comparable to the 20-year cards beside it; see the 2018 section for every book on this window.'}
         <br />
         <span className={styles.mut}>Size: {s.size}</span>
       </div>
@@ -799,8 +799,11 @@ export default function MpfReport() {
         intro={H.windowWhy}
       >
         <div className={styles.cards}>
-          {SYSTEMS.filter((s) => H.rows[s.key]).map((s) => (
-            <SystemCard key={s.key} s={s} r={H.rows[s.key]} />
+          {/* Arun (11-Sep-2026, late): every system gets a card at the top, Quality Summit
+              included — its card carries its own window because it cannot exist on the
+              20-year one. The 20-year TABLE below still excludes it, deliberately. */}
+          {SYSTEMS.filter((s) => H.rows[s.key] || W.rows[s.key]).map((s) => (
+            <SystemCard key={s.key} s={s} r={H.rows[s.key]} window2018={W.rows[s.key]} />
           ))}
         </div>
 
