@@ -301,27 +301,49 @@ def send(k, tradingsymbol, side, qty, tag):
 
 
 def broker_nifty_legs(k):
-    """Open NIFTY option legs at the broker, as {tradingsymbol: qty}."""
+    """Open NIFTY option legs at the broker under OUR product, {symbol: qty}.
+
+    Scoped to PRODUCT (NRML) on purpose: NAS trades NIFTY options intraday on
+    MIS, and at 15:20 those legs are usually open. Without the product filter
+    this book would mistake NAS's positions for its own.
+    """
     out = {}
     for p in k.positions().get("net", []):
-        if p["exchange"] == "NFO" and p["quantity"] != 0 \
-                and p["tradingsymbol"].startswith("NIFTY"):
+        if (p["exchange"] == "NFO" and p["quantity"] != 0
+                and (p.get("product") or "") == PRODUCT
+                and p["tradingsymbol"].startswith("NIFTY")):
             out[p["tradingsymbol"]] = p["quantity"]
     return out
 
 
 def reconcile(con, k):
-    """The book must match the broker before anything is decided."""
+    """The book must match the broker before anything is decided - BOTH ways.
+
+    Checking only that the book's legs exist at the broker leaves the dangerous
+    direction open: an order that FILLED while the DB write failed is invisible
+    to an empty book, reconcile passes, and try_entry opens a second straddle on
+    top of a position nobody is tracking. The broker is the source of truth in
+    both directions.
+    """
     open_rows = rows(con, "status='OPEN'")
     legs = broker_nifty_legs(k)
+    known = set()
     for r in open_rows:
-        for sym, px in ((r["ce_symbol"], r["ce_entry"]), (r["pe_symbol"], r["pe_entry"])):
+        for sym in (r["ce_symbol"], r["pe_symbol"]):
+            known.add(sym)
             have = legs.get(sym, 0)
             if have != -r["qty"]:
                 raise Halt("RECONCILE: book says SHORT %d %s, broker says %d. "
                            "Refusing to act. Investigate, then fix the book."
                            % (r["qty"], sym, have))
-    log("  reconciled: %d open position(s) match the broker" % len(open_rows))
+    orphans = {sy: q for sy, q in legs.items() if sy not in known}
+    if orphans:
+        raise Halt("RECONCILE: the broker holds NRML NIFTY leg(s) this book does "
+                   "not know about - %s. An order may have filled without being "
+                   "recorded. Refusing to act; square off or record it by hand."
+                   % ", ".join("%s %+d" % (sy, q) for sy, q in sorted(orphans.items())))
+    log("  reconciled BOTH ways: %d open position(s), %d broker NRML NIFTY leg(s)"
+        % (len(open_rows), len(legs)))
     return open_rows
 
 

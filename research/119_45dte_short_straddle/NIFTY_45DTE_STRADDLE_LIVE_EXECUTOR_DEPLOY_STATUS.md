@@ -44,7 +44,7 @@ in 61 campaigns. It ships because it is the ruleset of record, not because it pa
 |---|---|
 | `STRADDLE45_LIVE=1` | **Not set = dry run.** Logs the exact orders, sends nothing. |
 | Kill file `backtest_data/straddle45_KILL` | `touch` it → every order refused instantly, no deploy |
-| Reconcile-first | Reads `kite.positions()` and HALTS on any book/broker mismatch rather than guessing — the 2026-08-06 SENSEX phantom and 2026-08-14 momentum ledger corruption were both "assumed instead of read" |
+| Reconcile-first, BOTH ways | Reads `kite.positions()` and HALTS on any mismatch in either direction - a book leg missing at the broker, OR a broker leg the book does not know about (an order that filled while the DB write failed would otherwise be re-entered on top of). Scoped to NRML so NAS's intraday MIS legs are not mistaken for this book's — the 2026-08-06 SENSEX phantom and 2026-08-14 momentum ledger corruption were both "assumed instead of read" |
 | **Both legs or neither** | If one leg fills and the other is rejected, the filled leg is bought back at once. A lone short option is the one outcome this book must never produce; if the unwind *also* fails it HALTs with an explicit manual-action message |
 | Fill verification | Every order polled through `order_history` to a terminal state; an unverified order halts rather than being assumed good |
 | Margin gate | Refuses to enter unless available ≥ **1.25×** the real basket requirement |
