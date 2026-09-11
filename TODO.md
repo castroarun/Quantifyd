@@ -20,62 +20,66 @@ Still open: ring-fence Rs11.96L vs Rs13.5L (3 lots breaches at an 8% move), and 
 stress-margin vol axis (dated 2026-11-30).
 Deploy record: `research/119_45dte_short_straddle/NIFTY_45DTE_STRADDLE_LIVE_EXECUTOR_DEPLOY_STATUS.md`.
 
-## 🔴 2026-09-08 — ALERTS GO NOWHERE: email and WhatsApp are DORMANT (Arun action)
+## ✅ 2026-09-10 — ALERTS NOW REACH THE PHONE AND THE INBOX (was: they went nowhere)
 
-**Every alert this system raises is currently written to a file and delivered to no one.**
-Verified by sending a test alert through the real module on 08-Sep: it wrote the feed line
-and reported both channels dormant.
+Email and ntfy both deliver. The daily check reported OK for the first time on 10-Sep, and
+the 11-Sep entry run's rejection summary arrived on both channels.
 
-```
-email:    email DORMANT (set EMAIL_SMTP_HOST/USER/PASS and EMAIL_TO in .env)
-whatsapp: whatsapp DORMANT (set WHATSAPP_ENABLED=1 + TWILIO_* + WHATSAPP_TO in .env)
-```
+Five separate faults stacked on top of each other, any one of which silenced everything:
 
-**What this silences right now:**
+| Fault | What it did |
+|---|---|
+| `_alert()` wrote to `/tmp/nas_alert_feed.log` | the **cron output log of a different job**. Nothing has ever read it. |
+| the delivery import could never run | `python services/oa_real.py` puts `services/` on the path, not the repo root, so `from services.dividend_notify import ...` always raised |
+| 1 of 14 cron jobs sourced `.env` | the other 13 had no credentials whatever was configured |
+| the credential names did not match | `.env` held `TWILIO_ACCOUNT_SID` / `GMAIL_APP_PASSWORD`; the code looked for `TWILIO_SID` / `EMAIL_SMTP_PASS` |
+| `.env` had no trailing newline | the appended `NTFY_TOPIC` glued onto the previous value, corrupting a TOTP secret **and** leaving the topic undefined |
 
-| Alert | Raised by | Matters because |
-|---|---|---|
-| EXIT DUE / EXIT PLACED / **EXIT FAILED TO PLACE** | `oa_real.check` | an exit that could not be sent is money leaking |
-| Entry could not be armed | `oa_entry.arm` | a slot silently stays empty |
-| Order rejected / unfilled | `equity_executor.flush_failures` | built 08-Sep and has never actually sent anything |
-| Reconcile mismatch, sold-something-not-held | `oa_real.reconcile` | book drifting from the account |
-| IPO exits and data events | `ipo_paper` | same class |
+**This is why SPORTKING sat a full day below its 15-SMA trail.** The 15:18 check produced the
+exact sell order and wrote it to a log nobody reads.
 
-**How it got missed:** `_alert()` in `oa_real.py` and `ipo_paper.py` appended to
-`/tmp/nas_alert_feed.log` — which is not an alert feed at all, it is the **cron output log**
-of `scripts/nas_alert_feed.py` (a different job) and is full of "no new orders" lines.
-Nothing has ever read it. Fixed 08-Sep: alerts now go to
-`backtest_data/book_alerts.jsonl` and critical ones call `services/dividend_notify`. That
-path works — it simply has no credentials to use.
+Still open on the channels:
 
-**This is why SPORTKING sat a full day below its 15-SMA trail.** The 15:18 check produced
-the exact sell order and wrote it to a log nobody reads.
+- **Enable "Instant delivery" in the ntfy Android app.** Without it, Firebase batches a burst
+  and alerts arrive late. The code already paces sends 2.5s apart; the app setting is Arun's.
+- **WhatsApp stays off deliberately.** Credentials are present; `WHATSAPP_ENABLED=1` turns it
+  on, and Twilio bills per message. Email + ntfy cover the need for free.
+- **The ntfy topic name is the only secret protecting the channel**, and real alerts carry
+  position data over a public relay. Rotate the topic if it is ever pasted anywhere.
 
-### Arun does this (Claude will not touch `.env` — denied path, and it holds credentials)
+---
 
-```bash
-# on the VPS, append to /home/arun/quantifyd/.env
-EMAIL_SMTP_HOST=smtp.gmail.com
-EMAIL_SMTP_USER=<the sending address>
-EMAIL_SMTP_PASS=<a Gmail APP PASSWORD, not the account password>
-EMAIL_TO=arun.castromin@gmail.com
-```
+## ⏳ 2026-09-11 — Open Alpha entries: what the morning's run left open
 
-Email alone closes the gap; WhatsApp needs a Twilio account and can wait.
-**No restart needed** — the alerting runs in cron-launched scripts, which read `.env` fresh.
+The book is **16/16** (12 held + 4 resting buy-stops: CUPID, MOREPENLAB, AEROFLEX,
+CYIENTDLM). Two scanner faults were fixed and pushed (`869290fd`):
 
-**Verify it works** (writes one clearly-marked test alert, sends nothing else):
+- the order type now follows the clock — a live order inside market hours, an after-market
+  order outside. The 09:25 re-arm cron **could never have worked** before this: it runs at
+  09:25 and always asked for an AMO, which Kite refuses during the session.
+- a circuit rejection is read by **which field** it caps. A capped order price is
+  renegotiated up to four attempts, because both caps can be hit in sequence; a capped
+  trigger means the pivot itself is outside today's band, so the name is skipped and the
+  slot goes to the next ranked candidate.
 
-```bash
-cd /home/arun/quantifyd && set -a && . ./.env && set +a && venv/bin/python3 - <<'EOF'
-from services.dividend_notify import send_email, send_whatsapp
-print('email   :', send_email('Quantifyd alert test', '<pre>ignore me</pre>'))
-print('whatsapp:', send_whatsapp('Quantifyd alert test - ignore'))
-EOF
-```
+Left open:
 
-Until this is done, **the page is the only channel that works** — the Capital Desk's
-"Room before a sale" and each book's failure banner.
+- **Three names are unreachable while their circuit bands stay where they are** — TBZ
+  (trigger 555.30 vs cap 526.30), BIRLACABLE (423.65 vs 393.35), BODALCHEM (184.05 vs
+  174.41). Each is a pivot above the upper circuit, so no breakout can print today. They
+  re-enter the candidate list on their own as bands move; nothing to do, but if names keep
+  landing here the RS ranking is feeding the scanner stocks already locked limit-up, which
+  is worth measuring at the soak review.
+- **BLISSGVS-BE was lost on 10-Sep to the old two-attempt budget** — the exchange had
+  already named a workable price and the retry was spent. Fixed; recorded because it is the
+  only *missed* entry of the episode rather than an unreachable one.
+- **Point the universe refresh at renamed symbols.** 169 of the scanner-eligible symbols in
+  `market_data.db` no longer trade under the stored name; 110 are recoverable series moves
+  (MODISONLTD → MODISONLTD-BE). The scan now names which is which. Delisted history
+  **stays in the DB on purpose** — removing it is survivorship bias, and r/142's universe
+  is built from it. The daily check counts the drift so 169 does not quietly become 400.
+- **True North and IPO Base still debit cash gross on a buy**, so their `Unreconciled` row
+  will drift again the way Open Alpha's did. Open Alpha charges the measured 25 bps now.
 
 ---
 
@@ -89,10 +93,16 @@ Until this is done, **the page is the only channel that works** — the Capital 
   bigger gap will not fill where the backtest took it. Measure the miss rate at the soak
   review — gap-ups are exactly where breakout edges live, so this could matter more than
   its size suggests.
-- **`/api/momentum-paper/state` takes 10–16s** and every True North page load pays it. The
-  first-paint path hides it; caching the pandas pivot or baking the feed would fix it.
-- **Two credential rotations still owed** — the `.env.bak` Kite leak (02-Sep) and the
-  GitHub PAT found in cleartext in the VPS git remote.
+- ~~**`/api/momentum-paper/state` takes 10–16s**~~ — **done 10-Sep.** `scripts/gen_momentum_state.py`
+  bakes the 46-key state to `static/app/momentum_state.json` and the page raw-fetches it.
+  11.65s of API became ~4ms of file, the same pattern Open Alpha already used.
+- **Two credential rotations still owed** — the `.env.bak` Kite leak (02-Sep), which
+  reached GitHub, and the GitHub PAT in cleartext in the VPS git remote. A third scare on
+  11-Sep was contained: `.env.fixbak` (a backup made while repairing a glued `.env` line)
+  was committed with Twilio credentials in it, GitHub push protection refused the push, the
+  commits were rewritten before anything left the machine, the file was shredded, and
+  `.gitignore` now denies `.env*` rather than the two exact names the 02-Sep incident saw.
+  **No rotation owed for that one** — it never reached the remote.
 
 ---
 
