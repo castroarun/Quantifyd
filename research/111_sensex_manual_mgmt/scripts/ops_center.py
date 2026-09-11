@@ -128,9 +128,10 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("research/161 ATH base-age breakout - portfolio-fit test vs an HONEST Open Alpha",
+    ("OA V2.0 (research/161) - RS>=70 test, reconcile with the OA honest re-optimisation, paper-book call",
      "2026-09-26", "PENDING",
-     "r/161 cleared all five pre-registered criteria standalone (21.26% after tax, -34.80% DD, "
+     "OA V2.0 (Arun's name, 11-Sep-2026) cleared all five pre-registered criteria standalone "
+     "(21.26% after tax, -34.80% DD, 30-seed median; worst seed 19.87%), "
      "beats NIFTYBEES in both windows) but its portfolio-fit test could NOT be run: Open Alpha's "
      "published ~34.9% rests on a same-bar look-ahead fill (found by r/159_oa_honest_reoptimization), "
      "so the r/154 OA curve is unusable as a benchmark. WHEN that study lands, run the blend test: "

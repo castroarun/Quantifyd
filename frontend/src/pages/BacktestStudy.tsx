@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import styles from './BacktestStudy.module.css';
 import MetricCard from '../components/Cards/MetricCard';
@@ -148,6 +149,101 @@ function KVList({ rows }: { rows: KV[] }) {
   );
 }
 
+/** Backtested trade list, fetched from a CSV served under /app/.
+ *  Sortable by any column, scrollable, with a download link. */
+function TradeTable({
+  src, caption, maxRows = 400, note,
+}: { src: string; caption?: string; maxRows?: number; note?: string }) {
+  const [rows, setRows] = useState<string[][]>([]);
+  const [head, setHead] = useState<string[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<number | null>(null);
+  const [desc, setDesc] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(src)
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((txt) => {
+        if (!alive) return;
+        const lines = txt.trim().split(/\r?\n/);
+        setHead(lines[0].split(','));
+        setRows(lines.slice(1).map((l) => l.split(',')));
+      })
+      .catch((e) => alive && setErr(String(e)));
+    return () => { alive = false; };
+  }, [src]);
+
+  const sorted = useMemo(() => {
+    if (sortCol == null) return rows;
+    const copy = [...rows];
+    copy.sort((a, b) => {
+      const x = a[sortCol] ?? '';
+      const y = b[sortCol] ?? '';
+      const nx = Number(x);
+      const ny = Number(y);
+      const both = !Number.isNaN(nx) && !Number.isNaN(ny) && x !== '' && y !== '';
+      const c = both ? nx - ny : x.localeCompare(y);
+      return desc ? -c : c;
+    });
+    return copy;
+  }, [rows, sortCol, desc]);
+
+  if (err) {
+    return <div style={{ fontSize: 12, opacity: 0.7, margin: '14px 0' }}>
+      Trade list unavailable ({err}) — <a href={src}>download CSV</a>
+    </div>;
+  }
+
+  const columns: Column<string[]>[] = head.map((h, ci) => ({
+    key: String(ci),
+    header: h.replace(/_/g, ' '),
+    align: ci === 0 ? 'left' : 'right',
+    render: (row: string[]) => <span>{row[ci]}</span>,
+  }));
+
+  return (
+    <div style={{ margin: '18px 0' }}>
+      {caption && <div style={{ fontSize: 13, marginBottom: 8 }}>{caption}</div>}
+      <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
+        {rows.length.toLocaleString()} trades · click a column header to sort ·{' '}
+        <a href={src} download>download the full CSV</a>
+        {note ? ` · ${note}` : ''}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+        {head.map((h, ci) => (
+          <button
+            key={ci}
+            onClick={() => { if (sortCol === ci) setDesc(!desc); else { setSortCol(ci); setDesc(true); } }}
+            style={{
+              fontSize: 11, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
+              border: '1px solid rgba(148,163,184,0.25)',
+              background: sortCol === ci ? 'rgba(148,163,184,0.18)' : 'transparent',
+              color: 'inherit',
+            }}
+          >
+            {h.replace(/_/g, ' ')}{sortCol === ci ? (desc ? ' \u2193' : ' \u2191') : ''}
+          </button>
+        ))}
+      </div>
+      <div style={{ maxHeight: 560, overflow: 'auto', border: '1px solid rgba(148,163,184,0.18)', borderRadius: 10 }}>
+        <DataTable<string[]>
+          columns={columns}
+          rows={sorted.slice(0, maxRows)}
+          rowKey={(_r, i) => i}
+          emptyText="Loading trades…"
+        />
+      </div>
+      {sorted.length > maxRows && (
+        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 6 }}>
+          Showing the first {maxRows.toLocaleString()} of {sorted.length.toLocaleString()} rows in the current sort —
+          the CSV has them all.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectionHead({ n, label }: { n: number; label: string }) {
   return (
     <div className={styles.sectionHead}>
@@ -267,6 +363,14 @@ export default function BacktestStudy() {
         {study.results.charts?.map((c, i) => (
           <StudyFigure key={i} src={c.src} caption={c.caption} />
         ))}
+        {study.tradeTable && (
+          <TradeTable
+            src={study.tradeTable.src}
+            caption={study.tradeTable.caption}
+            maxRows={study.tradeTable.maxRows}
+            note={study.tradeTable.note}
+          />
+        )}
         {study.results.embeds?.map((e, i) => (
           <div key={`e${i}`} style={{ margin: '18px 0' }}>
             <iframe
@@ -335,6 +439,18 @@ export default function BacktestStudy() {
               ))}
             </ul>
           </div>
+          {study.reports && study.reports.length > 0 ? (
+            <div className={styles.linkCol}>
+              <div className={styles.linkColHead}>Reports &amp; data</div>
+              <ul className={styles.linkList}>
+                {study.reports.map((l, i) => (
+                  <li key={i}>
+                    <a href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className={styles.linkCol}>
             <div className={styles.linkColHead}>Project paths (local)</div>
             <ul className={styles.pathList}>

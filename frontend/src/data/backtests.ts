@@ -118,6 +118,20 @@ export interface BacktestStudy {
   // ---- Section 7: Caveats ----
   caveats: string[];
 
+  /** Optional: a CSV of backtested trades, fetched at runtime and rendered as a
+   *  scrollable, sortable table with a download link. `src` is a web path served
+   *  under /app/ (file lives in frontend/public/). */
+  tradeTable?: {
+    src: string;
+    caption?: string;
+    /** Rows rendered before the table scrolls (default 400). */
+    maxRows?: number;
+    note?: string;
+  };
+
+  /** Optional: rendered reports and data files, shown in the Links section. */
+  reports?: LinkRef[];
+
   // ---- Section 8: Links ----
   githubLinks: LinkRef[];
   projectPaths: string[];
@@ -128,7 +142,7 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
     slug: 'ath-base-age-breakout-research161',
-    title: 'How old is the last high? — base age, volume and the all-time-high breakout',
+    title: 'OA V2.0 — new-ATH breakout after an aged, deep base (research/161)',
     verdict:
       'STRATEGY (candidate). Arun asked three things after research/159 came back SIGNAL: should we look at ALL-TIME-HIGH closes only, does it matter how many candles ago the last all-time high was set, and does volume have to confirm. ANSWERS: age YES, volume NO, saucer NO — and the biggest lever is none of the three. THE EXIT IS THE BIG WIN. A plain new-all-time-high-close book run with Open Alpha’s own exits (15-day SMA trail plus an 8% close stop) makes 6.81% after tax on honest next-open fills. The SAME entries with a SuperTrend(14,4) trail make 18.66%. That single swap is worth 11.85 points, which is more than everything else in this study combined. BASE AGE IS A REAL SECOND IMPROVEMENT. Requiring the previous all-time high to be at least 60 trading bars old AND the stock to have fallen at least 20% below it in between lifts the book from 18.66% to 21.26% and cuts drawdown from -41.59% to -34.80% — Calmar 0.449 to 0.618. It survives 30 seeds (19.87 to 21.89%), the 25/40/60 bps cost ladder (21.26 / 20.34 / 19.35%), a stricter Rs5 crore liquidity floor (20.62%) and BOTH windows: 19.33% pre-2016 and 23.24% from 2016, against NIFTYBEES at 12.68% and 11.88%. It beats a date-matched random-entry control by 9.15 points and the honest Open Alpha proxy by 14.45. X=40 and X=60 are indistinguishable (21.23 vs 21.26%), so the winner is a plateau, not a spike. VOLUME CONFIRMATION SHOULD NOT BE ADDED. It does exactly what a trader expects at trade level — expectancy per trade rises monotonically with the volume multiple, from +12.37% to +15.12% at long base ages — and it makes the BOOK worse: CAGR 21.26% to 20.51% and drawdown -34.80% to -44.14%, because a 3x filter throws away 40% of the opportunities and a 5x filter 60%. A 16-slot book cannot afford that. Volume is a good filter for a discretionary trader picking a handful of names and a bad one for a mechanical book; both halves of that sentence are true at once. THE SAUCER FROM RESEARCH/159 IS A KILL. Run through the identical engine it yields 5.6 trades a year and 5.90% CAGR. WHAT STOPS THIS BEING A DEPLOY DECISION: the worst of 30 seeds is 19.87%, a whisker under the 20% floor; removing the ten best of 687 trades collapses compounded growth by a factor of 133,000, so it is still heavily tail-carried; the drawdown is -34.8% in absolute terms with a 14-trade losing streak; and the portfolio-fit test cannot be run until Open Alpha has been honestly re-measured, because its published 34.9% rests on a same-bar look-ahead fill.',
     status: 'COMPLETE',
@@ -243,6 +257,65 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [6],
       },
       {
+        title: 'Year by year — OA V2.0 against the alternatives (house format)',
+        caption:
+          'Each cell is the annual return with the intra-year maximum drawdown in brackets, measured from the running peak of the FULL curve rather than the year’s own first bar. After tax, net of 25 bps a side, 30-seed median path. Benchmarks are excluded from the best-of picks.',
+        columns: ['Year', 'NIFTYBEES', 'OA as designed (proxy)', 'plain ATH + ST(14,4)', 'OA V2.0', 'r/159 saucer', 'BEST CAGR', 'LEAST DD', 'BEST OVERALL'],
+        rows: [
+          ['2005', '+32.8 (-14.0)', '+0.8 (-9.0)', '+34.2 (-13.6)', '+14.3 (-12.3)', '+4.3 (-5.6)', 'plain ATH + ST(14,4)', 'r/159 saucer', 'plain ATH + ST(14,4)'],
+          ['2006', '+41.3 (-29.9)', '+49.3 (-10.5)', '+28.6 (-22.4)', '+42.1 (-20.5)', '+7.2 (-15.8)', 'OA as designed (proxy)', 'OA as designed (proxy)', 'OA as designed (proxy)'],
+          ['2007', '+53.0 (-14.9)', '+31.5 (-13.0)', '+83.3 (-13.1)', '+84.7 (-10.8)', '+35.9 (-17.1)', 'OA V2.0', 'OA V2.0', 'OA V2.0'],
+          ['2008', '-52.1 (-59.7)', '-9.2 (-17.0)', '-38.2 (-41.6)', '-29.7 (-32.4)', '-19.5 (-24.9)', 'OA as designed (proxy)', 'OA as designed (proxy)', 'OA as designed (proxy)'],
+          ['2009', '+75.6 (-59.1)', '+1.6 (-16.1)', '+72.7 (-40.8)', '+63.0 (-31.6)', '+23.2 (-21.5)', 'plain ATH + ST(14,4)', 'OA as designed (proxy)', 'plain ATH + ST(14,4)'],
+          ['2010', '+18.6 (-25.0)', '+7.1 (-20.8)', '+21.2 (-11.2)', '+15.6 (-15.7)', '+8.4 (-9.6)', 'plain ATH + ST(14,4)', 'r/159 saucer', 'plain ATH + ST(14,4)'],
+          ['2011', '-24.0 (-27.3)', '-1.8 (-9.3)', '-11.4 (-21.3)', '-10.3 (-18.4)', '-7.5 (-15.8)', 'OA as designed (proxy)', 'OA as designed (proxy)', 'OA as designed (proxy)'],
+          ['2012', '+26.5 (-26.0)', '+9.3 (-9.0)', '+11.9 (-20.1)', '+28.3 (-19.3)', '+5.8 (-15.8)', 'OA V2.0', 'OA as designed (proxy)', 'OA V2.0'],
+          ['2013', '+7.2 (-16.0)', '-1.1 (-6.2)', '+25.8 (-11.4)', '+4.6 (-9.2)', '-2.5 (-15.1)', 'plain ATH + ST(14,4)', 'OA as designed (proxy)', 'plain ATH + ST(14,4)'],
+          ['2014', '+31.6 (-6.2)', '+15.5 (-10.9)', '+56.0 (-10.9)', '+50.2 (-7.4)', '+39.0 (-14.9)', 'plain ATH + ST(14,4)', 'OA V2.0', 'plain ATH + ST(14,4)'],
+          ['2015', '-4.3 (-15.0)', '-11.0 (-19.2)', '+5.7 (-15.1)', '-2.9 (-22.8)', '+14.8 (-9.2)', 'r/159 saucer', 'r/159 saucer', 'r/159 saucer'],
+          ['2016', '+4.0 (-21.6)', '+11.7 (-16.8)', '-8.3 (-29.2)', '+7.3 (-28.8)', '-1.7 (-11.8)', 'OA as designed (proxy)', 'r/159 saucer', 'OA as designed (proxy)'],
+          ['2017', '+29.9 (-8.5)', '+40.3 (-9.4)', '+36.3 (-16.5)', '+60.4 (-12.5)', '+69.5 (-7.7)', 'r/159 saucer', 'r/159 saucer', 'r/159 saucer'],
+          ['2018', '+4.8 (-14.1)', '-22.8 (-28.5)', '-29.8 (-33.6)', '-26.3 (-32.1)', '-14.6 (-21.1)', 'r/159 saucer', 'r/159 saucer', 'r/159 saucer'],
+          ['2019', '+13.6 (-10.5)', '-10.8 (-36.0)', '+18.8 (-35.6)', '+30.1 (-32.4)', '+13.5 (-18.9)', 'OA V2.0', 'r/159 saucer', 'OA V2.0'],
+          ['2020', '+15.4 (-36.3)', '+17.4 (-41.8)', '+25.0 (-35.0)', '+48.3 (-19.3)', '+25.7 (-10.9)', 'OA V2.0', 'r/159 saucer', 'OA V2.0'],
+          ['2021', '+26.0 (-9.5)', '+28.9 (-27.8)', '+97.8 (-13.9)', '+83.7 (-10.9)', '+86.1 (-10.0)', 'plain ATH + ST(14,4)', 'r/159 saucer', 'plain ATH + ST(14,4)'],
+          ['2022', '+5.5 (-16.1)', '-15.8 (-29.3)', '-7.7 (-26.7)', '-0.8 (-24.3)', '-5.2 (-18.6)', 'OA V2.0', 'r/159 saucer', 'r/159 saucer'],
+          ['2023', '+21.0 (-9.7)', '+40.1 (-34.9)', '+31.9 (-22.8)', '+51.5 (-15.4)', '+43.2 (-18.5)', 'OA V2.0', 'OA V2.0', 'OA V2.0'],
+          ['2024', '+10.4 (-10.5)', '+6.0 (-16.2)', '+35.5 (-12.4)', '-4.1 (-26.3)', '+30.5 (-18.2)', 'plain ATH + ST(14,4)', 'plain ATH + ST(14,4)', 'plain ATH + ST(14,4)'],
+          ['2025', '+11.7 (-15.2)', '-12.8 (-29.5)', '-0.4 (-30.0)', '+5.9 (-22.8)', '+13.7 (-14.9)', 'r/159 saucer', 'r/159 saucer', 'r/159 saucer'],
+          ['2026', '-9.5 (-14.8)', '+11.1 (-26.9)', '+14.8 (-17.4)', '+37.7 (-23.1)', '+1.5 (-15.2)', 'OA V2.0', 'r/159 saucer', 'OA V2.0'],
+          ['FULL', '12.30% / -59.71% / Calmar 0.206', '6.81% / -40.67% / Calmar 0.165', '18.66% / -41.59% / Calmar 0.449', '21.26% / -34.80% / Calmar 0.618', '—', 'OA V2.0', 'OA V2.0', 'OA V2.0'],
+        ],
+        highlightRows: [22],
+      },
+      {
+        title: 'Open Alpha as designed vs OA V2.0 — what actually changed',
+        caption:
+          'Both columns are the same engine, the same 16-slot book and the same costs. The Open Alpha column is the rule set as designed; its live entries have been PAUSED since 11-Sep-2026 because the published backtest fill was found to be a same-bar look-ahead (research/158, research/159_oa_honest_reoptimization). The numbers in this column are the honest in-engine proxy measured here, not the published 34.9%.',
+        columns: ['Dimension', 'Open Alpha (as designed)', 'OA V2.0 (research/161)'],
+        rows: [
+          ['Signal', 'close > prior all-time-high close', 'SAME — close > prior all-time-high close'],
+          ['Base age', 'none — any new high qualifies', 'prior ATH must be >= 60 bars old (40 bars is equal)'],
+          ['Base depth', 'setup capped at <= 20% below the pivot', 'price must have fallen >= 20% below the prior high'],
+          ['Relative strength', 'IBD RS percentile >= 70', 'none — UNTESTED here, the obvious next axis'],
+          ['Volume confirmation', 'none', 'none — TESTED at 2x / 3x / 5x and rejected, it hurts the book'],
+          ['Fill', 'buy-stop at the pivot next day; the published backtest took it same-bar (look-ahead)', 'next-day OPEN, honest on both legs'],
+          ['Hard stop', '-8% on the close', 'none — the trail always fires first'],
+          ['Trail', '15-day SMA close', 'SuperTrend(14,4) close — worth +11.85pp on its own'],
+          ['Market gate', 'none', 'none'],
+          ['Liquidity floor', 'Rs 5 cr 20-day median traded value', 'Rs 2 cr (20.62% CAGR at the Rs 5 cr floor)'],
+          ['Book', '16 slots @ 6.25% of NAV', 'SAME — 16 slots @ 6.25% of NAV'],
+          ['Trades per year', '~171', '~32'],
+          ['Win rate', '36.2%', '49.2%'],
+          ['Expectancy per trade', '+0.60%', '+12.43%'],
+          ['CAGR (after tax, 25 bps)', '6.81%', '21.26% (worst of 30 seeds 19.87%)'],
+          ['Max drawdown', '-40.67%', '-34.80%'],
+          ['Calmar', '0.165', '0.618'],
+          ['Status', 'LIVE Rs 4,46,348 — ENTRIES PAUSED since 11-Sep-2026', 'RESEARCH ONLY — nothing deployed, no paper book'],
+        ],
+        highlightRows: [1, 2, 7, 14],
+      },
+      {
         title: 'Robustness',
         caption: 'Cost ladder, the idle-cash contribution Arun asked to see separately, both windows, and the outlier test.',
         columns: ['Test', 'Result'],
@@ -281,9 +354,26 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       ],
     },
 
+    tradeTable: {
+      src: '/app/research161/oa_v2_trades_median_seed.csv',
+      caption: 'Backtested trade details — every OA V2.0 trade on the median-CAGR seed (seed 20, 21.21% CAGR).',
+      maxRows: 400,
+      note: '689 trades, 340 winners / 349 losers, best +356.2%, worst -30.8%',
+    },
+
+    reports: [
+      { label: 'Trade list — median seed (CSV, 689 trades)', href: '/app/research161/oa_v2_trades_median_seed.csv' },
+      { label: 'Per-seed summary — 30 seeds (CSV)', href: '/app/research161/oa_v2_seed_summary.csv' },
+      { label: 'RESULTS.md — full write-up', href: '/app/research161/RESULTS.md' },
+      { label: 'Year-by-year table (Markdown)', href: '/app/research161/yoy161.md' },
+      { label: 'STATUS doc — pre-registration + run log', href: '/app/research161/ATH_BASE_AGE_VOLUME_BREAKOUT_DAILY_SWEEP_STATUS.md' },
+      { label: 'Full 864-cell sweep (CSV)', href: '/app/research161/sweep161.csv' },
+      { label: 'Factsheet PNG', href: '/app/ath-base-age-breakout-research161.png' },
+    ],
+
     winners: [
       {
-        config: 'X >= 60 bars since the prior all-time high, base at least 20% deep, NO volume filter, SuperTrend(14,4) close trail, no hard stop',
+        config: 'OA V2.0 — X >= 60 bars since the prior all-time high, base at least 20% deep, NO volume filter, SuperTrend(14,4) close trail, no hard stop, 16 slots @ 6.25%, Rs2 cr floor',
         summary:
           'Clears all five pre-registered criteria: 21.26% after tax against NIFTYBEES 12.30%, a shallower drawdown in both windows, beating the honest Open Alpha proxy by 14.45 points and a date-matched random control by 9.15, on a plateau where X=40 and X=60 are indistinguishable.',
         metrics: [

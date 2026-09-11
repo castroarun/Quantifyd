@@ -2,7 +2,7 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ✅ 2026-09-11 — research/161: ATH base-age breakout — STRATEGY candidate, awaiting Arun
+## ⏳ 2026-09-11 — **OA V2.0** (research/161): STRATEGY candidate — named by Arun, nothing deployed
 
 Arun's follow-up to r/159. Three answers: **base age YES** (X≥60 bars + depth≥20% → 21.26% CAGR /
 −34.80% DD, +2.60pp and −6.79pp over plain ATH), **volume NO** (better trades, worse book),
@@ -11,6 +11,20 @@ Arun's follow-up to r/159. Three answers: **base age YES** (X≥60 bars + depth�
 **The headline finding is about the EXIT, not the entry**: swapping OA's 15-SMA+−8% pair for
 ST(14,4) on the SAME plain-ATH entries is worth **+11.85pp** (6.81% → 18.66%). Base age adds
 +2.60pp on top of that.
+
+**Recorded in the app 11-Sep-2026:** study page retitled "OA V2.0", trade list (689 trades,
+median seed 20) and 30-seed summary exported and served at `/app/research161/`, reports linked,
+OA-vs-OA-V2.0 differences table added, and an **OA V2.0** row added to the Strategies register
+under Parked · not trading. Open Alpha's own status and rules were NOT changed — only a one-line
+change-log pointer.
+
+**Next steps, in order:**
+1. **Test RS >= 70** on the OA V2.0 entry — it is Open Alpha's one remaining filter and the only
+   axis from its spec this study did not sweep.
+2. **Reconcile with `research/159_oa_honest_reoptimization`** — that study owns the entry-mechanic,
+   trail and stop axes; OA V2.0's ST(14,4) result should be checked against their trail sweep
+   before either is proposed as a change to the live book.
+3. **Paper-book decision** — only after 1 and 2. It has never been papered and no order has been placed.
 
 **Open for Arun:**
 - Adopt the ST(14,4) exit for the ATH-breakout family? That is the single biggest lever found.
