@@ -1,0 +1,5 @@
+name,definition,mean_n_pass,n_pass_2026,pct_of_has_data
+has_data,"n_fy_usable >= 4 - the screenable sub-universe, the control every screen must beat",1283.4,2126,100.0
+growth_only,sales_g3>20 & profit_g3>20 & no negatives,162.6,276,12.67
+arun_strict,THE SCREEN AS ARUN WROTE IT: sales_g3>20 & profit_g3>20 & roe_avg3>15 & roce>15 (lenders: ROE only) & de<=0.2 & mcap_pit>1000cr & no negatives,26.4,46,2.06
+b6_g12_qual_mc,profitable & mcap>1000cr & roe_avg3>15 & roce>15 (lenders: ROE only) & sales_g3>12 & profit_g3>12 - the growth rung between r/160 b7 (10) and b5 (15),107.4,204,8.37

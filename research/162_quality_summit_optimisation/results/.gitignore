@@ -1,0 +1,11 @@
+# heavy, regenerable artefacts - never commit these
+aux_162.npz
+panel161.pkl
+partB_navs.npz
+ref_pair.csv
+baseage_navs30.csv
+ref_tn.csv
+ref_baseage.csv
+ref_baseage_b7overlay.csv
+masks162/*.npz
+partB_perseed.json

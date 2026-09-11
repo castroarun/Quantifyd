@@ -2,6 +2,54 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-12 — research/162: Quality Summit could NOT be improved, and the quality screen does NOT belong inside Base Age
+
+Arun said **"go"** at ~23:35 on 11-Sep and asked for the overlay review that research/160 had
+booked for **10-Oct-2026** to be done now. Both were done the same night. **Nothing is deployed,
+papered, or changed** — no engine, no live book, no `strategies.ts`, no `/app/mpf-report`. The one
+operational consequence is subtraction: the October review slot is freed.
+
+**Part A — can Quality Summit earn more and fall less? CONCLUDED, no adoption.**
+The incumbent (r/160 Family B `b7`, k=0.90, 15 names) stands: **21.19% after tax / −37.1% /
+Calmar 0.58**, reproduced bit-identically before anything was changed. The three axes r/160 never
+tried were swept — ATR trails, alternative ranking axes, inverse-vol sizing (the sector cap was
+dropped: **no sector field exists anywhere in this project**). The best cell — keep the screen,
+widen the near-ATH band from 0.90 to 0.85, cut to ten names, size inverse-vol — beat the incumbent
+by **+6.06pp CAGR and +0.282 Calmar on 12 of 12 rebalance offsets** in the fit window, on a
+verified 24-cell plateau. **The pre-registered holdout returned −3.48pp on 3 of 12 and −0.152
+Calmar on 1 of 12**, 9.22pp below its fit window against a 4pp limit written down in advance, and
+it loses money without its ten best trades. Both plateau neighbours fail the same way.
+
+**Part B — does the quality screen help inside Open Alpha · Base Age? NO EDGE. Review CLOSED.**
+r/161's engine byte-identical (its no-mask control reproduces **21.26% / −34.80% / Calmar 0.618**
+exactly). Applying each screen to ENTRIES only: **not one screen wins on a single seed out of
+thirty** on return, in either window, under either missing-data policy. b7 costs −9.71pp; the
+screen as Arun wrote it costs −17.77pp at 18.8% invested. It is starvation, not selection —
+qualifying signals fall 3,619 → 468 → 76. **The quality-screen line is closed permanently**, as
+that review's own text instructed on a fail.
+
+**Part C — portfolio fit: DILUTIVE.** Against True North + Base Age 50-50 monthly (the honest pair,
+24.42% / −13.71% / Calmar 1.769 on monthly marks), adding Quality Summit at 10/20/33% is beaten by
+plain **cash at the same weight on 360 of 360 paths**. Monthly correlation to Base Age **0.717**.
+
+**What this leaves for someone to pick up**
+
+- Nothing is owed. One dated review was registered: **2027-09-12 — re-open the Quality Summit
+  optimisation ONLY when the holdout has grown a year** (re-running it on the same window is
+  holdout mining). The pass criterion is unchanged and written into the Ops Centre entry.
+- **If Arun ever wants a lower-drawdown near-ATH momentum book**, the screen is the honest way to
+  get it: it takes **12.7 to 16.9 points off the maximum drawdown on 12 of 12 offsets** for 1.3
+  points of CAGR. That is insurance with a premium, not an edge, and it is not what was asked for.
+- A method note worth keeping: without the pre-registered W1/W2 split and the 4pp rule, a 12-of-12
+  offset sweep with a verified plateau would have been published as an improvement.
+
+Study: **http://94.136.185.54:5000/app/backtest/quality-summit-optimisation-research162**
+Verdicts + caveats: `research/162_quality_summit_optimisation/results/RESULTS.md`
+Pre-registration + live log + crash recovery:
+`research/162_quality_summit_optimisation/QUALITY_SUMMIT_OPTIMISATION_DAILY_SWEEP_STATUS.md`
+
+---
+
 ## ✅ 2026-09-11 — **ONE report page for the Momentum Portfolio** — `/app/mpf-report` is live
 
 Arun asked for a single page that says what the book actually is, replacing the roster study page

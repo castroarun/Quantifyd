@@ -142,9 +142,43 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("research/160 quality-growth near ATH - the ONE open question: quality as an OVERLAY inside Open Alpha's entries",
-     "2026-10-10", "PENDING",
-     "r/160 killed the standalone book in both families: Arun's screen as written returns 10.77% after tax (-29.1% DD, Calmar 0.40, only 43% invested, BELOW Midcap 150 at 16.41%) and loses -11.90pp on 12 of 12 paired offsets to the identical book with no screen; what he actually does (profitable + quality + growth>10, no debt test) returns 21.19% and still misses both the 25% CAGR bar and Calmar 1.0. Twelve masks were tested against a pre-registered bar and ZERO passed. It is also DILUTIVE to the live pair at every weight (monthly corr 0.624 to OA, 0.730 for the price-only version; cash in its place wins 360/360 paths). The single question the correlation does NOT answer: does a LOOSE quality gate (profitable, ROE and ROCE > 15, growth > 10, no D/E test) improve Open Alpha's OWN entries as an overlay? The point-in-time Screener panel and 37 causal masks now exist and are reusable, so this costs a day, not a week. RUN IT ONLY AFTER r/159_oa_honest_reoptimization lands - OA's published 34.9% rests on a same-bar look-ahead fill, so the overlay must be measured against the HONEST OA curve. PASS CRITERION: >= +2pp after-tax CAGR or >= +0.15 Calmar on >= 8 of 12 paired paths vs honest OA unscreened. If it fails, close the quality-screen line permanently. Evidence: research/160_quality_growth_near_ath/results/RESULTS.md and /app/backtest/quality-growth-near-ath-research160"),
+    ("research/160 quality-growth near ATH - quality as an OVERLAY inside Open Alpha's entries - DONE 12-Sep-2026, FAILED",
+     None, "DONE",
+     "CLOSED EARLY (due was 2026-10-10) by research/162 Part B, run against the HONEST book - "
+     "Open Alpha V2.0 / Base Age (r/161), whose no-mask control reproduces its published "
+     "21.26% / -34.80% / Calmar 0.618 exactly, so the r/159 look-ahead problem that blocked this "
+     "test is no longer in the way. Each eligibility mask was applied to ENTRIES only: a candidate "
+     "new-ATH close is dropped unless its symbol passes the screen on the SIGNAL day; exits, sizing, "
+     "slot contention and the 60-bar re-arm untouched; 30 seeds; both missing-data policies; two "
+     "windows. PASS CRITERION WAS >= +2pp after-tax CAGR or >= +0.15 Calmar on >= 8 of 12 paired "
+     "paths. RESULT: NOT ONE SCREEN WINS ON A SINGLE SEED OUT OF THIRTY on return, in either window, "
+     "under either policy. Control 26.57% CAGR / -26.57% DD / Calmar 0.999 (2018-08->2026-09, 87% "
+     "invested); + b7 (the loose gate this review named) 16.79%, paired -9.71pp on 0/30 and -0.248 "
+     "Calmar on 0/30; + quality-only 15.02% (-11.28pp); + growth-only 20.77% (-5.80pp, Calmar +0.014 "
+     "on 19/30, still a fail); + the screen as Arun wrote it 8.80% (-17.77pp) at 18.8% invested. "
+     "MECHANISM: starvation, not selection - the screen cuts qualifying signals from 3,619 to 468 "
+     "(b7) or 76 (strict) and the invested fraction from 87% to 63% or 19%. THE QUALITY-SCREEN LINE "
+     "IS CLOSED PERMANENTLY, as this review's own text instructed on a fail. Evidence: "
+     "research/162_quality_summit_optimisation/results/RESULTS.md and "
+     "/app/backtest/quality-summit-optimisation-research162"),
+    ("research/162 - re-open the Quality Summit optimisation ONLY when the holdout has grown a year",
+     "2027-09-12", "PENDING",
+     "r/162 Part A found a real-looking improvement to Quality Summit - keep the b7 screen, widen the "
+     "near-ATH band from k=0.90 to 0.85, cut the book from 15 names to 10, size inverse-volatility - "
+     "worth +6.06pp CAGR and +0.282 Calmar on 12 of 12 rebalance offsets in the FIT window "
+     "(2018-08 -> 2022-06), on a verified 24-cell plateau, surviving the cost ladder. The "
+     "pre-registered HOLDOUT (2022-07 -> 2026-09) returned -3.48pp on 3 of 12 offsets and -0.152 "
+     "Calmar on 1 of 12; its holdout CAGR sits 9.22pp below its fit CAGR against a 4pp limit written "
+     "down before the run, and deleting its ten best trades takes its compounding proxy BELOW ONE. "
+     "NOT ADOPTED. The honest caveat is that the holdout is only four years and is dominated by the "
+     "2023-25 smallcap boom, so the failure could in principle be regime rather than overfit. "
+     "RE-CHECK WITH A YEAR MORE DATA - and only with a year more data; re-running it on the same "
+     "window is holdout mining. PASS CRITERION, unchanged: >= +0.15 Calmar OR >= +2pp CAGR at no "
+     "worse drawdown, on >= 8 of 12 offsets, in BOTH windows, with the extended holdout no more than "
+     "4pp below the fit window. If it fails again, close the Quality Summit optimisation line "
+     "permanently. Cost: about two hours - every derived cache, mask and grid is committed. "
+     "Evidence: research/162_quality_summit_optimisation/results/RESULTS.md and "
+     "/app/backtest/quality-summit-optimisation-research162"),
     ("research/160 - refresh the point-in-time Screener panel before any reuse",
      "2027-02-01", "PENDING",
      "The panel is now the shared store backtest_data/fundamentals.db (tables screener_annual, screener_quarterly, screener_top_ratios, symbol_map, features_pit_monthly; loader research/160_quality_growth_near_ath/scripts/load_fundamentals_db.py, idempotent INSERT OR REPLACE) as well as research/160_quality_growth_near_ath/results/ (features_pit_monthly.csv.gz + masks/ + masks_study/); fetched 11-Sep-2026 and stops at 2026-09-01. REFRESH = screener_fetch_full.py (delete or age-out the cache first, ~2.25 h) -> build_pit_panel.py -> load_fundamentals_db.py. Screener figures are RESTATED, not as-reported, and the free page depth is about 12 fiscal years, so the panel's earliest usable month walks forward every August as a new FY is filed. Before any future study reuses it, re-run scripts/screener_fetch_full.py (about 2.25 h, resumable) then build_pit_panel.py, build_masks.py and build_study_masks.py. Do NOT reuse a stale panel for a live decision."),

@@ -159,3 +159,25 @@ group "Momentum Portfolio report (/app/mpf-report)").
 which basis. The page does not print a figure it cannot point at a file for: average invested
 for Open Alpha · Base Age renders as a visible "not measured" gap rather than the ~67% the
 handover asserts, because no file on disk carries it.
+
+## research/162 — Quality Summit optimisation and the Base Age quality overlay (added 2026-09-12)
+
+Both questions are **answered and closed**; nothing here runs on a schedule.
+
+| Item | State |
+|---|---|
+| r/160's "quality as an OVERLAY inside Open Alpha's entries" review (was due **2026-10-10**) | **DONE 12-Sep-2026, FAILED.** Not one screen wins on a single seed of thirty on return, either window, either missing-data policy. The quality-screen line is **closed permanently**, as that review's own text instructed on a fail. Ops Centre entry rewritten as a DONE record with the outcome. |
+| **NEW dated review — 2027-09-12** | Re-open the Quality Summit optimisation **only when the holdout has grown a year**. r/162 Part A's candidate (b7 screen, near-ATH band k=0.85, ten names, inverse-vol) won the fit window on 12 of 12 offsets and lost the holdout on 1 of 12, 9.22pp below fit against a pre-registered 4pp limit. The holdout is only four years and is dominated by the 2023-25 smallcap boom, so the failure could in principle be regime rather than overfit — but re-running it on the same window is holdout mining. Pass criterion unchanged; if it fails again, close the line permanently. Cost ~2 h; every derived cache, mask and grid is committed. |
+
+Manual re-run (nothing is scheduled):
+
+```bash
+cd /home/arun/quantifyd
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/build_aux.py        # ~90 s
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/build_masks162.py   # ~30 s
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/patch_engine.py     # regenerate qg_engine2.py
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/build_panel161.py   # ~45 s
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/partb_overlay.py    # ~30 s
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/finalize_a.py       # ~95 s
+venv/bin/python3 research/162_quality_summit_optimisation/scripts/partc_blend.py
+```

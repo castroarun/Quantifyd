@@ -1,0 +1,64 @@
+a,b,window,metric,n,median_delta,a_wins,note
+QS_v2,QS_base,full,cagr_net_tax,12,0.013,6,
+QS_v2,QS_base,full,calmar,12,-0.055,2,
+QS_v2,QS_base,full,maxdd,12,-3.927,1,
+QS_v2_eq,QS_base,full,cagr_net_tax,12,-0.779,4,
+QS_v2_eq,QS_base,full,calmar,12,-0.089,2,
+QS_v2_eq,QS_base,full,maxdd,12,-4.749,0,
+QS_v2_nbr,QS_base,full,cagr_net_tax,12,0.113,7,
+QS_v2_nbr,QS_base,full,calmar,12,-0.042,5,
+QS_v2_nbr,QS_base,full,maxdd,12,-4.564,1,
+CTRL_hasdata,QS_base,full,cagr_net_tax,12,-4.208,2,
+CTRL_hasdata,QS_base,full,calmar,12,-0.279,1,
+CTRL_hasdata,QS_base,full,maxdd,12,-21.756,0,
+CTRL_none,QS_base,full,cagr_net_tax,12,-6.132,1,
+CTRL_none,QS_base,full,calmar,12,-0.337,0,
+CTRL_none,QS_base,full,maxdd,12,-21.899,0,
+QS_v2,CTRL_hasdata,full,cagr_net_tax,12,4.746,9,candidate construction
+QS_v2,CTRL_hasdata,full,calmar,12,0.244,11,candidate construction
+QS_v2,CTRL_hasdata,full,maxdd,12,16.942,12,candidate construction
+QS_base,CTRL_hd_base,full,cagr_net_tax,12,-1.324,2,incumbent construction
+QS_base,CTRL_hd_base,full,calmar,12,0.106,10,incumbent construction
+QS_base,CTRL_hd_base,full,maxdd,12,12.737,12,incumbent construction
+QS_v2,QS_base,W1,cagr_net_tax,12,6.055,12,
+QS_v2,QS_base,W1,calmar,12,0.282,12,
+QS_v2,QS_base,W1,maxdd,12,4.937,10,
+QS_v2_eq,QS_base,W1,cagr_net_tax,12,5.237,11,
+QS_v2_eq,QS_base,W1,calmar,12,0.183,11,
+QS_v2_eq,QS_base,W1,maxdd,12,2.804,9,
+QS_v2_nbr,QS_base,W1,cagr_net_tax,12,5.349,11,
+QS_v2_nbr,QS_base,W1,calmar,12,0.217,11,
+QS_v2_nbr,QS_base,W1,maxdd,12,3.529,9,
+CTRL_hasdata,QS_base,W1,cagr_net_tax,12,-6.373,2,
+CTRL_hasdata,QS_base,W1,calmar,12,-0.351,0,
+CTRL_hasdata,QS_base,W1,maxdd,12,-19.952,0,
+CTRL_none,QS_base,W1,cagr_net_tax,12,-10.702,0,
+CTRL_none,QS_base,W1,calmar,12,-0.377,0,
+CTRL_none,QS_base,W1,maxdd,12,-19.295,0,
+QS_v2,CTRL_hasdata,W1,cagr_net_tax,12,10.492,11,candidate construction
+QS_v2,CTRL_hasdata,W1,calmar,12,0.649,12,candidate construction
+QS_v2,CTRL_hasdata,W1,maxdd,12,24.524,12,candidate construction
+QS_base,CTRL_hd_base,W1,cagr_net_tax,12,-1.577,4,incumbent construction
+QS_base,CTRL_hd_base,W1,calmar,12,0.158,8,incumbent construction
+QS_base,CTRL_hd_base,W1,maxdd,12,11.651,12,incumbent construction
+QS_v2,QS_base,W2,cagr_net_tax,12,-3.477,3,
+QS_v2,QS_base,W2,calmar,12,-0.152,1,
+QS_v2,QS_base,W2,maxdd,12,-4.426,0,
+QS_v2_eq,QS_base,W2,cagr_net_tax,12,-4.715,1,
+QS_v2_eq,QS_base,W2,calmar,12,-0.191,0,
+QS_v2_eq,QS_base,W2,maxdd,12,-5.08,0,
+QS_v2_nbr,QS_base,W2,cagr_net_tax,12,-4.526,3,
+QS_v2_nbr,QS_base,W2,calmar,12,-0.193,2,
+QS_v2_nbr,QS_base,W2,maxdd,12,-4.924,0,
+CTRL_hasdata,QS_base,W2,cagr_net_tax,12,-2.279,4,
+CTRL_hasdata,QS_base,W2,calmar,12,-0.273,2,
+CTRL_hasdata,QS_base,W2,maxdd,12,-18.866,0,
+CTRL_none,QS_base,W2,cagr_net_tax,12,-5.417,2,
+CTRL_none,QS_base,W2,calmar,12,-0.288,2,
+CTRL_none,QS_base,W2,maxdd,12,-18.781,0,
+QS_v2,CTRL_hasdata,W2,cagr_net_tax,12,-0.868,4,candidate construction
+QS_v2,CTRL_hasdata,W2,calmar,12,0.102,9,candidate construction
+QS_v2,CTRL_hasdata,W2,maxdd,12,13.51,12,candidate construction
+QS_base,CTRL_hd_base,W2,cagr_net_tax,12,1.036,7,incumbent construction
+QS_base,CTRL_hd_base,W2,calmar,12,0.165,10,incumbent construction
+QS_base,CTRL_hd_base,W2,maxdd,12,10.63,11,incumbent construction
