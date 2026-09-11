@@ -283,7 +283,18 @@ Smallcap/midcap gate series strangle the book (blocked 27-41% of days). Breadth 
 catastrophic. Full grids: `results/gate_bakeoff.csv`, `gate_finals.csv`,
 `gate_yoy_full.csv`, `gate_paired_test.csv`.
 
-**Adopted spec (2026-09-03): trail-20, −8% stop, 16 slots @6.25%, NO market gate.**
+**Adopted spec (2026-09-03, FINAL): trail-15, −8% stop, 16 slots @6.25%, NO market gate.**
+> NOTE (11-Sep-2026): this line read "trail-20" until today. That was the spec as of
+> the gate-and-slots decision earlier on 03-Sep; the exit no-cliff check re-ran the
+> same day under the new no-gate/16-slot spec and moved the trail **20 -> 15** on
+> after-tax paired evidence: **+1.59pp on 24/30 seeds, worst seed 30.34% vs 27.33%,
+> DD -29.1% vs -30.0%** (`results/exit_nocliff_check_aftertax.csv`, trail=15 stop=0.08
+> vs the trail=20 stop=0.08 incumbent row). The faster trail earns its churn once
+> gate-filtered entries are gone. `strategies.ts` carried the change on the day; this
+> summary did not, and on 11-Sep it was misread as current, which produced a false
+> report that the live book was deviating. The 30-seed figures quoted just below
+> (median 37.8% / worst 33.6%) are the **trail-20, pre-tax** numbers from the slots
+> decision and are left as the record of that step.
 30-seed evidence: median 37.8% CAGR (pre-tax, 2006→26), worst-seed 33.6% (vs 31.9% at
 8 slots), spread halved, losing years near-deterministic (2008 band −14.5..−12.3),
 2026 zero losing paths. Book re-seeded (seed 5, 1,310 trades, 15 open), deposits
