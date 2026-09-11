@@ -209,13 +209,18 @@ def arm(cand, free, st, kite, dry=True):
     except Exception as e:
         print('order read failed:', e)
 
-    ticks = {}
+    ticks, tradeable = {}, None
     try:
+        tradeable = set()
         for i in kite.instruments('NSE'):
             if i.get('segment') == 'NSE':
                 ticks[i['tradingsymbol']] = float(i.get('tick_size') or 0.05)
+                tradeable.add(i['tradingsymbol'])
     except Exception as e:
-        print('instrument dump failed, assuming 0.05 ticks:', e)
+        # Without the dump we cannot vet symbols; arm anyway rather than stall the book,
+        # and let the broker refuse what it will.
+        print('instrument dump failed, cannot vet symbols:', e)
+        tradeable = None
 
     placed = []
     for sym, r in cand.iterrows():
@@ -228,6 +233,13 @@ def arm(cand, free, st, kite, dry=True):
         bad, why = split_suspect(sym)
         if bad:
             print('  SKIP %-12s %s' % (sym, why))
+            continue
+        if tradeable is not None and sym not in tradeable:
+            # In market_data.db but not in the live instrument dump: renamed, delisted, or
+            # trading under another series. An AMO is validated lightly enough to accept it
+            # and RMS rejects at the open ("Field Not Found"), which is how MODISONLTD
+            # wasted a slot overnight on 10-Sep.
+            print('  SKIP %-12s not tradeable under this symbol on NSE today' % sym)
             continue
         tick = ticks.get(sym, 0.05)
         # CEIL, not round: the rule is close > pivot, so a trigger a tick BELOW the
@@ -257,13 +269,24 @@ def arm(cand, free, st, kite, dry=True):
             except Exception as e:
                 # The exchange caps the limit-to-trigger spread per scrip and names the
                 # maximum in the rejection. Take it at its word once, rather than guessing.
-                # NOT [0-9.]+ : that is greedy over dots and captures the full stop
-                # that ends the exchange's sentence ("...below Rs. 303.70.") -> float()
+                # The exchange refuses in two different sentences - the SL spread cap
+                # ("below Rs. 303.70.") and the circuit cap ("with Price below 735.45") -
+                # and both name the price that would work. One pattern takes either.
+                # NOT [0-9.]+ : greedy over dots, it swallows the full stop and float()
                 # then raises inside the handler meant to recover from the rejection.
-                m = re.search(r'below Rs\.?\s*([0-9]+(?:\.[0-9]+)?)', str(e))
+                m = re.search(r'below\s+(?:Rs\.?\s*)?([0-9]+(?:\.[0-9]+)?)', str(e))
                 if attempt == 1 and m:
-                    lim = round(math.floor((float(m.group(1)) - tick) / tick) * tick, 2)
-                    print('       exchange caps the spread; retrying with ceiling %.2f' % lim)
+                    cap = float(m.group(1))
+                    if cap <= trigger:
+                        # Even the pivot is outside the band: no breakout can happen today,
+                        # so the slot is better spent on the next candidate than on an
+                        # order that cannot fill.
+                        print('       ceiling %.2f is at or below the trigger %.2f - '
+                              'the breakout cannot happen in today\'s band, skipping'
+                              % (cap, trigger))
+                        break
+                    lim = round(math.floor((cap - tick) / tick) * tick, 2)
+                    print('       exchange caps the price; retrying with ceiling %.2f' % lim)
                     continue
                 print('       REJECTED: %s' % e)
                 e_final = e
