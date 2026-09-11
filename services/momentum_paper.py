@@ -2093,16 +2093,26 @@ def rebalance_job():
 
 
 def eod_job():
-    """Light pre-close EOD run (~15:15 IST): daily Donchian stop + weekly macro gate, at
-    near-close prices (executable while open). The heavy monthly re-rank runs earlier
-    (rebalance_job, ~14:45)."""
+    """Pre-close EOD run (~15:05 IST): Donchian stops, then the weekly macro gate, and only
+    THEN park spare cash. The heavy monthly re-rank runs earlier (rebalance_job, ~14:45).
+
+    Sweeping LAST is the point (Arun, 2026-09-11). The sweep used to sit inside daily_job, so on a
+    gate flip it ran before the gate sold anything: the whole book was liquidated seconds later and
+    those proceeds — Rs5.6L on 2026-09-11 — sat idle until the NEXT day's run. Gate flips are
+    precisely when the most cash is created, so that was the worst possible moment to have already
+    swept. Selling first and parking afterwards puts the money to work the same day."""
     if not _get("seeded"):
         return
     refresh_universe(full=False)
     panel = _panel()
-    daily_job(panel)                                   # interest + mark + Donchian (every day)
+    daily_job(panel, sweep=False)                      # interest + mark + Donchian (every day)
     if _is_last_trading_day_of_week():
-        weekly_job(panel)                              # macro gate
+        weekly_job(panel)                              # macro gate — may liquidate the whole book
+    if CFG["live_cash_sweep"]:
+        try:
+            sweep_idle_cash()                          # park what is left, AFTER all selling
+        except Exception as _e:
+            logger.error(f"[MP-SWEEP] eod sweep failed: {_e}")
 
 
 def _is_last_trading_day_of_week():
