@@ -61,27 +61,66 @@ reasonable watchlist input to the existing Open Alpha process.
 
 ---
 
-## ⏳ 2026-09-11 — research/160: Arun's Screener quality-growth screen + near-ATH buy, as a SYSTEM (in flight)
+## ✅ 2026-09-11 — research/160 DONE: Arun's Screener query tested — **FAMILY A: NO EDGE / FAMILY B: SIGNAL, not STRATEGY**
 
-Arun's own process: Screener query (sales & profit growth 3y > 20, avg ROE 3y > 15, ROCE > 15,
-D/E <= 0.2, price >= 0.9 x ATH, mcap > 1000 cr) -> manual liquidity + OPM-steadiness check ->
-buy near the ATH -> NO exit rule. He beats NIFTY discretionarily; ask = test and optimise it
-mechanically, minimum bar 25% CAGR after tax. Three agents, folder
-`research/160_quality_growth_near_ath/`:
+All three legs complete (DATA, ENGINE, STUDY). **588 cells, published, nothing deployed and
+nothing papered.** Study: `/app/backtest/quality-growth-near-ath-research160`
 
-- DATA leg — full-universe Screener point-in-time panel (annual + quarterly OPM + face value
-  -> PIT mcap), masks in the r/158 npz contract, coverage/survivorship audit, his real
-  holdings (holdings_snapshots.db) vs the screen. STATUS: `QUALITY_GROWTH_NEAR_ATH_DATA_LEG_STATUS.md`.
-- ENGINE leg — close-decided / next-open-filled positional engine (rebalance, first-qualify,
-  ATH-breakout reference), all exit families, tax/cost/idle cash, offsets+seeds, house YoY
-  table. STATUS: `QUALITY_GROWTH_NEAR_ATH_ENGINE_BUILD_STATUS.md`.
-- STUDY leg (after both) — G1 decomposition (fundamentals vs near-ATH vs both vs nulls),
-  exit optimisation (the missing piece of his process), robustness, blend vs TN+OA, publish.
+**The replication gate ruled before any backtest did: he does not run the screen he thinks he
+runs.** On his real Zerodha history the written screen picks **8 of 69** holdings and **3 of 43**
+observed buys; growth→15 gives 19, dropping D/E too gives 40, and **near-ATH alone gives 42 of
+69**. So two labelled families were tested and never blurred.
 
-Prior evidence: r/158 measured the same screen as an OVERLAY on the (unplaceable) Open Alpha
-entry over Aug-2024->Sep-2026: strict mask, missing=fail lifted that arm from -7.2% to +9.3%
-CAGR [0.7..18.8], DD -30.4%; ROCE was inert; ~9.7% of breakout candidates pass. Two-year window,
-not a verdict. Screener lacks delisted names -> the fundamentals leg carries survivorship.
+| | CAGR after tax | MaxDD | Calmar | % invested | verdict |
+|---|---:|---:|---:|---:|---|
+| **Family A — the screen as written** | **10.77%** | −29.1% | 0.40 | **43%** | **NO EDGE** — below Midcap 150 (16.41%) |
+| Family B — what he actually does | 21.19% | −37.1% | 0.58 | 91% | **SIGNAL, not STRATEGY** |
+| Best of all 588 cells — **no screen at all** | 25.88% | −40.9% | 0.61 | 96% | clears 25% CAGR, fails Calmar 1.0 |
+| Random-selection null (same universe) | 14.82% | −41.7% | 0.37 | 99% | **beats Family A** |
+
+**Answer to his question — does it clear 25% after tax?** Yes, but only by **deleting the
+screen**. The screen as written costs **−11.90pp on 12 of 12 paired offsets** against the identical
+book unscreened, and at a 0% idle-cash assumption it returns **7.74%** (three of its eleven points
+were cash yield on the 57% of the book it could not fill). Delete its ten best of 213 trades and
+the trade-level compounding proxy falls to **0.32× — below one**.
+
+**Twelve fundamental masks vs a pre-registered bar (+2pp CAGR or +0.15 Calmar on ≥8/12 paired
+offsets): ZERO passed.** The best of them, the loosest, buys +0.106 Calmar for −1.32pp CAGR.
+
+**What is actually doing the work:** relative-strength ranking, worth **+7.70pp** over the random
+null. The best fundamental screen is worth −1.32pp.
+
+**Specific, actionable for Arun:**
+- **Drop the 20% growth bar and the D/E ≤ 0.2 test.** They cost ~11.8 points of CAGR between
+  them. Growth is a monotonic downhill slope: >10 → 21.19%, >15 → 15.43%, >20 → 10.77%, >30 → 5.94%.
+- **ROCE > 15 is completely inert** — it never rejects a name ROE has not already rejected.
+- **D/E ≤ 0.2 is a sector exclusion, not a quality filter** — Screener carries no Borrowings row
+  for banks/NBFCs, so it removes every financial by construction.
+- **The "OPM steady or rising" step makes it worse** on all four readings of it.
+- **The missing exit is not missing much**: across 285 exit×gate cells, no exit beats simply
+  holding on either investable book, and the NIFTY-200SMA gate raises Calmar only by parking the
+  book in cash.
+
+**Do NOT add it to the book.** Monthly correlation **0.624 to Open Alpha** (0.730 for the
+price-only version). Added to the deployed TN+OA pair at 10/20/33%, Calmar falls
+2.369 → 2.232 → 2.017 → 1.693 monotonically, and **holding cash in its place wins on 360 of 360
+paths**.
+
+**The one open question (registered, due 2026-10-10):** does a loose quality gate help INSIDE
+Open Alpha's own entries, as an overlay rather than a standalone book? That is the only version
+the 0.73 correlation does not already answer. **Blocked until `research/159_oa_honest_reoptimization`
+lands** — OA's published 34.9% rests on a same-bar look-ahead fill, so the overlay must be measured
+against the honest OA curve.
+
+**Reusable residual:** a point-in-time Screener panel (2,116 pages, 256,828 rows, 141 months,
+only FY filed by the decision date) and **37 causal eligibility masks**. Refresh before reuse
+(dated review, 2027-02-01) — Screener figures are restated, not as-reported.
+
+- STATUS: `research/160_quality_growth_near_ath/QUALITY_GROWTH_NEAR_ATH_DAILY_SWEEP_STATUS.md`
+- RESULTS: `research/160_quality_growth_near_ath/results/RESULTS.md`
+- Caveat to carry: **8-year window** (a data fact — four filed FY do not exist before Aug-2018),
+  contains the 2023-25 smallcap boom, and every book here is tail-carried (top 5% of trades =
+  81-96% of all trade return).
 
 ## 🔴 2026-09-11 — RENAMED SYMBOLS GO STALE SILENTLY, and IPO Base is the most exposed
 

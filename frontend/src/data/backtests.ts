@@ -141,6 +141,314 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'quality-growth-near-ath-research160',
+    title: 'Arun’s own screener query, tested — quality-growth near the all-time high (research/160)',
+    verdict:
+      'FAMILY A (the screen exactly as he wrote it): NO EDGE. FAMILY B (what his real trades say he actually does): SIGNAL, NOT STRATEGY. DO NOT DEPLOY EITHER. Arun runs a screener.in query — sales growth 3y over 20, profit growth 3y over 20, average ROE 3y over 15, ROCE over 15, debt-to-equity at or below 0.2, price within 10% of the all-time high, market cap over Rs 1,000 crore — then checks liquidity and operating margin by hand, buys near the high, and holds with no exit rule at all. He asked whether it clears 25% CAGR after tax. THE FIRST THING THE DATA SAID WAS THAT HE DOES NOT RUN IT. Taking his real Zerodha history, the written screen picks 8 of the 69 equities he holds and 3 of the 43 he has actually been observed buying; relaxing growth to 15% gives 19, dropping debt-to-equity as well gives 40, and "near its all-time high" ALONE gives 42 of 69. So two families were tested and never blurred. THE SCREEN AS WRITTEN RETURNS 10.77% AFTER TAX on 2018-08 to 2026-09, at -29.1% drawdown, Calmar 0.40, with only 43% of the book invested because the screen cannot fill fifteen slots. That is below the Midcap 150 index at 16.41% on the same window. Against the IDENTICAL book with no screen at all on the same screenable universe it loses 11.90 points of CAGR on 12 of 12 rebalance offsets, and it loses to picking names AT RANDOM from the same liquid near-all-time-high universe (14.82%). Set the idle-cash assumption to zero and it returns 7.74%: three of its eleven points were the cash yield on the 57% of the book it could not fill. Delete its ten best trades out of 213 and the trade-level compounding proxy falls from 98.5x to 0.32x — below one. WHAT HE ACTUALLY DOES IS ROUGHLY TWICE AS GOOD: profitable, mcap over Rs 1,000 crore, ROE and ROCE over 15, growth over 10, NO debt test — 21.19% after tax, -37.1% drawdown, Calmar 0.58, 91% invested, stable in both sub-windows (20.11% and 20.95%) and at 60 bps (19.10%). It beats all three indices on return. It still misses the 25% bar and misses Calmar 1.0 by a mile. TWELVE FUNDAMENTAL MASKS WERE TESTED AGAINST A PRE-REGISTERED BAR AND ZERO PASSED. The best of them, the loosest one, buys +0.106 Calmar and gives back 1.32 points of CAGR; the bar was +0.15 Calmar or +2pp CAGR on 8 of 12 paired offsets. THE 25% BAR IS REACHABLE — BY DELETING THE SCREEN. The best of 588 cells is a plain relative-strength book on liquid names near their highs, no fundamentals at all, 30 names, 200-day SMA trail, Rs 5 crore liquidity floor: 25.88% after tax, -40.9% drawdown, Calmar 0.61, and it is a plateau (22 to 26% across slots 15-50 and liquidity floors Rs 2-10 crore), not a peak. It still fails the Calmar bar and it is not his system — it is momentum, which True North and Open Alpha already are. THE EXIT HE IS MISSING TURNS OUT NOT TO BE MISSING MUCH: across 285 exit-by-gate cells, no exit beats simply holding on either book that can stay invested, and the NIFTY 200-SMA gate raises Calmar only by parking the book in cash. AND IT DILUTES THE LIVE BOOK AT EVERY WEIGHT. Monthly correlation 0.624 to Open Alpha for the Family-B book and 0.730 for the price-only one — this is a weaker sampling of the family Open Alpha already trades. Added to the deployed TN+OA pair at 10 / 20 / 33%, Calmar falls 2.369 to 2.232, 2.017, 1.693 — monotonically — and holding CASH in its place beats it on 360 of 360 paths. The useful residual is not a strategy: it is the point-in-time Screener panel and 37 causal fundamental masks, now reusable for the one question this study does not answer — whether quality helps INSIDE Open Alpha’s entries rather than as a book of its own.',
+    status: 'COMPLETE',
+    date: '2026-09-11',
+    cardBlurb:
+      'Arun’s screener query, evaluated as it would have been knowable on the day, across the whole NSE cash universe. The written screen picks 8 of the 69 names he really holds and returns 10.8% after tax — below the Midcap index. What he actually does returns 21.2%. Neither clears his 25% bar, twelve fundamental masks fail a pre-registered test, and every blend weight makes the live book worse than holding cash.',
+    cardStats: [
+      { label: 'Screen as written', value: '10.77% CAGR / −29.1% DD / Calmar 0.40 — NO EDGE' },
+      { label: 'What he actually does', value: '21.19% / −37.1% / 0.58 — SIGNAL, not strategy' },
+      { label: 'Blend value vs TN+OA', value: 'DILUTIVE at every weight; cash wins 360/360' },
+    ],
+
+    systemRules: {
+      intro:
+        'Two families, labelled and never blurred, because the replication gate says they are different strategies. Every cell below shares the same engine, the same window, the same costs and the same ensemble; only the eligibility mask and the book construction change.',
+      sharedCoreTitle: 'Shared core — identical across every cell',
+      sharedCore: [
+        { k: 'Universe', v: '2,158 NSE cash names (funds excluded by instrument NAME, not ticker), 20-day median traded value ≥ ₹2 cr at the decision close' },
+        { k: 'Price state', v: 'close ≥ 0.90 × causal all-time-high close (the ATH cummax restarts on any one-day −40% split-shaped collapse)' },
+        { k: 'Fundamentals', v: 'point-in-time: only fiscal years FILED by the decision date (Indian FY end + 4 months). Screener panel, 2,131 of 2,158 names covered' },
+        { k: 'Decision / fill', v: 'decided on the CLOSE, filled at the NEXT OPEN. The engine never reads a high or a low, so the r/142 trigger/fill trap is structurally impossible' },
+        { k: 'Book', v: 'equal weight 1/N at entry, monthly rebalance, IBD-style relative-strength ranking, hysteresis buffer 1.5×N' },
+        { k: 'Costs / tax / cash', v: '25 bps a side (ladder to 60), 20% STCG / 12.5% LTCG netted within the Indian FY with loss carry-forward, idle cash 5% p.a.' },
+        { k: 'Ensemble', v: '12 rebalance-day offsets (30 seeds for daily-entry and random-ranking arms); medians, [min..max] and the worst path reported' },
+        { k: 'Window', v: '2018-08-01 → 2026-09-10. Not a choice: four filed fiscal years do not exist for most names until FY2018 is filed, and coverage steps 7% → 87% at that date' },
+      ],
+      riskLayer: {
+        title: 'The two families and the controls',
+        caption:
+          'The replication gate (Arun’s real Zerodha holdings vs the mechanical screen) is what forces the split. A Family-B result may never be reported as a validation of Family A.',
+        columns: ['Book', 'Eligibility rule', 'Picks how many of his 69 real holdings', 'What it tests'],
+        rows: [
+          ['FAMILY A — as written', 'growth >20 both lines · ROE & ROCE >15 · D/E ≤0.2 · mcap >₹1,000cr · no negatives', '8 of 69 (3 of 43 observed buys)', 'the query he believes he runs'],
+          ['FAMILY A relaxed', 'the same with growth >15 and mcap >₹500cr', '19 of 69', 'is the 20% growth bar the problem?'],
+          ['FAMILY B — what he does', 'profitable · mcap >₹1,000cr · ROE & ROCE >15 · growth >10 · NO debt test', '~40 of 69', 'his actual practice'],
+          ['Control — no screen', 'near-ATH + RS only, on the SAME screenable sub-universe', '42 of 69 (near-ATH alone)', 'what the fundamentals must beat'],
+          ['NULL — random selection', 'same liquid near-ATH universe, names picked at random, 30 seeds', '—', 'what the RANKING must beat'],
+        ],
+        highlightRows: [2, 3],
+      },
+    },
+
+    system: {
+      intro:
+        'Three legs ran in parallel: a DATA leg that fetched 2,116 Screener pages and built a point-in-time monthly fundamentals panel plus 31 eligibility masks; an ENGINE leg that built a close-only, slot-constrained positional simulator and passed five self-tests including a shifted-data look-ahead probe; and this STUDY leg, which added six more masks, ran 588 cells across four gates and published.',
+      rows: [
+        { k: 'What Arun asked', v: '“Does my screener query clear 25% CAGR after tax? The max the best.”' },
+        { k: 'The screen', v: 'Sales growth 3y > 20 AND Profit growth 3y > 20 AND Avg ROE 3y > 15 AND ROCE > 15 AND D/E ≤ 0.2 AND price ≥ 0.9 × all-time high AND mcap > ₹1,000 cr' },
+        { k: 'His manual steps', v: 'a liquidity check, “OPM steady or rising”, buy near the high — and NO exit rule' },
+        { k: 'Data leg', v: '2,116 Screener pages fetched in 137 min; 256,828 panel rows × 2,131 symbols × 141 months; point-in-time at a 4-month filing lag' },
+        { k: 'Masks', v: '31 from the data leg + 6 built here for Family B; every one run twice (missing data = ineligible, and = eligible)' },
+        { k: 'Cells run', v: 'G1 133 · G2 413 · G3 42 · plus 12 paired A-vs-B comparisons = 588, disclosed for the multiple-testing haircut' },
+        { k: 'Ranking metric (pre-registered)', v: 'after-tax Calmar at 25 bps, with the full tradeability gate in the same table — registered in the STATUS doc BEFORE any cell ran' },
+        { k: 'Adoption bar (pre-registered)', v: 'CAGR ≥ 25% AND Calmar ≥ 1.0 · positive in both sub-windows · plateau within ±3pp · survives 40 bps · passes the tradeability gate' },
+      ],
+    },
+
+    conditions: {
+      intro:
+        'What the data can and cannot support, stated before the results rather than after them.',
+      rows: [
+        { k: 'Window length', v: '8.1 years, and it contains the 2023-25 smallcap boom. It cannot be extended: Screener serves ~12 fiscal years' },
+        { k: 'Sub-windows', v: 'W1 2018-08 → 2022-06 (contains the 2020 crash), W2 2022-07 → 2026-09 (contains the boom)' },
+        { k: 'Survivorship — the real one', v: 'market_data.db keeps only 102 stopped series in 2,158 (4.7%) over eleven years, fewer than NSE actually delisted. Pressure is UPWARD on every arm, benchmarks included. The random null is the control that neutralises it' },
+        { k: 'Survivorship — Screener', v: 'NOT a problem, unusually: Screener keeps delisted pages, so 2,131 of 2,158 names are covered and the missing-data policy moves results by 0.0-1.7pp' },
+        { k: 'Look-ahead residual', v: 'Screener shows figures as they stand TODAY. The filing lag controls when a year becomes visible; it cannot undo a later restatement' },
+        { k: 'Split scale', v: 'the DB is not retroactively split-adjusted; the ATH cummax restarts on 152 detected events, which also fires on genuine crashes and makes the near-ATH state EASIER to satisfy for those names' },
+        { k: 'Two criteria are inert', v: 'ROCE never rejects a name ROE has not already rejected; and D/E ≤ 0.2 removes the entire financial sector by construction, because Screener carries no Borrowings row for lenders' },
+        { k: 'Read % invested next to every CAGR', v: 'the written screen fills 43% of a 15-slot book. A thinly invested book’s CAGR is the idle-cash yield wearing a strategy’s name' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'The decomposition — where the return actually comes from',
+        caption:
+          'Each row adds one thing to the row above. After tax, 25 bps, 12 offsets, medians. “% inv” is avg_pct_invested — the share of the book actually holding stock.',
+        columns: ['Step', 'CAGR after tax', 'MaxDD', 'Calmar', '% inv', 'What the step is worth'],
+        rows: [
+          ['NIFTY 50 buy-and-hold', '9.38', '−38.4', '0.24', '100', '—'],
+          ['NIFTY MIDCAP 150 buy-and-hold', '16.41', '−40.8', '0.40', '100', '—'],
+          ['Random selection, liquid + near-ATH (THE NULL)', '14.82', '−41.7', '0.37', '98.9', 'near-ATH alone ≈ +2pp over an index'],
+          ['+ relative-strength ranking, no screen', '22.52', '−48.3', '0.43', '98.6', '+7.70pp — THIS is the engine'],
+          ['+ Family B screen', '21.19', '−37.1', '0.58', '91.2', '−1.32pp CAGR, +0.11 Calmar'],
+          ['+ Family A screen, as written', '10.77', '−29.1', '0.40', '43.1', '−11.75pp'],
+          ['+ the manual “OPM steady or rising” step on A', '9.65', '−23.7', '0.41', '35.0', '−1.12pp further'],
+          ['+ 30 slots, ₹5cr floor, 200-SMA trail — NO screen', '25.88', '−40.9', '0.61', '95.5', '+3.36pp — book construction'],
+        ],
+        highlightRows: [3, 7],
+      },
+      {
+        title: 'The pre-registered paired test — twelve masks, zero pass',
+        caption:
+          'Each mask against the IDENTICAL book with no screen on the same screenable sub-universe, paired across the same 12 rebalance-day offsets. Bar: ≥ +2pp CAGR OR ≥ +0.15 Calmar, on ≥ 8 of 12. Unpaired medians lie at small n.',
+        columns: ['Mask', 'ΔCAGR median', 'CAGR wins', 'ΔCalmar median', 'Calmar wins', 'Verdict'],
+        rows: [
+          ['arun_strict — the screen as written', '−11.90', '0/12', '−0.048', '4/12', 'no'],
+          ['growth >15, mcap >₹1,000cr', '−8.00', '0/12', '+0.071', '8/12', 'no'],
+          ['growth >15, mcap >₹500cr', '−6.46', '1/12', '+0.101', '9/12', 'no'],
+          ['strict without the growth test', '−6.36', '1/12', '−0.004', '6/12', 'no'],
+          ['Family B at growth >15', '−4.46', '1/12', '−0.011', '6/12', 'no'],
+          ['profitable + mcap only', '−3.76', '1/12', '−0.048', '2/12', 'no'],
+          ['growth >15, no quality, no debt', '−2.94', '2/12', '+0.026', '7/12', 'no'],
+          ['quality only', '−2.85', '3/12', '+0.067', '9/12', 'no'],
+          ['growth only', '−2.68', '2/12', '+0.015', '7/12', 'no'],
+          ['profitable only', '−2.44', '5/12', '−0.007', '5/12', 'no'],
+          ['quality + mcap, no growth', '−2.36', '3/12', '+0.043', '11/12', 'no'],
+          ['Family B — quality + growth >10 (the best of them)', '−1.32', '2/12', '+0.106', '10/12', 'no'],
+        ],
+        highlightRows: [0, 11],
+      },
+      {
+        title: 'The growth bar is a slope, not a plateau',
+        caption: 'Everything else held fixed. Arun’s 20% bar sits on a monotonic downhill slope.',
+        columns: ['3-year growth threshold (both lines)', 'CAGR after tax', 'Names passing per month (mean)'],
+        rows: [
+          ['> 10% (Family B)', '21.19', '123'],
+          ['> 15%', '15.43', '43'],
+          ['> 20% — Arun’s bar', '10.77', '26'],
+          ['> 25%', '9.78', '18'],
+          ['> 30%', '5.94', '11'],
+        ],
+        highlightRows: [2],
+      },
+      {
+        title: 'The missing exit — 285 cells, and it turns out not to be missing much',
+        caption:
+          '19 exit specifications × 3 index-gate settings × 5 books. Family A’s best Calmar cell is a cash pile: 27% invested.',
+        columns: ['Book', 'Best by CAGR', 'Best by Calmar', 'What the exit and the gate are worth'],
+        rows: [
+          ['No screen (control)', 'sma_trail 200, no gate — 22.58%', 'same, Calmar 0.46', 'the 200-SMA trail is worth +0.06 CAGR at N=15 and +1.8pp at N=30. The NIFTY-200SMA gate is absent from the top six'],
+          ['Family A as written', 'no exit — 10.77%', 'donchian_low 20 + NIFTY gate — 8.04%, Calmar 0.55, 27% invested', 'the gate raises Calmar by cutting exposure, not by improving the book'],
+          ['Family A relaxed', 'no exit — 17.12%', 'donchian_low 50 + NIFTY gate — 13.74%, Calmar 0.67', 'the only book where the gate genuinely pays: −9.4pp CAGR for −9.4pp drawdown'],
+          ['Family B', 'time 12 — 21.37%', 'hard_stop 15 — 20.64%, Calmar 0.59', 'NO exit beats holding. Every family is within 1pp of none'],
+        ],
+      },
+      {
+        title: 'Portfolio fit — dilutive at every weight, and cash beats it on every path',
+        caption:
+          'Monthly returns, 360 paths (OA seed × TN offset, the r/154 convention), overlap window 2018-08 → 2026-08. The cash sleeve earns 5% p.a.',
+        columns: ['Book', 'CAGR', 'MaxDD', 'Calmar', 'ΔCalmar vs the pair', 'Paths improved'],
+        rows: [
+          ['TN + OA 50-50 — the deployed pair', '33.68', '−14.01', '2.369', '—', '—'],
+          ['+ Family B at 10%', '32.26', '−14.43', '2.232', '−0.108', '39 / 360'],
+          ['+ Family B at 20%', '30.99', '−15.64', '2.017', '−0.355', '16 / 360'],
+          ['+ Family B at 33%', '29.47', '−17.96', '1.693', '−0.709', '0 / 360'],
+          ['+ CASH at 20% — the null', '27.77', '−10.65', '2.586', '+0.212', '360 / 360'],
+          ['+ CASH at 33% — the null', '23.97', '−8.50', '2.794', '+0.427', '360 / 360'],
+          ['Family B standalone', '21.02', '−31.10', '0.671', '−1.732', '0 / 360'],
+          ['Open Alpha standalone (same window)', '43.73', '−23.74', '1.886', '−0.491', '7 / 360'],
+        ],
+        highlightRows: [4, 5],
+      },
+      {
+        title: 'Correlation — this is Open Alpha’s family, sampled worse',
+        caption: 'Median monthly return correlation across the 360 paths. A complement is normally wanted below ~0.40.',
+        columns: ['Pair', 'Median', 'Min', 'Max'],
+        rows: [
+          ['Family B vs Open Alpha', '0.624', '0.538', '0.723'],
+          ['Price-only version vs Open Alpha', '0.730', '0.650', '0.800'],
+          ['Family B vs True North', '0.374', '0.303', '0.456'],
+          ['True North vs Open Alpha (for reference)', '0.413', '0.282', '0.566'],
+        ],
+        highlightRows: [0, 1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Screen as written — CAGR after tax', value: '10.77%', tone: 'neg', hint: 'below the Midcap 150 at 16.41% on the same window' },
+        { label: '…at a 0% cash yield', value: '7.74%', tone: 'neg', hint: '3 of its 11 points were idle cash on the 57% it could not fill' },
+        { label: '…paired vs the same book unscreened', value: '−11.90pp, 0 of 12 offsets', tone: 'neg' },
+        { label: 'What he actually does — CAGR', value: '21.19%', hint: '−37.1% DD, Calmar 0.58, 91% invested' },
+        { label: 'Best of all 588 cells (NO screen)', value: '25.88%', hint: '−40.9% DD, Calmar 0.61 — a plateau across N 15-50' },
+        { label: 'Random-selection null', value: '14.82%', hint: 'the screen as written loses to it' },
+        { label: 'RS ranking is worth', value: '+7.70pp', tone: 'pos', hint: 'over random selection in the same near-ATH universe' },
+        { label: 'Blend value vs TN+OA', value: 'NEGATIVE at every weight', tone: 'neg', hint: 'cash in its place wins 360/360 paths' },
+      ],
+      tables: [
+        {
+          title: 'Year on year — return with the intra-year drawdown beneath it',
+          caption:
+            'Each cell is the calendar-year return with the worst intra-year drawdown in brackets, measured from the running peak of the FULL curve (never a within-year slice). System columns are after tax and net of costs, medians across the ensemble; benchmarks are price series.',
+          columns: ['Year', 'Screen as written', 'Screen relaxed', 'What he does', 'No screen', 'TN', 'OA', 'TN+OA', 'Pair +B 20%', 'NIFTY 50', 'Midcap 150', 'Smallcap 250', 'BEST CAGR', 'LEAST DD', 'BEST OVERALL'],
+          rows: [
+            ['2018 (from Aug)', '+0.1 (−2.6)', '−3.7 (−5.4)', '−12.2 (−18.7)', '−16.7 (−23.1)', '−5.7 (−9.6)', '−6.7 (−15.3)', '−6.1 (−11.5)', '−7.3 (−12.6)', '−4.3 (−14.6)', '−5.1 (−19.4)', '−11.0 (−21.6)', 'Screen as written', 'Screen as written', 'Screen as written'],
+            ['2019', '+4.0 (−1.8)', '+9.6 (−5.9)', '+24.3 (−16.2)', '+8.4 (−24.3)', '+1.1 (−11.6)', '+5.8 (−21.0)', '+4.1 (−14.2)', '+7.8 (−14.1)', '+12.0 (−11.4)', '−0.3 (−21.0)', '−8.3 (−29.9)', 'What he does', 'Screen as written', 'What he does'],
+            ['2020', '+13.6 (−9.7)', '+15.8 (−10.4)', '+39.8 (−33.4)', '+43.2 (−29.9)', '+58.4 (−12.3)', '+117.8 (−11.8)', '+83.5 (−8.3)', '+74.2 (−10.5)', '+14.9 (−38.4)', '+24.4 (−40.8)', '+25.1 (−51.8)', 'OA', 'TN+OA', 'OA'],
+            ['2021', '+25.2 (−4.2)', '+39.9 (−9.0)', '+87.2 (−14.0)', '+132.0 (−11.7)', '+57.9 (−12.4)', '+151.9 (−10.0)', '+101.0 (−7.2)', '+98.4 (−7.4)', '+24.1 (−10.1)', '+46.8 (−10.5)', '+61.9 (−9.3)', 'OA', 'Screen as written', 'OA'],
+            ['2022', '−1.2 (−8.5)', '−3.1 (−16.5)', '−19.1 (−33.2)', '−7.1 (−32.1)', '+6.0 (−16.2)', '+2.5 (−19.7)', '+4.6 (−12.6)', '−0.5 (−16.0)', '+4.3 (−17.2)', '+3.0 (−21.6)', '−3.6 (−26.9)', 'TN', 'Screen as written', 'TN+OA'],
+            ['2023', '+18.7 (−7.1)', '+29.8 (−12.5)', '+59.4 (−28.0)', '+75.7 (−26.1)', '+47.9 (−12.2)', '+48.0 (−19.2)', '+48.9 (−13.6)', '+51.4 (−12.4)', '+20.0 (−9.9)', '+43.7 (−10.4)', '+48.1 (−18.7)', 'No screen', 'Screen as written', 'No screen'],
+            ['2024', '+35.6 (−11.4)', '+28.3 (−13.6)', '+35.9 (−14.0)', '+28.7 (−17.6)', '+25.1 (−18.6)', '+64.0 (−12.3)', '+44.4 (−13.6)', '+43.7 (−12.6)', '+8.8 (−10.9)', '+23.8 (−11.0)', '+26.4 (−12.5)', 'OA', 'Screen as written', 'OA'],
+            ['2025', '−17.6 (−29.1)', '−7.2 (−22.6)', '−16.1 (−34.9)', '−21.1 (−35.2)', '+2.3 (−19.7)', '+11.6 (−25.7)', '+8.0 (−14.7)', '+2.7 (−18.7)', '+10.5 (−15.8)', '+5.4 (−21.1)', '−6.0 (−26.1)', 'OA', 'TN+OA', 'TN+OA'],
+            ['2026 (to Sep)', '+12.2 (−24.6)', '+17.4 (−17.3)', '+14.6 (−34.4)', '+21.8 (−40.9)', '+4.7 (−14.9)', '+32.9 (−20.9)', '+18.6 (−10.5)', '+18.2 (−10.4)', '−10.1 (−15.2)', '+2.8 (−14.0)', '+10.5 (−23.6)', 'OA', 'Pair +B 20%', 'OA'],
+            ['CAGR / MaxDD / Calmar', '10.8 / −29.1 / 0.40', '15.2 / −22.6 / 0.64', '21.2 / −37.1 / 0.58', '25.9 / −40.9 / 0.61', '21.4 / −21.2 / 1.01', '44.8 / −25.8 / 1.78', '34.0 / −15.6 / 2.18', '31.2 / −18.8 / 1.68', '9.4 / −38.4 / 0.24', '16.4 / −40.8 / 0.40', '15.0 / −51.8 / 0.29', '—', '—', '—'],
+          ],
+          highlightRows: [9],
+        },
+        {
+          title: 'Robustness — both windows, the cost ladder, and the cash-yield sensitivity',
+          caption:
+            'The cash-yield column is the one that matters for the thin books: set idle cash to 0% and a book that is only 43% invested loses most of what looked like a return.',
+          columns: ['Book', 'Full window', 'W1 2018-08→2022-06', 'W2 2022-07→2026-09', '40 bps', '60 bps', '0% cash yield', 'Missing = eligible'],
+          rows: [
+            ['Screen as written', '10.77', '8.79 (20.5% inv)', '12.43', '10.32', '9.73', '7.74', '12.42'],
+            ['Screen as written, best risk-adj.', '9.71', '8.02 (16.8% inv)', '11.05', '9.21', '8.55', '6.44', '11.37'],
+            ['Screen relaxed (growth >15, mcap >₹500cr)', '15.22', '11.38', '18.13', '14.52', '13.58', '12.84', '15.65'],
+            ['What he actually does (Family B)', '21.19', '20.11', '20.95', '20.25', '19.10', '21.01', '21.19'],
+            ['No screen, N=30, ₹5cr floor, 200-SMA trail', '25.88', '23.56', '25.27', '24.11', '22.26', '25.19', '25.88'],
+            ['No screen, N=50, 200-SMA trail', '23.62', '21.37', '25.17', '22.17', '20.34', '23.27', '23.62'],
+          ],
+          highlightRows: [0, 4],
+        },
+        {
+          title: 'Tradeability gate',
+          caption:
+            'A 29-trade losing streak on the best-returning book is a real problem for a discretionary operator, and it is exactly what this gate exists to surface.',
+          columns: ['Book', 'Win %', 'Avg win', 'Avg loss', 'Expectancy / trade', 'Max losing streak', 'Trades / yr', 'Turnover × NAV', '% invested'],
+          rows: [
+            ['Screen as written', '44.9', '+26.3%', '−10.0%', '+5.77%', '11', '25.6', '1.9×', '43.1'],
+            ['What he actually does', '46.3', '+27.9%', '−10.8%', '+7.26%', '17', '61.4', '4.2×', '91.2'],
+            ['No screen, N=30, ₹5cr floor', '43.7', '+29.8%', '−11.0%', '+7.00%', '29', '149.0', '5.1×', '95.5'],
+          ],
+        },
+        {
+          title: 'Outlier dependence — every book here is carried by a handful of names',
+          caption:
+            'Trade level, one path, net of costs. “full / ex-top-10” is the compounding proxy divided by the same proxy with the ten best trades deleted. It is a ratio between arms, not a return.',
+          columns: ['Book', 'Trades', 'Mean per trade', 'Win %', 'Top 5% of trades =', 'full / ex-top-10', 'Ex-top-10 absolute'],
+          rows: [
+            ['Screen as written', '213', '+4.36%', '47.9', '85% of all trade return', '309×', '0.32× — LOSES MONEY'],
+            ['Screen relaxed', '326', '+4.27%', '41.7', '92%', '652×', '1.68×'],
+            ['What he actually does', '520', '+6.02%', '47.5', '81%', '5,938×', '355×'],
+            ['No screen, N=30', '1,265', '+6.22%', '43.5', '96%', '167,230×', '1.76e9×'],
+          ],
+          highlightRows: [0],
+        },
+      ],
+      charts: [
+        {
+          src: '/app/quality-growth-near-ath-research160.png',
+          caption:
+            'Log growth of 100, after tax and net of costs, 2018-08 to 2026-09, with the drawdown panel beneath. Gold is Arun’s screen exactly as written; red is the same screen with the growth bar relaxed; green is what his real trades say he actually does; blue is the identical book with NO fundamental screen at all; purple is the deployed True North + Open Alpha pair. The ordering is the finding: the tighter the screen, the lower the curve — and the live pair sits above all of them with less than half the drawdown.',
+        },
+        {
+          src: '/app/quality-growth-near-ath-research160-tearsheet.png',
+          caption:
+            'Client factsheet for the best fundamental book in the study — Family B, i.e. what Arun actually does: profitable, mcap over ₹1,000 cr, ROE and ROCE over 15, growth over 10, no debt test, fifteen names near their all-time highs, RS-ranked, monthly, no exit.',
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Nothing is adopted. The honest answer to “does it clear 25% after tax?” is: not as you run it, and not as written.',
+        summary:
+          'The 25% bar is reachable in this family only by deleting the fundamental screen entirely — and the book that does it is plain relative-strength momentum on liquid names near their highs, which is what True North and Open Alpha already are. Correlation 0.73 to Open Alpha; every blend weight makes the live book worse; cash in its place wins on all 360 paths.',
+        metrics: [
+          { k: 'Screen as written', v: '10.77% after tax / −29.1% DD / Calmar 0.40 / 43% invested — NO EDGE' },
+          { k: 'What he actually does', v: '21.19% / −37.1% / 0.58 / 91% invested — SIGNAL, not a strategy' },
+          { k: 'Best of 588 cells (no screen)', v: '25.88% / −40.9% / 0.61 — clears the CAGR bar, fails Calmar 1.0' },
+          { k: 'Adoption bar', v: 'FAILED on Calmar by every arm; FAILED on CAGR by both families' },
+          { k: 'The one actionable finding', v: 'drop the 20% growth bar and the D/E ≤ 0.2 test — they cost 11.8 points of CAGR between them' },
+        ],
+        rejected: [
+          'Family A (the screen as written) — loses 11.90pp to the same book unscreened on 12 of 12 offsets, and loses to random selection',
+          'The “OPM steady or rising” manual step — all four readings of it make the book worse (9.65 / 7.45 / 8.58 / 5.26% vs 10.77%)',
+          'ROCE > 15 — completely inert; it never rejects a name ROE has not already rejected',
+          'D/E ≤ 0.2 — not a quality filter but a sector exclusion; Screener carries no Borrowings row for lenders, so it removes all financials by construction',
+          'The market-cap floor — nearly inert; dropping it moves the pass count 46 → 52',
+          'Every exit family on the investable books — none beats simply holding',
+          'The NIFTY 200-SMA and NIFTYBEES 100-week gates — they raise Calmar by holding cash, not by improving the book',
+          'Adding either family to the live TN+OA pair at any weight from 10% to 40%',
+        ],
+      },
+    ],
+
+    caveats: [
+      'EIGHT YEARS IS SHORT AND IT CONTAINS THE 2023-25 SMALLCAP BOOM. The window cannot be extended: Screener serves about twelve fiscal years, so four filed years do not exist for most names until FY2018 is filed in August 2018, and coverage steps from 7% to 87% at exactly that date. Nothing here shows how this screen behaves across a full cycle, because the data to show it does not exist.',
+      'THE PRICE UNIVERSE IS NOT POINT-IN-TIME. market_data.db carries only 102 stopped series in 2,158 (4.7%) across eleven years — fewer than NSE actually delisted or suspended. A company that never entered the price database is invisible to this study and to its own coverage audit. Survivorship pressure is upward on EVERY arm, benchmarks included. The random-selection null is the control that neutralises it for the ranking claim, because it carries the identical bias.',
+      'SCREENER’S OWN COVERAGE IS, UNUSUALLY, NOT THE PROBLEM. It keeps the pages of delisted companies, so 2,131 of 2,158 universe names are covered and the missing-data policy changes results by only 0.0-1.7pp. Every arm was still run both ways.',
+      'THE FUNDAMENTALS ARE RESTATED, NOT AS-REPORTED. The four-month filing lag controls when a fiscal year becomes visible; it cannot undo a later restatement. That is the residual look-ahead in the panel.',
+      'THE DATABASE IS NOT RETROACTIVELY SPLIT-ADJUSTED. The engine restarts the all-time-high cummax on any one-day close collapse below 0.55× — 152 events, logged — which also fires on genuine crashes and therefore makes the near-ATH state EASIER to satisfy for those names. The direction of that bias is stated, not hidden.',
+      'EVERY BOOK HERE IS TAIL-CARRIED. The top 5% of trades contribute 81-96% of total trade return in every arm. Delete the ten best trades from the screen as written and the trade-level compounding proxy falls below 1.0 — it loses money. That is normal for a momentum book and it is why the drawdowns are what they are, but none of these results is a broad, repeatable edge across many names.',
+      'WEIGHTS ARE NOT REBALANCED BETWEEN ENTRIES — winners run and the book drifts from equal weight. Tax is an approximation of the statute: one netted FY pool with per-trade rates and loss carry-forward, not the STCL/LTCL set-off ordering.',
+      '588 CELLS WERE RUN. Discount the best cell for multiple testing accordingly. That is precisely why plateaus, paired offset-by-offset tests and a random-selection null are reported here rather than a single winning configuration.',
+      'THE REPLICATION GATE FRAMES EVERYTHING. The written screen picks 8 of the 69 equities Arun actually holds and 3 of the 43 he has been observed buying since April. A backtest of the screen as written is a backtest of a strategy he does not run, and this study says so in both directions rather than letting one family stand in for the other.',
+      'ONE QUESTION IS NOT ANSWERED HERE. Whether a loose quality gate helps INSIDE Open Alpha’s own entries — as an overlay rather than as a standalone book — is not tested, and the 0.73 correlation is the reason it is the only version of this question still worth asking. The point-in-time panel and 37 masks built for this study are reusable for exactly that.',
+    ],
+
+    githubLinks: [
+      { label: 'research/160 — STUDY leg status + results', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/160_quality_growth_near_ath' },
+    ],
+    projectPaths: [
+      'research/160_quality_growth_near_ath/QUALITY_GROWTH_NEAR_ATH_DAILY_SWEEP_STATUS.md',
+      'research/160_quality_growth_near_ath/QUALITY_GROWTH_NEAR_ATH_DATA_LEG_STATUS.md',
+      'research/160_quality_growth_near_ath/QUALITY_GROWTH_NEAR_ATH_ENGINE_BUILD_STATUS.md',
+      'research/160_quality_growth_near_ath/results/RESULTS.md',
+      'research/160_quality_growth_near_ath/results/paired_g1.md',
+      'research/160_quality_growth_near_ath/results/g4_blend.md',
+      'research/160_quality_growth_near_ath/results/yoy_study.md',
+      'research/160_quality_growth_near_ath/scripts/qg_engine.py',
+      'research/160_quality_growth_near_ath/scripts/make_grid.py',
+    ],
+  },
+  {
     slug: 'ath-base-age-breakout-research161',
     title: 'OA V2.0 — new-ATH breakout after an aged, deep base (research/161)',
     verdict:
