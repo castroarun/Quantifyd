@@ -599,6 +599,65 @@ reserved capital**, which the 2026-08-31 stress test says the book does not have
 The standing lesson is the one Phase E already wrote and this reproduces on a
 second, independent trigger: **to cut risk on this book, cut LOTS — do not manage.**
 
+## 5c. Does it matter WHEN in the entry session you sell? (Phase H)
+
+**Verdict: NO. Entry timing within the day is a coin flip — paired difference
+−6.3 pts (t −0.39) on the live VIX>25 book and +1.9 pts (t +0.19) on all
+campaigns. Selling early is neither better nor worse than selling at the close.**
+
+Asked on 2026-09-11, an entry day, when Arun wanted to take the campaign at 11:10
+rather than wait for the 15:20 window. Every one of the 89 backtested campaigns
+was struck at the CLOSE, so an intraday entry had no evidence either way.
+
+**What could not be tested, stated first.** Expired-contract intraday option
+prices are unobtainable from Kite, and our own 1-minute recorder only covers a
+contract from ~27 DTE — a 45-DTE entry has no recorded intraday history at all.
+There is no way to price an 11:10 fill historically.
+
+**What could.** NSE's bhavcopy carries OPEN as well as CLOSE for every contract.
+The open is the session's first trade (~09:15), the close is the tested
+convention (15:30), so OPEN-vs-CLOSE **brackets** any intraday entry time. Exits
+are identical in both arms — the same 21-DTE close — so the only thing that
+differs is what you were paid at entry, and where the strike landed.
+
+| Scope | Arm | net/camp | t | win % | MaxDD |
+|---|---|---|---|---|---|
+| **VIX>25** (n=28) | CLOSE — the tested rule | **103.5** | 2.46 | 71.4% | −564.8 |
+| | OPEN — entering early | 97.2 | 2.39 | 67.9% | −501.1 |
+| | **paired diff** | **−6.3** | **−0.39** | open beat close 15/28 | |
+| **ALL** (n=50) | CLOSE | 65.1 | 1.75 | 70.0% | −1201.8 |
+| | OPEN | 67.0 | 1.86 | 68.0% | −1148.1 |
+| | **paired diff** | **+1.9** | **+0.19** | open beat close 27/50 | |
+
+Nowhere near significance in either direction, and the sign **flips between the
+two scopes** — the signature of noise, not an effect.
+
+### The mechanism — why it washes out
+
+Selling at the open collects **more** premium, consistently: **+11.7 points**
+(t +2.16 across all campaigns, t +1.27 on the filtered book). That looks like an
+edge until you see what pays for it — the ATM strike chosen off the open spot
+differs from the close-spot strike on **76–86% of campaigns**, and it is the
+worse centring for the move that follows. The extra credit and the worse strike
+cancel almost exactly.
+
+### Honest limits
+
+Only **50 of 89** campaigns (and **28 of 61** on the filtered book) could be
+priced both ways, because option OPEN prints are frequently missing or below the
+liquidity gate in bhavcopy. That is a materially smaller sample than the study
+proper — the close arm scores t 2.46 here against t 3.53 on the full 61 — so the
+error bars are wider than the headline suggests. The finding is "no detectable
+difference", which is not the same as "proven identical".
+
+### What this licenses, and what it does not
+
+It licenses taking a campaign earlier in the session without expecting to be
+worse off. It does **not** change the rule of record: the book, the executor and
+the paper book all strike at the close, and an early manual entry breaks the
+live-versus-paper comparison on that campaign — which is most of the reason for
+running both while the order path is still unproven.
+
 ## 6. Robustness
 
 **Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
