@@ -161,8 +161,14 @@ def check_books(rep, kite_orders):
                            for o in kite_orders):
                     unplaced.append(p['symbol'])
         if unplaced:
-            rep.add(b['label'], 'exits due', FAIL,
-                    'past the rule with NO sell placed: ' + ', '.join(unplaced))
+            # The exit check fires at 15:18 on a close proxy. Before then a name below its
+            # trail is the rule working - it may be back above by the close - so this is
+            # only a failure once the check has had its chance.
+            after_check = (datetime.now().hour * 60 + datetime.now().minute) > (15 * 60 + 25)
+            rep.add(b['label'], 'exits due', FAIL if after_check else OK,
+                    ('past the rule with NO sell placed: ' if after_check
+                     else 'below the rule, 15:18 check will place if still there: ')
+                    + ', '.join(unplaced))
         elif due:
             rep.add(b['label'], 'exits due', OK, 'placed: ' + ', '.join(due))
         else:
@@ -197,34 +203,39 @@ def check_books(rep, kite_orders):
 
 
 # ── the scheduled jobs that keep it all moving ───────────────────────────────
+# (label, log, the time it is DUE) - judged against that, never against "today" alone.
 JOBS = [
-    ('True North marks',   '/tmp/momentum_live.log',   'market-hours'),
-    ('True North state',   '/tmp/momentum_state.log',  'market-hours'),
-    ('Open Alpha marks',   '/tmp/oa_real_mark.log',    'market-hours'),
-    ('Open Alpha exits',   '/tmp/oa_real.log',         'daily'),
-    ('Open Alpha entries', '/tmp/oa_entry.log',        'evening'),
-    ('Open Alpha recon',   '/tmp/oa_reconcile.log',    'daily'),
-    ('IPO marks',          '/tmp/ipo_mark.log',        'market-hours'),
-    ('IPO engine',         '/tmp/ipo_paper.log',       'evening'),
-    ('Cash executor',      '/tmp/equity_executor.log', 'daily'),
-    ('Universe refresh',   '/tmp/universe_refresh.log', 'evening'),
+    ('True North marks',   '/tmp/momentum_live.log',    '09:16'),
+    ('True North state',   '/tmp/momentum_state.log',   '09:18'),
+    ('Open Alpha marks',   '/tmp/oa_real_mark.log',     '09:16'),
+    ('Open Alpha recon',   '/tmp/oa_reconcile.log',     '09:35'),
+    ('Cash executor',      '/tmp/equity_executor.log',  '09:20'),
+    ('IPO marks',          '/tmp/ipo_mark.log',         '09:16'),
+    ('Open Alpha exits',   '/tmp/oa_real.log',          '15:18'),
+    ('Universe refresh',   '/tmp/universe_refresh.log', '18:05'),   # 17:45 + ~18 min
+    ('IPO engine',         '/tmp/ipo_paper.log',        '18:45'),
+    ('Open Alpha entries', '/tmp/oa_entry.log',         '18:50'),
 ]
+JOB_GRACE_MIN = 15        # a job due at 15:18 that takes a minute has not failed at 15:19
 ERR = re.compile(r'Traceback \(most recent call last\)|^\w*Error:|Exception', re.M)
 
 
 def check_jobs(rep):
     today = date.today()
-    for label, path, cadence in JOBS:
+    now_min = datetime.now().hour * 60 + datetime.now().minute
+    for label, path, due in JOBS:
         p = Path(path)
         if not p.exists():
             rep.add('Jobs', label, WARN, 'no log at %s - has it ever run?' % path)
             continue
         mtime = datetime.fromtimestamp(p.stat().st_mtime)
         stale = mtime.date() < today
-        # An evening job has not run yet if we are checking before it fires; say so rather
-        # than calling it broken.
-        if stale and cadence == 'evening' and datetime.now().hour < 19:
-            rep.add('Jobs', label, OK, 'due later today (last %s)' % mtime.strftime('%d-%b %H:%M'))
+        due_min = int(due[:2]) * 60 + int(due[3:]) + JOB_GRACE_MIN
+        # Not yet due is not a failure. Before this, every afternoon job read as broken all
+        # morning, which is how a report teaches you to ignore it.
+        if stale and now_min < due_min:
+            rep.add('Jobs', label, OK, 'due at %s (last ran %s)'
+                    % (due, mtime.strftime('%d-%b %H:%M')))
             continue
         tail = ''
         try:
@@ -236,8 +247,8 @@ def check_jobs(rep):
                           if 'Error' in l or 'Exception' in l), 'see the log')
             rep.add('Jobs', label, FAIL, 'ERRORED: %s' % first.strip()[:120])
         elif stale:
-            rep.add('Jobs', label, FAIL, 'has not run today (last %s)'
-                    % mtime.strftime('%d-%b %H:%M'))
+            rep.add('Jobs', label, FAIL, 'was due at %s, has NOT run (last %s)'
+                    % (due, mtime.strftime('%d-%b %H:%M')))
         else:
             rep.add('Jobs', label, OK, 'ran %s' % mtime.strftime('%H:%M'))
 

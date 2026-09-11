@@ -1,20 +1,12 @@
 {
- "asof": "2026-09-10 16:20:21",
+ "asof": "2026-09-11 10:05:11",
  "upcoming": [
-  {
-   "expiry": "2026-10-27",
-   "entry_date": "2026-09-11",
-   "entry_weekday": "Fri",
-   "exit_due": "2026-10-06",
-   "days_away": 1,
-   "weekend_rolled": true
-  },
   {
    "expiry": "2026-11-23",
    "entry_date": "2026-10-09",
    "entry_weekday": "Fri",
    "exit_due": "2026-11-02",
-   "days_away": 29,
+   "days_away": 28,
    "weekend_rolled": false
   },
   {
@@ -22,7 +14,15 @@
    "entry_date": "2026-11-13",
    "entry_weekday": "Fri",
    "exit_due": "2026-12-08",
-   "days_away": 64,
+   "days_away": 63,
+   "weekend_rolled": true
+  },
+  {
+   "expiry": "2027-03-30",
+   "entry_date": "2027-02-12",
+   "entry_weekday": "Fri",
+   "exit_due": "2027-03-09",
+   "days_away": 154,
    "weekend_rolled": true
   }
  ],
@@ -32,20 +32,20 @@
  "lots": 3,
  "qty": 195,
  "capital": 1196000.0,
- "bhav_through": "2026-09-09",
+ "bhav_through": "2026-09-10",
  "realised": 142559.80425250003,
  "unrealised": 0,
- "nav": 1342391.7103614602,
+ "nav": 1342978.1416710792,
  "filter_name": "India VIX percentile rank > 25 (vs previous 252 sessions)",
  "vix_rank_min": 25,
  "realised_plan": 131703.64278000002,
  "realised_off": 10856.161472500004,
  "unrealised_plan": 0,
  "unrealised_off": 0,
- "nav_plan": 1331535.5488889604,
+ "nav_plan": 1332121.9801985794,
  "n_off_plan": 1,
  "idle_etf": "LIQUID1",
- "idle_earned": 3831.91,
+ "idle_earned": 4418.34,
  "idle_spans": [
   {
    "frm": "2026-06-09",
@@ -73,16 +73,16 @@
   },
   {
    "frm": "2026-09-08",
-   "to": "2026-09-10",
-   "days": 2,
+   "to": "2026-09-11",
+   "days": 3,
    "px_from": 1121.7,
-   "px_to": 1121.97,
-   "gain": 287.88
+   "px_to": 1122.52,
+   "gain": 874.32
   }
  ],
  "capital_deployed": null,
  "capital_deployed_peak": null,
- "margin_asof": "2026-09-10 16:20",
+ "margin_asof": "2026-09-11 10:05",
  "running_pnl": 142559.80425250003,
  "running_pnl_pct": null,
  "n_closed": 4,
@@ -118,7 +118,7 @@
    "mark_spot": 23635.1,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-09-08",
-   "dte": 18,
+   "dte": 17,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -198,7 +198,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-08-04",
-   "dte": -17,
+   "dte": -18,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -278,7 +278,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-07-07",
-   "dte": -45,
+   "dte": -46,
    "legs_entry": [
     {
      "side": "SHORT",
@@ -358,7 +358,7 @@
    "mark_spot": null,
    "created_at": "2026-08-25 09:54:42",
    "exit_due": "2026-06-09",
-   "dte": -73,
+   "dte": -74,
    "legs_entry": [
     {
      "side": "SHORT",

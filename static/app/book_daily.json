@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-10T15:45:02",
+ "generated_at": "2026-09-11T10:00:05",
  "books": {
   "orb": {
    "days": [
@@ -4529,6 +4529,34 @@
   "pairs": {
    "days": [
     {
+     "date": "2026-09-10",
+     "trades": 1,
+     "wins": 0,
+     "losses": 1,
+     "pnl": -16923.69,
+     "deployed": 0.0,
+     "cum": -45310.24,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "BAJFINANCE-KOTAKBANK",
+       "pnl": -16923.69,
+       "deployed": 0.0,
+       "mode": "paper",
+       "origin": "sim",
+       "direction": 1,
+       "entry_date": "2026-08-21",
+       "days_held": 20,
+       "entry_z": -2.3069498474999275,
+       "exit_z": -0.6103227600477977,
+       "gross_pnl_inr": -16647.5,
+       "cost_inr": 276.19,
+       "exit_reason": "EXIT_TIME"
+      }
+     ]
+    },
+    {
      "date": "2026-09-07",
      "trades": 1,
      "wins": 1,
@@ -4592,11 +4620,11 @@
     "max_position": null,
     "busiest_day": null,
     "avg_trade": null,
-    "days": 2,
-    "trades": 2,
+    "days": 3,
+    "trades": 3,
     "wins": 1,
-    "win_rate": 50.0,
-    "net": -28386.55,
+    "win_rate": 33.3,
+    "net": -45310.24,
     "best_day": 428.57,
     "worst_day": -28815.12,
     "green_days": 1,
@@ -4604,9 +4632,9 @@
     "t_stat": null,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 2,
+    "sim_trades": 3,
     "first": "2026-09-04",
-    "last": "2026-09-07"
+    "last": "2026-09-10"
    }
   },
   "orb-index": {
@@ -11264,6 +11292,107 @@
   "ha-paper": {
    "days": [
     {
+     "date": "2026-09-11",
+     "trades": 8,
+     "wins": 1,
+     "losses": 7,
+     "pnl": -3467.97,
+     "deployed": 192072.11,
+     "cum": -29529.42,
+     "mode": "paper",
+     "origin": "sim",
+     "rows": [
+      {
+       "symbol": "AMBUJACEM",
+       "pnl": -988.85,
+       "deployed": 23216.57,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 388.28348,
+       "qty": 59.79284065139442,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "CUMMINSIND",
+       "pnl": -171.79,
+       "deployed": 23664.36,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 5031.98995,
+       "qty": 4.702784410960086,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "INDUSINDBK",
+       "pnl": -660.39,
+       "deployed": 24103.18,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 981.7054,
+       "qty": 24.552359987223987,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "IRCTC",
+       "pnl": -506.73,
+       "deployed": 23559.01,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 464.06074,
+       "qty": 50.76707914943249,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "KOTAKBANK",
+       "pnl": 762.06,
+       "deployed": 25178.84,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 411.57649,
+       "qty": 61.176567713844065,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "LT",
+       "pnl": -669.39,
+       "deployed": 24225.59,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 3889.23288,
+       "qty": 6.2288875454829915,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "TRENT",
+       "pnl": -961.53,
+       "deployed": 23724.75,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 2763.27077,
+       "qty": 8.585747725622294,
+       "reason": "PATTERN"
+      },
+      {
+       "symbol": "ULTRACEMCO",
+       "pnl": -271.35,
+       "deployed": 24399.8,
+       "mode": "paper",
+       "origin": "sim",
+       "side": "SELL",
+       "price": 10838.7474,
+       "qty": 2.2511641910804436,
+       "reason": "PATTERN"
+      }
+     ]
+    },
+    {
      "date": "2026-09-10",
      "trades": 9,
      "wins": 3,
@@ -14796,22 +14925,22 @@
     "basis": "\u20b920L paper \u00b7 Heikin-Ashi 2-green",
     "max_position": 32746.06,
     "busiest_day": 490046.48,
-    "avg_trade": 24598.64,
-    "days": 36,
-    "trades": 278,
-    "wins": 96,
-    "win_rate": 34.5,
-    "net": -26061.42,
+    "avg_trade": 24582.14,
+    "days": 37,
+    "trades": 286,
+    "wins": 97,
+    "win_rate": 33.9,
+    "net": -29529.39,
     "best_day": 7492.54,
     "worst_day": -6934.76,
     "green_days": 9,
     "costs_modelled": null,
-    "t_stat": -2.11,
+    "t_stat": -2.36,
     "top3_share": null,
     "broker_trades": 0,
-    "sim_trades": 278,
+    "sim_trades": 286,
     "first": "2026-07-23",
-    "last": "2026-09-10"
+    "last": "2026-09-11"
    }
   },
   "ohol-paper": {

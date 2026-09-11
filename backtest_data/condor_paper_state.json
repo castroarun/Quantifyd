@@ -14,8 +14,8 @@
         "side": "SELL",
         "qty": 650,
         "entry": 70.4,
-        "ltp": 32.65,
-        "pnl": 24538,
+        "ltp": 10.6,
+        "pnl": 38870,
         "entry_time": "15:10"
       },
       {
@@ -24,8 +24,8 @@
         "side": "SELL",
         "qty": 650,
         "entry": 43.4,
-        "ltp": 46.2,
-        "pnl": -1820,
+        "ltp": 115.7,
+        "pnl": -46995,
         "entry_time": "15:10"
       },
       {
@@ -34,8 +34,8 @@
         "side": "BUY",
         "qty": 650,
         "entry": 17.85,
-        "ltp": 8.0,
-        "pnl": -6403,
+        "ltp": 3.95,
+        "pnl": -9035,
         "entry_time": "15:10"
       },
       {
@@ -44,14 +44,14 @@
         "side": "BUY",
         "qty": 650,
         "entry": 15.45,
-        "ltp": 12.5,
-        "pnl": -1917,
+        "ltp": 31.85,
+        "pnl": 10660,
         "entry_time": "15:10"
       }
     ],
     "entry_time": "15:10",
-    "cur_value": 58.35,
-    "day_pnl": 14318
+    "cur_value": 90.5,
+    "day_pnl": -6580
   },
   "history": [
     {
