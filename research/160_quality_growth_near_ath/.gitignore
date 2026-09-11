@@ -1,0 +1,2 @@
+# the 791 MB price panel cache is rebuilt by qg_panel.py in ~105s - never committed
+results/panel_*.npz
