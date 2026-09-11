@@ -303,9 +303,22 @@ def send(k, tradingsymbol, side, qty, tag):
 def broker_nifty_legs(k):
     """Open NIFTY option legs at the broker under OUR product, {symbol: qty}.
 
-    Scoped to PRODUCT (NRML) on purpose: NAS trades NIFTY options intraday on
-    MIS, and at 15:20 those legs are usually open. Without the product filter
-    this book would mistake NAS's positions for its own.
+    Two filters, and it is worth being exact about what each one does.
+
+    startswith("NIFTY") is what actually excludes the other books today. The
+    account's open F&O legs on 2026-09-11 were BSE, HAL and IDEA stock-option
+    spreads - Arun's manual positions, all NRML - and none of them is a NIFTY
+    contract, so the symbol filter alone removes them.
+
+    PRODUCT (NRML) is a forward guard, not a currently-exercised one. NAS is on
+    paper and holds nothing at the broker; if it ever goes live it trades NIFTY
+    intraday on MIS, and the product filter is what would keep the two books
+    apart then.
+
+    CONSEQUENCE WORTH KNOWING: a NIFTY option held NRML that this book did not
+    open will trip the orphan check and HALT the book. That is deliberate - an
+    unexplained NIFTY leg is exactly the ambiguity worth stopping for - but it
+    means a manual NIFTY NRML position stops this book until it is cleared.
     """
     out = {}
     for p in k.positions().get("net", []):
