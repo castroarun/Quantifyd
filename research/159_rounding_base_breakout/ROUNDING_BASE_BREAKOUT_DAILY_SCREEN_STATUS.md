@@ -982,3 +982,48 @@ trade**, 21.8 trades/yr, max losing streak 14. Cost ladder is nearly flat (14.60
    **0.617** (the complement bar is < ~0.4). OA alone over the shared window: **34.90% CAGR,
    −25.10% DD, Calmar 1.390**. Adding V3 makes every blend worse, monotonically:
    90/10 → 34.24% / 1.368 · 80/20 → 33.51% / 1.344 · 67/33 → 32.43% / 1.310.
+
+
+## 12.4 Sweep crash and fix (11-Sep-2026)
+
+| Time (IST) | Event | Notes |
+|---|---|---|
+| 17:12 | **All 18 entry variants finished** (`/tmp/r159_variants.log`) | S × K × ATH = 2 × 3 × 3 |
+| 17:10 | **All three sweep shards died instantly** | `ValueError: assignment destination is read-only` at `gate[:100] = True` |
+| 18:05 | **Fixed and relaunched** | `pandas.Series.to_numpy()` on a comparison returns a **read-only view**; the market-gate array was being written in place. Fix: `np.array(..., copy=True)` before the assignment. The same latent bug was present in `bt_final.py` (it would only have fired with `--gate 1`, which was never used) and is fixed there too |
+| 18:06 | 3 shards relaunched `nice -n 10`, PIDs verified alive; panel cache hit (623 symbols) | ~0.9 s/cell → ~10 min per shard |
+
+**No result already reported is affected.** The crash hit only the 2,016-cell *plateau* sweep.
+Everything in §12.3 — the 30-seed final analysis, the cost ladder, the two windows, the
+outlier test, the null controls and the blend — came from `bt_compare.py`, `bt_final.py` and
+the slot probe, all of which completed before the crash and none of which touches that line.
+
+### A note on reading the comparison log
+`/tmp/r159_cmp.log` shows v3 CAGRs spanning **5.2% to 14.6%** across the exit family. The low
+end is real but is **not** the system: SMA-15 (5.23%) and Donchian-10 (5.34%) are the fastest
+trails, and they are exactly the exits that also **lose to the date-matched control**. The
+headline configuration is the slow trail **ST(14,4) at 14.60%**. Quoting the fast-trail cells
+as the system’s return would understate it; quoting 14.60% without saying it is the best of
+2,016 cells would overstate it. Both are stated.
+
+
+## 12.5 Sweep complete — 2,016 of 2,016 cells (11-Sep-2026, 18:11 IST)
+
+| | |
+|---|---|
+| Cells reaching Arun’s **20% CAGR floor** | **0 of 2,016** |
+| Best cell | **14.63%** — `ST(14,4) · no stop · no time stop · shelf 15 · K=3 · ATH≥0.90 · no OBV · no gate` |
+| Cells beating NIFTYBEES on CAGR **and** drawdown | **22 (1%)** |
+| Median / p90 / min cell | **7.34% / 9.88% / 3.72%** |
+
+The sweep **confirms** the verdict reached before it and adds the plateau evidence:
+the **exit axis is a true plateau** (ST(14,4) leads on the median of all 288 of its cells,
+and every one of the top 15 cells uses it), while the **entry axes are largely inert** —
+shelf length 15 vs 20 differs by 0.015pp, the NIFTY-above-100-SMA gate by 0.035pp, and
+requiring a *new* all-time high actively **hurts** (6.87% vs 7.77% at ≥ 0.90×). The OBV
+accumulation filter costs 1.05pp of CAGR and buys 7.3pp of drawdown — it de-levers rather
+than selects.
+
+**STATUS: COMPLETE.** Verdict **SIGNAL, not STRATEGY** and **no incremental value to the
+book**. Published at `/app/backtest/rounding-base-shelf-breakout-research159`. Nothing
+deployed; no live engine touched; no service restarted.

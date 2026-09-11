@@ -104,7 +104,8 @@ def main():
     con.close()
     gate = None
     if a.gate:
-        g = (nb > nb.rolling(100, min_periods=100).mean()).to_numpy(); g[:100] = True
+        g = np.array((nb > nb.rolling(100, min_periods=100).mean()).to_numpy(), copy=True)
+        g[:100] = True
         gate = g
 
     report = {}

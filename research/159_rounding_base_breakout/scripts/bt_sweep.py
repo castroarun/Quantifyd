@@ -125,7 +125,9 @@ def main():
         "SELECT date,close FROM market_data_unified WHERE timeframe='day' AND symbol='NIFTYBEES' "
         "ORDER BY date", con)
     nb = nb[nb['date'].isin(set(cal))].set_index('date')['close'].reindex(cal).ffill()
-    gate = (nb > nb.rolling(100, min_periods=100).mean()).to_numpy()
+    # .to_numpy() on a pandas comparison can hand back a READ-ONLY view; take a
+    # writable copy before assigning (this killed all three shards at 17:10).
+    gate = np.array((nb > nb.rolling(100, min_periods=100).mean()).to_numpy(), copy=True)
     gate[:100] = True
     con.close()
 

@@ -84,6 +84,55 @@ Post-hoc (**not pre-registered** — slot count was not in the grid), varying sl
 A **plateau at ~15–16%**, never 20%, at any concentration. The 20% floor is not missed by a
 sizing choice; the signal does not produce enough opportunity to reach it.
 
+---
+
+## 3.5 The full 2,016-cell sweep — the 20% floor is missed everywhere
+
+The pre-registered grid completed on 11-Sep-2026 (all 2,016 cells, 10-seed scan each).
+It does not change the verdict; it removes any remaining doubt about it.
+
+| Question | Answer |
+|---|---|
+| Cells reaching the **20% CAGR floor** | **0 of 2,016** |
+| Best cell in the entire sweep | **14.63%** — `ST(14,4) · no stop · no time stop · shelf 15 · K=3× · ATH≥0.90 · no OBV · no gate` |
+| Cells beating NIFTYBEES on **CAGR *and* drawdown** | **22 of 2,016 (1%)** |
+| Median cell | **7.34%** · 90th percentile 9.88% · worst 3.72% |
+
+### The exit is a plateau; the entry axes are mostly inert
+
+Median CAGR across every other setting, one axis at a time:
+
+| Axis | Values (median CAGR) | Reading |
+|---|---|---|
+| **Exit** | **ST(14,4) 9.39** · ST(10,3) 8.06 · ST(7,3) 7.97 · EMA-50 7.91 · Donchian-20 6.76 · Donchian-10 5.56 · SMA-15 5.25 | **A real, monotone plateau: the slower the trail, the better.** All 15 top cells are ST(14,4) |
+| ATH proximity | 0.90 → 7.77 · 0.95 → 7.75 · **above ATH → 6.87** | Demanding a *new* high **hurts**; near-the-high is the useful condition, not blue sky itself |
+| Volume K | 2× → 7.68 · 3× → 7.21 · 5× → 7.24 | Weak; K mostly trades return for drawdown (K=5 has the best Calmar, 0.618) |
+| OBV filter | off 7.94 · **on 6.89** | Costs 1.05pp of CAGR and buys 7.3pp of drawdown — a de-levering filter, not an edge |
+| Shelf S | 15 → 7.335 · 20 → 7.350 | **Inert.** The shelf length does not matter once a shelf is required at all |
+| Market gate | off 7.355 · on 7.320 | **Inert** — unlike True North, this system gains nothing from a NIFTY-above-100-SMA gate |
+| Hard −8% stop | off 7.51 · on 7.21 | Slightly negative on return, mildly positive on drawdown |
+| Time stop 120 | off 7.54 · on 7.20 | Negative |
+
+### Neighbourhood of the winner (vary one axis, hold the rest at the winner)
+
+| Axis varied | Neighbours |
+|---|---|
+| Exit | DON10 5.31 · SMA15 5.23 · DON20 8.98 · EMA50 10.49 · ST(10,3) 10.80 · ST(7,3) 10.82 · **ST(14,4) 14.63** |
+| Hard stop | off **14.63** · on 13.33 |
+| Time stop | off **14.63** · 120 bars 12.82 |
+| Shelf S | 15 **14.63** · 20 13.09 |
+| Volume K | 2 → 13.24 · **3 → 14.63** · 5 → 12.74 |
+| ATH | **0.90 → 14.63** · 0.95 → 13.53 · 1.00 → 11.80 |
+| OBV | off **14.63** · on 10.93 |
+| Market gate | off **14.63** · on 12.90 |
+
+**Honest reading of this.** The *exit* result is a plateau and should be trusted: ST(14,4)
+wins on the axis median across all 288 of its cells, not just at the winner. The *winner cell
+itself* sits about 1.1–1.6pp above its own nearest neighbours on several axes, so some of that
+last point of CAGR is selection across 2,016 cells and should be discounted. Neither reading
+gets anywhere near 20%: **the best of 2,016 cells is 14.63%, and the 90th percentile cell is
+9.88%.**
+
 ### 3.4 It dilutes Open Alpha instead of complementing it
 Correlation to OA: **daily 0.468, monthly 0.617** — the complement bar is < ~0.4, and this
 pattern is by construction a **subset of OA's ATH-breakout entries**.
@@ -150,9 +199,10 @@ already only 40% invested.
 2. **Split artifacts.** `market_data.db` is not retroactively split-adjusted. The ATH is
    computed only from bars after the last < −35% one-day move, and 1,399 saucer windows were
    rejected by the split guard — which also discards genuine bases on names that split.
-3. **Multiple testing.** The pre-registered grid is **2,016 cells**; the winner must be
-   discounted accordingly. It is reported as a plateau (the exit family ranks consistently
-   across entry variants), not a peak.
+3. **Multiple testing.** The grid is **2,016 cells, all completed**; the winner is discounted
+   accordingly. The exit family is a genuine plateau (ST(14,4) leads on the axis median over
+   all 288 of its cells), but the winning *cell* sits ~1.1–1.6pp above its own neighbours, so
+   part of that last point is selection. **0 of 2,016 cells reach 20%; the median cell is 7.34%.**
 4. **One degree of freedom was spent** re-deriving the no-V threshold after v1 failed on
    KMEW (STATUS §3.10 D1), and another aligning the vertex bound (§9.3 D4).
 5. **ACCENTMIC-SM, Arun's second example, is absent from the DB** (NSE SME board), so the

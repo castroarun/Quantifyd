@@ -215,6 +215,24 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         highlightRows: [0],
       },
       {
+        title: 'THE FULL SWEEP — 2,016 cells, and not one of them reaches 20%',
+        caption:
+          'The entire pre-registered grid, completed: 7 exits x hard stop x time stop x shelf 15/20 x volume 2/3/5x x ATH 0.90/0.95/new-high x OBV on-off x market gate on-off, each on a 10-seed scan. The exit axis is a genuine plateau — SuperTrend(14,4) leads on the median of all 288 of its own cells and every one of the top 15 cells uses it. The entry axes are largely inert.',
+        columns: ['Axis', 'Setting (median CAGR across all other settings)', 'Reading'],
+        rows: [
+          ['Exit', 'ST(14,4) 9.39 | ST(10,3) 8.06 | ST(7,3) 7.97 | EMA-50 7.91 | Donchian-20 6.76 | Donchian-10 5.56 | SMA-15 5.25', 'A real monotone plateau — the slower the trail, the better'],
+          ['ATH proximity', '0.90x 7.77 | 0.95x 7.75 | must be a NEW high 6.87', 'Demanding blue sky HURTS; near-the-high is the useful condition'],
+          ['Volume K', '2x 7.68 | 3x 7.21 | 5x 7.24', 'Weak — K mostly trades return for drawdown (K=5 has the best Calmar)'],
+          ['OBV accumulation filter', 'off 7.94 | on 6.89', 'Costs 1.05pp of CAGR, buys 7.3pp of drawdown — de-levering, not selection'],
+          ['Shelf length S', '15 bars 7.335 | 20 bars 7.350', 'INERT once a shelf is required at all'],
+          ['Market gate (NIFTY > 100-SMA)', 'off 7.355 | on 7.320', 'INERT — unlike True North, this system gains nothing from a gate'],
+          ['Hard -8% close stop', 'off 7.51 | on 7.21', 'Slightly negative on return, mildly positive on drawdown'],
+          ['Time stop 120 bars', 'off 7.54 | on 7.20', 'Negative'],
+          ['WHOLE SWEEP', 'best cell 14.63% | 90th pct 9.88% | median 7.34% | worst 3.72%', '0 of 2,016 cells reach the 20% floor; 22 of 2,016 beat NIFTYBEES on BOTH return and drawdown'],
+        ],
+        highlightRows: [8],
+      },
+      {
         title: 'Sizing is not the problem — post-hoc slot sweep',
         caption:
           'NOT pre-registered: slot count was not in the grid, so this is reported as post-hoc and never as the headline. Everything else held fixed at the winning configuration. The 20% floor is missed on a plateau, not by a sizing choice.',
