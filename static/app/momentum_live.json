@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-11 13:16:12.771216",
+ "updated": "2026-09-11 13:19:11.092297",
  "asof": "2026-09-11",
  "positions": [
   {
@@ -8,38 +8,38 @@
    "symbol": "AUROPHARMA",
    "qty": 64.0,
    "entry_price": 1692.7,
-   "ltp": 1673.0,
+   "ltp": 1672.5,
    "prev_close": 1668.4,
-   "day_move_pct": 0.28,
-   "value": 107072,
-   "pnl": -1261,
-   "pnl_pct": -1.16
+   "day_move_pct": 0.25,
+   "value": 107040,
+   "pnl": -1293,
+   "pnl_pct": -1.19
   },
   {
    "stop": 409.9,
-   "to_stop_pct": 4.7,
+   "to_stop_pct": 4.6,
    "symbol": "BHEL",
    "qty": 258.0,
    "entry_price": 421.54,
-   "ltp": 429.0,
+   "ltp": 428.95,
    "prev_close": 429.5,
-   "day_move_pct": -0.12,
-   "value": 110682,
-   "pnl": 1924,
-   "pnl_pct": 1.77
+   "day_move_pct": -0.13,
+   "value": 110669,
+   "pnl": 1911,
+   "pnl_pct": 1.76
   },
   {
    "stop": 14.0,
-   "to_stop_pct": 7.3,
+   "to_stop_pct": 7.1,
    "symbol": "IDEA",
    "qty": 7738.0,
    "entry_price": 14.81,
-   "ltp": 15.02,
+   "ltp": 15.0,
    "prev_close": 14.9,
-   "day_move_pct": 0.81,
-   "value": 116225,
-   "pnl": 1619,
-   "pnl_pct": 1.41
+   "day_move_pct": 0.67,
+   "value": 116070,
+   "pnl": 1464,
+   "pnl_pct": 1.28
   },
   {
    "stop": 1797.4,
@@ -47,12 +47,12 @@
    "symbol": "LAURUSLABS",
    "qty": 61.0,
    "entry_price": 1833.72,
-   "ltp": 1972.0,
+   "ltp": 1971.0,
    "prev_close": 1945.0,
-   "day_move_pct": 1.39,
-   "value": 120292,
-   "pnl": 8435,
-   "pnl_pct": 7.54
+   "day_move_pct": 1.34,
+   "value": 120231,
+   "pnl": 8374,
+   "pnl_pct": 7.49
   },
   {
    "stop": 11458.0,
@@ -60,21 +60,21 @@
    "symbol": "OFSS",
    "qty": 9.0,
    "entry_price": 12160.89,
-   "ltp": 11768.0,
+   "ltp": 11769.0,
    "prev_close": 11725.0,
-   "day_move_pct": 0.37,
-   "value": 105912,
-   "pnl": -3536,
-   "pnl_pct": -3.23
+   "day_move_pct": 0.38,
+   "value": 105921,
+   "pnl": -3527,
+   "pnl_pct": -3.22
   }
  ],
- "value": 560183,
+ "value": 559931,
  "cash": 26799,
  "swept": 330312,
- "nav": 917294,
+ "nav": 917042,
  "capital": 937525,
- "pnl": 7180,
- "pnl_pct": 1.3,
+ "pnl": 6929,
+ "pnl_pct": 1.25,
  "n": 5,
  "slots": 8,
  "realized": -26559,
