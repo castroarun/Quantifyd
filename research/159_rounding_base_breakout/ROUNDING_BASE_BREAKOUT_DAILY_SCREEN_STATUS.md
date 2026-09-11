@@ -863,3 +863,44 @@ The idea is **killed** if: after-tax net CAGR does not beat NIFTYBEES on the 30-
 **or** the worst seed loses to NIFTYBEES; **or** either window fails; **or** it does not beat
 the date-matched ATH control (11.4a) — in which case it is redundant with Open Alpha and is
 **not** deployed regardless of its standalone numbers.
+
+
+## 11.8 Backtest phase — status: NOT STARTED, deferred to after 15:40 IST
+
+**Nothing in section 11 has been run.** Phase A (generating the 18 entry-variant event
+sets) was launched at **14:43 IST on 11-Sep-2026 and killed ~2 minutes later**, before any
+variant file was completed. The reason:
+
+- The market was **open** (NSE cash/F&O 09:15-15:30, closing session to ~15:40).
+- The 4-core VPS was already carrying **another agent's research sweep**
+  (`research/159_oa_honest_reoptimization/scripts/sweep_honest.py` at ~86% CPU, plus
+  `cand8y.py`) **and** the live paper jobs (`fly_paper.py`) and gunicorn, at a
+  **load average above 9**.
+- Adding CPU-heavy research to that while short option positions are monitored **in
+  memory** by the gunicorn process is the same failure class as the rogue REST poller
+  that starved the live monitors on 2026-08-14.
+
+The job was killed **by PID**, its partial output (`rounding_base_events_v3_s15_k2_a0.90.csv`)
+**deleted**, and the process confirmed gone. **No live engine or service was touched and no
+service was restarted.**
+
+**To resume (after 15:40 IST, verify with `TZ=Asia/Kolkata date` on the VPS first):**
+```bash
+ssh arun@94.136.185.54
+cd /home/arun/quantifyd
+# check the box is quiet first:
+uptime; ps -eo pcpu,pid,args --sort=-pcpu | head -6
+setsid nohup bash research/159_rounding_base_breakout/scripts/gen_variants.sh   > /tmp/r159_variants.log 2>&1 < /dev/null &
+tail -f /tmp/r159_variants.log      # ~50 min for 18 variants, sequential and niced
+```
+The driver **skips any variant file that already exists**, so it is safe to re-run.
+
+## 11.9 Research-number collision — flagged, not silently fixed
+
+`research/159_` is claimed **twice**: this study (`159_rounding_base_breakout`, assigned in
+the original brief) and `159_oa_honest_reoptimization`, created by another agent while this
+one was in flight. `research/160_quality_growth_near_ath` also exists, so the next free
+number is **161**. This folder was **not** renamed: it is already committed under 159 across
+six commits and reported to Arun under that path, and renaming mid-flight would invalidate
+every path already handed over. **Arun / the coordinator should decide** whether this study
+or the OA one gets renumbered.
