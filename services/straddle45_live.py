@@ -155,16 +155,40 @@ def sessions(m, k=None):
     return s
 
 
-def vix_now(m):
-    """(level, percentile rank vs the previous 252 sessions) from the latest close."""
+def vix_now(m, k=None):
+    """(level, percentile rank vs the previous 252 sessions, source).
+
+    Prefers the LIVE India VIX. The stored daily bar for TODAY is built by an
+    intraday job and is not final until after the close, so judging a 15:20
+    decision off the stored series risks using a partial or stale value - while
+    the backtest struck the filter on the entry day's own CLOSE. The live quote
+    at 15:20 is the closest honest proxy for that close.
+
+    Window discipline: against a live level the trailing window is the 252
+    stored closes ending YESTERDAY; against a stored level it is the 252 closes
+    before it. The level is never compared against itself.
+    """
     vx = sorted((r[0][:10], float(r[1])) for r in m.execute(
         "SELECT date, close FROM market_data_unified WHERE symbol='INDIAVIX' "
         "AND timeframe='day' AND close IS NOT NULL"))
     if len(vx) < 253:
-        return None, None
-    lvl = vx[-1][1]
-    w = [v for _, v in vx[-253:-1]]
-    return lvl, 100.0 * sum(1 for x in w if x < lvl) / len(w)
+        return None, None, "insufficient history"
+    today = date.today().isoformat()
+    hist = [(d, v) for d, v in vx if d < today]        # strictly before today
+    if len(hist) < 253:
+        return None, None, "insufficient history"
+    lvl = None
+    if k is not None:
+        try:
+            lvl = float(k.ltp(["NSE:INDIA VIX"])["NSE:INDIA VIX"]["last_price"]) or None
+        except Exception as e:
+            log("  vix: live quote unavailable (%s) - using the last stored close"
+                % str(e)[:50])
+    if lvl:
+        src, w = "live", [v for _, v in hist[-252:]]
+    else:
+        lvl, src, w = hist[-1][1], "stored close %s" % hist[-1][0], [v for _, v in hist[-253:-1]]
+    return lvl, 100.0 * sum(1 for x in w if x < lvl) / len(w), src
 
 
 def monthly_expiries(k):
@@ -316,13 +340,16 @@ def try_entry(con, k, m, sess, today):   # sess kept for signature stability
     if rows(con, "expiry=?", (target,)):
         return "expiry %s already traded this cycle" % target
 
-    lvl, rank = vix_now(m)
-    on_plan = rank is not None and rank > VIX_RANK_MIN
+    lvl, rank, vsrc = vix_now(m, k)
+    if rank is None:
+        raise Halt("VIX rank is UNKNOWN (%s) - refusing to decide the filter. "
+                   "Unknown must stay unknown." % vsrc)
+    on_plan = rank > VIX_RANK_MIN
     if not on_plan and not ALLOW_OFF_PLAN:
-        event(con, "SKIP", "%s VIX %.2f rank %.1f <= %d"
-              % (target, lvl or 0, rank or 0, VIX_RANK_MIN))
-        return ("SKIP per plan: VIX %.2f rank %.1f is not > %d"
-                % (lvl or 0, rank or 0, VIX_RANK_MIN))
+        event(con, "SKIP", "%s VIX %.2f rank %.1f <= %d (%s)"
+              % (target, lvl or 0, rank or 0, VIX_RANK_MIN, vsrc))
+        return ("SKIP per plan: VIX %.2f rank %.1f is not > %d [%s]"
+                % (lvl or 0, rank or 0, VIX_RANK_MIN, vsrc))
 
     spot = k.ltp(["NSE:NIFTY 50"])["NSE:NIFTY 50"]["last_price"]
     K = round(spot / 50.0) * 50

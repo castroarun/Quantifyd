@@ -506,7 +506,15 @@ def seed():
             continue
         credit = combined_bhav(m, exp, K, ed)
         lvl, rk = vix_rank_at(vx, vidx, ed)
-        on_plan = 1 if (rk is not None and rk > VIX_RANK_MIN) else 0
+        if rk is None:
+            # An unknown rank is NOT a failed filter. Tagging OFF-PLAN here would
+            # mislabel the campaign permanently - the insert guard means a later
+            # run never revisits it. Skip and let the next run seed it once the
+            # entry day's VIX close exists.
+            print("  defer %s entry %s - VIX rank not yet known for that session"
+                  % (exp, ed))
+            continue
+        on_plan = 1 if rk > VIX_RANK_MIN else 0
         con.execute(
             "INSERT INTO trades(expiry,strike,entry_date,entry_spot,credit,qty,lots,status,"
             "vix_level,vix_rank,on_plan) VALUES(?,?,?,?,?,?,?,'OPEN',?,?,?)",
