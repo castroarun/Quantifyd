@@ -1,0 +1,31 @@
+{
+ "symbol": "SIEMENS",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 4152.0,
+   "operating_profit": 637.0,
+   "net_profit": 803.0
+  },
+  "2025-03-31": {
+   "sales": 4029.0,
+   "operating_profit": 445.0,
+   "net_profit": 582.0
+  },
+  "2026-03-31": {
+   "sales": 4618.0,
+   "operating_profit": 444.0,
+   "net_profit": 370.0,
+   "equity_capital": 71.0,
+   "reserves": 13769.0,
+   "borrowings": 307.0,
+   "total_assets": 21213.0,
+   "roce_pct": 21.0,
+   "equity": 13840.0,
+   "roe_pct": 2.6734104046242773,
+   "de": 0.02218208092485549
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

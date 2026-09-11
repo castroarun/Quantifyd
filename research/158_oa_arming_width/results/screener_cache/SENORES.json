@@ -1,0 +1,85 @@
+{
+ "symbol": "SENORES",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 34.0,
+   "operating_profit": -0.0,
+   "net_profit": 1.0,
+   "equity_capital": 31.0,
+   "reserves": 138.0,
+   "borrowings": 101.0,
+   "total_assets": 286.0,
+   "roce_pct": 3.0,
+   "equity": 169.0,
+   "roe_pct": 0.591715976331361,
+   "de": 0.5976331360946746
+  },
+  "2025-03-31": {
+   "sales": 39.0,
+   "operating_profit": -7.0,
+   "net_profit": 4.0,
+   "equity_capital": 46.0,
+   "reserves": 662.0,
+   "borrowings": 103.0,
+   "total_assets": 834.0,
+   "roce_pct": 2.0,
+   "equity": 708.0,
+   "roe_pct": 0.5649717514124294,
+   "de": 0.14548022598870056
+  },
+  "2026-03-31": {
+   "sales": 106.0,
+   "operating_profit": -19.0,
+   "net_profit": 20.0,
+   "equity_capital": 46.0,
+   "reserves": 704.0,
+   "borrowings": 85.0,
+   "total_assets": 888.0,
+   "roce_pct": 4.0,
+   "equity": 750.0,
+   "roe_pct": 2.6666666666666665,
+   "de": 0.11333333333333333
+  },
+  "2021-03-31": {
+   "sales": 8.0,
+   "operating_profit": 1.0,
+   "net_profit": 1.0,
+   "equity_capital": 4.0,
+   "reserves": 6.0,
+   "borrowings": 4.0,
+   "total_assets": 15.0,
+   "equity": 10.0,
+   "roe_pct": 10.0,
+   "de": 0.4
+  },
+  "2022-03-31": {
+   "sales": 14.0,
+   "operating_profit": 1.0,
+   "net_profit": 1.0,
+   "equity_capital": 9.0,
+   "reserves": 25.0,
+   "borrowings": 15.0,
+   "total_assets": 55.0,
+   "roce_pct": 5.0,
+   "equity": 34.0,
+   "roe_pct": 2.9411764705882355,
+   "de": 0.4411764705882353
+  },
+  "2023-03-31": {
+   "sales": 12.0,
+   "operating_profit": -2.0,
+   "net_profit": 1.0,
+   "equity_capital": 10.0,
+   "reserves": 29.0,
+   "borrowings": 61.0,
+   "total_assets": 112.0,
+   "roce_pct": 6.0,
+   "equity": 39.0,
+   "roe_pct": 2.5641025641025643,
+   "de": 1.564102564102564
+  }
+ },
+ "note": "",
+ "n_fy": 6
+}

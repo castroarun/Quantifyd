@@ -1,0 +1,85 @@
+{
+ "symbol": "UNIMECH",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 31.0,
+   "operating_profit": 3.0,
+   "net_profit": 2.0,
+   "equity_capital": 22.0,
+   "reserves": 4.0,
+   "borrowings": 3.0,
+   "total_assets": 38.0,
+   "roce_pct": 12.0,
+   "equity": 26.0,
+   "roe_pct": 7.6923076923076925,
+   "de": 0.11538461538461539
+  },
+  "2025-03-31": {
+   "sales": 42.0,
+   "operating_profit": 8.0,
+   "net_profit": 19.0,
+   "equity_capital": 25.0,
+   "reserves": 498.0,
+   "borrowings": 13.0,
+   "total_assets": 550.0,
+   "roce_pct": 8.0,
+   "equity": 523.0,
+   "roe_pct": 3.632887189292543,
+   "de": 0.0248565965583174
+  },
+  "2026-03-31": {
+   "sales": 44.0,
+   "operating_profit": 1.0,
+   "net_profit": 22.0,
+   "equity_capital": 25.0,
+   "reserves": 526.0,
+   "borrowings": 15.0,
+   "total_assets": 579.0,
+   "roce_pct": 5.0,
+   "equity": 551.0,
+   "roe_pct": 3.9927404718693285,
+   "de": 0.02722323049001815
+  },
+  "2021-03-31": {
+   "sales": 20.0,
+   "operating_profit": 2.0,
+   "net_profit": 2.0,
+   "equity_capital": 1.0,
+   "reserves": 19.0,
+   "borrowings": 2.0,
+   "total_assets": 29.0,
+   "equity": 20.0,
+   "roe_pct": 10.0,
+   "de": 0.1
+  },
+  "2022-03-31": {
+   "sales": 16.0,
+   "operating_profit": 2.0,
+   "net_profit": 2.0,
+   "equity_capital": 1.0,
+   "reserves": 20.0,
+   "borrowings": 4.0,
+   "total_assets": 30.0,
+   "roce_pct": 8.0,
+   "equity": 21.0,
+   "roe_pct": 9.523809523809524,
+   "de": 0.19047619047619047
+  },
+  "2023-03-31": {
+   "sales": 28.0,
+   "operating_profit": 4.0,
+   "net_profit": 2.0,
+   "equity_capital": 1.0,
+   "reserves": 23.0,
+   "borrowings": 4.0,
+   "total_assets": 35.0,
+   "roce_pct": 12.0,
+   "equity": 24.0,
+   "roe_pct": 8.333333333333334,
+   "de": 0.16666666666666666
+  }
+ },
+ "note": "",
+ "n_fy": 6
+}

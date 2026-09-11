@@ -1,0 +1,55 @@
+{
+ "symbol": "ROSSTECH",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 217.0,
+   "operating_profit": 32.0,
+   "net_profit": 11.0,
+   "equity_capital": 8.0,
+   "reserves": 118.0,
+   "borrowings": 168.0,
+   "total_assets": 360.0,
+   "roce_pct": 9.0,
+   "equity": 126.0,
+   "roe_pct": 8.73015873015873,
+   "de": 1.3333333333333333
+  },
+  "2025-03-31": {
+   "sales": 259.0,
+   "operating_profit": 35.0,
+   "net_profit": 7.0,
+   "equity_capital": 8.0,
+   "reserves": 125.0,
+   "borrowings": 240.0,
+   "total_assets": 421.0,
+   "roce_pct": 8.0,
+   "equity": 133.0,
+   "roe_pct": 5.2631578947368425,
+   "de": 1.8045112781954886
+  },
+  "2026-03-31": {
+   "sales": 485.0,
+   "operating_profit": 62.0,
+   "net_profit": 21.0,
+   "equity_capital": 8.0,
+   "reserves": 145.0,
+   "borrowings": 409.0,
+   "total_assets": 627.0,
+   "roce_pct": 11.0,
+   "equity": 153.0,
+   "roe_pct": 13.72549019607843,
+   "de": 2.673202614379085
+  },
+  "2023-03-31": {
+   "equity_capital": 8.0,
+   "reserves": 107.0,
+   "borrowings": 148.0,
+   "total_assets": 307.0,
+   "equity": 115.0,
+   "de": 1.2869565217391303
+  }
+ },
+ "note": "",
+ "n_fy": 4
+}

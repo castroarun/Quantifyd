@@ -1,0 +1,23 @@
+{
+ "symbol": "VESUVIUS",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 453.0,
+   "operating_profit": 95.0,
+   "net_profit": 69.0
+  },
+  "2025-03-31": {
+   "sales": 482.0,
+   "operating_profit": 83.0,
+   "net_profit": 59.0
+  },
+  "2026-03-31": {
+   "sales": 500.0,
+   "operating_profit": 84.0,
+   "net_profit": 56.0
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

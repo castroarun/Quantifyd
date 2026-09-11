@@ -1,0 +1,80 @@
+{
+ "symbol": "SBFC",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1019.0,
+   "net_profit": 237.0,
+   "equity_capital": 1072.0,
+   "reserves": 1706.0,
+   "total_assets": 7063.0,
+   "equity": 2778.0,
+   "roe_pct": 8.531317494600431
+  },
+  "2025-03-31": {
+   "sales": 1305.0,
+   "net_profit": 345.0,
+   "equity_capital": 1085.0,
+   "reserves": 2105.0,
+   "total_assets": 8596.0,
+   "equity": 3190.0,
+   "roe_pct": 10.815047021943574
+  },
+  "2026-03-31": {
+   "sales": 1679.0,
+   "net_profit": 451.0,
+   "equity_capital": 1106.0,
+   "reserves": 2619.0,
+   "total_assets": 11085.0,
+   "equity": 3725.0,
+   "roe_pct": 12.10738255033557
+  },
+  "2019-03-31": {
+   "sales": 177.0,
+   "net_profit": 24.0,
+   "equity_capital": 676.0,
+   "reserves": 204.0,
+   "total_assets": 1793.0,
+   "equity": 880.0,
+   "roe_pct": 2.727272727272727
+  },
+  "2020-03-31": {
+   "sales": 445.0,
+   "net_profit": 36.0,
+   "equity_capital": 742.0,
+   "reserves": 270.0,
+   "total_assets": 4208.0,
+   "equity": 1012.0,
+   "roe_pct": 3.5573122529644268
+  },
+  "2021-03-31": {
+   "sales": 510.0,
+   "net_profit": 85.0,
+   "equity_capital": 797.0,
+   "reserves": 408.0,
+   "total_assets": 4231.0,
+   "equity": 1205.0,
+   "roe_pct": 7.053941908713693
+  },
+  "2022-03-31": {
+   "sales": 529.0,
+   "net_profit": 65.0,
+   "equity_capital": 807.0,
+   "reserves": 480.0,
+   "total_assets": 4515.0,
+   "equity": 1287.0,
+   "roe_pct": 5.05050505050505
+  },
+  "2023-03-31": {
+   "sales": 734.0,
+   "net_profit": 150.0,
+   "equity_capital": 890.0,
+   "reserves": 838.0,
+   "total_assets": 5747.0,
+   "equity": 1728.0,
+   "roe_pct": 8.680555555555555
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

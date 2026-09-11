@@ -1,0 +1,96 @@
+{
+ "symbol": "THELEELA",
+ "source": "standalone",
+ "fy": {
+  "2025-03-31": {
+   "sales": 375.0,
+   "operating_profit": 175.0,
+   "net_profit": 34.0,
+   "equity_capital": 276.0,
+   "reserves": 6066.0,
+   "borrowings": 1587.0,
+   "total_assets": 8014.0,
+   "roce_pct": 5.0,
+   "equity": 6342.0,
+   "roe_pct": 0.5361084831283507,
+   "de": 0.25023651844843897
+  },
+  "2026-03-31": {
+   "sales": 437.0,
+   "operating_profit": 219.0,
+   "net_profit": 276.0,
+   "equity_capital": 334.0,
+   "reserves": 8693.0,
+   "borrowings": 376.0,
+   "total_assets": 9536.0,
+   "roce_pct": 5.0,
+   "equity": 9027.0,
+   "roe_pct": 3.0574941841143235,
+   "de": 0.041652819319818325
+  },
+  "2020-03-31": {
+   "sales": 87.0,
+   "operating_profit": 26.0,
+   "net_profit": -47.0,
+   "equity_capital": 5.0,
+   "reserves": -5.0,
+   "borrowings": 1006.0,
+   "total_assets": 1041.0,
+   "equity": 0.0
+  },
+  "2021-03-31": {
+   "sales": 46.0,
+   "operating_profit": -30.0,
+   "net_profit": -162.0,
+   "equity_capital": 19.0,
+   "reserves": -48.0,
+   "borrowings": 1313.0,
+   "total_assets": 1466.0,
+   "roce_pct": -7.0,
+   "equity": -29.0,
+   "roe_pct": 558.6206896551724,
+   "de": -45.275862068965516
+  },
+  "2022-03-31": {
+   "sales": 115.0,
+   "operating_profit": 13.0,
+   "net_profit": -154.0,
+   "equity_capital": 20.0,
+   "reserves": -194.0,
+   "borrowings": 1601.0,
+   "total_assets": 1495.0,
+   "roce_pct": -2.0,
+   "equity": -174.0,
+   "roe_pct": 88.50574712643679,
+   "de": -9.201149425287356
+  },
+  "2023-03-31": {
+   "sales": 282.0,
+   "operating_profit": 132.0,
+   "net_profit": -25.0,
+   "equity_capital": 20.0,
+   "reserves": -41.0,
+   "borrowings": 1766.0,
+   "total_assets": 1792.0,
+   "roce_pct": 8.0,
+   "equity": -21.0,
+   "roe_pct": 119.04761904761905,
+   "de": -84.0952380952381
+  },
+  "2024-03-31": {
+   "sales": 322.0,
+   "operating_profit": 154.0,
+   "net_profit": -13.0,
+   "equity_capital": 20.0,
+   "reserves": -45.0,
+   "borrowings": 1857.0,
+   "total_assets": 1887.0,
+   "roce_pct": 9.0,
+   "equity": -25.0,
+   "roe_pct": 52.0,
+   "de": -74.28
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

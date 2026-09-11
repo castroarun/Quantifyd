@@ -1,0 +1,89 @@
+{
+ "symbol": "TMB",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 4848.0,
+   "net_profit": 1072.0,
+   "equity_capital": 158.0,
+   "reserves": 7763.0,
+   "total_assets": 61552.0,
+   "equity": 7921.0,
+   "roe_pct": 13.533644741825528
+  },
+  "2025-03-31": {
+   "sales": 5291.0,
+   "net_profit": 1183.0,
+   "equity_capital": 158.0,
+   "reserves": 8850.0,
+   "total_assets": 66450.0,
+   "equity": 9008.0,
+   "roe_pct": 13.132770870337477
+  },
+  "2026-03-31": {
+   "sales": 5819.0,
+   "net_profit": 1338.0,
+   "equity_capital": 158.0,
+   "reserves": 9952.0,
+   "total_assets": 75300.0,
+   "equity": 10110.0,
+   "roe_pct": 13.234421364985163
+  },
+  "2018-03-31": {
+   "sales": 3250.0,
+   "net_profit": 222.0,
+   "equity_capital": 143.0,
+   "reserves": 3262.0,
+   "total_assets": 37868.0,
+   "equity": 3405.0,
+   "roe_pct": 6.5198237885462555
+  },
+  "2019-03-31": {
+   "sales": 3224.0,
+   "net_profit": 259.0,
+   "equity_capital": 143.0,
+   "reserves": 3476.0,
+   "total_assets": 40473.0,
+   "equity": 3619.0,
+   "roe_pct": 7.156673114119923
+  },
+  "2020-03-31": {
+   "sales": 3466.0,
+   "net_profit": 408.0,
+   "equity_capital": 143.0,
+   "reserves": 3837.0,
+   "total_assets": 42733.0,
+   "equity": 3980.0,
+   "roe_pct": 10.251256281407036
+  },
+  "2021-03-31": {
+   "sales": 3609.0,
+   "net_profit": 603.0,
+   "equity_capital": 143.0,
+   "reserves": 4437.0,
+   "total_assets": 47499.0,
+   "equity": 4580.0,
+   "roe_pct": 13.16593886462882
+  },
+  "2022-03-31": {
+   "sales": 3834.0,
+   "net_profit": 822.0,
+   "equity_capital": 143.0,
+   "reserves": 5193.0,
+   "total_assets": 52828.0,
+   "equity": 5336.0,
+   "roe_pct": 15.4047976011994
+  },
+  "2023-03-31": {
+   "sales": 4081.0,
+   "net_profit": 1029.0,
+   "equity_capital": 158.0,
+   "reserves": 6770.0,
+   "total_assets": 57866.0,
+   "equity": 6928.0,
+   "roe_pct": 14.852771362586605
+  }
+ },
+ "note": "",
+ "n_fy": 9
+}

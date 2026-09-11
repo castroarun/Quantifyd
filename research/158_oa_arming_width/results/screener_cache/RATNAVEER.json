@@ -1,0 +1,98 @@
+{
+ "symbol": "RATNAVEER",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 595.0,
+   "operating_profit": 50.0,
+   "net_profit": 31.0,
+   "equity_capital": 49.0,
+   "reserves": 203.0,
+   "borrowings": 207.0,
+   "total_assets": 516.0,
+   "roce_pct": 13.0,
+   "equity": 252.0,
+   "roe_pct": 12.301587301587302,
+   "de": 0.8214285714285714
+  },
+  "2025-03-31": {
+   "sales": 892.0,
+   "operating_profit": 86.0,
+   "net_profit": 47.0,
+   "equity_capital": 53.0,
+   "reserves": 318.0,
+   "borrowings": 195.0,
+   "total_assets": 746.0,
+   "roce_pct": 14.0,
+   "equity": 371.0,
+   "roe_pct": 12.668463611859838,
+   "de": 0.5256064690026954
+  },
+  "2026-03-31": {
+   "sales": 1069.0,
+   "operating_profit": 112.0,
+   "net_profit": 64.0,
+   "equity_capital": 68.0,
+   "reserves": 601.0,
+   "borrowings": 335.0,
+   "total_assets": 1262.0,
+   "roce_pct": 12.0,
+   "equity": 669.0,
+   "roe_pct": 9.566517189835576,
+   "de": 0.5007473841554559
+  },
+  "2020-03-31": {
+   "sales": 297.0,
+   "operating_profit": 25.0,
+   "net_profit": 7.0,
+   "equity_capital": 4.0,
+   "reserves": 47.0,
+   "borrowings": 140.0,
+   "total_assets": 242.0,
+   "equity": 51.0,
+   "roe_pct": 13.72549019607843,
+   "de": 2.7450980392156863
+  },
+  "2021-03-31": {
+   "sales": 360.0,
+   "operating_profit": 20.0,
+   "net_profit": 5.0,
+   "equity_capital": 4.0,
+   "reserves": 52.0,
+   "borrowings": 151.0,
+   "total_assets": 256.0,
+   "roce_pct": 11.0,
+   "equity": 56.0,
+   "roe_pct": 8.928571428571429,
+   "de": 2.6964285714285716
+  },
+  "2022-03-31": {
+   "sales": 427.0,
+   "operating_profit": 28.0,
+   "net_profit": 9.0,
+   "equity_capital": 4.0,
+   "reserves": 62.0,
+   "borrowings": 191.0,
+   "total_assets": 309.0,
+   "roce_pct": 11.0,
+   "equity": 66.0,
+   "roe_pct": 13.636363636363637,
+   "de": 2.893939393939394
+  },
+  "2023-03-31": {
+   "sales": 480.0,
+   "operating_profit": 46.0,
+   "net_profit": 25.0,
+   "equity_capital": 35.0,
+   "reserves": 71.0,
+   "borrowings": 230.0,
+   "total_assets": 389.0,
+   "roce_pct": 14.0,
+   "equity": 106.0,
+   "roe_pct": 23.58490566037736,
+   "de": 2.169811320754717
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}
