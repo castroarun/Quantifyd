@@ -118,6 +118,20 @@ GROUPS = [
          "UI: /app/sleeves Dividends card.",
          "cd /home/arun/quantifyd && venv/bin/python scripts/dividend_declare.py"),
     ]),
+    ("Momentum Portfolio report (/app/mpf-report)", [
+        ("mpf_report_build", "on demand / after any mpf system change",
+         "Regenerates EVERY number and all ten charts on /app/mpf-report - the single report "
+         "page for True North, Open Alpha Base Age, IPO Base and Quality Summit. Reads the "
+         "after-tax curve files (r/159 full_period_after_tax.csv and all_systems_after_tax.csv, "
+         "r/160 F_Bb7_equity.csv, r/159 after_tax_tables.csv) and writes static/app/mpf_report.json "
+         "+ frontend/public/mpf-report-*.png. Read-only over research results; touches no DB, no "
+         "engine, no live state. RUN IT whenever a book's rules, size or status changes, or when "
+         "any of those curve files is re-run - otherwise the page shows the previous evidence. "
+         "A frontend rebuild is needed after it for the PNGs to reach static/app. Build doc: "
+         "research/160_quality_growth_near_ath/MPF_REPORT_PAGE_BUILD_STATUS.md",
+         "cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py && "
+         "export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH && cd frontend && npm run build"),
+    ]),
     ("Kill / pause levers", [
         ("Freeze flag", "instant", "blocks ALL order placement (suite + sleeves)", "touch backtest_data/nas_manual_freeze.flag"),
         ("Master mode", "instant", "whole stack to paper", "echo '{\"mode\": \"paper\"}' > backtest_data/nas_master_mode.json"),

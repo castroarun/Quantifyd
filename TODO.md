@@ -2,6 +2,82 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-11 — **ONE report page for the Momentum Portfolio** — `/app/mpf-report` is live
+
+Arun asked for a single page that says what the book actually is, replacing the roster study page
+as the entry point. Built as a React page at **`/app/mpf-report`** (sidebar: Holdings → MPF
+Report). **Nothing was lost:** every study page under `/app/backtest/<slug>` stays as the archive
+and every section links back to it. The roster study entry in `backtests.ts` was deliberately NOT
+edited — a second session was editing it at the same time — and `strategies.ts` was not touched,
+because no status, size or rule changed.
+
+**What the page is.** Post-tax only, on one basis, with every table stating WHICH SYSTEMS, WHICH
+WINDOW, WHICH BASIS. The **correction leads**, above any return figure. Then a five-question Q&A,
+the headline table on the **full 20.4-year common period**, the portfolio view, a clearly
+secondary **2018-2026 section** where Quality Summit can be compared, four per-system sections of
+six blocks each (Rules · Mechanics · Evidence · What its distinctive piece is worth · Caveats ·
+Links), the after-tax evidence behind the correction, and the dated reviews plus nine owed items.
+Systems are NAMED, never versioned: **Open Alpha · Base Age** (r/161) and **Open Alpha · ATH +
+VIX** (r/159).
+
+**Headline, after tax, 2006-04-03 → 2026-09-03 (20.4 years):**
+
+| System | CAGR | Max DD | Calmar | Growth of 100 | Avg invested |
+|---|---:|---:|---:|---:|---:|
+| TN + Base Age, 50-50 monthly *(computed by the report, not a study)* | **20.42%** | −25.24% | 0.81 | 4,442 | n/m |
+| Open Alpha · Base Age | 20.27% | −32.45% | 0.62 | 4,334 | **not measured** |
+| True North | 19.48% | **−23.67%** | **0.82** | 3,787 | 43% |
+| IPO Base | 15.10% | −35.86% | 0.42 | 1,767 | 33% |
+| NIFTYBEES | 10.58% | −59.71% | 0.18 | 780 | 100% |
+
+**Nothing reaches 25% after tax on the long window.** The 50-50 blend is the strongest line on the
+page — essentially all of Base Age's return with True North's shallower ride, and on the 2018
+window it posts **Calmar 1.21**, the best number anywhere on it. That row is the report
+generator's own arithmetic; **the blend/allocation study (handover owed item 7) is still NOT
+STARTED**, and it is the only structure that plausibly clears Arun's 25% bar.
+
+**Ten generated charts**, colours constant throughout (gold TN, green Base Age, coral Quality
+Summit, purple IPO, blue blend, grey index): log growth + drawdown on both windows, yearly
+grouped bars, rolling 3-year CAGR against the 25% bar, two correlation heatmaps, invested-vs-cash,
+and a monthly-return heatmap per system.
+
+**How to regenerate** (safe any time — read-only over research results, no DB, no engine):
+
+```
+cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py
+export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build
+```
+
+Run it after ANY mpf system change or curve re-run, otherwise the page shows the previous
+evidence. Registered in the Ops & Review Centre (`ops_center.py` GROUPS) and mirrored in
+`docs/LABS_AND_JOBS_REFERENCE.md`.
+
+**What is owed / known gaps** (all on the page itself, in the last section):
+
+1. **Average invested for Open Alpha · Base Age is NOT MEASURED** — the handover asserts ~67% but
+   no file carries it (`full_period.py` records `None`). The page renders a visible gap rather
+   than a number it cannot point at. Fix: have the r/161 harness emit that column.
+2. **IPO Base re-optimisation on the honest entry — NOT STARTED.** Top priority; its 680 cells
+   were scored on the look-ahead entry and Open Alpha's trail surface inverted when corrected.
+3. **Blend / allocation study — NOT STARTED.**
+4. **No engine writes a daily invested-fraction series**, so the "when is each book in cash" chart
+   is measured averages, not a strip over time.
+5. **No pre-registered soak criterion exists for a Base Age paper book** — needed before 26-Sep if
+   the answer is yes.
+6. True North is still a single path while the others are ensembles; a like-for-like re-run is owed.
+
+**Note on the evidence:** `research/159/results/after_tax_tables.csv` completed at 22:18 (the
+other session's `c92a4749` / `eb3c9f71`) while this page was being built, so the page carries the
+VIX-gate rows after tax too — as their OWN 2016-2026 table, never merged with the 2006-2026 price
+gates.
+
+- Page: `/app/mpf-report`
+- Build doc + full provenance: `research/160_quality_growth_near_ath/MPF_REPORT_PAGE_BUILD_STATUS.md`
+- Generator: `research/_utilities/mpf_report_build.py`
+- Handover it was built from: `docs/MPF_UNIFIED_REPORT_HANDOVER_2026-09-11.md`
+
+---
+
 ## ⏳ 2026-09-11 — **OA V2.0** (research/161): STRATEGY candidate — named by Arun, nothing deployed
 
 Arun's follow-up to r/159. Three answers: **base age YES** (X≥60 bars + depth≥20% → 21.26% CAGR /

@@ -15,7 +15,7 @@ import Avatar from '../Avatar/Avatar';
 import { useFavourites } from '../GlobalSearch/favourites';
 
 interface Props {
-  active?: 'overview' | 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'stock-wings' | 'nwv' | 'options-study' | 'straddle-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'bluesky-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'capital' | 'ipo-paper' | 'portfolio' | 'settings';
+  active?: 'overview' | 'strategies' | 'orb' | 'nas' | 'nas-config' | 'scaleup' | 'straddles' | 'straddle45' | 'stock-wings' | 'nwv' | 'options-study' | 'straddle-study' | 'n500m' | 'strangle' | 'mst' | 'intraday75wr' | 'pair-trading' | 'scanner' | 'breakout-scanner' | 'ath-scanner' | 'indices' | 'backtest' | 'momentum-paper' | 'breakout-paper' | 'bluesky-paper' | 'ha-paper' | 'orb-paper' | 'ohol-paper' | 'fnoms-paper' | 'eod-breakout' | 'reports' | 'holdings' | 'options-data' | 'future-plans' | 'journal' | 'capital' | 'ipo-paper' | 'portfolio' | 'mpf-report' | 'settings';
   userName?: string;
   /** Phone drawer is open (ignored from 769px up). */
   mobileOpen?: boolean;
@@ -390,6 +390,13 @@ export default function Sidebar({ active, userName = 'Trader', mobileOpen, onNav
             icon={<IconBarChart />}
             label="Momentum Portfolio"
             active={active === 'portfolio'}
+            collapsed={collapsedEff}
+          />
+          <NavItem
+            to="/mpf-report"
+            icon={<IconBarChart />}
+            label="MPF Report"
+            active={active === 'mpf-report'}
             collapsed={collapsedEff}
           />
         </nav>

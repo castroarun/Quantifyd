@@ -138,3 +138,24 @@ Verdict **NO EDGE**. The screen reproduces the site exit engine exactly (31/32 t
 
 ### CSL-60 DTE-0 straddle PAPER book (2026-09-07, research/136)
 - services/csl60_paper.py — cron every minute 09-15 Mon-Fri; acts only on NIFTY expiry days; log /tmp/csl60_paper.log; manual: ./venv/bin/python3 services/csl60_paper.py mark|show|seed. Renders in NAS Trade Book; review due 2026-11-30 (Ops Center).
+
+## Momentum Portfolio report generator — /app/mpf-report (added 2026-09-11)
+
+Mirrors the Ops & Review Centre entry (`research/111_sensex_manual_mgmt/scripts/ops_center.py`,
+group "Momentum Portfolio report (/app/mpf-report)").
+
+| | |
+|---|---|
+| **Job** | `mpf_report_build` |
+| **Schedule** | on demand / after any mpf system change — NOT a cron |
+| **Script** | `research/_utilities/mpf_report_build.py` |
+| **What** | Regenerates every number and all ten charts on `/app/mpf-report`, the single report page for True North, Open Alpha · Base Age, IPO Base and Quality Summit. Writes `static/app/mpf_report.json`, `frontend/public/mpf_report.json` and `frontend/public/mpf-report-*.png`. |
+| **Reads** | `research/159_oa_honest_reoptimization/results/{full_period_after_tax.csv, all_systems_after_tax.csv, after_tax_tables.csv, all_systems_summary.json}` and `research/160_quality_growth_near_ath/results/F_Bb7_equity.csv`. Read-only: no DB, no engine, no live state. |
+| **Manual command** | `cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py` then `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build` |
+| **When to run it** | Whenever a Momentum-Portfolio book changes rules, size or status, or whenever any of the curve files above is re-run. Otherwise the page keeps showing the previous evidence. The frontend rebuild is what moves the PNGs into `static/app/`. |
+| **Build doc** | `research/160_quality_growth_near_ath/MPF_REPORT_PAGE_BUILD_STATUS.md` — carries the full provenance table and the three-window resolution. |
+
+**Everything on that page is AFTER TAX** and every table states which systems, which window and
+which basis. The page does not print a figure it cannot point at a file for: average invested
+for Open Alpha · Base Age renders as a visible "not measured" gap rather than the ~67% the
+handover asserts, because no file on disk carries it.

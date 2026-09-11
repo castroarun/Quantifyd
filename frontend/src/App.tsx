@@ -45,6 +45,7 @@ const BreakoutPaper = lazy(() => import('./pages/BreakoutPaper'));
 const BlueskyPaper = lazy(() => import('./pages/BlueskyPaper'));
 const CapitalDesk = lazy(() => import('./pages/CapitalDesk'));
 const Portfolio = lazy(() => import('./pages/Portfolio'));
+const MpfReport = lazy(() => import('./pages/MpfReport'));
 const IpoPaper = lazy(() => import('./pages/IpoPaper'));
 const HaPaper = lazy(() => import('./pages/HaPaper'));
 const OrbPaper = lazy(() => import('./pages/OrbPaper'));
@@ -354,6 +355,18 @@ export default function App() {
           <Protected>
             <AppLayout active="portfolio">
               <Portfolio />
+            </AppLayout>
+          </Protected>
+        }
+      />
+      {/* The Momentum Portfolio report — one page for the whole book (11-Sep-2026).
+          The individual study pages under /backtest/<slug> remain the archive. */}
+      <Route
+        path="/mpf-report"
+        element={
+          <Protected>
+            <AppLayout active="mpf-report">
+              <MpfReport />
             </AppLayout>
           </Protected>
         }
