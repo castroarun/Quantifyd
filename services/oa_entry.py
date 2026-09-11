@@ -235,11 +235,23 @@ def arm(cand, free, st, kite, dry=True):
             print('  SKIP %-12s %s' % (sym, why))
             continue
         if tradeable is not None and sym not in tradeable:
-            # In market_data.db but not in the live instrument dump: renamed, delisted, or
-            # trading under another series. An AMO is validated lightly enough to accept it
-            # and RMS rejects at the open ("Field Not Found"), which is how MODISONLTD
-            # wasted a slot overnight on 10-Sep.
-            print('  SKIP %-12s not tradeable under this symbol on NSE today' % sym)
+            # In market_data.db but not in the live dump: renamed, delisted, or moved
+            # series. An AMO is validated lightly enough to accept it and RMS rejects at
+            # the open ("Field Not Found") - that is how MODISONLTD wasted a slot on
+            # 10-Sep. Skip either way, but say WHICH, because a rename is recoverable and
+            # a delisting is not.
+            alt = next((sym + sfx for sfx in ('-BE', '-BZ', '-SM', '-ST')
+                        if sym + sfx in tradeable), None)
+            if alt:
+                # NOT auto-mapped: a position opened as %s-BE would have no price history
+                # under that name, so the 15-SMA trail could not be computed and the exit
+                # rule would have nothing to evaluate. Trading a name the book cannot exit
+                # is worse than missing it. Point the universe refresh at `alt` instead.
+                print('  SKIP %-12s renamed_to %s - add it to the universe refresh so the '
+                      'history accumulates, then it qualifies on its own' % (sym, alt))
+            else:
+                print('  SKIP %-12s no longer trades on NSE (delisted or merged); its '
+                      'history stays in the DB on purpose, for the backtests' % sym)
             continue
         tick = ticks.get(sym, 0.05)
         # CEIL, not round: the rule is close > pivot, so a trigger a tick BELOW the

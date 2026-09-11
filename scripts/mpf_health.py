@@ -253,6 +253,39 @@ def check_jobs(rep):
             rep.add('Jobs', label, OK, 'ran %s' % mtime.strftime('%H:%M'))
 
 
+def check_universe(rep, kite_orders):
+    """How much of the price database no longer trades under the name it is stored under.
+
+    Not a fault in itself - delisted history is exactly what keeps the backtests free of
+    survivorship bias - but it should not drift unwatched, because every one of these is a
+    candidate the live scanner has to refuse.
+    """
+    import sqlite3
+    try:
+        from services.oa_real import _kite
+        live = {i['tradingsymbol'] for i in _kite().instruments('NSE')
+                if i.get('segment') == 'NSE'}
+    except Exception as e:
+        rep.add('Universe', 'tradeable', WARN, 'instrument dump unreachable: %s' % e)
+        return
+    try:
+        con = sqlite3.connect(
+            'file:%s?mode=ro' % (ROOT / 'backtest_data' / 'market_data.db'), uri=True)
+        rows = con.execute("select symbol, count(*) from market_data_unified "
+                           "where timeframe='day' group by symbol").fetchall()
+        con.close()
+    except Exception as e:
+        rep.add('Universe', 'tradeable', WARN, 'price DB unreachable: %s' % e)
+        return
+    gone = [s for s, n in rows if n >= 260 and s not in live]
+    renamed = [s for s in gone
+               if any(s + x in live for x in ('-BE', '-BZ', '-SM', '-ST'))]
+    rep.add('Universe', 'tradeable', WARN if len(gone) > 200 else OK,
+            '%d of %d scanner-eligible symbols no longer trade under that name '
+            '(%d merely renamed); the scanner refuses them and the history stays for the '
+            'backtests' % (len(gone), len(rows), len(renamed)))
+
+
 def check_channels(rep):
     # Ask the sender what it can do; do not re-derive its rules here and drift from them.
     try:
@@ -306,6 +339,7 @@ def main():
     rep = Report()
     books = check_books(rep, kite_orders)
     check_jobs(rep)
+    check_universe(rep, kite_orders)
     check_channels(rep)
 
     payload = dict(generated=str(datetime.now()), overall=rep.worst,
