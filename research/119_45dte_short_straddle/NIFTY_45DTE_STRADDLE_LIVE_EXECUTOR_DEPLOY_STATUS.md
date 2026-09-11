@@ -78,8 +78,11 @@ published forward plan:
 2026-10   expiry 2026-10-27   entry 2026-09-11   exit 2026-10-06   <- matches the page
 ```
 
-Entry also carries a 4-day grace window so an exchange holiday delays the trade by a
-session instead of skipping the cycle entirely.
+Entry carries **exactly one session** of grace, to cover an exchange holiday on the
+nominal day. It was 4 calendar days on first deploy; Phase I (2026-09-11) measured
+entries two or more sessions late at **+12.0 points against +99.5** for an on-time
+entry (t 0.10) while taking max drawdown from âˆ’564.8 to âˆ’978.5, so the window was
+narrowed the same day. Miss the day and the cycle is gone.
 
 ## 5. Status
 

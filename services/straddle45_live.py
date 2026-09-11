@@ -229,6 +229,15 @@ def entry_day(expiry):
         date(*map(int, expiry.split("-"))) - timedelta(days=DTE_IN)).isoformat()
 
 
+def next_session_after(d):
+    """The next weekday after d. Future exchange holidays are not knowable, so a
+    weekday is the best available proxy for 'the next session'."""
+    n = date(*map(int, d.split("-"))) + timedelta(days=1)
+    while n.weekday() >= 5:
+        n += timedelta(days=1)
+    return n.isoformat()
+
+
 def exit_day(expiry):
     """Expiry minus 21 calendar days, rolled back off weekends. Same reasoning:
     a session-list lookup returned TODAY for a future exit, so the book would
@@ -331,8 +340,14 @@ def try_entry(con, k, m, sess, today):   # sess kept for signature stability
         if e <= today:
             continue
         ed = entry_day(e)
-        if ed <= today <= (date(*map(int, ed.split("-")))
-                           + timedelta(days=4)).isoformat():
+        # EXACTLY ONE session of grace, to cover an exchange holiday on the
+        # nominal entry day. No more. Phase I measured entries two or more
+        # sessions late at +12.0 points against +99.5 for an on-time entry
+        # (t 0.10 - indistinguishable from zero) while taking the book's max
+        # drawdown from -564.8 to -978.5. A stale entry is not a smaller version
+        # of the edge, it is noise carrying the full tail. Miss the day and the
+        # cycle is gone.
+        if today == ed or today == next_session_after(ed):
             target = e
             break
     if not target:
