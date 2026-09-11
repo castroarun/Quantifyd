@@ -177,7 +177,7 @@ for trail in [10, 15, 20, 30, 50, 75, 100, 150]:
                                          ('null_random', 'null: random names')]
                  if ('B', lab, str(trail)) not in have]
     if trail == 75:
-        todo += [('GATES', 'GATES', None)] if ('C', 'none', '75') not in have else []
+        todo += [('GATES', 'GATES')] if ('C', 'none', '75') not in have else []
     if not todo:
         continue
     print('trail-%d ...' % trail, flush=True)
