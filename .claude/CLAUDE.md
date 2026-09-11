@@ -1,5 +1,43 @@
 # Quantifyd - Project Instructions
 
+## ANSWER QUESTIONS IN Q&A FORM, AND NAME THE BOOK FIRST (binding, Arun 2026-09-11)
+
+**Whenever Arun asks a question or asks for a clarification — one question or five —
+answer by listing each question and then its answer.** Not a flowing paragraph that
+addresses them in passing, and not a single answer that silently merges two of them.
+
+```
+**Q1. <his question, restated in one line>**
+
+<the answer>
+
+**Q2. ...**
+```
+
+Restate the question rather than pasting it verbatim where his wording was compressed or
+dictated — but do not quietly change what was asked. If a question cannot be answered yet,
+say so under that question and say what would answer it, rather than omitting it.
+
+**And every result or interim observation opens with the book name** — TN (True North),
+OA (Open Alpha), IPO (IPO Base) — then one or two lines on what is being reported and why,
+and only then the numbers:
+
+```
+OA — entry mechanic bake-off, tradeable variants only
+Every entry that can actually be placed, same window and book settings.
+
+| variant | CAGR | after tax | DD |
+```
+
+**Why both.** Arun runs several books at once and returns to these threads days later. A
+table that opens with figures is ambiguous about which book it describes, and a paragraph
+that answers four questions at once cannot be checked off. Same reason as the standing rule
+to restate every term and metric instead of assuming recall.
+
+Applies to chat replies, STATUS-MD updates and commit messages alike.
+
+---
+
 ## CHECK `TODO.md` FIRST when asked "what's pending" / "what's next"
 
 The project root contains a `TODO.md` file that is the single cross-session

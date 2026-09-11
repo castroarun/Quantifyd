@@ -47,6 +47,51 @@ entry over Aug-2024->Sep-2026: strict mask, missing=fail lifted that arm from -7
 CAGR [0.7..18.8], DD -30.4%; ROCE was inert; ~9.7% of breakout candidates pass. Two-year window,
 not a verdict. Screener lacks delisted names -> the fundamentals leg carries survivorship.
 
+## 🔴 2026-09-11 — RENAMED SYMBOLS GO STALE SILENTLY, and IPO Base is the most exposed
+
+**Found by chasing why Sri Lotus Developers was not an IPO Base holding.** It was a valid
+candidate and triggered twice (24-Sep-2025 and 07-Jan-2026, both inside its six-month
+window), but the book did not exist until 08-Sep-2026, so nothing was there to take them.
+That part is fine. What is not fine is what the check turned up.
+
+**`LOTUSDEV` is not in the Kite instrument dump at all.** The tradeable symbol is
+`LOTUSDEV-BE` ("SRI LOTUS DEVLPRS N RTY L"). The nightly refresh asks for history under the
+dead name, receives nothing, treats that as "no new bars", and moves on. The database keeps
+the old name frozen at the rename date — **126 days stale** as of 11-Sep.
+
+**Eleven young names are stale and ten of them are missing from the dump.** Six freeze on
+exactly the same day, which is a single batch migration to the trade-for-trade series:
+
+| Symbol | Bars | Last bar | In dump |
+|---|---|---|---|
+| RNBDENIMS | 113 | 2026-02-17 | no |
+| CHEMBONDCH | 189 | 2026-04-30 | no |
+| AMANTA / LOTUSDEV / OMFREIGHT / RAJOOENG / SYSTMTXC / UFBL | 90-233 | **2026-05-08** | no |
+| DAICHI / EBIX | 8-90 | 2026-08-26 | no |
+| KALYANI-BE | 5 | 2026-08-28 | yes (genuinely new) |
+
+**This is the same root cause as the OA scanner defect fixed this morning**, in a different
+place. That fix made the SCANNER name a rename instead of skipping silently
+(`services/oa_entry.py`, `renamed_to`). The REFRESH still asks for the dead symbol and gets
+an empty answer it cannot distinguish from "nothing to do".
+
+**Why IPO Base is the most exposed of the three books.** It trades young, thinly traded
+names, which are exactly the ones NSE moves to the trade-for-trade series. A holding or
+candidate inside its six-month window that gets renamed goes stale and becomes invisible at
+the moment it is eligible. True North trades the liquid top-200 and Open Alpha has a Rs 5cr
+floor, so both are far less exposed.
+
+**The fix (NOT applied — a nightly data job, not trading logic, but still a real change):**
+`scripts/refresh_daily_universe.py` should resolve each symbol against the instrument dump
+before requesting history. Where the plain symbol is absent but a suffixed variant exists
+(-BE, -BZ, -SM, -ST), either follow the rename or raise it. Returning quietly is the bug.
+
+**Related, still open from this morning:** 154 of the scanner-eligible symbols in
+`market_data.db` no longer trade under their stored name, 110 of them recoverable series
+moves. The daily check counts the drift; nothing yet repairs it.
+
+---
+
 ## 🔴 2026-09-11 — OPEN ALPHA WAS BUYING GOLD ETFs: the universe filter never excluded them
 
 **Found while auditing the entry, and separate from it.** `services/oa_entry.py` filters the
