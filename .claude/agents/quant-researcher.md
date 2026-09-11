@@ -120,6 +120,12 @@ Sometimes the instrument's own history does not exist (GOLDBEES has **no Kite da
 
 ---
 
+- **THE UNIVERSE CONTAINS FUNDS (2026-09-11).** ~346 ETFs sit in `market_data.db`
+  alongside the companies, and the ticker regex r/142 shipped keeps almost none of the
+  2023-2025 gold and silver wave out. Gold funds in an EQUITY momentum book produced a
+  fake +32% arm. Use `backtest_data/etf_exclusions.json` — see §5A for how it is built
+  and why a ticker blacklist cannot work.
+
 ## 4. Stage gates — kill cheap, spend late
 
 Follow the playbook's G0→G6. In practice here:
@@ -169,6 +175,66 @@ question is not an answer.
 - **Incremental CSVs**, one row per completed cell, resume-safe (skip cells already present).
 
 ---
+
+
+## 5A. Entry mechanics — enumerate them, never assume one (BINDING, 2026-09-11)
+
+Doctrine: `research/QUANT_RESEARCH_PLAYBOOK.md` §5A. What you must DO:
+
+**Before reporting any level-based entry, measure every placeable mechanic, not one.**
+
+| Mechanic | Trigger | Fill | Placeable |
+|---|---|---|---|
+| Resting stop at the level | `high[t] >= level` | `max(level, open[t])` | yes, survives a dead process |
+| Buy at the signal close | `close[t] > level` | `close[t]` | yes, needs a live process at 15:10 |
+| Next-day stop at the level | `close[t] > level` | `max(level, open[t+1])` if reached | yes |
+| Next-day stop above the signal candle | `close[t] > level` | `max(high[t], open[t+1])` if exceeded | yes |
+| Same-bar open on a close trigger | `close[t] > level` | `max(level, open[t])` | **NO. Look-ahead. Reference arm only — label it in the table.** |
+
+Cross each with the fill convention: `level` always (inflation) vs `max(level, open)`
+(honest). On r/142 the fill convention alone was 8 CAGR points; on r/153, 14.
+
+**When replicating a published claim that ships a trade list, run these two first.** They
+settle it in minutes and need no simulation:
+
+1. Did the entry-day close finish above the entry level on nearly every published trade?
+   ~100% means the engine only books breakouts that held. (r/142 source: 49 of 50.)
+2. How many times would a resting order at the same level have been filled and FAILED
+   before each published entry? (r/142 source: 7.0 per published trade.)
+
+`research/158_oa_arming_width/scripts/verify_published_trades.py` is the template.
+
+**Say this out loud when someone reports checking trades by hand:** a list of taken trades
+cannot reveal the trades that are missing. They were not wrong; they were looking at the
+only thing a trade list can show.
+
+**Three traps that cost a full day on 11-Sep-2026:**
+
+- **Short windows truncate cumulative features.** An all-time-high pivot is a `cummax` over
+  the whole history. Deriving the data start from the trading start turns it into an
+  N-month high. Set the data start independently — the r/158 fork has `--base-start`.
+- **Ticker-based universe filters rot.** Exclude funds by the instrument's long NAME from
+  the Kite dump (every ETF says so; no operating company does), not by a ticker regex.
+  Use `backtest_data/etf_exclusions.json`; rebuild with
+  `research/158_oa_arming_width/scripts/build_etf_list.py`. The old regex let 221 gold,
+  silver and index funds into an equity book, and gold then produced a fake +32% arm.
+- **Point-in-time fundamentals or none.** Only fiscal years FILED before the decision date
+  (Indian year-ends: year-end + ~4 months). Check the source's year DEPTH first: four annual
+  years cannot support a three-year growth test except at the very end of a window. Yahoo
+  gives four; Screener gives about twelve.
+
+**Report missing-data policy both ways.** Any filter needing data some names lack gets run
+treating missing as ineligible AND as eligible. The gap is the coverage bias; one number
+hides it.
+
+**Suspicion discipline.** A result that moves implausibly far for the change made is a bug
+until proven otherwise. Diagnose before it reaches a report, not after.
+
+**Check the register, not a summary line.** On 11-Sep a stale line in a RESULTS.md said
+trail-20 when the adopted spec had moved to trail-15 hours later the same day; the register
+(`frontend/src/data/strategies.ts`) and the evidence CSV both said 15. Arun caught the error.
+The register of record and the evidence file outrank any prose summary.
+
 
 ## 6. Robustness — the statistics that decide adoption
 

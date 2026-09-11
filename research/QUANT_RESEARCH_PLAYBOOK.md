@@ -99,7 +99,7 @@ Before trusting any result, verify the data can support the claim:
 
 ---
 
-## 4. The seven deadly sins (failure taxonomy — with our scars)
+## 4. The eight deadly sins (failure taxonomy — with our scars)
 
 | Sin | How it fakes an edge | Guard | Where it bit us |
 |---|---|---|---|
@@ -110,6 +110,7 @@ Before trusting any result, verify the data can support the claim:
 | **Regime dependence** | Works only in one regime | Per-year/sub-period; stress the opposite regime | Breakout long-beta thrived 2024 bull, died in pullbacks (44) |
 | **Correlation / single-factor** | Many positions = one bet | Factor/sector caps; market-neutral; measure DD under cluster stress | Long high-beta breakout = −70%+ correlated DD (44) |
 | **Capacity / liquidity / shortability** | Untradeable at size | Liquidity-filtered universe; impact model; India SLB/F&O short limits | Reversal short book not executable in cash (46) |
+| **Trigger/fill mismatch** | A trigger read from a bar's CLOSE, filled at a price from EARLIER in that same bar. Deletes every intraday failure from the record, while passing every causal-feature check | Decide on the close and fill at the close or later; OR trigger on an intraday level and accept EVERY crossing. Enumerate all placeable mechanics (§5A) | r/142 40.8% → **−1.7%**; r/153 IPO Base 31.0% → 15.0% (2026-09-11) |
 
 If you cannot name how each of these is controlled for, the result is not yet credible.
 
@@ -132,6 +133,101 @@ If you cannot name how each of these is controlled for, the result is not yet cr
   SLB; only ~F&O names are shortable via futures. A long-short stock book must respect this.
 - **Taxes** (STCG/LTCG) materially change net for holding-period-sensitive systems — model
   when comparing intraday vs swing vs positional.
+
+---
+
+## 5A. Entry and exit mechanics — the trigger/fill trap (BINDING, added 2026-09-11)
+
+**The single most expensive bug this project has found.** It is not caught by any generic
+look-ahead check, because the feature uses no future bar and the fill price genuinely traded.
+
+### The trap
+
+```python
+trig = setup & (close > pivot)          # decided from the bar's CLOSE
+fill = max(pivot, open)                 # priced from EARLIER in the SAME bar
+```
+
+Both lines are individually defensible. Together they are fatal: the engine only records a
+trade when the breakout **held to the close**, but pays the price available **at the open**.
+Every intraday failure — price touches the level, then falls back — vanishes from the
+record, because a trade only enters the record once the close confirmed it.
+
+Measured on research/142, same spec, seeds, window and code, changing only the entry:
+
+| Entry | CAGR | Max DD |
+|---|---|---|
+| `close > pivot`, filled at `max(pivot, open)` **same bar** | **40.8%** | −33.9% |
+| `high >= pivot`, filled at `max(pivot, open)` — the honest resting stop | **−1.7%** | −82.1% |
+
+Forty-two points of CAGR, all of it the certainty that the breakout would hold.
+
+### The rule
+
+> **A trigger evaluated on bar *t*'s CLOSE may never be filled at a price from before that
+> close.** Either decide on the close and fill at the close (or later), or decide on a level
+> the price crosses intraday and accept EVERY crossing, including the ones that fail.
+
+### The mechanics that are actually placeable — enumerate and measure ALL of them
+
+For any level-based entry, these are the only honest choices. A study that reports one
+without the others has not established which is being claimed:
+
+| Mechanic | Trigger | Fill | Placeable? |
+|---|---|---|---|
+| Resting stop at the level | `high[t] >= level` | `max(level, open[t])` | yes — survives a dead process |
+| Buy at the signal close | `close[t] > level` | `close[t]` (≈15:10 decision) | yes — needs a live process at the close |
+| Next-day stop at the level | `close[t] > level` | `max(level, open[t+1])` if `high[t+1] >= level` | yes |
+| Next-day stop above the signal candle | `close[t] > level` | `max(high[t], open[t+1])` if `high[t+1] > high[t]` | yes |
+| Same-bar open on a close trigger | `close[t] > level` | `max(level, open[t])` | **NO — look-ahead. Reference arm only, label it.** |
+
+**Fill convention is a second axis, and it is not cosmetic.** Booking `level` when the bar
+gapped past it is fill inflation; the honest fill is `max(level, open)`. On r/142 that alone
+was worth ~8 CAGR points; on r/153 the pivot-vs-close fill was worth 14.
+
+**Exits get the same treatment.** An exit decided on a close must fill at that close or
+later — never at the stop level the price passed through earlier in the bar. A close-only
+engine (no `open`/`high` arrays at all) makes the whole class structurally impossible and is
+worth preferring where the strategy allows it.
+
+### Diagnosing a suspected case, on the source's own published trades
+
+If a claim comes with a trade list, two tests settle it without any simulation:
+
+1. **Did the entry-day close finish above the entry level, on nearly every trade?** If yes,
+   the engine only books breakouts that held. On r/142's source: **49 of 50 (98%)**.
+2. **How many times would a resting order at the same level have been filled and failed
+   BEFORE each published entry?** Those are the trades the list cannot show. On r/142's
+   source: **348 across 50 trades = 7.0 per published trade.** HCLTECH's clean 10-Jan-2025
+   entry follows twenty earlier fills at the same level that all failed.
+
+> **A list of taken trades can never reveal the trades that are missing.** Manual
+> verification of listed trades is valid and proves nothing about omission. Say so plainly
+> when someone reports having checked the trades by hand — they were not wrong, they were
+> looking at the only thing a trade list can show.
+
+### Three more traps from the same audit
+
+- **A cumulative feature is silently truncated by a short data window.** An all-time-high
+  pivot is a `cummax` over the stock's ENTIRE history. Loading eighteen months of prices to
+  trade a two-year window turns it into an eighteen-month high, and names that peaked years
+  earlier look like fresh breakouts. **Always set the data start independently of the
+  trading start** when the signal uses a running extreme.
+- **Universe filters built from ticker spellings rot.** Exclude funds by what the instrument
+  is CALLED in the broker's instrument dump — every ETF says so in its long name, no
+  operating company does — not by a regex over tickers. A ticker blacklist works until the
+  next fund launches: r/142's let 221 gold, silver and index funds into an equity book.
+- **Missing-data policy must be reported BOTH ways.** When a filter needs data some names
+  lack, run it treating missing as ineligible AND as eligible. The gap between the two IS
+  the data-coverage bias, and quoting one hides it. This is what exposed the gold-fund
+  contamination: the permissive arm printed +32% because it was buying instruments that have
+  no fundamentals precisely because they are not companies.
+
+### Suspicion discipline
+
+**A result that moves implausibly far for the change made is a bug until proven otherwise.**
+Removing 20% of signals took a book from −7% to +32%. That is not an edge, it is a defect,
+and the correct response is to diagnose it before it reaches a report — not after.
 
 ---
 
