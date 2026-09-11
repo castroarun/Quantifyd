@@ -278,6 +278,8 @@ panel ships as `.csv.gz`, which that rule does not match. Nothing this leg commi
 
 ---
 
+**Promoted to the central store (Arun, 11-Sep-2026 evening):** `scripts/load_fundamentals_db.py` writes everything above into `backtest_data/fundamentals.db` (screener_annual 22,340 rows · screener_quarterly 26,405 · screener_top_ratios 18,415 · screener_meta 2,116 · symbol_map 2,158 · features_pit_monthly 256,828; 62 MB; `schema_notes` documents every column). Verified: the PIT strict screen at 2026-09-01 returns the same 46 names from the DB as from the CSV panel. Documented in project CLAUDE.md (Other DBs), the quant-researcher data table, and the 2027-02-01 ops-center refresh review.
+
 ## 8. Findings
 
 ### 8.1 The masks are not starved — the earlier 0.081% was a smoke-test artifact

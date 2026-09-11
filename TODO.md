@@ -63,6 +63,8 @@ reasonable watchlist input to the existing Open Alpha process.
 
 ## ✅ 2026-09-11 — research/160 DONE: Arun's Screener query tested — **FAMILY A: NO EDGE / FAMILY B: SIGNAL, not STRATEGY**
 
+**Fundamentals now live in the central store `backtest_data/fundamentals.db` (11-Sep-2026 evening, Arun: "log the fundamentals in the database for our other researches")** — point-in-time panel `features_pit_monthly` + raw Screener annual/quarterly/top-ratio tables + `symbol_map`; self-documented via `schema_notes`; loader `research/160_quality_growth_near_ath/scripts/load_fundamentals_db.py`. Refresh review 2027-02-01 in the Ops Centre.
+
 All three legs complete (DATA, ENGINE, STUDY). **588 cells, published, nothing deployed and
 nothing papered.** Study: `/app/backtest/quality-growth-near-ath-research160`
 

@@ -702,6 +702,7 @@ Index: `(symbol, timeframe, date)` composite
 | backtest_results.db | 708 KB | Runs, trades, equity curves |
 | kc6_trading.db | 52 KB | KC6 live trading state |
 | mq_agent.db | 40 KB | MQ agent runs |
+| **fundamentals.db** | 62 MB | **Screener fundamentals, POINT-IN-TIME (added 2026-09-11, research/160).** `screener_annual` (2,089 tickers, FY2002→FY2026 raw P&L/BS rows as restated today), `screener_quarterly` (~13 quarters/name, from ~2023), `screener_top_ratios` (today-only headline block, never PIT), `symbol_map`, and **`features_pit_monthly`** — one row per (1st-of-month, symbol) holding only figures FILED by that date (FY usable from year-end + 4 months): sales_g3, profit_g3, roe_avg3, roce_latest, de_latest, OPM level/slope/range, quarterly OPM stats, neg3, shares_pit, **mcap_pit** (PIT market cap, ₹cr). Backtests join on `date` and use only that row. `has_data` = n_fy_usable ≥ 4; coverage is 7% before Aug-2018 and 87% after — **fundamentals windows start Aug-2018**. Lenders have no borrowings/ROCE (D/E tests exclude financials by construction). Self-documenting: `select * from schema_notes`. Rebuild/refresh: `research/160_quality_growth_near_ath/scripts/{screener_fetch_full,build_pit_panel,load_fundamentals_db}.py` (fetch ≈ 2¼ h, resumable). Refresh review registered for 2027-02-01. |
 
 ---
 
