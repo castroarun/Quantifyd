@@ -72,7 +72,7 @@ VOL_RATIO_MIN     = 1.20
 
 # ---------------------------------------- v3 trigger
 SHELF_S           = 15         # default shelf lookback (bars)
-SHELF_S_FLAGS     = (15, 20, 30)
+SHELF_S_FLAGS     = (10, 15, 20, 25, 30)
 SHELF_MAX_RANGE   = 0.12       # (max close - min close) / max close over the shelf
 ATH_MIN_FRAC      = 0.90       # close >= 0.90 x ATH
 TRIG_K            = 3.0        # volume >= K x prior 20-bar median
@@ -419,6 +419,7 @@ def emit(sym, mode, a, t, date, o, c, h, lo, st_dir, tv20, ret1, volx,
 
 
 def main():
+    global SHELF_S, TRIG_K, ATH_MIN_FRAC
     t0 = time.time()
     con = sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
     syms = [r[0] for r in con.execute(
@@ -431,12 +432,25 @@ def main():
           % (SHELF_S, SHELF_MAX_RANGE * 100, ATH_MIN_FRAC, TRIG_K, MAX_WAIT_BARS), flush=True)
 
     out = OUT_CSV
+    tag = ''
     for arg in sys.argv[1:]:
         if arg.startswith('--symbols='):
             only = set(arg.split('=', 1)[1].split(','))
             syms = [s for s in syms if s in only]
             out = OUTDIR / 'smoke_events_v3.csv'
             print('SMOKE TEST restricted to: %s' % syms, flush=True)
+        elif arg.startswith('--shelf='):
+            SHELF_S = int(arg.split('=', 1)[1]); tag += '_s%d' % SHELF_S
+        elif arg.startswith('--k='):
+            TRIG_K = float(arg.split('=', 1)[1]); tag += '_k%g' % TRIG_K
+        elif arg.startswith('--ath='):
+            ATH_MIN_FRAC = float(arg.split('=', 1)[1]); tag += '_a%g' % ATH_MIN_FRAC
+        elif arg.startswith('--out='):
+            out = OUTDIR / arg.split('=', 1)[1]
+    if tag and out == OUT_CSV:
+        out = OUTDIR / ('rounding_base_events_v3%s.csv' % tag)
+    print('config: SHELF_S=%d TRIG_K=%.1f ATH_MIN_FRAC=%.2f -> %s'
+          % (SHELF_S, TRIG_K, ATH_MIN_FRAC, out.name), flush=True)
 
     stats = dict(events=0, qualified=0, expired=0, split_rejected=0, skipped=0)
     with open(out, 'w', newline='', encoding='utf-8') as fh:
