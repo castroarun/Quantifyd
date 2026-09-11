@@ -224,3 +224,8 @@ research/156_sector_rotation/results/ind20_breadth50.csv
 research/156_sector_rotation/results/ind20_breadth200.csv
 research/156_sector_rotation/results/ind20_counts.csv
 research/156_sector_rotation/results/p5_navs.csv
+
+# Research price-panel caches: rebuilt from market_data.db by the scripts that
+# read them, same as research/152's frames_cache.npz above. research/159's two
+# were 132 MB and 48 MB and blocked every push on 11-Sep-2026.
+research/*/results/*.pkl
