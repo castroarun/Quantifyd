@@ -177,20 +177,20 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     },
     comparisons: [
       {
-        title: 'SCOPE: ALL FOUR BOOKS, AFTER TAX - every book, common window',
-        caption: 'Every number in this table and the two below is AFTER TAX. The three tables further down (trail surface, null control, gate bake-off) are Open Alpha v3 ONLY and PRE-TAX, so figures do not carry across between the two groups.',
-        columns: ['Book', 'CAGR', 'Max drawdown', 'Calmar', 'Growth of 100', 'Status'],
+        title: 'Every live and candidate book - FULL common period, after tax',
+        caption: 'Common window 03-Apr-2006 to 03-Sep-2026, 20.4 years, set by the shortest series (True North). Every figure is AFTER TAX at 20% short-term and 12.5% long-term with Indian financial-year loss netting, after 25 bps a side, and WITH 5% credited on idle cash - see the cash column, which changes how these rows should be read.',
+        columns: ['System', 'Test period', 'CAGR', 'Max drawdown', 'Calmar', 'Growth of 100', 'Avg invested', 'Avg in cash', 'Status'],
         rows: [
-          ['True North (incumbent)', '23.0%', '-23.7%', '0.97', '911', 'LIVE - audited clean'],
-          ['Open Alpha v2 (r/161)', '23.0%', '-32.4%', '0.71', '915', 'CANDIDATE - preferred'],
-          ['Open Alpha v3 (r/159)', '19.2%', '-34.1%', '0.56', '654', 'superseded by v2'],
-          ['IPO Base (honest entry)', '16.0%', '-35.9%', '0.45', '487', 'LIVE - halved, still clears'],
-          ['NIFTYBEES', '12.1%', '-36.3%', '0.33', '339', 'benchmark'],
+          ['Open Alpha - Base Age (r/161)', '2005-01 to 2026-09', '20.3%', '-32.5%', '0.62', '4334', '67%', '33%', 'CANDIDATE - the Open Alpha going forward'],
+          ['True North (incumbent)', '2006-04 to 2026-09', '19.5%', '-23.7%', '0.82', '3787', '43%', '57%', 'LIVE - audited clean, no defect found'],
+          ['IPO Base - First Base', '2006-01 to 2026-09', '15.1%', '-35.9%', '0.42', '1767', '33%', '67%', 'LIVE - study corrected from 31.0%'],
+          ['NIFTYBEES (index)', '2005-01 to 2026-09', '10.6%', '-59.7%', '0.18', '780', '100%', '0%', 'benchmark - fully invested, no cash yield'],
         ],
+        highlightRows: [0, 1],
       },
       {
-        title: 'SCOPE: ALL FOUR BOOKS, AFTER TAX - year by year, return with that year worst intra-year fall beneath',
-        caption: 'Benchmarks are excluded from the best-of column.',
+        title: 'Year by year, after tax - return with that year worst intra-year fall beneath',
+        caption: 'NOTE: this table and the correlation table below run on the SHORTER 2016-2026 window, because they include Open Alpha v3 whose VIX gate needs INDIA VIX (from 2015). The summary table above is the full 20.4-year period. Open Alpha v3 is retained here only as the evidence for the correction - it is superseded by Base Age and is not a candidate. Benchmarks are excluded from the best-of column.',
         columns: ['Year', 'True North', 'OA v2', 'OA v3', 'IPO Base', 'NIFTYBEES', 'Best overall'],
         rows: [
           ['2016', '+27.0 (-4.5)', '+5.9 (-13.9)', '-6.3 (-19.8)', '+43.7 (-9.3)', '+3.7 (-12.1)', 'IPO Base'],
@@ -315,7 +315,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         },
         {
           title: 'SCOPE: OPEN ALPHA v3 ONLY, PRE-TAX - gate bake-off, 29 signals',
-          caption: 'OPEN ALPHA v3 ONLY, at trail-75, PRE-TAX. VIX rows run 2016-2026 because INDIA VIX starts 2015; price-gate rows run 2006-2026. These numbers are NOT comparable with the after-tax summary above: the adopted 70th-percentile row reads 22.40%% here and 19.2%% there, the difference being tax. THE 70TH WAS ADOPTED OVER THE 90TH despite the 90th showing more return, because the 70th has the better Calmar (0.675 against 0.634) and a seven-point shallower fall (-32.4%% against -39.3%%). Price gates barely help even on an honest entry; every fixed VIX level loses while every relative construction wins, which makes sense because VIX drifts over a decade while a percentile adapts.',
+          caption: 'OPEN ALPHA v3 ONLY, at trail-75, PRE-TAX. VIX rows run 2016-2026 because INDIA VIX starts 2015; price-gate rows run 2006-2026. These numbers are NOT comparable with the after-tax summary above: the adopted 70th-percentile row reads 22.40% here and 19.2% there, the difference being tax. THE 70TH WAS ADOPTED OVER THE 90TH despite the 90th showing more return, because the 70th has the better Calmar (0.675 against 0.634) and a seven-point shallower fall (-32.4% against -39.3%). Price gates barely help even on an honest entry; every fixed VIX level loses while every relative construction wins, which makes sense because VIX drifts over a decade while a percentile adapts.',
           columns: ['Gate', 'CAGR', 'Drawdown', 'Calmar', 'vs no gate', 'Days out'],
           rows: [
             ['none (baseline)', '21.30%', '-46.3%', '0.467', '-', '0%'],
@@ -393,7 +393,8 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'research/QUANT_RESEARCH_PLAYBOOK.md',
     ],
     caveats: [
-      'TWO GROUPS OF TABLES, DIFFERENT BASES - read the SCOPE line on each. The summary, year-by-year and correlation tables cover ALL FOUR BOOKS AFTER TAX on 2016-2026. The trail surface, null control and gate bake-off cover OPEN ALPHA v3 ONLY and are PRE-TAX. Figures do not carry between the groups: v3 reads 22.40%% in the gate table and 19.2%% in the summary, and the whole of that gap is tax.',
+      'CASH YIELD IS INCLUDED AND IT IS NOT A SMALL TERM. Every book above credits 5% a year on idle cash, which the live books genuinely earn by sweeping to CASHIETF. Because the books hold very different amounts of cash, that contributes very differently: True North holds cash 57% of the time so roughly 2.8 points of its 19.5% is the sweep; IPO Base holds 67% so roughly 3.4 points of its 15.1%; Base Age holds 33% so roughly 1.7 points of its 20.3%. NIFTYBEES is fully invested and gets none, so the index row is the only one with no sweep in it. A further inconsistency: True North curve comes from research/144 own file, which assumes 6.5% on idle cash rather than 5%, worth about 0.9 points a year to it on a 57% cash weight. Not enough to change the ranking, but not like-for-like either.',
+      'THE SUMMARY TABLE IS THE FULL 20.4-YEAR PERIOD; the year-by-year and correlation tables below it run 2016-2026 because they include Open Alpha v3, whose VIX gate cannot exist before INDIA VIX starts in 2015. Figures therefore differ between the two: Base Age reads 20.3% over the full period and 23.0% over 2016-2026, so the recent decade flatters it. True North reads 19.5% and 23.0% for the same reason.',
       'THE WINDOW IS 2016-2026, forced by the shortest input: the v3 gate needs INDIA VIX, which starts 2015. Longer-window figures per book differ, and Open Alpha v2 returns 19.33% pre-2016 against 23.24% after, so the recent decade flatters it.',
       '141 CELLS DISCLOSED in the Open Alpha re-optimisation alone - 100 entry x trail x stop, 29 gates, 36 tax and gate combinations at the plateau - plus research/161 own 2,016-cell sweep. Best-cell figures should be discounted for multiple testing. The plateau is the finding; the peak is only where it happens to be highest.',
       'TRUE NORTH CURVE IS A SINGLE PATH from research/144 own after-tax NAV file, while every other book is a 30-seed median. That is not identical treatment and a like-for-like re-run of True North under the same ensemble is owed before the two are compared to the decimal.',

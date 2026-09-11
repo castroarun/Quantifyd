@@ -1,0 +1,34 @@
+{
+ "Open Alpha - Base Age": {
+  "cagr": 20.27,
+  "dd": -32.45,
+  "calmar": 0.62,
+  "final": 43.34,
+  "invested": null,
+  "span": "2005-01-03 to 2026-09-11"
+ },
+ "True North": {
+  "cagr": 19.48,
+  "dd": -23.67,
+  "calmar": 0.82,
+  "final": 37.87,
+  "invested": 43.0,
+  "span": "2006-04-03 to 2026-09-03"
+ },
+ "IPO Base - First Base": {
+  "cagr": 15.1,
+  "dd": -35.86,
+  "calmar": 0.42,
+  "final": 17.67,
+  "invested": 32.7,
+  "span": "2006-01-02 to 2026-09-04"
+ },
+ "NIFTYBEES (index)": {
+  "cagr": 10.58,
+  "dd": -59.71,
+  "calmar": 0.18,
+  "final": 7.8,
+  "invested": 100.0,
+  "span": "2005-01-03 to 2026-09-11"
+ }
+}
