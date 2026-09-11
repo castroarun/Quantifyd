@@ -1,0 +1,116 @@
+{
+ "symbol": "POONAWALLA",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 5418.0,
+   "net_profit": 1683.0,
+   "equity_capital": 154.0,
+   "reserves": 8013.0,
+   "total_assets": 24087.0,
+   "equity": 8167.0,
+   "roe_pct": 20.60732215011632
+  },
+  "2025-03-31": {
+   "sales": 4190.0,
+   "net_profit": -98.0,
+   "equity_capital": 155.0,
+   "reserves": 8020.0,
+   "total_assets": 35030.0,
+   "equity": 8175.0,
+   "roe_pct": -1.198776758409786
+  },
+  "2026-03-31": {
+   "sales": 6790.0,
+   "net_profit": 542.0,
+   "equity_capital": 162.0,
+   "reserves": 10187.0,
+   "total_assets": 60272.0,
+   "equity": 10349.0,
+   "roe_pct": 5.237220987535028
+  },
+  "2015-03-31": {
+   "sales": 2534.0,
+   "net_profit": 187.0,
+   "equity_capital": 38.0,
+   "reserves": 1617.0,
+   "total_assets": 14882.0,
+   "equity": 1655.0,
+   "roe_pct": 11.299093655589123
+  },
+  "2016-03-31": {
+   "sales": 2656.0,
+   "net_profit": 213.0,
+   "equity_capital": 47.0,
+   "reserves": 2104.0,
+   "total_assets": 15525.0,
+   "equity": 2151.0,
+   "roe_pct": 9.902370990237099
+  },
+  "2017-03-31": {
+   "sales": 2524.0,
+   "net_profit": 13.0,
+   "equity_capital": 47.0,
+   "reserves": 2125.0,
+   "total_assets": 13622.0,
+   "equity": 2172.0,
+   "roe_pct": 0.5985267034990792
+  },
+  "2018-03-31": {
+   "sales": 2290.0,
+   "net_profit": 237.0,
+   "equity_capital": 47.0,
+   "reserves": 1925.0,
+   "total_assets": 14894.0,
+   "equity": 1972.0,
+   "roe_pct": 12.018255578093306
+  },
+  "2019-03-31": {
+   "sales": 2457.0,
+   "net_profit": 304.0,
+   "equity_capital": 54.0,
+   "reserves": 2690.0,
+   "total_assets": 16789.0,
+   "equity": 2744.0,
+   "roe_pct": 11.078717201166182
+  },
+  "2020-03-31": {
+   "sales": 2513.0,
+   "net_profit": 27.0,
+   "equity_capital": 54.0,
+   "reserves": 2694.0,
+   "total_assets": 15240.0,
+   "equity": 2748.0,
+   "roe_pct": 0.982532751091703
+  },
+  "2021-03-31": {
+   "sales": 2319.0,
+   "net_profit": -559.0,
+   "equity_capital": 54.0,
+   "reserves": 2140.0,
+   "total_assets": 13212.0,
+   "equity": 2194.0,
+   "roe_pct": -25.478577939835915
+  },
+  "2022-03-31": {
+   "sales": 1540.0,
+   "net_profit": 375.0,
+   "equity_capital": 153.0,
+   "reserves": 5903.0,
+   "total_assets": 16443.0,
+   "equity": 6056.0,
+   "roe_pct": 6.19220607661823
+  },
+  "2023-03-31": {
+   "sales": 2177.0,
+   "net_profit": 685.0,
+   "equity_capital": 154.0,
+   "reserves": 6708.0,
+   "total_assets": 23221.0,
+   "equity": 6862.0,
+   "roe_pct": 9.982512387059167
+  }
+ },
+ "note": "",
+ "n_fy": 12
+}

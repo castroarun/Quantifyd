@@ -1,0 +1,89 @@
+{
+ "symbol": "NORTHARC",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 1891.0,
+   "net_profit": 318.0,
+   "equity_capital": 89.0,
+   "reserves": 2142.0,
+   "total_assets": 11707.0,
+   "equity": 2231.0,
+   "roe_pct": 14.25369789332138
+  },
+  "2025-03-31": {
+   "sales": 2344.0,
+   "net_profit": 301.0,
+   "equity_capital": 161.0,
+   "reserves": 3273.0,
+   "total_assets": 13638.0,
+   "equity": 3434.0,
+   "roe_pct": 8.765288293535235
+  },
+  "2026-03-31": {
+   "sales": 2691.0,
+   "net_profit": 404.0,
+   "equity_capital": 162.0,
+   "reserves": 3734.0,
+   "total_assets": 16745.0,
+   "equity": 3896.0,
+   "roe_pct": 10.369609856262834
+  },
+  "2017-03-31": {
+   "sales": 370.0,
+   "net_profit": 64.0,
+   "equity_capital": 78.0,
+   "reserves": 397.0,
+   "total_assets": 2945.0,
+   "equity": 475.0,
+   "roe_pct": 13.473684210526315
+  },
+  "2019-03-31": {
+   "sales": 602.0,
+   "net_profit": 115.0,
+   "equity_capital": 78.0,
+   "reserves": 1014.0,
+   "total_assets": 4279.0,
+   "equity": 1092.0,
+   "roe_pct": 10.531135531135531
+  },
+  "2020-03-31": {
+   "sales": 634.0,
+   "net_profit": 103.0,
+   "equity_capital": 87.0,
+   "reserves": 1336.0,
+   "total_assets": 4597.0,
+   "equity": 1423.0,
+   "roe_pct": 7.238229093464511
+  },
+  "2021-03-31": {
+   "sales": 682.0,
+   "net_profit": 77.0,
+   "equity_capital": 88.0,
+   "reserves": 1412.0,
+   "total_assets": 5696.0,
+   "equity": 1500.0,
+   "roe_pct": 5.133333333333334
+  },
+  "2022-03-31": {
+   "sales": 911.0,
+   "net_profit": 182.0,
+   "equity_capital": 89.0,
+   "reserves": 1568.0,
+   "total_assets": 7973.0,
+   "equity": 1657.0,
+   "roe_pct": 10.983705491852746
+  },
+  "2023-03-31": {
+   "sales": 1306.0,
+   "net_profit": 242.0,
+   "equity_capital": 89.0,
+   "reserves": 1784.0,
+   "total_assets": 9371.0,
+   "equity": 1873.0,
+   "roe_pct": 12.920448478376935
+  }
+ },
+ "note": "",
+ "n_fy": 9
+}

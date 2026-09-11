@@ -1,0 +1,85 @@
+{
+ "symbol": "PPLPHARMA",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 8171.0,
+   "operating_profit": 1197.0,
+   "net_profit": 18.0,
+   "equity_capital": 1323.0,
+   "reserves": 6588.0,
+   "borrowings": 4710.0,
+   "total_assets": 15083.0,
+   "roce_pct": 5.0,
+   "equity": 7911.0,
+   "roe_pct": 0.22753128555176336,
+   "de": 0.5953735305271142
+  },
+  "2025-03-31": {
+   "sales": 9151.0,
+   "operating_profit": 1445.0,
+   "net_profit": 91.0,
+   "equity_capital": 1324.0,
+   "reserves": 6801.0,
+   "borrowings": 4856.0,
+   "total_assets": 15429.0,
+   "roce_pct": 6.0,
+   "equity": 8125.0,
+   "roe_pct": 1.12,
+   "de": 0.5976615384615385
+  },
+  "2026-03-31": {
+   "sales": 8869.0,
+   "operating_profit": 922.0,
+   "net_profit": -326.0,
+   "equity_capital": 1327.0,
+   "reserves": 6835.0,
+   "borrowings": 5675.0,
+   "total_assets": 17607.0,
+   "roce_pct": 3.0,
+   "equity": 8162.0,
+   "roe_pct": -3.994119088458711,
+   "de": 0.6952952707669688
+  },
+  "2021-03-31": {
+   "sales": 6315.0,
+   "operating_profit": 1428.0,
+   "net_profit": 835.0,
+   "equity_capital": 995.0,
+   "reserves": 4610.0,
+   "borrowings": 3025.0,
+   "total_assets": 10677.0,
+   "equity": 5605.0,
+   "roe_pct": 14.897413024085639,
+   "de": 0.5396966993755575
+  },
+  "2022-03-31": {
+   "sales": 6559.0,
+   "operating_profit": 950.0,
+   "net_profit": 376.0,
+   "equity_capital": 1186.0,
+   "reserves": 5511.0,
+   "borrowings": 4128.0,
+   "total_assets": 12605.0,
+   "roce_pct": 7.0,
+   "equity": 6697.0,
+   "roe_pct": 5.614454233238764,
+   "de": 0.6163954009257877
+  },
+  "2023-03-31": {
+   "sales": 7082.0,
+   "operating_profit": 629.0,
+   "net_profit": -186.0,
+   "equity_capital": 1193.0,
+   "reserves": 5580.0,
+   "borrowings": 5637.0,
+   "total_assets": 14303.0,
+   "roce_pct": 2.0,
+   "equity": 6773.0,
+   "roe_pct": -2.746198139672228,
+   "de": 0.8322752103942123
+  }
+ },
+ "note": "",
+ "n_fy": 6
+}

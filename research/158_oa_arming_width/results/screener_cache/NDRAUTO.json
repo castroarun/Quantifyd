@@ -1,0 +1,98 @@
+{
+ "symbol": "NDRAUTO",
+ "source": "consolidated",
+ "fy": {
+  "2024-03-31": {
+   "sales": 602.0,
+   "operating_profit": 56.0,
+   "net_profit": 39.0,
+   "equity_capital": 12.0,
+   "reserves": 242.0,
+   "borrowings": 31.0,
+   "total_assets": 396.0,
+   "roce_pct": 19.0,
+   "equity": 254.0,
+   "roe_pct": 15.354330708661417,
+   "de": 0.1220472440944882
+  },
+  "2025-03-31": {
+   "sales": 713.0,
+   "operating_profit": 73.0,
+   "net_profit": 53.0,
+   "equity_capital": 24.0,
+   "reserves": 279.0,
+   "borrowings": 32.0,
+   "total_assets": 486.0,
+   "roce_pct": 23.0,
+   "equity": 303.0,
+   "roe_pct": 17.49174917491749,
+   "de": 0.10561056105610561
+  },
+  "2026-03-31": {
+   "sales": 823.0,
+   "operating_profit": 91.0,
+   "net_profit": 62.0,
+   "equity_capital": 24.0,
+   "reserves": 334.0,
+   "borrowings": 62.0,
+   "total_assets": 563.0,
+   "roce_pct": 22.0,
+   "equity": 358.0,
+   "roe_pct": 17.318435754189945,
+   "de": 0.17318435754189945
+  },
+  "2020-03-31": {
+   "sales": 97.0,
+   "operating_profit": -1.0,
+   "net_profit": 7.0,
+   "equity_capital": 6.0,
+   "reserves": 164.0,
+   "borrowings": 0.0,
+   "total_assets": 189.0,
+   "equity": 170.0,
+   "roe_pct": 4.117647058823529,
+   "de": 0.0
+  },
+  "2021-03-31": {
+   "sales": 114.0,
+   "operating_profit": 6.0,
+   "net_profit": 9.0,
+   "equity_capital": 6.0,
+   "reserves": 172.0,
+   "borrowings": 4.0,
+   "total_assets": 223.0,
+   "roce_pct": 6.0,
+   "equity": 178.0,
+   "roe_pct": 5.056179775280899,
+   "de": 0.02247191011235955
+  },
+  "2022-03-31": {
+   "sales": 233.0,
+   "operating_profit": 15.0,
+   "net_profit": 15.0,
+   "equity_capital": 6.0,
+   "reserves": 185.0,
+   "borrowings": 13.0,
+   "total_assets": 250.0,
+   "roce_pct": 10.0,
+   "equity": 191.0,
+   "roe_pct": 7.853403141361256,
+   "de": 0.06806282722513089
+  },
+  "2023-03-31": {
+   "sales": 393.0,
+   "operating_profit": 33.0,
+   "net_profit": 28.0,
+   "equity_capital": 6.0,
+   "reserves": 212.0,
+   "borrowings": 34.0,
+   "total_assets": 344.0,
+   "roce_pct": 17.0,
+   "equity": 218.0,
+   "roe_pct": 12.844036697247706,
+   "de": 0.1559633027522936
+  }
+ },
+ "note": "",
+ "n_fy": 7
+}

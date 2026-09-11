@@ -20,6 +20,127 @@ import type { HoldingsRecord } from '../api/types';
    The retired paper model's types, EquityCurve and BookSummary were deleted on
    06-Sep-2026 — none had been rendered since the page was rebuilt around the real book. */
 
+type LedgerTrade = {
+  symbol: string; entry_date: string; exit_date: string; pivot: number | null;
+  entry: number; exit: number; qty: number; day_open: number; day_high: number;
+  day_close: number; held_days: number; reason: string; ret_pct: number;
+  pnl: number; cum_pnl: number; dd_pct: number | null;
+};
+type LedgerArm = {
+  key: string; label: string; trail: number; entry_time: string; note: string;
+  cagr: number; dd: number; n: number; win: number; trades: LedgerTrade[];
+};
+type Ledger = { generated: string; window: string[]; seed: number; arms: LedgerArm[] };
+
+/* The trade ledger, collapsed by default and fetched only when opened: 305 KB has no
+   business loading on first paint. Two arms from the same signal and the same exits,
+   differing only in the entry, so the pivot / price-paid / day-close columns can be read
+   across and compared without any commentary from me. */
+function LedgerCard() {
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState<Ledger | null>(null);
+  const [arm, setArm] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || data) return;
+    fetch('/app/oa_ledger.json?t=' + Date.now())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+      .then(setData)
+      .catch((e) => setErr(String(e)));
+  }, [open, data]);
+
+  const a = data?.arms[arm];
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitleTog} onClick={() => setOpen(!open)}
+           role="button" tabIndex={0}
+           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(!open); }}>
+        Trade ledger — last two years, for manual verification
+        <span className={styles.sumTog}>{open ? '▾' : '▸'}</span>
+      </div>
+      {!open && (
+        <p className={styles.note}>
+          Every trade both entry mechanics would have taken between Sep-2024 and Sep-2026,
+          with the pivot, the price paid and that day’s open, high and close side by side.
+          Expand to load.
+        </p>
+      )}
+      {open && err && <p className={styles.note}>Could not load the ledger: {err}</p>}
+      {open && !data && !err && <p className={styles.note}>Loading…</p>}
+      {open && a && (
+        <>
+          <div className={styles.chips}>
+            {data!.arms.map((x, i) => (
+              <span key={x.key} className={i === arm ? styles.curveChipOn : styles.curveChip}
+                    onClick={() => setArm(i)} role="button" tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') setArm(i); }}>
+                {x.label}
+              </span>
+            ))}
+          </div>
+          <p className={styles.note}>
+            {a.note} <b>{a.n}</b> trades, CAGR <b>{a.cagr.toFixed(1)}%</b>, max drawdown{' '}
+            <b>{a.dd.toFixed(1)}%</b>, win rate <b>{a.win.toFixed(0)}%</b>. Entry timing:{' '}
+            {a.entry_time}. The study runs on daily bars, so there is no intraday clock in
+            it — the time shown is the one this mechanic implies, not a recorded
+            timestamp. One deterministic path (seed {data!.seed}), ranked by relative
+            strength. Generated {data!.generated}.
+          </p>
+          <div style={{ maxHeight: 460, overflow: 'auto' }}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Symbol</th><th>Entry</th><th>Pivot</th><th>Paid</th>
+                  <th>Day open</th><th>Day high</th><th>Day close</th>
+                  <th>Exit</th><th>Reason</th><th>Days</th><th>Qty</th>
+                  <th>Return</th><th>P&amp;L</th><th>Cumulative</th><th>Book DD</th>
+                </tr>
+              </thead>
+              <tbody>
+                {a.trades.map((tr, i) => (
+                  <tr key={i}>
+                    <td className={styles.sym}>{tr.symbol}</td>
+                    <td>{fmtD(tr.entry_date)}</td>
+                    <td>{tr.pivot == null ? '—' : tr.pivot.toFixed(2)}</td>
+                    <td>{tr.entry.toFixed(2)}</td>
+                    <td className={styles.muted}>{tr.day_open.toFixed(2)}</td>
+                    <td className={styles.muted}>{tr.day_high.toFixed(2)}</td>
+                    <td style={tr.pivot != null && tr.day_close > tr.pivot
+                               ? { color: 'var(--pos, #2f9152)' } : {}}>
+                      {tr.day_close.toFixed(2)}
+                    </td>
+                    <td>{fmtD(tr.exit_date)}</td>
+                    <td className={styles.muted}>{reasonLabel[tr.reason] ?? tr.reason}</td>
+                    <td>{tr.held_days}</td>
+                    <td>{tr.qty}</td>
+                    <td className={tr.ret_pct >= 0 ? styles.pos : styles.neg}>
+                      {pct(tr.ret_pct)}
+                    </td>
+                    <td className={tr.pnl >= 0 ? styles.pos : styles.neg}>{inr(tr.pnl)}</td>
+                    <td>{inr(tr.cum_pnl)}</td>
+                    <td className={styles.muted}>
+                      {tr.dd_pct == null ? '—' : tr.dd_pct.toFixed(1) + '%'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className={styles.note}>
+            Read the <b>Pivot</b>, <b>Paid</b> and <b>Day close</b> columns across. On the
+            published mechanic the close finishes above the pivot on every single trade,
+            because that mechanic only counts the trades where it did — a median 1.29%
+            above the price paid, on all 550. A real order gets the same kind of entry and
+            is right about half the time: 231 of 465, median 0.31% below. That difference,
+            not the price, is what the published figure rests on.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 const inr = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
 const lakh = (n: number) => '₹' + (n / 100000).toFixed(2) + 'L';
 const pct = (n: number | null | undefined) =>
@@ -435,12 +556,13 @@ export default function BlueskyPaper() {
           <tbody>
             {[
               ['Universe', 'NSE equities clearing a Rs 5 cr 20-day median traded value floor; ETFs excluded'],
-              ['Entry', 'close at an all-time high, relative strength >= 70, bought the next day'],
+              ['Entry (as designed)', 'close at an all-time high, relative strength >= 70, bought the next day'],
+              ['Entry (PAUSED 11-Sep-2026)', 'buying is switched off. The scanner arms the opposite condition to the one above \u2014 it picks names still BELOW their high \u2014 and separately, the published entry cannot be placed by any real order. See the ledger below. Selling, stops and the trail keep running.'],
               ['Sizing', '16 slots at 6.25% of NAV each — equal weight, no pyramiding'],
               ['Hard stop', 'close 8% below the fill'],
               ['Trail', 'close below the 15-day SMA (the entry day is exempt)'],
               ['Market gate', 'none — the gate was retired in r/142; per-stock stops carry the risk'],
-              ['Exit check', '15:18 IST daily, on a close proxy. ALERT-ONLY: no automated selling'],
+              ['Exit check', '15:18 IST daily on a close proxy, and it PLACES the sell orders itself (automated since 08-Sep-2026)'],
               ['Costs', '25 bps per side, and 20% STCG on gains held under a year'],
             ].map(([k, v]) => (
               <tr key={k}><td className={styles.sym}>{k}</td><td className={styles.muted}>{v}</td></tr>
@@ -454,6 +576,8 @@ export default function BlueskyPaper() {
           something to put in them.
         </p>
       </div>
+
+      <LedgerCard />
     </div>
   );
 }

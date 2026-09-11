@@ -1,0 +1,107 @@
+{
+ "symbol": "NRL",
+ "source": "standalone",
+ "fy": {
+  "2024-03-31": {
+   "sales": 181.0,
+   "operating_profit": 4.0,
+   "net_profit": 11.0,
+   "equity_capital": 69.0,
+   "reserves": 17.0,
+   "borrowings": 0.0,
+   "total_assets": 95.0,
+   "roce_pct": 13.0,
+   "equity": 86.0,
+   "roe_pct": 12.790697674418604,
+   "de": 0.0
+  },
+  "2025-03-31": {
+   "sales": 134.0,
+   "operating_profit": 4.0,
+   "net_profit": 7.0,
+   "equity_capital": 69.0,
+   "reserves": 41.0,
+   "borrowings": 0.0,
+   "total_assets": 112.0,
+   "roce_pct": 10.0,
+   "equity": 110.0,
+   "roe_pct": 6.363636363636363,
+   "de": 0.0
+  },
+  "2026-03-31": {
+   "sales": 136.0,
+   "operating_profit": 4.0,
+   "net_profit": 8.0,
+   "equity_capital": 69.0,
+   "reserves": 52.0,
+   "borrowings": 0.0,
+   "total_assets": 127.0,
+   "roce_pct": 10.0,
+   "equity": 121.0,
+   "roe_pct": 6.6115702479338845,
+   "de": 0.0
+  },
+  "2020-03-31": {
+   "sales": 13.0,
+   "operating_profit": 0.0,
+   "net_profit": 0.0,
+   "equity_capital": 0.01,
+   "reserves": 0.0,
+   "borrowings": 2.0,
+   "total_assets": 9.0,
+   "roce_pct": 13.0,
+   "equity": 0.01,
+   "roe_pct": 0.0,
+   "de": 200.0
+  },
+  "2021-03-31": {
+   "sales": 104.0,
+   "operating_profit": 14.0,
+   "net_profit": 10.0,
+   "equity_capital": 0.01,
+   "reserves": 10.0,
+   "borrowings": 6.0,
+   "total_assets": 25.0,
+   "roce_pct": 159.0,
+   "equity": 10.01,
+   "roe_pct": 99.9000999000999,
+   "de": 0.5994005994005994
+  },
+  "2022-03-31": {
+   "sales": 159.0,
+   "operating_profit": 24.0,
+   "net_profit": 19.0,
+   "equity_capital": 23.0,
+   "reserves": 42.0,
+   "borrowings": 2.0,
+   "total_assets": 75.0,
+   "roce_pct": 64.0,
+   "equity": 65.0,
+   "roe_pct": 29.23076923076923,
+   "de": 0.03076923076923077
+  },
+  "2023-03-31": {
+   "sales": 99.0,
+   "operating_profit": 7.0,
+   "net_profit": 9.0,
+   "equity_capital": 46.0,
+   "reserves": 24.0,
+   "borrowings": 0.0,
+   "total_assets": 74.0,
+   "roce_pct": 20.0,
+   "equity": 70.0,
+   "roe_pct": 12.857142857142858,
+   "de": 0.0
+  },
+  "2019-03-31": {
+   "equity_capital": 0.01,
+   "reserves": 0.0,
+   "borrowings": 3.0,
+   "total_assets": 3.0,
+   "equity": 0.01,
+   "de": 300.0
+  }
+ },
+ "note": "",
+ "n_fy": 8
+}

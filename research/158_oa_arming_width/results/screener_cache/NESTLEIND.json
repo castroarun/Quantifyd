@@ -1,0 +1,42 @@
+{
+ "symbol": "NESTLEIND",
+ "source": "consolidated",
+ "fy": {
+  "2025-03-31": {
+   "sales": 20202.0,
+   "operating_profit": 4747.0,
+   "net_profit": 3208.0,
+   "equity_capital": 96.0,
+   "reserves": 3914.0,
+   "borrowings": 1167.0,
+   "total_assets": 12193.0,
+   "roce_pct": 96.0,
+   "equity": 4010.0,
+   "roe_pct": 80.0,
+   "de": 0.2910224438902743
+  },
+  "2026-03-31": {
+   "sales": 23155.0,
+   "operating_profit": 5261.0,
+   "net_profit": 3499.0,
+   "equity_capital": 193.0,
+   "reserves": 4964.0,
+   "borrowings": 444.0,
+   "total_assets": 13182.0,
+   "roce_pct": 85.0,
+   "equity": 5157.0,
+   "roe_pct": 67.84952491758774,
+   "de": 0.08609656777196044
+  },
+  "2024-03-31": {
+   "equity_capital": 96.0,
+   "reserves": 3244.0,
+   "borrowings": 345.0,
+   "total_assets": 10523.0,
+   "equity": 3340.0,
+   "de": 0.10329341317365269
+  }
+ },
+ "note": "",
+ "n_fy": 3
+}

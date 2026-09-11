@@ -130,7 +130,7 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                         cash += qty * cl_i * (1 - cost)
                         if stcg:
                             tax_yr_gain += stcg * qty * (cl_i - fill)
-                        trades.append((c, i, i, fill, cl_i, 'eod_abort'))
+                        trades.append((c, i, i, fill, cl_i, 'eod_abort', qty))
                         if abort_keeps_slot:
                             # The slot is spent for today. Stops the loop from buying a
                             # fresh name the instant this one is cut, which is what made
@@ -157,7 +157,7 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
                     held = (dates[i] - dates[ei]).days
                     rate = ltcg if held > 365 else stcg
                     tax_yr_gain += rate * pnl   # negative pnl offsets within the year
-                trades.append((c, ei, i, b, float(cl), reason))
+                trades.append((c, ei, i, b, float(cl), reason, q))
             else:
                 still.append((c, ei, b, q))
         positions = still
@@ -168,7 +168,8 @@ def simulate(seed, sel, days_idx, dates, C, H, O, ATH, S50, RS, TVp, TRIG, weak_
     last = days_idx[-1]
     for c, ei, b, q in positions:
         cl = C[last, c]
-        trades.append((c, ei, last, b, float(cl) if not np.isnan(cl) else b, 'open_marked'))
+        trades.append((c, ei, last, b, float(cl) if not np.isnan(cl) else b,
+                       'open_marked', q))
     return equity, trades, passed_up
 
 
