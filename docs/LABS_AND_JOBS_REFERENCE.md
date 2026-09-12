@@ -150,18 +150,37 @@ group "Momentum Portfolio report (/app/mpf-report)").
 | **Schedule** | on demand / after any mpf system change — NOT a cron |
 | **Script** | `research/_utilities/mpf_report_build.py` |
 | **What** | Regenerates every number and all ten charts on `/app/mpf-report`, the single report page for True North, Open Alpha · Base Age, IPO Base and Quality Summit. Writes `static/app/mpf_report.json`, `frontend/public/mpf_report.json` and `frontend/public/mpf-report-*.png`. |
-| **Reads** | `research/163_mpf_cash_yield_harmonisation/results/{full_period_after_tax_cash05.csv, all_systems_after_tax_cash05.csv}` (the two curve files, since 12-Sep-2026 — research/159's, with True North and Open Alpha · Base Age replaced by 5%-idle-cash re-runs of their own engines), plus `research/159_oa_honest_reoptimization/results/{after_tax_tables.csv, all_systems_summary.json}` and `research/160_quality_growth_near_ath/results/F_Bb7_equity.csv`. Read-only: no DB, no engine, no live state. |
-| **Manual command** | `cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py` then `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build`. `--curves-dir` (with `--full-period-csv` / `--roster-csv`) points it at a different curve set — pass research/159's results folder with the un-suffixed file names to rebuild the page exactly as it stood before the 12-Sep-2026 cash-yield harmonisation. |
+| **Reads** | `research/163_mpf_cash_yield_harmonisation/results/cash052/{full_period_after_tax_cash052.csv, all_systems_after_tax_cash052.csv, F_Bb7_equity_cash052.csv, athvix_summary_cash052.json}` — since 12-Sep-2026 (evening) these are research/159's and research/160's own curves with **every cash-holding book re-run at 5.2% idle cash**; NIFTYBEES holds no cash and is byte-identical. Plus `research/159_oa_honest_reoptimization/results/after_tax_tables.csv` for the entry-surface / null / gate tables, which the generator swaps automatically for `cash052/after_tax_tables_cash052.csv` once that 5.2% re-run is complete and LABELS the section with whichever rate it used. Read-only: no DB, no engine, no live state. |
+| **Manual command** | `cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py` then `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build`. `--curves-dir` (with `--full-period-csv` / `--roster-csv`) points it at a different curve set — pass `research/163_mpf_cash_yield_harmonisation/results` with the `_cash05` file names to put the curves back on the previous 5.0% basis. To change the cash rate itself, re-run `research/163_mpf_cash_yield_harmonisation/scripts/{tn,ba,ipo,oa_vix,qs}_cash052.py` (each reproduces its own published curve at the old yield before changing it), then `build_inputs_052.py` and `check_cash052.py`. |
 | **When to run it** | Whenever a Momentum-Portfolio book changes rules, size or status, or whenever any of the curve files above is re-run. Otherwise the page keeps showing the previous evidence. The frontend rebuild is what moves the PNGs into `static/app/`. |
 | **Build doc** | `research/160_quality_growth_near_ath/MPF_REPORT_PAGE_BUILD_STATUS.md` — carries the full provenance table and the three-window resolution. |
 
-**Everything on that page is AFTER TAX**, **every book credits idle cash at 5% a year post-tax,
-accrued daily** (harmonised 12-Sep-2026 by research/163; True North's own study used 6.5% and
-Base Age's 5.5%), and every table states which systems, which window and which basis. The page
-does not print a figure it cannot point at a file for — a missing value still renders as a
-visible gap rather than a zero. Average invested for Open Alpha · Base Age WAS such a gap; it
-was measured in research/163 at **72.89%** (30-seed median, daily series in that folder), which
-supersedes the ~67% the handover asserted without a source.
+**Everything on that page is AFTER TAX**, **every book credits idle cash at 5.2% a year
+post-tax, accrued daily**, and every table states which systems, which window and which basis.
+The page does not print a figure it cannot point at a file for — a missing value still renders
+as a visible gap rather than a zero. Average invested for Open Alpha · Base Age WAS such a gap;
+it was measured in research/163 at **72.9%** (30-seed median, daily series in that folder),
+which supersedes the ~67% the handover asserted without a source.
+
+**The 5.2% cash rate (set 12-Sep-2026, research/163).** It is the **arbitrage-fund** rate after
+tax: arbitrage funds carry equity taxation (20% STCG on units churned inside a year, 12.5% LTCG
+beyond a year, ~0.25% exit load inside a month), so ~6.5% pre-tax at 2025-26 cash-futures
+spreads is ~5.2% post-tax. A liquid ETF at a 30% slab would be ~3.5% post-tax (LIQUIDCASE /
+LIQUIDADD / LIQUIDBETF realised 5.4-5.5% pre-tax in 2025, ~5.0% annualised in 2026). Operating
+rule: **bulk in the arbitrage fund, a liquid-ETF buffer** for money needed at the next open,
+because arbitrage redemptions settle T+1. It is a **flat assumption, not a measured yield**.
+The page reached it in two passes on 12-Sep-2026: True North (6.5%) and Base Age (5.5%) came
+onto a common 5.0% first, then all five books moved 5.0% → 5.2%.
+
+**Dated review — 2026-12-15, PENDING** (Ops & Review Centre, top of REVIEWS): *"Momentum
+Portfolio - idle cash instrument: pick the arbitrage fund, add the liquid-ETF buffer, measure
+the realised post-tax yield."* Task **(0)** is **owed by Arun and is operational, not a model
+change**: move True North's idle cash into an arbitrage fund with a liquid-ETF buffer sized for
+the gate's re-entry (the 100-SMA weekly gate liquidates all and re-buys 8 names, so the buffer
+must cover a full re-entry within T+1 of a redemption, or the redemption must be placed the day
+the gate signals), and record the fund and date in the Capital Desk / True North dashboard note.
+**No executor change.** PASS = the report's cash line reads a measured number with its source;
+if it differs from 5.2% by more than 0.5 points, re-run the curves via the research/163 scripts.
 
 ## research/162 — Quality Summit optimisation and the Base Age quality overlay (added 2026-09-12)
 

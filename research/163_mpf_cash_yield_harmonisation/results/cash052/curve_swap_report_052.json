@@ -1,0 +1,181 @@
+{
+ "FULL PERIOD (20.4y)": {
+  "file": "/home/arun/quantifyd/research/163_mpf_cash_yield_harmonisation/results/cash052/full_period_after_tax_cash052.csv",
+  "rows": 5066,
+  "window": [
+   "2006-04-03",
+   "2026-09-03"
+  ],
+  "columns": [
+   "Open Alpha - Base Age",
+   "True North",
+   "IPO Base - First Base",
+   "NIFTYBEES (index)"
+  ],
+  "changed": [
+   "True North",
+   "Open Alpha - Base Age",
+   "IPO Base - First Base"
+  ],
+  "rows_moved": {
+   "Open Alpha - Base Age": {
+    "before": {
+     "cagr": 20.27,
+     "maxdd": -32.45,
+     "calmar": 0.62,
+     "growth": 43.34
+    },
+    "after": {
+     "cagr": 19.99,
+     "maxdd": -32.64,
+     "calmar": 0.61,
+     "growth": 41.31
+    },
+    "moved": true
+   },
+   "True North": {
+    "before": {
+     "cagr": 19.48,
+     "maxdd": -23.67,
+     "calmar": 0.82,
+     "growth": 37.87
+    },
+    "after": {
+     "cagr": 18.69,
+     "maxdd": -24.78,
+     "calmar": 0.75,
+     "growth": 33.1
+    },
+    "moved": true
+   },
+   "IPO Base - First Base": {
+    "before": {
+     "cagr": 15.1,
+     "maxdd": -35.86,
+     "calmar": 0.42,
+     "growth": 17.67
+    },
+    "after": {
+     "cagr": 15.26,
+     "maxdd": -35.77,
+     "calmar": 0.43,
+     "growth": 18.16
+    },
+    "moved": true
+   },
+   "NIFTYBEES (index)": {
+    "before": {
+     "cagr": 10.58,
+     "maxdd": -59.71,
+     "calmar": 0.18,
+     "growth": 7.8
+    },
+    "after": {
+     "cagr": 10.58,
+     "maxdd": -59.71,
+     "calmar": 0.18,
+     "growth": 7.8
+    },
+    "moved": false
+   }
+  }
+ },
+ "ROSTER (2016+)": {
+  "file": "/home/arun/quantifyd/research/163_mpf_cash_yield_harmonisation/results/cash052/all_systems_after_tax_cash052.csv",
+  "rows": 2646,
+  "window": [
+   "2016-01-01",
+   "2026-09-04"
+  ],
+  "columns": [
+   "OA v3 (gated)",
+   "TN incumbent",
+   "NIFTYBEES",
+   "OA v2",
+   "IPO (honest)"
+  ],
+  "changed": [
+   "TN incumbent",
+   "OA v2",
+   "IPO (honest)",
+   "OA v3 (gated)"
+  ],
+  "rows_moved": {
+   "OA v3 (gated)": {
+    "before": {
+     "cagr": 19.23,
+     "maxdd": -34.15,
+     "calmar": 0.56,
+     "growth": 6.54
+    },
+    "after": {
+     "cagr": 20.44,
+     "maxdd": -32.92,
+     "calmar": 0.62,
+     "growth": 7.28
+    },
+    "moved": true
+   },
+   "TN incumbent": {
+    "before": {
+     "cagr": 23.0,
+     "maxdd": -23.67,
+     "calmar": 0.97,
+     "growth": 9.11
+    },
+    "after": {
+     "cagr": 22.28,
+     "maxdd": -24.78,
+     "calmar": 0.9,
+     "growth": 8.56
+    },
+    "moved": true
+   },
+   "NIFTYBEES": {
+    "before": {
+     "cagr": 12.13,
+     "maxdd": -36.34,
+     "calmar": 0.33,
+     "growth": 3.39
+    },
+    "after": {
+     "cagr": 12.13,
+     "maxdd": -36.34,
+     "calmar": 0.33,
+     "growth": 3.39
+    },
+    "moved": false
+   },
+   "OA v2": {
+    "before": {
+     "cagr": 23.04,
+     "maxdd": -32.43,
+     "calmar": 0.71,
+     "growth": 9.15
+    },
+    "after": {
+     "cagr": 22.9,
+     "maxdd": -32.51,
+     "calmar": 0.7,
+     "growth": 9.04
+    },
+    "moved": true
+   },
+   "IPO (honest)": {
+    "before": {
+     "cagr": 15.98,
+     "maxdd": -35.86,
+     "calmar": 0.45,
+     "growth": 4.87
+    },
+    "after": {
+     "cagr": 16.09,
+     "maxdd": -35.77,
+     "calmar": 0.45,
+     "growth": 4.92
+    },
+    "moved": true
+   }
+  }
+ }
+}

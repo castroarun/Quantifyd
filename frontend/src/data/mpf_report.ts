@@ -107,7 +107,7 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate detail', v: 'NIFTYBEES below its 100-day SMA on a Friday close → LIQUIDATE the whole book to cash. It does not merely block new buys' },
     ],
     evidence: [
-      { k: 'Own study window', v: '20.9% after-tax CAGR at −23.7%, Calmar 0.88, on 2012 → 3-Sep-2026 — the study’s primary window WA (that study credited idle cash at 6.5%, so it reads a little above the rows on this page, which credit 5%). Source: research/144_truenorth_reassessment/results/RESULTS.md §(b)' },
+      { k: 'Own study window', v: '20.9% after-tax CAGR at −23.7%, Calmar 0.88, on 2012 → 3-Sep-2026 — the study’s primary window WA (that study credited idle cash at 6.5%, so it reads well above the rows on this page, which credit 5.2% — the arbitrage-fund rate after tax). Source: research/144_truenorth_reassessment/results/RESULTS.md §(b)' },
       { k: 'Robustness band', v: '12 rebalance-day offsets: median 20.7% [14.9 .. 25.1], drawdown median −25.1%, WORST OFFSET −28.3%' },
       { k: 'Both sub-windows', v: 'W1 (2016-06 → 2019-12) 13.6% median · W2 (2020 → now) 27.3% median — positive in both' },
       { k: 'Cells disclosed', v: '71-cell gate bake-off + 27-cell action/frequency sweep + 240-run slots × exits sweep, all ranked after tax' },
@@ -119,7 +119,7 @@ export const SYSTEMS: SystemReport[] = [
       'Remove the gate and the same book returns MORE — 23.9% against 20.9% — at a −46.5% fall instead of −23.7%, so Calmar collapses from 0.88 to 0.51. The gate is not a return filter that happens to help in crashes; it IS the product. And it had to be that gate: 71 cells of alternatives were tested and no other series and no other construction beat NIFTYBEES-SMA100 on drawdown-constrained return. Only a NIFTYBEES-based gate protects 2008 at all, because the index series in the database begin in 2011. The cash that gate parks is also why this book sits out 57% of the time and still finishes near the top.',
     caveats: [
       'TRUE NORTH IS A SINGLE PATH while Open Alpha · Base Age and IPO Base are their studies’ drawn curves and Quality Summit is a 12-offset median. That is not identical treatment, and a like-for-like ensemble re-run of True North is OWED before the columns are compared to the decimal.',
-      'ITS CASH YIELD WAS 6.5% UNTIL 12-SEP-2026 — it is 5% now, like every other book here. research/144 assumed 6.5%, and this book holds cash 57% of the time, so the assumption alone was worth about a point a year to it. research/163 re-ran the identical cell on research/144’s own engine at 5%: the run first reproduced the published 6.5% curve exactly, then the yield change cost 0.97 points of CAGR (19.53% → 18.56% on the 20.4-year window) and 1.3 points of drawdown. Those lower numbers are what the tables on this page now show; the study’s own page still quotes the 6.5% figures.',
+      'ITS CASH YIELD WAS 6.5% UNTIL 12-SEP-2026 — it is 5.2% now, like every other book here. research/144 assumed 6.5%, and this book holds cash 57% of the time, so the assumption alone was worth about a point a year to it. research/163 re-ran the identical cell on research/144’s own engine twice on 12-Sep-2026, each time reproducing the published curve at the old yield first: 6.5% → 5.0% cost 0.97 points of CAGR (19.53% → 18.56% on the 20.4-year window) and 1.3 points of drawdown, then 5.0% → 5.2% gave 0.13 back (18.56% → 18.69%), which is what (1 − 43% invested) × 0.2 points predicts. Those are the numbers the tables on this page now show; the study’s own page still quotes the 6.5% figures. 5.2% is the ARBITRAGE-FUND rate after 20% short-term tax at 2025-26 cash-futures spreads — and this book, sitting in cash 57% of the time, is the one with the most riding on where that cash actually sits. Moving it into an arbitrage fund with a liquid-ETF buffer is an OWED OPERATIONAL ACTION, not a modelled one.',
       'Survivorship: market_data.db keeps only 102 stopped series in 2,158 over eleven years, fewer than NSE actually delisted. Pressure is upward on every arm here, benchmarks included.',
       'market_data.db is NOT retroactively split-adjusted. Smaller exposure for a Nifty-200 momentum book than for an all-time-high screen, but not zero.',
       'Residual phantom rows (OHLC = previous close, volume 0) exist on 2025-03-18 and 2024-01-15 for small-caps. Benign for a Nifty-200 system; flagged for a future purge.',
@@ -169,13 +169,13 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate', v: 'NONE — no market gate and no VIX gate. The VIX gate belongs to the ATH + VIX variant below, not to this one' },
     ],
     evidence: [
-      { k: 'Own study window', v: '21.26% after-tax CAGR at −34.80%, Calmar 0.618, on 3-Jan-2005 → 11-Sep-2026, 30-seed median (that study credited idle cash at 5.5%, so it reads a little above the rows on this page, which credit 5%). Source: research/161_ath_base_age_breakout/results/RESULTS.md §1' },
+      { k: 'Own study window', v: '21.26% after-tax CAGR at −34.80%, Calmar 0.618, on 3-Jan-2005 → 11-Sep-2026, 30-seed median (that study credited idle cash at 5.5%, so it reads a little above the rows on this page, which credit 5.2% — the arbitrage-fund rate after tax). Source: research/161_ath_base_age_breakout/results/RESULTS.md §1' },
       { k: 'Robustness band', v: '30 seeds: 19.87 .. 21.89%. WORST PATH 19.87% — a whisker BELOW the pre-registered 20% floor. On a median reading it passes; anyone who meant "every path clears 20%" should read it as a fail by 0.13pp' },
       { k: 'Both sub-windows', v: 'pre-2016 19.33% at −32.45% · 2016+ 23.24% at −32.43% — index-beating in both' },
       { k: 'Null control', v: 'A date-matched random-entry control on the same days returns 12.11%. The rule beats it by +9.15pp' },
       { k: 'Trade profile', v: '49.2% win rate, +37.2% average win against −11.6% average loss, expectancy +12.4% a trade, 31.7 trades a year, longest losing streak 14' },
       { k: 'Cost ladder', v: '25 / 40 / 60 bps → 21.26 / 20.34 / 19.35% — a shallow slope, this is a low-turnover book' },
-      { k: 'Idle cash', v: 'Credited at 5% on this page (research/161’s own study used 5.5%; re-running it at 5% cost 0.34 points on the 20.4-year window). Measured 72.9% invested over 30 seeds, band 72.7–73.1%, so about a quarter of the book earns the sweep. With no cash carry at all the study returned 19.27% against 21.26%' },
+      { k: 'Idle cash', v: 'Credited at 5.2% post-tax on this page — the arbitrage-fund rate (research/161’s own study used 5.5%; re-running it at 5.0% cost 0.34 points on the 20.4-year window, and the move back up to 5.2% returned 0.06, matching (1 − invested) × 0.2). Measured 72.9% invested over 30 seeds, band 72.7–73.0%, so about a quarter of the book earns the sweep. With no cash carry at all the study returned 19.27% against 21.26%' },
       { k: 'Cells disclosed', v: '864 (6 base ages × 3 depths × 4 volume levels × 2 shapes × 6 exits), 810 completed. The winner is reported as a plateau, not a spike' },
     ],
     distinctiveTitle: 'The exit is worth +11.85pp; base age is worth +2.6pp and −6.8pp of drawdown',
@@ -257,7 +257,7 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate', v: 'NONE. A NIFTY 200-SMA gate raises Calmar only by parking the book in cash, not by improving it' },
     ],
     evidence: [
-      { k: 'Own study window', v: '21.19% after-tax CAGR at −37.1%, Calmar 0.58, 91% invested, on 1-Aug-2018 → 10-Sep-2026. Source: research/160_quality_growth_near_ath/results/RESULTS.md' },
+      { k: 'Own study window', v: '21.19% after-tax CAGR at −37.1%, Calmar 0.58, 91% invested, on 1-Aug-2018 → 10-Sep-2026 (that study credited idle cash at 5.0%; the rows on this page credit 5.2%, worth about +0.02 a year to a book this heavily invested). Source: research/160_quality_growth_near_ath/results/RESULTS.md' },
       { k: 'Robustness band', v: '12 rebalance offsets: median 21.05% on the common window, range 17.45 .. 23.50%. WORST PATH 17.45%' },
       { k: 'Both sub-windows', v: 'W1 (2018-08 → 2022-06, contains the 2020 crash) 20.11% · W2 (2022-07 → 2026-09, contains the smallcap boom) 20.95% — unusually stable' },
       { k: 'Null control', v: 'Picking names AT RANDOM from the same liquid near-the-high universe returns 14.82%. The relative-strength RANKING is worth +7.70pp; the quality screen is worth −1.32pp' },
@@ -323,7 +323,7 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate', v: 'NONE' },
     ],
     evidence: [
-      { k: 'Own study window', v: '15.00% after-tax CAGR at −37.55%, Calmar 0.40, 2006 → Sep-2026, 30 seeds — the entry the LIVE engine actually places. Source: research/158_oa_arming_width/OA_ARMING_WIDTH_AND_POKE_FILL_DAILY_SWEEP_STATUS.md §3' },
+      { k: 'Own study window', v: '15.00% after-tax CAGR at −37.55%, Calmar 0.40, 2006 → Sep-2026, 30 seeds — the entry the LIVE engine actually places (that study credited idle cash at 5.0%; the rows on this page credit 5.2%, worth +0.16 a year to a book only 32% invested — the largest cash-rate effect of any book here). Source: research/158_oa_arming_width/OA_ARMING_WIDTH_AND_POKE_FILL_DAILY_SWEEP_STATUS.md §3' },
       { k: 'The correction', v: 'The study headline reproduced at 31.48% and was published at 31.03%. Its close-fill control gives 17.49%. The live engine’s honest next-day entry gives 15.00% — the published number HALVES' },
       { k: 'Why it survives', v: '98.5% of same-day signals survive as reachable next-day fills, so the loss is the ENTRY PRICE, not missed trades. The book survives at about half strength rather than dying' },
       { k: 'Against the index', v: 'NIFTYBEES over the same window 11.5% at −59.7%. IPO Base still beats it on return AND on drawdown' },

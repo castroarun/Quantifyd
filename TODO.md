@@ -2,6 +2,102 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-12 (evening) — every Momentum Portfolio book now credits idle cash at **5.2% post-tax — the arbitrage-fund rate** (research/163)
+
+Arun: *"the Momentum Portfolio report `/app/mpf-report` must credit idle cash at 5.2% a year
+post-tax on EVERY book (was 5.0%) … idle cash is kept in the best post-tax cash instrument …
+nothing else about any system changes."*
+
+**Nothing about any system changed.** No entry, exit, stop, slot count, universe or gate moved;
+no executor, no cron, no live DB, no backend restart. One input moved on all five books, each
+re-run on its own study's engine.
+
+**Why 5.2%, and it is now written on the page.** Idle cash is assumed to sit in an **arbitrage
+fund**, which carries **equity taxation** — 20% STCG on units churned inside a year, 12.5% LTCG
+beyond a year, ~0.25% exit load inside a month — so **~6.5% pre-tax** at 2025-26 cash-futures
+spreads is **~5.2% post-tax**. A liquid ETF is taxed at slab and would be only ~3.5% post-tax at
+30% (`LIQUIDCASE` / `LIQUIDADD` / `LIQUIDBETF` in `market_data.db` realised **5.4–5.5% pre-tax
+in 2025**, ~**5.0% annualised in 2026**). Operating rule assumed: **bulk in the arbitrage fund,
+a liquid-ETF buffer** for money needed at the next open, because arbitrage redemptions settle
+**T+1**. It is a **flat assumption, not a measured yield** — hence the dated review below.
+
+**Before → after, after tax, both windows.**
+
+| Window | Row | CAGR 5.0 → 5.2 | Δ |
+|---|---|---|---|
+| 20.4y | True North | 18.56% → **18.69%** | +0.13 |
+| 20.4y | Open Alpha · Base Age | 19.93% → **19.99%** | +0.06 |
+| 20.4y | IPO Base | 15.10% → **15.26%** | +0.16 |
+| 20.4y | TN + Base Age 50-50 | 19.80% → **19.89%** | +0.09 |
+| 20.4y | NIFTYBEES | 10.58% → 10.58% | 0.00 — bit-identical, it holds no cash |
+| 2018 | True North | 19.80% → **19.93%** | +0.13 |
+| 2018 | Open Alpha · Base Age | 25.54% → **25.57%** | +0.03 |
+| 2018 | Quality Summit | 20.90% → **20.63%** | −0.27 (path re-draw, see below) |
+| 2018 | IPO Base | 12.97% → **13.08%** | +0.11 |
+| 2018 | TN + Base Age 50-50 | 23.40% → **23.48%** | +0.08 |
+| 2018 | NIFTYBEES | 10.92% → 10.92% | 0.00 |
+
+Open Alpha · ATH + VIX: 19.23 / −34.15 / 0.56 → **20.44 / −32.92 / 0.62**, 30-seed band
+15.60–22.57%. **Nothing reorders on either window.**
+
+**Each move is the arithmetic.** Twenty extra basis points are earned only on the cash share, so
+the gain is ≈ (1 − invested) × 0.2 pp — and the ordering proves the mechanism: least-invested
+book gains most (IPO Base, 32% invested, +0.16), most-invested gains least (Quality Summit, 91%,
++0.01), fully-invested gains nothing. Every book passed a **paired** consistency test
+(`scripts/check_cash052.py`, PASS).
+
+**Every harness proved itself before it was believed.** No curve was written until the same
+script reproduced that book's published 5.0% curve — True North 5,066/5,066 rows, Base Age
+**bit-exact on all 30 paths**, IPO Base 5,128/5,128 and its published 15.00%, ATH + VIX
+2,642/2,642 *and* the published 19.23 / −34.15 / 0.56 exactly, Quality Summit bit-exact on its
+frozen panel. Two scripts stopped at their own gates and the gates were fixed to test the right
+thing, not loosened.
+
+**The finding worth remembering: single-path re-draw swamps the cash effect.** Changing the cash
+rate changes integer share counts, which changes whether a buy is affordable, which re-draws
+every later selection — worth up to **±2 points** of CAGR on one path against the 0.02–0.16 the
+rate is actually worth. So the drawn path can move 30× too far or the wrong way. Handled by
+freezing the drawn seed at the one the 5.0% page drew and testing consistency paired across the
+ensemble; the ATH + VIX row now publishes its band and says to read the band, not the point.
+
+**Not yet at 5.2%, and the page says so:** the entry-surface / null / gate-bake-off tables
+(70 rows × 30 seeds, ~4 h) are still research/159's 5.0% run. `scripts/aftertax_all_052.py` is
+running; the generator switches to it automatically on the next regen and meanwhile **labels
+that section with the rate it used**. Ordering there is unaffected.
+
+**Evidence:** `research/163_mpf_cash_yield_harmonisation/MPF_CASH_YIELD_5P2_DAILY_RUN_STATUS.md`,
+`results/cash052/RESULTS_CASH052.md`, scripts `{tn,ba,ipo,oa_vix,qs}_cash052.py` +
+`build_inputs_052.py` + `check_cash052.py`.
+**Page:** http://94.136.185.54:5000/app/mpf-report
+
+### ⏳ OWED (Arun) — move True North's idle cash to an arbitrage fund + liquid buffer
+
+**Operational cash management, NOT a model or executor change.** True North's idle cash sits in a
+liquid instrument today and the book is **in cash 57% of the time**, so it is the book with the
+most riding on where that cash actually sits. Move the bulk into an **arbitrage fund** and keep a
+**liquid-ETF buffer sized for the gate's re-entry**: the NIFTYBEES 100-SMA weekly gate
+**liquidates the whole book** and then re-buys 8 names, so the buffer must cover a **full
+re-entry within T+1** of a redemption — otherwise the redemption has to be placed **the day the
+gate signals**. **Record the fund chosen and the date in the Capital Desk / True North dashboard
+note.** Do not touch any executor for this.
+
+### ⏳ Dated review — **2026-12-15**, PENDING (top of the Ops & Review Centre)
+
+*"Momentum Portfolio - idle cash instrument: pick the arbitrage fund, add the liquid-ETF buffer,
+measure the realised post-tax yield."* Tasks: **(0)** the owed action above; (1) name the
+instruments held and the buffer size; (2) measure the **realised** post-tax yield on the idle
+balance since the switch, with its source (broker/AMC statement, not a quoted headline yield);
+(3) re-state the page's cash line as that measured number.
+**PASS** = the report's cash line reads a **measured** number with its source named. If it
+differs from 5.2% by more than **0.5 points**, re-run the curves via
+`research/163_.../scripts/{tn,ba,ipo,oa_vix,qs}_cash052.py` → `build_inputs_052.py` →
+`check_cash052.py` → `research/_utilities/mpf_report_build.py`. Each script reproduces its own
+published curve at the old yield before changing it, so the re-run is self-gating.
+Mirrored in `docs/LABS_AND_JOBS_REFERENCE.md`.
+
+
+---
+
 ## ✅ 2026-09-12 — research/167: IPO Base re-optimised on a placeable entry — **the adopted spec has NO EDGE; the re-fit is a STRATEGY candidate, nothing deployed**
 
 Arun: *"The largest piece of work not started is the one you named: improving IPO Base. proceed"*.

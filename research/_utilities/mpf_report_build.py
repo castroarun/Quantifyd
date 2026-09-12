@@ -42,18 +42,17 @@ WHICH BASIS.
 --------------------------------------------------------------------------------------------
 INPUTS (the evidence files)
 --------------------------------------------------------------------------------------------
-  research/163_mpf_cash_yield_harmonisation/results/full_period_after_tax_cash05.csv
+  research/163_.../results/cash052/full_period_after_tax_cash052.csv
       HEADLINE. After-tax daily curves 2006-04-03 -> 2026-09-03 for
       'Open Alpha - Base Age', 'True North', 'IPO Base - First Base', 'NIFTYBEES (index)'.
-      This is research/159's full_period_after_tax.csv with the True North and Base Age
-      columns replaced by 5%-idle-cash re-runs of their own engines (their studies used
-      6.5% and 5.5%); every other column is byte-identical. Override with --curves-dir.
+      This is research/159's full_period_after_tax.csv with EVERY cash-holding column
+      replaced by a 5.2%-idle-cash re-run of that book's own engine. NIFTYBEES holds no
+      cash and is byte-identical. Override with --curves-dir.
   research/159_oa_honest_reoptimization/results/full_period_summary.json
       the measured average-invested figures that go on the table.
-  research/163_mpf_cash_yield_harmonisation/results/all_systems_after_tax_cash05.csv
-      the 2016-2026 roster curves, same two columns swapped — used ONLY to build the 2018
-      section, so that section still reproduces the published roster page for every series
-      the cash-yield harmonisation did not touch.
+  research/163_.../results/cash052/all_systems_after_tax_cash052.csv
+      the 2016-2026 roster curves, the same columns swapped — used ONLY to build the 2018
+      section, so that section still reproduces the published roster page's construction.
   research/160_quality_growth_near_ath/results/F_Bb7_equity.csv
       Quality Summit, 12 rebalance offsets, 2018-08-01 -> 2026-09-10.
   research/159_oa_honest_reoptimization/results/after_tax_tables.csv
@@ -111,22 +110,27 @@ ROOT = Path('/home/arun/quantifyd')
 R159 = ROOT / 'research/159_oa_honest_reoptimization/results'
 R160 = ROOT / 'research/160_quality_growth_near_ath/results'
 R163 = ROOT / 'research/163_mpf_cash_yield_harmonisation/results'
+C52 = R163 / 'cash052'
 PUB = ROOT / 'frontend/public'
 OUT_JSONS = [ROOT / 'static/app/mpf_report.json', PUB / 'mpf_report.json']
 
 # ---- WHERE THE TWO CURVE FILES COME FROM.
-# research/163 re-ran True North (research/144's engine, which used 6.5%) and Open Alpha ·
-# Base Age (research/161's engine, which used 5.5%) with idle cash at 5% so that EVERY book
-# on this page credits idle cash at the same rate. Those harmonised files are the default.
-# `--curves-dir` points the generator at a different folder. To rebuild the page exactly as
-# it stood before 12-Sep-2026 (True North at 6.5%, Base Age at 5.5%):
-#   --curves-dir research/159_oa_honest_reoptimization/results \
-#   --full-period-csv full_period_after_tax.csv --roster-csv all_systems_after_tax.csv
+# research/163 re-ran every book on this page at 5.2% idle cash — the ARBITRAGE-FUND rate
+# after 20% short-term tax at 2025-26 cash-futures spreads. Two passes got here:
+#   12-Sep-2026 18:47  True North (research/144, 6.5%) and Base Age (research/161, 5.5%)
+#                      were brought onto a common 5.0%;
+#   12-Sep-2026 23:xx  all five books moved 5.0% -> 5.2%, which also brought IPO Base,
+#                      Open Alpha · ATH + VIX and Quality Summit onto the same rate.
+# `--curves-dir` points the generator at a different folder. To rebuild the page's curves at
+# the previous 5.0% basis (the prose and the ATH+VIX row still read 5.2%):
+#   --curves-dir research/163_mpf_cash_yield_harmonisation/results \
+#   --full-period-csv full_period_after_tax_cash05.csv \
+#   --roster-csv all_systems_after_tax_cash05.csv
 _ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-_ap.add_argument('--curves-dir', default=str(R163),
+_ap.add_argument('--curves-dir', default=str(C52),
                  help='folder holding full_period_after_tax*.csv and all_systems_after_tax*.csv')
-_ap.add_argument('--full-period-csv', default='full_period_after_tax_cash05.csv')
-_ap.add_argument('--roster-csv', default='all_systems_after_tax_cash05.csv')
+_ap.add_argument('--full-period-csv', default='full_period_after_tax_cash052.csv')
+_ap.add_argument('--roster-csv', default='all_systems_after_tax_cash052.csv')
 ARGS = _ap.parse_args()
 CURVES = Path(ARGS.curves_dir)
 FULL_CSV = CURVES / ARGS.full_period_csv
@@ -194,11 +198,12 @@ INVESTED_SRC = {
     BM: 'fully invested by definition',
     BA: 'MEASURED 12-Sep-2026 in research/163: research/161’s engine re-run with the daily '
         'invested fraction (market value of open positions / NAV) recorded, 30 seeds. '
-        'Median 72.89%, band 72.73–73.05% — a very tight band, because the fraction is set by '
-        'how often the 16 slots are full, not by which names win them. The daily series for '
-        'the drawn seed is research/163_mpf_cash_yield_harmonisation/results/'
-        'baseage_invested_daily.csv. NOTE: the handover doc asserted ~67% from memory with '
-        'no source file; that figure is superseded by this measurement.',
+        'Median 72.91%, band 72.74–73.03% at the 5.2% cash rate (72.89%, 72.73–73.05% at '
+        '5.0% — the rate barely touches it) — a very tight band, because the fraction is set '
+        'by how often the 16 slots are full, not by which names win them. The daily series '
+        'for the drawn seed is research/163_mpf_cash_yield_harmonisation/results/cash052/'
+        'baseage_invested_daily_052.csv. NOTE: the handover doc asserted ~67% from memory '
+        'with no source file; that figure is superseded by this measurement.',
     QS: 'research/160 RESULTS.md decomposition table, Family B "% inv" = 91.2',
 }
 
@@ -301,21 +306,22 @@ headline = block(
                 'set by the shortest series, True North’s, and it is the window that '
                 'matters because it contains BOTH 2008 and 2020 — the two falls a window '
                 'starting in 2018 throws away.'),
-    source='research/163_mpf_cash_yield_harmonisation/results/full_period_after_tax_cash05.csv '
-           '— research/159’s full_period_after_tax.csv with the True North and Open Alpha · '
-           'Base Age columns replaced by 5%-idle-cash re-runs of their own engines. Every '
-           'other column is byte-identical to research/159’s file.',
-    basis=('After tax, 25 bps a side, 5% a year on idle cash for EVERY book, accrued daily '
+    source='research/163_mpf_cash_yield_harmonisation/results/cash052/'
+           'full_period_after_tax_cash052.csv — research/159’s full_period_after_tax.csv with '
+           'True North, Open Alpha · Base Age and IPO Base each replaced by a 5.2%-idle-cash '
+           're-run of that book’s own engine. NIFTYBEES holds no cash and is byte-identical '
+           'to research/159’s file.',
+    basis=('After tax, 25 bps a side, 5.2% a year on idle cash for EVERY book, accrued daily '
            'and not taxed again. True North is a single after-tax NAV path from research/144’s '
-           'engine; Open Alpha · Base Age is the median-CAGR seed of 30 from research/161’s '
-           'engine; IPO Base is its study’s drawn curve. Placeable entries only: decided on '
-           'the close, filled at the next open.'))
+           'engine; Open Alpha · Base Age is one seed of 30 from research/161’s engine, held '
+           'at the seed the 5.0% page drew; IPO Base is its study’s drawn curve. Placeable '
+           'entries only: decided on the close, filled at the next open.'))
 
 # -------------------------------------------- SECOND WINDOW: where Quality Summit exists
 
 roster = pd.read_csv(ROSTER_CSV, index_col=0, parse_dates=True)
 roster = roster.rename(columns=ROSTER_RENAME)[[TN, BA, IPO, BM]]
-qs_all = pd.read_csv(R160 / 'F_Bb7_equity.csv', index_col=0, parse_dates=True)
+qs_all = pd.read_csv(C52 / 'F_Bb7_equity_cash052.csv', index_col=0, parse_dates=True)
 
 START18 = pd.Timestamp('2018-08-01')
 END18 = min(roster.index[-1], qs_all.index[-1])
@@ -337,21 +343,35 @@ window2018 = block(
                 'need four filed fiscal years and Screener history begins FY2015. So every '
                 'system is RE-MEASURED here on the only window all five can share. These '
                 'figures are NOT comparable with the 20.4-year table above.'),
-    source=('research/160_quality_growth_near_ath/results/F_Bb7_equity.csv for Quality Summit '
-            '(the median-CAGR offset of 12) and '
-            'research/163_mpf_cash_yield_harmonisation/results/all_systems_after_tax_cash05.csv '
-            'for the others — research/159’s roster curve file with True North and Base Age '
-            'swapped for their 5%-idle-cash re-runs, so this section still reproduces the '
-            'roster page for every other series. It is a DIFFERENT run from the 20.4-year '
-            'table’s file.'),
-    basis=('After tax, 25 bps a side, 5% a year on idle cash for every book, accrued daily '
+    source=('research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv '
+            'for Quality Summit — research/160’s F_Bb7 finalist cell re-run at 5.2% idle cash '
+            'on its own frozen panel (the 5.0% re-run reproduced research/160’s file exactly '
+            'first), the median-CAGR offset of 12 — and '
+            'research/163_mpf_cash_yield_harmonisation/results/cash052/'
+            'all_systems_after_tax_cash052.csv for the others — research/159’s roster curve '
+            'file with True North, Base Age and IPO Base swapped for their 5.2%-idle-cash '
+            're-runs, so this section still reproduces the roster page’s construction. It is '
+            'a DIFFERENT run from the 20.4-year table’s file.'),
+    basis=('After tax, 25 bps a side, 5.2% a year on idle cash for every book, accrued daily '
            'and not taxed again. Quality Summit is the median-CAGR rebalance offset of '
            'twelve, never an average of paths.'))
 window2018['qsOffsets'] = QS_OFFSETS
 
 # ------------------------------------------------ THE CORRECTION: after-tax evidence only
 
-at_all = pd.read_csv(R159 / 'after_tax_tables.csv')
+# These three tables are their OWN 30-seed re-runs of the Open Alpha engine, not slices of
+# the curve files. research/163 re-ran them at 5.2% too (scripts/aftertax_all_052.py, which is
+# research/159's aftertax_all.py with CASH_Y moved and its output redirected). If that re-run
+# is not complete, the page falls back to research/159's 5.0% tables AND SAYS SO in the
+# caption — a mixed basis is acceptable only when it is stated.
+_AT52 = C52 / 'after_tax_tables_cash052.csv'
+_at52 = pd.read_csv(_AT52) if _AT52.exists() else None
+_at50 = pd.read_csv(R159 / 'after_tax_tables.csv')
+AT_COMPLETE = _at52 is not None and len(_at52) >= len(_at50)
+at_all = _at52 if AT_COMPLETE else _at50
+AT_YIELD = '5.2%' if AT_COMPLETE else '5.0%'
+AT_SRC = (str(_AT52).replace('/home/arun/quantifyd/', '') if AT_COMPLETE
+          else 'research/159_oa_honest_reoptimization/results/after_tax_tables.csv')
 at = at_all[at_all['window'] == '2006-2026']
 
 trails = sorted(at[at.table == 'A'].trail.unique())
@@ -391,36 +411,104 @@ gate_bakeoff = _gate_rows(at[at.table == 'C'])
 vix_gates = _gate_rows(at_all[(at_all.table == 'C') & (at_all.window == '2016-2026')])
 
 NOTES['aftertax_incomplete'] = (
-    'The after-tax re-run of research/159’s tables (scripts/aftertax_all.py) FINISHED at 22:18 '
-    'on 11-Sep-2026, so every table in this section is after tax and no pre-tax figure appears '
-    'anywhere on this page. Note the window split inside the gate bake-off: the PRICE gates ran '
-    'on the full 2006-2026 window, while every VIX construction could only run on 2016-2026, '
-    'because INDIA VIX begins in 2015. They are therefore shown as TWO tables and must never be '
-    'read across.')
+    'Every table in this section is after tax and no pre-tax figure appears anywhere on this '
+    'page. Note the window split inside the gate bake-off: the PRICE gates ran on the full '
+    '2006-2026 window, while every VIX construction could only run on 2016-2026, because '
+    'INDIA VIX begins in 2015. They are therefore shown as TWO tables and must never be read '
+    'across. IDLE CASH IN THIS SECTION: ' + AT_YIELD + ' a year, from ' + AT_SRC + '.'
+    + ('' if AT_COMPLETE else
+       ' THIS SECTION IS THEREFORE ON A DIFFERENT CASH RATE FROM THE TABLES ABOVE, which '
+       'credit 5.2%. These are 30-seed medians of the same engine at 5.0%; the cash rate is '
+       'worth about 0.04 pp a year to a book this heavily invested, so the ORDERING of the '
+       'rows — which is all this section is for — is unaffected. The 5.2% re-run is '
+       'research/163 scripts/aftertax_all_052.py and can be finished at any time.'))
 NOTES['invested_gap'] = INVESTED_SRC[BA]
 NOTES['cash_yield'] = (
-    'EVERY book on this page credits idle cash at 5% a year, post-tax, accrued daily — the '
+    'EVERY book on this page credits idle cash at 5.2% a year, POST-TAX, accrued daily — the '
     'cash yield is credited to the cash balance each bar and is never passed through the '
-    'capital-gains settlement, which touches realised equity gains only. That was made true '
-    'on 12-Sep-2026 by research/163: True North’s own study (research/144) had assumed 6.5% '
-    'and Open Alpha · Base Age’s (research/161) 5.5%, so both were re-run at 5% on their own '
-    'engines. Re-running True North cost it 0.97 points of CAGR (19.53% → 18.56% on the '
-    '20.4-year window) because it holds cash 57% of the time; Base Age, 73% invested, lost '
-    '0.34 (20.27% → 19.93%). Each re-run first reproduced its own published curve at the old '
-    'yield before the yield was changed. Cash yield is not a small term for any of these '
-    'books: roughly 2.8 of True North’s points and 3.4 of IPO Base’s are the sweep rather '
-    'than the strategy, while NIFTYBEES is fully invested and gets none of it.')
+    'capital-gains settlement, which touches realised equity gains only. '
+    'WHERE 5.2% COMES FROM. The rule is that idle cash sits in the best post-tax cash '
+    'instrument, not in a savings account. That instrument is an ARBITRAGE FUND: it is taxed '
+    'as equity — 20% short-term on units churned inside a year, 12.5% long-term beyond a '
+    'year, and about 0.25% exit load if redeemed inside a month — and at 2025-26 cash-futures '
+    'spreads it yields roughly 6.5% pre-tax, which lands at about 5.2% post-tax. The '
+    'alternative is a liquid ETF, taxed at slab: LIQUIDCASE, LIQUIDADD and LIQUIDBETF in '
+    'market_data.db realised 5.4–5.5% pre-tax in 2025 and about 5.0% annualised in 2026, '
+    'which at a 30% slab is only about 3.5% post-tax. The operating rule that follows is '
+    'BULK IN THE ARBITRAGE FUND, A LIQUID-ETF BUFFER for money needed at the next open, '
+    'because arbitrage redemptions settle T+1. 5.2% is a FLAT ASSUMPTION, not a measured '
+    'realised yield, and it is REVIEWED ON 15-DEC-2026. '
+    'HOW THE PAGE GOT HERE. On 12-Sep-2026 research/163 re-ran all five books twice. First '
+    'True North (research/144 had assumed 6.5%) and Open Alpha · Base Age (research/161 had '
+    'assumed 5.5%) came onto a common 5.0%: True North lost 0.97 points of CAGR because it '
+    'holds cash 57% of the time, Base Age 0.34. Then every book moved 5.0% → 5.2%: True '
+    'North 18.56% → 18.69%, Base Age 19.93% → 19.99%, IPO Base 15.10% → 15.26% on the '
+    '20.4-year window. Each re-run first REPRODUCED its own published curve at the old yield '
+    'before the yield was touched. '
+    'WHY THE MOVES ARE THE SIZE THEY ARE. Twenty extra basis points are earned only on the '
+    'share of a book that is in cash, so the gain is about (1 − invested) × 0.2 points a '
+    'year: 0.11 for True North at 43% invested, 0.14 for IPO Base at 32%, 0.05 for Base Age '
+    'at 73%, 0.02 for Quality Summit at 91%. Every book’s measured move agreed with that '
+    'arithmetic within its own path noise. '
+    'AND CASH YIELD IS NOT A SMALL TERM for these books overall: roughly 2.9 of True North’s '
+    'points and 3.5 of IPO Base’s are the sweep rather than the strategy, while NIFTYBEES is '
+    'fully invested and gets none of it.')
+NOTES['path_redraw'] = (
+    'ONE HONEST CAVEAT ON THE 5.0% → 5.2% MOVE. Three of these books draw ONE path out of an '
+    'ensemble (30 seeds for Base Age and for ATH + VIX, 12 rebalance offsets for Quality '
+    'Summit). Changing the cash rate changes the cash balance, which changes INTEGER SHARE '
+    'COUNTS, which changes whether a particular buy is affordable, which re-draws every later '
+    'selection in that path. That re-draw is worth up to ±2 points of CAGR on a single path — '
+    'an order of magnitude more than the 0.02–0.16 points the cash rate itself is worth. So '
+    'the drawn path can move further, or the other way, without anything being wrong. Two '
+    'things were done about it. The drawn seed is HELD at the one the 5.0% page drew, so the '
+    'curve files differ only by the cash rate wherever that is possible; and the consistency '
+    'test is run PAIRED, path index by path index, across the whole ensemble, against the '
+    '(1 − invested) × 0.2 arithmetic. All five books passed. The one row where the re-draw is '
+    'plainly visible is Open Alpha · ATH + VIX: its drawn path moved +1.20 points while the '
+    'cash rate is worth +0.04 to it and its 30-seed paired median moved −0.15 ± 0.21. Read '
+    'that row’s band, not its point.')
 NOTES['invested_timeseries'] = (
     'The "when is each book in cash" chart is a bar of MEASURED averages rather than a strip '
     'over time. Open Alpha · Base Age now has a daily invested series — measured in '
-    'research/163 and saved as baseage_invested_daily.csv — but True North, IPO Base and '
-    'Quality Summit still only report a window average, so a time-series version is still '
-    'owed and needs those three engines to emit the column.')
+    'research/163 and saved as cash052/baseage_invested_daily_052.csv — but True North, IPO '
+    'Base and Quality Summit still only report a window average, so a time-series version is '
+    'still owed and needs those three engines to emit the column.')
 NOTES['two_curve_files'] = (
     'The 20.4-year section and the 2018 section are built from DIFFERENT curve files for the '
-    'same systems — full_period_after_tax.csv and all_systems_after_tax.csv. They are '
-    'separate runs. The 2018 section uses the roster file deliberately, so it reproduces the '
-    'published roster page to the decimal.')
+    'same systems — full_period_after_tax_cash052.csv and all_systems_after_tax_cash052.csv, '
+    'both derived from research/159’s two originals. They are separate runs. The 2018 section '
+    'uses the roster file deliberately, so it reproduces the published roster page’s '
+    'construction.')
+
+# ---- the Open Alpha · ATH + VIX summary row, re-measured at 5.2% idle cash.
+# COMPUTED, not typed: research/163 scripts/oa_vix_cash052.py re-ran research/159's adopted
+# gate cell at 5.0% (reproducing the published 19.23 / -34.15 / 0.56 exactly, on
+# compare_all.py's own aligned index) and then at 5.2%. This is the one row on the page where
+# the single-path re-draw described in NOTES['path_redraw'] is larger than the cash effect, so
+# the 30-seed band is published beside the point and the row says why.
+_AV = json.load(open(C52 / 'athvix_summary_cash052.json'))
+_ATHVIX_ROW = {
+    'label': 'Open Alpha · ATH + VIX (research/159)',
+    'cagr': _AV['cagr_052'], 'maxdd': _AV['maxdd_052'], 'calmar': _AV['calmar_052'],
+    'window': _AV['window'],
+    'cagrAt5': _AV['cagr_050'], 'maxddAt5': _AV['maxdd_050'], 'calmarAt5': _AV['calmar_050'],
+    'seedBand': [_AV['aligned_band_052']['cagr_min'], _AV['aligned_band_052']['cagr_med'],
+                 _AV['aligned_band_052']['cagr_max']],
+    'pathNote': ('Drawn path, seed %d, held at the seed the 5.0%% page drew. It moved %+.2f '
+                 'points when the cash rate went from 5.0%% to 5.2%%, but the cash rate is '
+                 'worth only %+.2f to a book %.0f%% invested: the rest is the share-count '
+                 're-draw. Across all 30 seeds, paired, the move is %+.2f points and the '
+                 '5.2%% CAGR band is %.1f–%.1f%% with a median of %.1f%%. Read the band.'
+                 % (_AV['drawn_seed'], _AV['drawn_seed_redraw_pp'],
+                    _AV['cagr_delta_rule_of_thumb_pp'], _AV['invested_median_pct'],
+                    _AV['aligned_paired_delta_med_pp'],
+                    _AV['aligned_band_052']['cagr_min'], _AV['aligned_band_052']['cagr_max'],
+                    _AV['aligned_band_052']['cagr_med'])),
+    'source': ('research/163_mpf_cash_yield_harmonisation/results/cash052/'
+               'athvix_summary_cash052.json — research/159’s cell, its own engine, 5.2% idle '
+               'cash; the 5.0% re-run reproduced all_systems_summary.json exactly first'),
+}
 
 correction = {
     'headline': ('Two of the three live books were justified by an entry no order can place. '
@@ -442,9 +530,7 @@ correction = {
     'nullControl': null_control,
     'gateBakeoff': gate_bakeoff,
     'vixGates': vix_gates,
-    'athVix': {'label': 'Open Alpha · ATH + VIX (research/159)', 'cagr': 19.23,
-               'maxdd': -34.15, 'calmar': 0.56, 'window': '2016-01-01 to 2026-09-04',
-               'source': 'research/159_oa_honest_reoptimization/results/all_systems_summary.json'},
+    'athVix': dict(_ATHVIX_ROW),
 }
 
 # --------------------------------------------------------------------------- assemble
@@ -455,9 +541,23 @@ res = {
     'postTaxOnly': True,
     'standard': ('After tax — 20% short-term, 12.5% long-term above 365 days, netted '
                  'within the Indian financial year with loss carry-forward — 25 bps a '
-                 'side, 5% a year on idle cash for every book, accrued daily and not taxed '
+                 'side, 5.2% a year on idle cash for every book, accrued daily and not taxed '
                  'again, and placeable entries only: decided on the close, filled at the '
                  'next open.'),
+    'cashYield': {
+        'rate': 5.2, 'basis': 'post-tax', 'instrument': 'arbitrage fund',
+        'preTax': 6.5,
+        'why': ('Arbitrage funds carry equity taxation — 20% short-term on units churned '
+                'inside a year, 12.5% long-term beyond a year, ~0.25% exit load inside a '
+                'month — so ~6.5% pre-tax at 2025-26 cash-futures spreads is ~5.2% post-tax.'),
+        'alternative': ('A liquid ETF is taxed at slab: LIQUIDCASE / LIQUIDADD / LIQUIDBETF '
+                        'realised 5.4–5.5% pre-tax in 2025 and ~5.0% annualised in 2026, '
+                        'which is only ~3.5% post-tax at a 30% slab.'),
+        'operatingRule': ('Bulk in the arbitrage fund, a liquid-ETF buffer for money needed '
+                          'at the next open — arbitrage redemptions settle T+1.'),
+        'status': 'flat assumption, not a measured realised yield',
+        'reviewDue': '2026-12-15',
+    },
     'names': {'TN': TN, 'BA': BA, 'IPO': IPO, 'QS': QS, 'BM': BM, 'BLEND': BLEND},
     'blendNote': ('Computed by this generator from the True North and Open Alpha · Base '
                   'Age daily curves, 50-50, rebalanced monthly. It is NOT a study result. The '
@@ -471,13 +571,15 @@ res = {
     'notes': NOTES,
     'sources': {
         '20.4-year curves': str(FULL_CSV).replace('/home/arun/quantifyd/', ''),
-        'True North at 5% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/tn_nav_INC_cash_n8_d15_tax1_cash05.csv (research/144’s engine, its own study used 6.5%)',
-        'Open Alpha · Base Age at 5% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/ba_nav_winner_cash05.csv (research/161’s engine, its own study used 5.5%; median-CAGR seed of 30)',
-        'average invested': 'research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py; Base Age measured in research/163 (baseage_invested_daily.csv)',
+        'True North at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/tn_nav_INC_cash_n8_d15_tax1_cash052.csv (research/144’s engine, its own study used 6.5%)',
+        'Open Alpha · Base Age at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/ba_nav_winner_cash052.csv (research/161’s engine, its own study used 5.5%; 30 seeds, drawn seed held at the one the 5.0% page drew)',
+        'IPO Base at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/ipo_honest_curve_cash052.csv (research/153’s engine via research/159’s honest-entry transform; 30 seeds, median-CAGR seed)',
+        'average invested': 'research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py; Base Age measured in research/163 (cash052/baseage_invested_daily_052.csv)',
         '2018-window curves (TN, Base Age, IPO, index)': str(ROSTER_CSV).replace('/home/arun/quantifyd/', ''),
-        'Quality Summit, 12 offsets': 'research/160_quality_growth_near_ath/results/F_Bb7_equity.csv',
-        'after-tax entry surface / null / price gates': 'research/159_oa_honest_reoptimization/results/after_tax_tables.csv',
-        'ATH + VIX summary row': 'research/159_oa_honest_reoptimization/results/all_systems_summary.json',
+        'Quality Summit, 12 offsets at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv (research/160’s F_Bb7 cell on its own frozen panel)',
+        'after-tax entry surface / null / price gates': AT_SRC + ' (idle cash ' + AT_YIELD + ')',
+        'ATH + VIX summary row': 'research/163_mpf_cash_yield_harmonisation/results/cash052/athvix_summary_cash052.json',
+        'the cash-rate re-runs': 'research/163_mpf_cash_yield_harmonisation/MPF_CASH_YIELD_5P2_DAILY_RUN_STATUS.md + scripts/{tn,ba,ipo,oa_vix,qs}_cash052.py, each gated on reproducing its own 5.0% curve first',
         'the entry audit': 'research/158_oa_arming_width/OA_ARMING_WIDTH_AND_POKE_FILL_DAILY_SWEEP_STATUS.md + scripts/verify_published_trades.py',
     },
 }
@@ -561,8 +663,9 @@ growth_chart(
     'Log scale, because over twenty years a 30x book plotted linearly flattens every other '
     'line and hides 2008 entirely. The growth panel is DRAWN WEEKLY and MEASURED DAILY — '
     'Friday closes only, to keep five twenty-year lines legible; every figure in the legend '
-    'and the whole drawdown panel come from the daily series. After tax, 25 bps a side, 5% a '
-    'year on idle cash for every book. The blend is a thin dashed line because it is this '
+    'and the whole drawdown panel come from the daily series. After tax, 25 bps a side, 5.2% '
+    'a year post-tax on idle cash for every book — the arbitrage-fund rate; NIFTYBEES holds '
+    'no cash and gets none of it. The blend is a thin dashed line because it is this '
     'generator’s own arithmetic, not a study result.',
     [100, 400, 1600, 6400])
 
@@ -575,8 +678,9 @@ growth_chart(
     'quality filter, not a different kind of risk.',
     'This window exists only because point-in-time fundamentals need four filed fiscal years. '
     'It throws away 2008 and 2020, so it flatters everything: read it alongside the 20-year '
-    'chart, never instead of it. Quality Summit is the median-CAGR offset of twelve. Growth '
-    'panel drawn weekly, measured daily; drawdown panel daily.',
+    'chart, never instead of it. Quality Summit is the median-CAGR offset of twelve. After '
+    'tax, 25 bps a side, 5.2% a year post-tax on idle cash for every book. Growth panel drawn '
+    'weekly, measured daily; drawdown panel daily.',
     [100, 200, 400, 800])
 
 # ---- yearly grouped bars

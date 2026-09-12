@@ -142,6 +142,41 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("Momentum Portfolio - idle cash instrument: pick the arbitrage fund, add the "
+     "liquid-ETF buffer, measure the realised post-tax yield",
+     "2026-12-15", "PENDING",
+     "Every book on /app/mpf-report credits idle cash at 5.2% a year POST-TAX (research/163, "
+     "12-Sep-2026). That 5.2% is an ASSUMPTION, not a measurement: an arbitrage fund yields "
+     "roughly 6.5% pre-tax at 2025-26 cash-futures spreads and carries EQUITY taxation - 20% "
+     "short-term on units churned inside a year, 12.5% long-term beyond a year, ~0.25% exit "
+     "load inside a month - which lands at about 5.2% post-tax. The alternative, a liquid ETF, "
+     "is taxed at slab: LIQUIDCASE / LIQUIDADD / LIQUIDBETF in market_data.db realised 5.4-5.5% "
+     "pre-tax in 2025 and ~5.0% annualised in 2026, i.e. only ~3.5% post-tax at a 30% slab. "
+     "Operating rule assumed by the page: BULK IN THE ARBITRAGE FUND, a LIQUID-ETF BUFFER for "
+     "money needed at the next open, because arbitrage redemptions settle T+1. "
+     "WHY IT MATTERS: cash yield is not a rounding term for these books. True North sits in "
+     "cash 57% of the time and IPO Base 68%, so roughly 2.9 and 3.5 points of their CAGR are "
+     "the sweep rather than the strategy; each 0.2 points of cash rate is worth (1 - invested) "
+     "x 0.2 pp a year to a book. TASKS BY THIS DATE: "
+     "(0) OWED BY ARUN, OPERATIONAL, NOT A MODEL CHANGE - move True North's idle cash out of "
+     "its current liquid instrument into an ARBITRAGE FUND, keeping a liquid-ETF buffer sized "
+     "for the gate's re-entry: the 100-SMA weekly gate LIQUIDATES the whole book and then "
+     "re-buys 8 names, so the buffer must cover a full re-entry within T+1 of a redemption, or "
+     "the redemption must be placed the day the gate signals. Record the fund chosen and the "
+     "date in the Capital Desk / True North dashboard note. NO EXECUTOR CHANGE - do not touch "
+     "services/*; this is manual cash management. "
+     "(1) Name the actual instrument(s) held and the buffer size. "
+     "(2) Measure the REALISED post-tax yield actually earned on the idle balance since the "
+     "switch, with its source (broker/AMC statement), not a quoted headline yield. "
+     "(3) Re-state the page's cash line as that measured number. "
+     "PASS = the report's cash line reads a MEASURED number with its source named. If the "
+     "measured rate differs from 5.2% by more than 0.5 points, RE-RUN the curves via "
+     "research/163_mpf_cash_yield_harmonisation/scripts/{tn,ba,ipo,oa_vix,qs}_cash052.py with "
+     "the yield changed and build_inputs_052.py + check_cash052.py behind them, then "
+     "regenerate with research/_utilities/mpf_report_build.py. Each script reproduces its own "
+     "published curve at the old yield before changing it, so the re-run is self-gating. "
+     "Evidence: research/163_mpf_cash_yield_harmonisation/"
+     "MPF_CASH_YIELD_5P2_DAILY_RUN_STATUS.md"),
     ('research/167 - IPO Base: adopt the re-fitted spec, or keep the incumbent? The 3-sleeve blend test is what blocks the call', '2026-09-26', 'PENDING', "research/167 (12-Sep-2026) re-measured the ADOPTED r/153 IPO spec on an entry an order can actually place, and it is NO EDGE: 14.90% after tax, -38.6% drawdown, and it LOSES to a date-matched random-entry null run on the same days with the same fill rule (14.90 vs 15.11, real wins 14 of 30 paired seeds; gated, 8 of 30). r/153's own null passed only because it was run on the close-fill arm rather than the live next-day-stop arm. Re-fitted, ONE dial carries the whole edge and it is the trail: real-minus-null is zero or negative at trail <=20, the incumbent's own region, and +4.91pp at trail 50, unanimous 30 of 30 across the whole 30-75 band and reproducing at two independent stop values. Spec A - trail SMA-50, stop 10%, target +25%, plus a NEW no-new-entries-while-NIFTYBEES-is-below-its-150-day-SMA gate - gives 21.80% after tax [20.83..23.19 across 30 seeds], -26.6% median drawdown, Calmar 0.819, against the incumbent's 14.90 / -38.6 / 0.386. The gate is insurance with no premium: a coin flip on return (14 of 30) that removes 17.8pp of drawdown on 30 of 30 paths. TWO THINGS BLOCK ADOPTION. (1) The 3-sleeve blend against True North + OA Base Age was never run, and that is the question that decides it - the refit RAISES correlation to the other books (0.282 to Base Age and 0.256 to True North, against the incumbent's 0.245 and 0.211), so it can be worth less to the portfolio while being worth more standalone. (2) The refit is 10.7pp WORSE than the incumbent in 2008, -10.3% against +0.4%, because the fast SMA-20 trail that costs 7pp a year in normal times is exactly what sidestepped that crash. Read before deciding: 21.80% should be discounted to 19-22% for the ~350 cells scored, the worst-seed drawdown is -32.9% not -26.6%, and capacity caps this sleeve at roughly Rs 20-25L permanently. Decide on the same date as the Base Age paper-book call so the two are settled together."),
     ("research/164 - Open Alpha - Base Age: test POSITION DRIFT, the first-order constraint the "
      "slot study exposed",

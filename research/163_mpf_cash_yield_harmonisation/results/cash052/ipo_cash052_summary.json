@@ -1,0 +1,17 @@
+{
+ "drawn_seed_050": 14,
+ "drawn_seed_052": 14,
+ "cagr_med_050": 15.0,
+ "cagr_med_052": 15.15,
+ "dd_med_050": -37.55,
+ "dd_med_052": -37.49,
+ "invested_median_pct": 31.76,
+ "drawn_cagr_050": 15.072,
+ "drawn_cagr_052": 15.228,
+ "drawn_dd_050": -35.861,
+ "drawn_dd_052": -35.767,
+ "cagr_delta_paired_med_pp": 0.156,
+ "cagr_delta_rule_of_thumb_pp": 0.136,
+ "reproduction_rows_differing": 0,
+ "reproduction_max_rel": 2.4599183039697004e-16
+}

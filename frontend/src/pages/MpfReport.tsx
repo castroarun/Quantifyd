@@ -68,7 +68,11 @@ interface Report {
     nullControl: { trails: number[]; rows: { label: string; cagr: (number | null)[] }[]; edge: (number | null)[] };
     gateBakeoff: { gate: string; cagr: number; maxdd: number; calmar: number; blockedPct: number }[];
     vixGates: { gate: string; cagr: number; maxdd: number; calmar: number; blockedPct: number }[];
-    athVix: { label: string; cagr: number; maxdd: number; calmar: number; window: string; source: string };
+    athVix: {
+      label: string; cagr: number; maxdd: number; calmar: number; window: string; source: string;
+      cagrAt5?: number; maxddAt5?: number; calmarAt5?: number;
+      seedBand?: number[]; pathNote?: string;
+    };
   };
   notes: Record<string, string>;
   sources: Record<string, string>;
@@ -827,6 +831,13 @@ export default function MpfReport() {
           <strong>Average invested for {BA} is a gap, not a zero.</strong>{' '}
           {d.notes.invested_gap}
         </div>
+
+        {d.notes.path_redraw && (
+          <div className={styles.noteBox}>
+            <strong>Why the 5.0% → 5.2% moves are not all the same size.</strong>{' '}
+            {d.notes.path_redraw}
+          </div>
+        )}
       </Section>
 
       {/* ---------------------------------------------------------- 2. portfolio view */}
@@ -1047,6 +1058,12 @@ export default function MpfReport() {
           on {d.correction.athVix.window} ONLY, because INDIA VIX does not exist before 2015 in our
           data. It is evidence for the correction, not a candidate. Source:{' '}
           <span className={styles.mono}>{d.correction.athVix.source}</span>.
+          {d.correction.athVix.pathNote && (
+            <div className={styles.noteBox} style={{ marginTop: 10 }}>
+              <strong>Read this row as a band, not a point.</strong>{' '}
+              {d.correction.athVix.pathNote}
+            </div>
+          )}
         </div>
       </Section>
 

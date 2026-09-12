@@ -1,0 +1,14 @@
+{
+ "drawn_050": "offset3",
+ "drawn_052": "offset3",
+ "cagr_050": 21.22,
+ "cagr_052": 20.987,
+ "maxdd_050": -38.897,
+ "maxdd_052": -38.897,
+ "calmar_050": 0.546,
+ "calmar_052": 0.54,
+ "invested_pct": 91.2,
+ "cagr_delta_paired_med_pp": 0.013,
+ "cagr_delta_rule_of_thumb_pp": 0.018,
+ "reproduction_bit_exact": true
+}
