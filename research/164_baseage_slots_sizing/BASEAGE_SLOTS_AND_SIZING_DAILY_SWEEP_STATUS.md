@@ -239,9 +239,13 @@ DB. Do NOT restart `quantifyd`. **Safe to inspect:** everything under
 | `scripts/build164.py` | freezes the adopted-spec event list with the four ranking attributes | yes |
 | `scripts/run164.py` | the cell runner (incremental CSV, resumable, 2 fork workers) | yes |
 | `scripts/finalize164.py` | paired tests, windows, cost ladder, YoY, capacity | yes |
-| `results/events164.csv` | the frozen event list (small) | yes |
-| `results/cells_*.csv` | one summary row per cell | yes |
-| `results/seedstats_*.csv` | one row per (cell, seed) — the paired-test input | yes |
+| `scripts/outliers164.py` | the honest delete-the-ten-best-trades re-run | yes |
+| `scripts/closeout164.py` | STATUS / INDEX / TODO / Ops-Centre updates | yes |
+| `scripts/bt_core.py` | research/161's engine, copied read-only so `panel164.pkl` unpickles | yes |
+| `results/cells_*.csv` | one summary row per cell — the evidence behind the verdict | yes |
+| `results/paired164.csv` | every cell vs the incumbent: paired seed-win counts, both windows, capacity | yes |
+| `results/tables164.md`, `results/outliers164.md` | the rendered tables that make up RESULTS.md | yes |
+| `results/events164.csv`, `results/seedstats_*.csv` | the frozen event list and per-seed stats — regenerate in ~4 min from `scripts/` | **NO — the repo-wide research-results-CSV rule** |
 | `results/RESULTS.md` | verdict + Q&A | yes |
 | `results/PUBLISH_NOTE.md` | the `BacktestStudy` entry to publish once the frontend is free | yes |
 | `results/panel164.pkl` | 138 MB price panel | **NO — gitignored** |
