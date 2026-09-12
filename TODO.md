@@ -102,6 +102,115 @@ Mirrored in `docs/LABS_AND_JOBS_REFERENCE.md`.
 
 ---
 
+## ✅ 2026-09-12 — IPO Base: the research/167 spec is DEPLOYED to the live book, and the book was found DEAD for four sessions
+
+Arun: *"also implement this in the current IPO system, make the required changes... the one
+running positions, ensure the exit/management is within the new framework, also list down and
+ensure the code is armed for new entrants the next trading day. u may list down the potential
+candidates in the IPO page as a section if not already there"*.
+
+Deployed at 23:45 IST on a Saturday, so outside market hours on a non-trading day. No backend
+restart was needed — this book runs from cron, not from the Flask process.
+
+### THE OUTAGE CAME FIRST, because it is worse than the spec change
+
+**The live IPO book had not run since 8 September.** Commit `3829ad71` (3-Sep, "IPO Base marks
+intraday") rewrote the constants block in `services/ipo_paper.py` and silently dropped two
+lines: `IPO_TAG` and `SEEN_ORDERS`. Both are read **only** inside the `mode == 'live'` branch,
+so nothing failed while the sleeve was on paper. Then it was funded with real money on 8-Sep
+and **every nightly cycle and every reconcile crashed on a `NameError` from that moment**.
+
+- Four trading sessions with no exit evaluation and no buy-stops armed, on real money.
+- Nothing alerted. The cron redirects the traceback into `/tmp/ipo_paper.log`, which no
+  monitor reads.
+- Re-checked: KISSHT would have been **HELD** on 9, 10 and 11 September under both the old and
+  the new exit rules, so **no exit was actually missed**. That was luck, not design.
+- Constants restored verbatim from `3bc0b4f4`. The book now runs.
+
+**The broader fix is still open and matters more than this one book:** a crashing cron on a
+live book should raise an alert, not write a traceback to a file nobody reads. Every
+`*_paper.py` and `*_real.py` cron shares that shape. Review registered for **19-Sep-2026**.
+
+### What changed in the spec (research/167 Spec A)
+
+| Dial | Was | Now | Worth |
+|---|---|---|---|
+| Trail | close below the 20-day average | close below the **50-day** average | ~+7pp CAGR, and the **only** dial that lifts this book above random stock selection |
+| Stop | 8% below the fill | **10%** below the fill | ~+0.8pp; 10% is the plateau centre, 8% was one notch tight |
+| Market gate | none | **no new entries while NIFTYBEES closes below its 150-day average** | 17.8pp of drawdown removed on 30 of 30 paths, for a coin flip on return |
+| Fill | `max(pivot, open)` | `max(pivot, open)` **only if the day's high reached the pivot** | correctness, not return — see below |
+
+Target (+25%), base geometry, universe, liquidity floor, 8 slots at 18.75% and the tie-break
+are all unchanged, and all were re-confirmed on the honest entry.
+
+### The fill defect, fixed in the same pass
+
+The book booked a fill at `max(pivot, open)` **without checking that the day's high ever
+reached the pivot**, so a buy-stop resting above a market that never got there was recorded as
+a filled position. research/167 measured it at about 1.5% of signals, every one of them
+flattering. The day's high is now required, and a non-fill is logged with the high that
+missed, and shown on the page.
+
+### Running positions brought onto the new framework
+
+A stop is stored on the position row as a price at entry, so a position bought under the old
+dials would have run the old rule for its whole life. `migrate_spec()` re-bases it once,
+idempotently, keeping the prior value as `stop_prev` so the change is auditable:
+
+- **KISSHT** stop **297.94 → 291.47** (0.92 → 0.90 of the 323.85 fill). Looser, which is the
+  intended direction.
+- Its trail moved from the 20-day average at **310.43** to the 50-day at **314.97** — slightly
+  *tighter* for this particular name, because its recent closes sit below its older ones.
+- Last close 328.40, so it is 12.7% above the new stop, 4.3% above the new trail, and 1.4% into
+  a +25% target at 404.81. It survives every new exit.
+
+### Armed for the next session: NOTHING, and the reason is the new gate
+
+`NIFTYBEES` closed at **267.40** on 11-Sep against its 150-day average of **273.81**, i.e.
+**2.34% below it**. The gate is **ON**, so the book arms no buy-stops for Monday. Zero names
+triggered in any case. Held positions are untouched — the gate blocks buying only.
+
+The pipeline behind that, on the page now:
+
+| Stock | State | To pivot | Close | Pivot | Base depth | Traded value |
+|---|---|---|---|---|---|---|
+| CMRGREEN | watching | 6.7% away | 216.50 | 231.03 | 11.2% | ₹12.6 cr |
+| VEDPOWER | watching | 11.2% away | 33.73 | 37.50 | 10.0% | ₹41.8 cr |
+| VAML | watching | 11.8% away | 422.60 | 472.60 | 9.4% | ₹256.3 cr |
+
+A **watching** row already satisfies every rule except the trigger: inside the age band, base
+no deeper than 30%, clears the ₹5 cr liquidity floor, not already extended. One close above the
+pivot makes it an order — unless the gate is on that evening.
+
+### Page and registry
+
+- New **Candidate pipeline** card on `/app/ipo-paper`: what triggered and was armed, what
+  triggered and was passed over **and why**, the near-pivot watchlist, and any buy-stop that
+  did not fill with the high that missed it. An empty armed list reads very differently when
+  six names triggered and the gate blocked them than when nothing triggered.
+- Study published at `/app/backtest/ipo-base-honest-reopt-research167`. The research/153 page's
+  verdict now opens by pointing forward to it, because every performance figure on that page is
+  the look-ahead one.
+- Strategies register: the IPO row now carries the research/167 rules, and **two drifts are
+  corrected** — it still said `paper` on ₹10L notional while the sleeve has been **live on
+  ₹2,28,711 since 8-Sep** holding a real position. A hard capacity cap of ₹20–25L is recorded
+  on the row.
+
+### Still open
+
+1. **The three-sleeve blend** against True North and OA Base Age — dispatched as research/168,
+   running now. It decides what weight this sleeve should carry, and the re-fit argues against
+   itself there: it RAISES correlation to the other books (0.282 weekly to Base Age and 0.256
+   to True North, against 0.245 and 0.211 before).
+2. **2008.** The re-fit loses 10.3% where the old spec made +0.4%. This book is not a crash
+   cushion, and should not be relied on as one.
+3. **Cron-crash alerting** across every paper and real book (above).
+4. **The rename defect** (`LOTUSDEV` → `LOTUSDEV-BE`) hits this book hardest of the three. Ten
+   of eleven stale young names are missing from the instrument dump. It corrupts live signals,
+   not the backtest. Still not fixed.
+
+---
+
 ## ✅ 2026-09-12 — research/167: IPO Base re-optimised on a placeable entry — **the adopted spec has NO EDGE; the re-fit is a STRATEGY candidate, nothing deployed**
 
 Arun: *"The largest piece of work not started is the one you named: improving IPO Base. proceed"*.

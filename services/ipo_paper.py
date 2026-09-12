@@ -1,10 +1,56 @@
-"""IPO-Base book — the research/153 adopted spec, run forward on real prices.
+"""IPO-Base book — the research/167 re-fitted spec, run forward on real prices.
 
-WHAT THIS IS. research/153 found that a breakout from a base built by a recently listed
-stock is the first genuine complement to True North and Open Alpha: 31.03% CAGR /
--20.88% drawdown / Calmar 1.50 over 2006-2026 after tax, at correlation 0.16 to OA and
-0.18 to TN. It has never traded. This runs it forward so its trades are visible before
-any money is committed.
+WHAT THIS IS. A breakout from a base built by a recently listed stock, held on a moving-
+average trail. It is the least correlated of the three momentum books (weekly 0.28 to
+Open Alpha · Base Age, 0.26 to True North).
+
+THE SPEC CHANGED ON 12-SEP-2026, AND THE REASON MATTERS MORE THAN THE NUMBERS.
+
+research/153 published 31.03% CAGR for this book. That figure was earned on an entry no
+order can place: the trigger is a close above the pivot and the fill was booked at the
+SAME day's open, which is already in the past by the time the close exists. research/158
+and research/159 found that defect across three books in this project; research/167
+re-measured this one on the entry the book actually uses — next day, buy-stop at the
+pivot — and the adopted rules returned 14.90% after tax, −38.6% drawdown.
+
+Worse than weak: at those parameters the rules were INDISTINGUISHABLE FROM CHANCE. Against
+a date-matched random-entry control — same days, same number of entries, names drawn at
+random from the same young-and-liquid universe, the same fill convention on both arms —
+the real rules won 14 of 30 paired runs. There was no edge in picking the breakout.
+
+One dial fixed it, and only one: THE TRAIL. Real minus control, in points of CAGR, at
+trail 10 / 15 / 20 / 30 / 40 / 50 / 60 / 75 / 100 bars:
+
+    +0.04  -0.71  -0.10  +1.26  +3.08  +4.78  +2.05  +0.43  +0.31
+
+Zero or negative across the whole region the old spec sat in (<= 20), unanimous 30-of-30
+across the entire 30-75 band, the same shape at a second independent stop value. A 25-bar
+base breakout in a young stock is a real edge only if it is given room to run. The old
+20-bar trail sold every winner back into the noise that produced it.
+
+So three dials moved: trail 20 -> 50, stop 8% -> 10%, and a NEW market gate. Everything
+else research/153 found was re-confirmed on the honest entry and is unchanged: the base
+geometry tops a 128-cell grid, and 8 slots at 18.75% beats 5x20%, 10x10% and 16x6.25%.
+
+After: 21.80% CAGR after tax, -26.6% median drawdown, Calmar 0.819, and it beats the
+random control on 30 of 30 runs. Read the headline down to 19-22%: ~350 cells were scored
+to find it, and the worst of the 30 runs drew -32.9%.
+
+THE GATE IS INSURANCE WITH NO PREMIUM. No new entries while NIFTYBEES closes below its
+150-day average; positions already held are untouched and keep their own exits. It is a
+coin flip on return (14 of 30 runs) that removes 17.8 points of drawdown on 30 of 30.
+Bounded at both ends: the 200-day average agrees, the 100-day average fails, which is what
+a real effect looks like rather than a fitted one.
+
+WHAT THIS BOOK MUST NOT BE SIZED PAST. At Rs 10L the 90th-percentile position is 1.56% of
+the name's own 20-day median traded value. At Rs 1cr it is ~90% of a day's volume. This
+sleeve cannot exceed roughly Rs 20-25L, ever, and that is a property of the universe
+rather than of the rules.
+
+THE ONE HONEST BLACK MARK. In 2008 the re-fit loses 10.3% where the old spec made +0.4%.
+The fast 20-bar trail that costs seven points a year in normal times is exactly what
+sidestepped that crash, and the gate recovers only part of it. If this book is ever relied
+on for a crash cushion, it is the wrong instrument.
 
 PAPER UNTIL ARMED (Arun, 06-Sep-2026). The book runs on a notional Rs 10,00,000 until a
 real deposit is routed to it through the Capital Desk, which flips `ipo_status` to
@@ -12,21 +58,32 @@ real deposit is routed to it through the Capital Desk, which flips `ipo_status` 
 real-money instructions. Execution is manual-assisted either way: like Open Alpha this
 book has no executor, so it alerts with the exact order and Arun places it.
 
-THE SPEC (results/ipo_adopted_spec.json, unchanged):
+THE SPEC (research/167 "Spec A"; what changed on 12-Sep-2026 is marked):
   universe    NSE equities with a VETTED listing date, ETFs excluded, all rows before
               the listing date masked
-  age band    listed <= 6 months ago AND >= 25 bars of history
+  age band    listed <= 6 months ago AND >= 25 bars of history (see MIN_BARS below —
+              the book runs 60, matching what was actually validated)
   liquidity   20-day median traded value >= Rs 5 cr at t-1
   base        last 25 bars; pivot = highest CLOSE, shifted 1; depth (pivot to lowest
               low) <= 30%; and close[t-1] < pivot, so it is not already extended
   RS          OFF. r/153 section 3: a strict RS >= 70 yields ZERO signals in this age
               band, because a 252-day relative-strength score does not exist for a
               stock that has traded for four months
+  gate        CHANGED: no NEW entries while NIFTYBEES closes below its 150-day average.
+              Held positions are untouched and keep their own exits. The gate is read
+              from the close that has already happened, never from a forming bar, so it
+              is evaluated when buy-stops are armed for the next session — which is the
+              same day's data the study's gate used
   trigger     close[t] > pivot
-  fill        next day, buy-stop AT the pivot, filled max(pivot, open)
-  exits       priority order: stop (close <= fill x 0.92) -> target (close >= fill x
-              1.25) -> trail (close < SMA-20, never on the entry bar)
-  book        8 slots at 18.75% of equity, no market gate, 25 bps per side
+  fill        next day, buy-stop AT the pivot, filled max(pivot, open), AND ONLY IF the
+              day's HIGH reached the pivot. That last clause was missing before 12-Sep-
+              2026 and is the buy-stop's whole meaning: an order resting above the market
+              that the market never reaches does not fill
+  exits       priority order: stop (close <= fill x 0.90, CHANGED from 0.92) ->
+              target (close >= fill x 1.25, unchanged) -> trail (close < SMA-50, CHANGED
+              from SMA-20, never on the entry bar)
+  book        8 slots at 18.75% of equity, 25 bps per side (both re-confirmed on the
+              honest entry: 8 slots beat 5, 10 and 16)
 
 TWO RULES THAT ARE NOT IN THE BACKTEST, pre-registered here before the book wrote a
 single row, because a live book has to answer questions a backtest never faced:
@@ -51,6 +108,10 @@ Modes:
                   nav point -> write UI
   --dry           compute and print, write nothing
   --ui-only       rebake the UI JSON from frozen state (safe any time, no Kite)
+  --migrate       bring stored state onto the current spec without scanning. Needed when
+                  a spec ships outside a trading day, so held positions are not left
+                  running the previous stop until the next session
+  --gate          print the gate and exit. Read-only, safe any time
 
 State: backtest_data/ipo_paper_state.json   UI: static/app/ipo_paper.json
 """
@@ -78,12 +139,43 @@ LISTINGS = ROOT / 'research' / '153_ipo_base' / 'results' / 'listing_dates.csv'
 # A real feed the pages can read. The old path was another job's cron log.
 FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 
+# RESTORED 12-Sep-2026. Both of these were deleted by commit 3829ad71 ("IPO Base marks
+# intraday"), which rewrote this constants block and dropped two lines. They are only ever
+# read inside the `mode == 'live'` branch, so nothing failed while the book was on paper —
+# and then the sleeve was funded on 08-Sep and EVERY nightly cycle and every reconcile
+# crashed on a NameError from that moment. Four sessions of a real-money book with no exit
+# evaluation and no buy-stops armed. Recovered verbatim from 3bc0b4f4:services/ipo_paper.py.
+#
+# IPO_TAG is how this book claims its own orders out of a shared account: matching by
+# symbol handed Open Alpha 481 shares of a stock it held 9 of on 08-Sep. The tag must keep
+# this exact value or the already-applied KISSHT order stops being recognised.
+IPO_TAG = 'IPO-ENTRY'
+SEEN_ORDERS = ROOT / 'backtest_data' / 'ipo_applied_orders.json'
+
 CAPITAL = 1_000_000          # notional while on paper
 SLOTS = 8
 SIZE_PCT = 0.1875
-STOP = 0.08                  # close <= fill * 0.92
+
+# research/167 Spec A. The two numbers that moved, and by how much it mattered:
+#   STOP       0.08 -> 0.10   worth about +0.8pp of CAGR; 10% is the centre of a
+#                             plateau (6 < 8 < 10 ~ 15 > none), 8% was one notch tight
+#   TRAIL_SMA  20   -> 50     worth about +7pp of CAGR, and it is the ONLY dial that
+#                             separates this book from random stock selection. At trail
+#                             <= 20 the rules beat a date-matched random control on 14 of
+#                             30 paired runs; at 50, on 30 of 30. A hump, not a ramp: it
+#                             peaks at 50 and rolls back off by 100-150, so do not read
+#                             "longer is better" from this and lengthen it again.
+# SPEC_VERSION exists so state written under the old dials can be migrated exactly once.
+STOP = 0.10                  # close <= fill * 0.90
 TARGET = 0.25                # close >= fill * 1.25
-TRAIL_SMA = 20               # close < SMA-20, entry bar exempt
+TRAIL_SMA = 50               # close < SMA-50, entry bar exempt
+SPEC_VERSION = 'r167-A'
+
+# The market gate. NEW on 12-Sep-2026, and it gates ENTRIES ONLY — nothing about a held
+# position changes when it comes on. NIFTYBEES is the NIFTY 50 ETF and stands in for the
+# index here because it is the series this project already has clean daily history for.
+GATE_SYMBOL = 'NIFTYBEES'
+GATE_SMA = 150
 BASE_L = 25                  # base window, in bars
 MAX_AGE_M = 6
 
@@ -207,6 +299,48 @@ def save_state(st):
     os.replace(tmp, STATE)
 
 
+def migrate_spec(st, log=None):
+    """Bring positions opened under the old dials onto the new ones. Idempotent.
+
+    A stop is stored on the position row, at entry, as a price. So a position bought
+    before 12-Sep-2026 carries a stop computed at fill x 0.92 and would keep running the
+    OLD rule for its whole life unless it is re-based. The trail needs no migration — it
+    is recomputed from TRAIL_SMA on every pass — but the stop does.
+
+    This LOOSENS the stop on anything already held (0.92 -> 0.90 of the fill). That is the
+    intended direction: research/167 found 8% one notch too tight, with 10% at the centre
+    of the plateau, and a book half on one rule and half on the other is neither.
+
+    The prior stop is kept on the row as `stop_prev` so the change is auditable rather than
+    silently overwritten.
+    """
+    if st.get('spec_version') == SPEC_VERSION:
+        return False
+    moved = []
+    for p in st.get('positions', []):
+        want = round(float(p['buy']) * (1 - STOP), 2)
+        have = round(float(p.get('stop', 0) or 0), 2)
+        if abs(want - have) >= 0.01:
+            p['stop_prev'] = have
+            p['stop'] = want
+            p['stop_rebased_on'] = str(date.today())
+            moved.append('%s %.2f -> %.2f' % (p['symbol'], have, want))
+    st['spec_version'] = SPEC_VERSION
+    st.setdefault('spec_history', []).append(dict(
+        on=str(date.today()), to=SPEC_VERSION,
+        note='research/167 Spec A: trail SMA-20 -> SMA-50, stop 8%% -> 10%%, new '
+             'NIFTYBEES < SMA-150 entry gate, and the buy-stop now requires the day high '
+             'to have reached the pivot. Stops re-based on %d open position(s).' % len(moved),
+        rebased=moved))
+    msg = ('SPEC MIGRATED to %s; stops re-based: %s'
+           % (SPEC_VERSION, '; '.join(moved) if moved else 'none needed'))
+    if log is not None:
+        log.append(msg)
+    else:
+        print(msg)
+    return True
+
+
 def acquire_lock(tries=30, wait=2.0):
     for _ in range(tries):
         try:
@@ -249,7 +383,7 @@ def load_wide(asof=None):
     asof = pd.Timestamp(asof or date.today())
     lo = asof - pd.Timedelta(days=int(MAX_AGE_M * 30.44))
     cand = [s for s, d in listing.items() if lo <= d < asof]
-    closes, opens, lows, tv = {}, {}, {}, {}
+    closes, opens, highs, lows, tv = {}, {}, {}, {}, {}
     for s in cand:
         if any(p in s for p in ETF_PAT):
             continue
@@ -265,6 +399,10 @@ def load_wide(asof=None):
             continue
         closes[s] = df['close']
         opens[s] = df['open']
+        # highs: needed to answer whether a resting buy-stop was ever actually touched.
+        # The column was always read from the DB and then thrown away, which is how the
+        # never-triggered fills got booked (see the fill branch).
+        highs[s] = df['high']
         lows[s] = df['low']
         tv[s] = (df['close'] * df['volume']).rolling(20).median()
     conn.close()
@@ -272,13 +410,68 @@ def load_wide(asof=None):
         return None
     return dict(close=pd.DataFrame(closes).sort_index(),
                 open=pd.DataFrame(opens).sort_index(),
+                high=pd.DataFrame(highs).sort_index(),
                 low=pd.DataFrame(lows).sort_index(),
                 tv=pd.DataFrame(tv).sort_index()), listing
 
 
-def scan(wide, listing, asof):
-    """Candidates whose close TODAY breaks the base pivot. Returns rows sorted by the
-    pre-registered tiebreak (highest 20-day median traded value first)."""
+def market_gate(asof=None):
+    """Is the market weak enough to stop taking NEW positions?
+
+    NIFTYBEES closing below its 150-day average. Returns (blocked, detail) where detail
+    carries the two numbers so the page and the log can show WHY, not just that it fired.
+
+    Read from closes that have already happened. This is called when buy-stops are armed
+    for the next session, so the value used is the previous close relative to the fill —
+    exactly the one-day shift the study's gate series used. Nothing here ever looks at a
+    forming bar.
+
+    Fails OPEN, deliberately: if the index series is missing or too short the book keeps
+    trading. A gate that silently halts a real-money book on a data outage is a worse
+    failure than one that misses a signal, because the first is invisible.
+    """
+    import sqlite3
+    con = sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
+    try:
+        rows = [(r[0], r[1]) for r in con.execute(
+            "select date, close from market_data_unified where symbol=? and "
+            "timeframe='day' and close > 0 order by date desc limit ?",
+            (GATE_SYMBOL, GATE_SMA + 10))]
+    finally:
+        con.close()
+    if asof is not None:
+        cut = str(pd.Timestamp(asof))[:10]
+        rows = [r for r in rows if str(r[0])[:10] <= cut]
+    if len(rows) < GATE_SMA:
+        return False, dict(ok=False, why='%s has only %d of the %d closes the gate needs '
+                                         '- gate OPEN' % (GATE_SYMBOL, len(rows), GATE_SMA))
+    closes = [r[1] for r in rows[:GATE_SMA]]
+    sma = sum(closes) / GATE_SMA
+    last = closes[0]
+    blocked = last < sma
+    return blocked, dict(ok=True, symbol=GATE_SYMBOL, n=GATE_SMA,
+                         asof=str(rows[0][0])[:10], close=round(last, 2),
+                         sma=round(sma, 2), above_pct=round(100 * (last / sma - 1), 2),
+                         blocked=bool(blocked))
+
+
+# near_pct is DISPLAY ONLY. It widens the watchlist the page shows; it can never add
+# a row the book arms, because arming reads `triggered` and nothing else. 15% was
+# chosen because at 10% the watchlist was one name.
+def scan(wide, listing, asof, include_near=False, near_pct=15.0):
+    """Names whose close TODAY breaks the base pivot — and optionally the ones that nearly
+    did.
+
+    Every row satisfies the whole spec except, for a watchlist row, the trigger itself:
+    listed inside the age band, at least MIN_BARS of history, base depth <= 30%, not
+    already extended at yesterday's close, and 20-day median traded value >= TV_FLOOR. So
+    a watchlist name needs exactly one thing to become an order, a close above its pivot,
+    and nothing else about it has to be re-checked.
+
+    `triggered=True` rows are the ones the book arms. `include_near` adds rows whose close
+    is within `near_pct` of the pivot, for the page — they are NOT candidates for an order
+    and must never be armed.
+    """
     close, low, tvp = wide['close'], wide['low'], wide['tv']
     if asof not in close.index:
         return []
@@ -303,26 +496,68 @@ def scan(wide, listing, asof):
             continue
         if pc >= pv:                               # already extended
             continue
-        if tc <= pv:                               # no trigger
-            continue
         liq = tvp[s].iloc[i - 1] if i >= 1 else np.nan
         if not np.isfinite(liq) or liq < TV_FLOOR:
+            continue
+        triggered = bool(tc > pv)
+        if not triggered and not include_near:
+            continue
+        # gap_pct: how far today's close sits BELOW the pivot. 0 or negative means it has
+        # already broken out. This is the only number that says how close a watchlist name
+        # actually is, so it is what the watchlist sorts on.
+        gap = (pv / tc - 1) * 100 if tc > 0 else None
+        if not triggered and (gap is None or gap > near_pct):
             continue
         out.append(dict(symbol=s, pivot=round(float(pv), 2), close=round(float(tc), 2),
                         depth_pct=round(float(depth) * 100, 1), tv=float(liq),
                         listed=str(listing[s].date()),
-                        age_days=int((asof - listing[s]).days)))
+                        age_days=int((asof - listing[s]).days),
+                        triggered=triggered,
+                        gap_pct=round(float(gap), 2) if gap is not None else None))
     # PRE-REGISTERED TIEBREAK — deterministic, capacity-friendly. See the module header.
-    out.sort(key=lambda r: -r['tv'])
+    # Triggered names first, then by traded value; within the untriggered watchlist, the
+    # nearest to its pivot first, because that is the one that could fire tomorrow.
+    out.sort(key=lambda r: (not r['triggered'],
+                            r['gap_pct'] if not r['triggered'] else -r['tv']))
     return out
 
 
-def sma20(close, sym, upto):
+def sma_trail(close, sym, upto):
+    """Where the trail sits: the mean of the last TRAIL_SMA closes up to and including
+    `upto`. Returns None rather than a short-window average — a 50-bar trail computed off
+    30 bars is a different, tighter rule, and a young listing often has only 30."""
     s = close[sym].loc[:upto].dropna()
     return float(s.iloc[-TRAIL_SMA:].mean()) if len(s) >= TRAIL_SMA else None
 
 
 # ───────────────────────── UI ─────────────────────────
+def spec_block():
+    """The rules, in the page's own words. Generated from the constants rather than typed,
+    so the page can never describe a spec the engine is not running."""
+    return dict(
+        version=SPEC_VERSION,
+        study='research/167_ipo_base_honest_reopt',
+        changed='2026-09-12',
+        entry='Close above the highest close of the last %d bars, in a stock listed '
+              'within %d months with at least %d bars of history, base no deeper than '
+              '%d%%, and 20-day median traded value of at least Rs %.0f cr. Next session, '
+              'a buy-stop at that pivot.' % (BASE_L, MAX_AGE_M, MIN_BARS,
+                                             int(MAX_DEPTH * 100), TV_FLOOR / 1e7),
+        gate='No new entries while %s closes below its %d-day average. Positions already '
+             'held are untouched.' % (GATE_SYMBOL, GATE_SMA),
+        exits='Stop at %d%% below the fill, target %d%% above it, otherwise trail out on a '
+              'close below the %d-day average. Evaluated on closes, in that order.'
+              % (int(STOP * 100), int(TARGET * 100), TRAIL_SMA),
+        book='%d slots at %.2f%% of equity, %d bps a side.'
+             % (SLOTS, SIZE_PCT * 100, int(COST * 10000)),
+        what_changed='Trail %s, stop %s, and the gate is new. The old dials were fitted '
+                     'against a fill no order could place; measured honestly they beat a '
+                     'random-entry control on only 14 of 30 runs, and the re-fit beats it '
+                     'on 30 of 30.' % ('20 -> 50 bars', '8% -> 10%'),
+        capacity='Do not size this sleeve past about Rs 20-25L: at Rs 1cr a typical '
+                 'position would be most of a day volume in these names.')
+
+
 def write_ui(st, wide, asof, log, dry=False):
     close = wide['close'] if wide else None
     rows = []
@@ -334,7 +569,7 @@ def write_ui(st, wide, asof, log, dry=False):
         pnl = p['qty'] * (lp - p['buy'])
         tot_val += val
         tot_pnl += pnl
-        tr = sma20(close, p['symbol'], asof) if close is not None and p['symbol'] in close.columns else None
+        tr = sma_trail(close, p['symbol'], asof) if close is not None and p['symbol'] in close.columns else None
         rows.append(dict(**p, ltp=round(lp, 2), value=round(val), pnl=round(pnl),
                          pnl_pct=round((lp / p['buy'] - 1) * 100, 2),
                          trail=round(tr, 2) if tr else None,
@@ -361,7 +596,12 @@ def write_ui(st, wide, asof, log, dry=False):
               pending=st.get('pending', []), navcurve=st.get('nav', []),
               trades=st.get('trades', [])[-100:], data_events=st.get('data_events', [])[-20:],
               started=st.get('started'), log=log,
-              failed_orders=st.get('failed_orders', []))
+              failed_orders=st.get('failed_orders', []),
+              # the re-fitted spec, carried onto the page so the rules it is judged
+              # against are visible beside the numbers rather than only in this file
+              spec=spec_block(), gate=st.get('gate'),
+              candidates=st.get('candidates', []), watchlist=st.get('watchlist', []),
+              missed=st.get('missed', [])[-40:])
     if dry:
         print(json.dumps({k: ui[k] for k in ('asof', 'mode', 'nav', 'cash', 'slots_used')}, indent=1))
         return ui
@@ -537,6 +777,12 @@ def main():
             print('ui-only done')
             return
 
+        # ---- 0. spec migration, BEFORE any exit is evaluated ----
+        # Belt and braces: the migration is run once at deploy, but state can be restored
+        # from a backup written under the old dials, and an exit must never be tested
+        # against a stop the book no longer runs.
+        migrate_spec(st, log)
+
         # ---- 1. exits, on today's close ----
         keep = []
         for p in st['positions']:
@@ -562,7 +808,7 @@ def main():
                 log.append(f'DATA EVENT {s} {prev:.2f}->{px:.2f} held')
                 keep.append(p)
                 continue
-            tr = sma20(close, s, asof)
+            tr = sma_trail(close, s, asof)
             why = None
             if px <= p['stop']:
                 why = 'STOP'
@@ -637,8 +883,23 @@ def main():
                   continue
               op = wide['open'][s].loc[asof]
               px_today = close[s].loc[asof]
+              hi = wide['high'][s].loc[asof] if s in wide['high'].columns else np.nan
               if not np.isfinite(op) or not np.isfinite(px_today):
                   st.setdefault('missed', []).append(dict(**cand, why='no price'))
+                  continue
+              # DID THE BUY-STOP ACTUALLY TRIGGER? Before 12-Sep-2026 this branch booked
+              # a fill at max(pivot, open) whether or not the market ever reached the
+              # pivot, so orders that never executed entered the record as positions.
+              # research/167 measured it at about 1.5% of signals, every one of them
+              # flattering. A buy-stop resting above the market fills only if the market
+              # trades there, and the day's high is the evidence that it did.
+              if not np.isfinite(hi) or float(hi) < float(cand['pivot']):
+                  st.setdefault('missed', []).append(dict(
+                      **cand, why='never reached the pivot',
+                      day_high=round(float(hi), 2) if np.isfinite(hi) else None))
+                  log.append('NO FILL %s - high %s never reached the buy-stop at %s'
+                             % (s, round(float(hi), 2) if np.isfinite(hi) else 'n/a',
+                                cand['pivot']))
                   continue
               if len(st['positions']) >= SLOTS:
                   st.setdefault('missed', []).append(dict(**cand, why='no slot'))
@@ -664,14 +925,50 @@ def main():
 
         # ---- 3. scan today for TOMORROW's buy-stops ----
         held = {p['symbol'] for p in st['positions']}
-        cands = [c for c in scan(wide, listing, asof) if c['symbol'] not in held]
+        rows = [c for c in scan(wide, listing, asof, include_near=True)
+                if c['symbol'] not in held]
+        cands = [c for c in rows if c['triggered']]
+        watch = [c for c in rows if not c['triggered']]
         free = max(0, SLOTS - len(st['positions']))
-        st['pending'] = cands[:free]
-        log.append(f'{len(cands)} candidates, {free} slots free, '
-                   f'{len(st["pending"])} buy-stops armed for tomorrow')
-        if st['pending']:
-            _alert('IPO candidates for tomorrow',
-                   '; '.join(f'{c["symbol"]} buy-stop {c["pivot"]}' for c in st['pending']), 'low')
+
+        # THE GATE, applied here and nowhere else: it blocks NEW entries only, and the
+        # place a new entry is created is the arming of a buy-stop. Held positions run
+        # their own stop, target and trail untouched — that is the rule as tested, and it
+        # is also why the gate costs nothing in return while removing drawdown.
+        blocked, gate = market_gate(asof)
+        st['gate'] = gate
+        if blocked:
+            st['pending'] = []
+            log.append('GATE ON - %s %s is below its %d-day average %s, so NO buy-stops '
+                       'are armed (%d would have qualified). Held positions unaffected.'
+                       % (GATE_SYMBOL, gate.get('close'), GATE_SMA, gate.get('sma'),
+                          len(cands)))
+            if cands:
+                _alert('IPO gate ON - %d candidates NOT armed' % len(cands),
+                       '%s closed %s against its %d-day average %s, so no new entries. '
+                       'Skipped: %s' % (GATE_SYMBOL, gate.get('close'), GATE_SMA,
+                                        gate.get('sma'),
+                                        ', '.join(c['symbol'] for c in cands[:8])), 'low')
+        else:
+            st['pending'] = cands[:free]
+            log.append('%d candidates, %d slots free, %d buy-stops armed for tomorrow '
+                       '(gate OFF: %s %s vs %d-day average %s)'
+                       % (len(cands), free, len(st['pending']), GATE_SYMBOL,
+                          gate.get('close'), GATE_SMA, gate.get('sma')))
+            if st['pending']:
+                _alert('IPO candidates for tomorrow',
+                       '; '.join(f'{c["symbol"]} buy-stop {c["pivot"]}'
+                                 for c in st['pending']), 'low')
+
+        # Everything that qualified today, armed or not, plus the near-misses. Stored on
+        # state so the page can show WHY a name was passed over rather than leaving the
+        # reader to guess between "no slot", "gated" and "not a candidate".
+        armed = {c['symbol'] for c in st['pending']}
+        st['candidates'] = [dict(c, armed=c['symbol'] in armed,
+                                 passed_over=('gate' if blocked else
+                                              (None if c['symbol'] in armed else 'no slot')))
+                            for c in cands]
+        st['watchlist'] = watch[:25]
 
         # ---- 4. nav point ----
         tot = sum(p['qty'] * float(close[p['symbol']].loc[:asof].dropna().iloc[-1])
@@ -731,13 +1028,19 @@ def _live_px(kite, syms):
     return px, prev
 
 
-def _sma20_proxy(syms, live):
-    """The 20-SMA the trail would sit at if today closed here: 19 stored closes + the LTP.
+def _trail_sma_proxy(syms, live):
+    """Where the trail would sit if today closed at the current price: the last
+    TRAIL_SMA-1 stored closes plus the live price, averaged.
 
-    The same close-proxy Open Alpha uses for its 15-SMA. An intraday trail computed any
+    The same close-proxy Open Alpha uses for its own trail. An intraday trail computed any
     other way would either lag a day or invent a bar that has not closed.
+
+    The window follows TRAIL_SMA, so it became 50 bars on 12-Sep-2026 with the rest of the
+    spec. A name with fewer stored closes than that gets no trail shown rather than a
+    short-window average, which would be a tighter rule than the book runs.
     """
     import sqlite3
+    n = TRAIL_SMA - 1
     con = sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
     out = {}
     try:
@@ -746,9 +1049,9 @@ def _sma20_proxy(syms, live):
                 continue
             rows = [r[0] for r in con.execute(
                 "select close from market_data_unified where symbol=? and timeframe='day' "
-                'and close > 0 order by date desc limit 19', (s,))]
-            if len(rows) == 19:
-                out[s] = (sum(rows) + live[s]) / 20.0
+                'and close > 0 order by date desc limit ?', (s, n))]
+            if len(rows) == n:
+                out[s] = (sum(rows) + live[s]) / float(TRAIL_SMA)
     finally:
         con.close()
     return out
@@ -763,7 +1066,7 @@ def mark():
         return
     kite = _kite()
     live, prev = _live_px(kite, syms)
-    smas = _sma20_proxy(syms, live)
+    smas = _trail_sma_proxy(syms, live)
 
     rows, tot_val, tot_pnl = [], 0.0, 0.0
     today = date.today()
@@ -800,6 +1103,9 @@ def mark():
               pending=st.get('pending', []), navcurve=st.get('nav', []),
               trades=st.get('trades', [])[-100:], data_events=st.get('data_events', [])[-20:],
               failed_orders=st.get('failed_orders', []), started=st.get('started'),
+              spec=spec_block(), gate=st.get('gate'),
+              candidates=st.get('candidates', []), watchlist=st.get('watchlist', []),
+              missed=st.get('missed', [])[-40:],
               log=['intraday mark - prices live, exits still decided by the 18:45 run'])
     tmp = UI_JSON.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
@@ -809,8 +1115,46 @@ def mark():
              format(round(tot_val), ','), format(round(nav), ',')))
 
 
+def migrate_now(dry=False):
+    """Apply the spec migration to stored state on its own, without a scan.
+
+    Needed because the nightly cycle refuses to run outside market days, so deploying a
+    spec change on a Saturday would otherwise leave held positions running the old stop
+    until the next session. Takes the lock like everything else that writes state.
+    """
+    if not acquire_lock():
+        print('book busy')
+        return
+    try:
+        st = load_state()
+        before = [(p['symbol'], p.get('stop')) for p in st.get('positions', [])]
+        changed = migrate_spec(st)
+        print('spec_version now %s' % st.get('spec_version'))
+        for (s, old), p in zip(before, st.get('positions', [])):
+            print('  %-12s stop %s -> %s   target %s   trail now the %d-day average'
+                  % (s, old, p.get('stop'), round(p['buy'] * (1 + TARGET), 2), TRAIL_SMA))
+        blocked, gate = market_gate()
+        print('gate: %s' % ('ON - no new entries' if blocked else 'OFF - entries allowed'))
+        print('  %s' % json.dumps(gate))
+        if dry:
+            print('DRY - nothing written')
+            return
+        if changed:
+            save_state(st)
+            print('state written')
+        else:
+            print('already on %s - nothing to do' % SPEC_VERSION)
+    finally:
+        release_lock()
+
+
 if __name__ == '__main__':
-    if '--mark' in sys.argv:
+    if '--migrate' in sys.argv:
+        migrate_now(dry='--dry' in sys.argv)
+    elif '--gate' in sys.argv:
+        b, g = market_gate()
+        print('BLOCKED' if b else 'OPEN', json.dumps(g, indent=1))
+    elif '--mark' in sys.argv:
         mark()
     elif '--arm-now' in sys.argv:
         arm()

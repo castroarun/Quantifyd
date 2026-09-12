@@ -5,7 +5,15 @@ import HoldingsCharts from '../components/HoldingsCharts/HoldingsCharts';
 import BookPanel, { pnlBreakdown, todayPnl } from '../components/BookPanel/BookPanel';
 import type { HoldingsRecord } from '../api/types';
 
-/* IPO BASE (/app/ipo-paper) — research/153's adopted spec, run forward on real prices.
+/* IPO BASE (/app/ipo-paper) — research/167's re-fitted spec, run forward on real prices.
+
+   SPEC CHANGED 12-Sep-2026. research/153's published 31.0% rested on a fill no order can
+   place. Measured on the entry this book actually uses, the old dials were no better than
+   picking names at random. Three changed: the trail went from a 20-day average to a 50-day
+   one (the only dial that separates this book from chance), the stop from 8% to 10%, and a
+   new rule blocks new entries while the index sits below its 150-day average. The page
+   reads those numbers from the engine's own `spec` block, so it cannot describe rules the
+   engine is not running.
 
    Shares MomentumPaper's stylesheet and section order so the three books read as one
    family, and uses Open Alpha's loader: a raw fetch of the cron-baked static feed, so
@@ -49,7 +57,18 @@ type Pos = {
   to_stop_pct: number | null; to_trail_pct: number | null; days: number;
 };
 type Pend = { symbol: string; pivot: number; close: number; depth_pct: number;
-  tv: number; listed: string; age_days: number };
+  tv: number; listed: string; age_days: number;
+  triggered?: boolean; gap_pct?: number | null;
+  armed?: boolean; passed_over?: string | null };
+type Gate = {
+  ok: boolean; why?: string; symbol?: string; n?: number; asof?: string;
+  close?: number; sma?: number; above_pct?: number; blocked?: boolean;
+};
+type Spec = {
+  version: string; study: string; changed: string; entry: string; gate: string;
+  exits: string; book: string; what_changed: string; capacity: string;
+};
+type Missed = { symbol: string; pivot: number; why: string; day_high?: number | null };
 type Trade = { symbol: string; qty: number; buy: number; sell: number; entry_date: string;
   exit_date: string; reason: string; net_pnl: number; pnl_pct: number };
 type Ev = { d: string; symbol: string; prev: number; px: number; note: string };
@@ -63,10 +82,104 @@ type Feed = {
   navcurve: { d: string; nav: number }[]; trades: Trade[]; data_events: Ev[];
   started: string; log: string[];
   failed_orders?: FailedOrder[];
+  spec?: Spec; gate?: Gate | null;
+  candidates?: Pend[]; watchlist?: Pend[]; missed?: Missed[];
 };
 
+/* What could become a position, and what stopped each one.
+
+   The armed-buy-stops card above answers "what is the book doing tomorrow". This answers
+   the question Arun actually asks when that card is empty: what is in the pipeline at all?
+   Three states, and naming them is the point — an empty armed list means something very
+   different when six names triggered and the gate blocked them than when nothing triggered.
+
+     TRIGGERED   closed above its pivot today. Either armed, or passed over for a reason
+                 this table names rather than leaving the reader to infer.
+     WATCHING    satisfies every other condition — age band, base depth, liquidity, not
+                 already extended — and is within 15% of its pivot. One close away from
+                 being an order, and nothing else about it needs re-checking.
+     NO FILL     was armed, and the market never traded up to the buy-stop. Shown because
+                 before 12-Sep-2026 this book recorded those as filled positions. */
+function CandidatePipeline({ r }: { r: Feed }) {
+  const [open, setOpen] = useState(true);
+  const cands = r.candidates ?? [];
+  const watch = r.watchlist ?? [];
+  const noFill = (r.missed ?? []).filter((m) => m.why === 'never reached the pivot');
+  const rows = [
+    ...cands.map((c) => ({ ...c, state: c.armed ? 'armed' : (c.passed_over ?? 'passed over') })),
+    ...watch.map((c) => ({ ...c, state: 'watching' })),
+  ];
+  return (
+    <div className={styles.card}>
+      <button type="button" className={`${styles.cardTitle} ${styles.cardTitleTog}`}
+              aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        Candidate pipeline
+        <span className={styles.cardCount}>
+          {cands.length} triggered · {watch.length} watching
+        </span>
+        <span className={styles.caret} aria-hidden="true">{'▾'}</span>
+      </button>
+      {open && (
+        <>
+          {rows.length === 0 ? (
+            <p className={styles.note}>
+              Nothing in the pipeline. The whole universe this book can trade is the handful
+              of NSE names listed inside the last six months that also clear ₹5 cr of daily
+              traded value, so an empty pipeline is ordinary rather than a fault.
+            </p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className={styles.table}>
+                <thead><tr>
+                  <th>Stock</th><th>State</th><th>Listed</th><th>Age</th>
+                  <th>Close ₹</th><th>Pivot ₹</th><th>To pivot</th>
+                  <th>Base depth</th><th>Traded value</th>
+                </tr></thead>
+                <tbody>
+                  {rows.map((c) => (
+                    <tr key={c.symbol}>
+                      <td className={styles.sym}>{c.symbol}</td>
+                      <td className={c.state === 'armed' ? undefined : styles.muted}>
+                        {c.state === 'armed' ? <b>armed</b> : c.state}
+                      </td>
+                      <td className={styles.muted}>{fmtD(c.listed)}</td>
+                      <td className={styles.muted}>{c.age_days}d</td>
+                      <td>{c.close}</td>
+                      <td><b>{c.pivot}</b></td>
+                      <td className={styles.muted}>
+                        {c.triggered ? 'broken' : (c.gap_pct == null ? '—' : `${c.gap_pct.toFixed(1)}% away`)}
+                      </td>
+                      <td className={styles.muted}>{c.depth_pct}%</td>
+                      <td className={styles.muted}>₹{(c.tv / 1e7).toFixed(1)} cr</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {noFill.length > 0 && (
+            <p className={styles.note}>
+              <b>{noFill.length} buy-stop{noFill.length === 1 ? '' : 's'} did not fill</b> because
+              the market never traded up to the level:{' '}
+              {noFill.slice(-6).map((m) => `${m.symbol} (high ${m.day_high ?? '—'} vs ${m.pivot})`).join(', ')}.
+              That is the order working as intended. Before 12-Sep-2026 this book recorded those
+              as filled positions, which flattered it by about 1.5% of signals.
+            </p>
+          )}
+          <p className={styles.note}>
+            A <b>watching</b> row already satisfies every rule except the trigger itself: it is
+            inside the age band, its base is no deeper than 30%, it clears the liquidity floor,
+            and it is not already extended. One close above the pivot turns it into an order —
+            unless the market gate is on that evening, in which case nothing is armed at all.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 function BacktestEvidence() {
-  const s = getStudy('ipo-base-breakout-research153');
+  const s = getStudy('ipo-base-honest-reopt-research167');
   const [open, setOpen] = useState(false);
   if (!s) return null;
   return (
@@ -77,7 +190,7 @@ function BacktestEvidence() {
         <button className={styles.evidenceBtn} onClick={() => setOpen(!open)}>
           {open ? 'hide' : 'what was tested'}
         </button>
-        <a className={styles.studyLink} href="/app/backtest/ipo-base-breakout-research153">study →</a>
+        <a className={styles.studyLink} href="/app/backtest/ipo-base-honest-reopt-research167">study →</a>
         <a className={styles.studyLink} href="/app/capital">Capital Desk →</a>
       </div>
       <div className={styles.evidenceGrid}>
@@ -172,8 +285,8 @@ export default function IpoPaper() {
           </h1>
           <p className={styles.sub}>
             Breakouts from bases built by recently listed stocks · 25-day base, depth ≤ 30% ·
-            buy-stop AT the pivot · −8% close stop · +25% target · exit below the 20-SMA ·
-            8 slots at 18.75% · no market gate.{' '}
+            buy-stop AT the pivot · −10% close stop · +25% target · exit below the 50-SMA ·
+            8 slots at 18.75% · no new entries while NIFTYBEES is below its 150-SMA.{' '}
             {live
               ? 'LIVE: exits and entries are alerted; you place the order (no executor on this book).'
               : 'On paper until a real deposit is routed to it from the Capital Desk — that arms it.'}
@@ -203,7 +316,12 @@ export default function IpoPaper() {
         status={<>
           <span><b>{r.slots_used}</b> / {r.slots} slots</span>
           <span><b>{r.invested_pct}%</b> deployed</span>
-          <span>no market gate</span>
+          {r.gate?.ok
+            ? <span className={r.gate.blocked ? styles.neg : undefined}>
+                gate <b>{r.gate.blocked ? 'ON' : 'OFF'}</b>
+                {' '}· {r.gate.symbol} {pct(r.gate.above_pct)} vs its {r.gate.n}-SMA
+              </span>
+            : <span>gate open · index history short</span>}
           <span><b>{r.pending.length}</b> buy-stop{r.pending.length === 1 ? '' : 's'} armed</span>
           {(r.failed_orders ?? []).length > 0
             ? <span className={styles.neg}>
@@ -222,9 +340,16 @@ export default function IpoPaper() {
           </span>
         </div>
         {r.pending.length === 0
-          ? <p className={styles.note}>Nothing armed. Most days are like this: the sleeve is
-              32.7% invested on average and is meant to sit still when no young stock is
-              breaking out.</p>
+          ? <p className={styles.note}>
+              {r.gate?.blocked
+                ? <><b>Nothing armed because the gate is on.</b> {r.gate.symbol} closed{' '}
+                    {r.gate.close} against its {r.gate.n}-day average of {r.gate.sma}, so the
+                    book takes no new positions until that flips. Anything already held keeps
+                    its own stop, target and trail — the gate only stops buying.</>
+                : <>Nothing armed. Most days are like this: the sleeve is about a third
+                    invested on average and is meant to sit still when no young stock is
+                    breaking out.</>}
+            </p>
           : (
             <table className={styles.table}>
               <thead><tr>
@@ -248,6 +373,8 @@ export default function IpoPaper() {
           )}
       </div>
 
+      <CandidatePipeline r={r} />
+
       {r.positions.length > 0 && (
         <div className={styles.card}>
           <button type="button" className={`${styles.cardTitle} ${styles.cardTitleTog}`}
@@ -264,7 +391,7 @@ export default function IpoPaper() {
               <thead><tr>
                 <th>Holding</th><th>Entry</th><th>Buy ₹</th><th>Now ₹</th><th>Value</th>
                 <th>P&amp;L ₹</th><th>P&amp;L %</th><th>Days</th>
-                <th>Stop −8%</th><th>To stop</th><th>20-SMA trail</th><th>To trail</th>
+                <th>Stop −10%</th><th>To stop</th><th>50-SMA trail</th><th>To trail</th>
                 <th>Target +25%</th>
               </tr></thead>
               <tbody>
@@ -391,11 +518,12 @@ export default function IpoPaper() {
               ['Liquidity', '20-day median traded value at least ₹5 cr'],
               ['Base', 'last 25 bars; pivot = highest close; depth to the base low ≤ 30%; not already extended'],
               ['Trigger', 'close above the pivot'],
-              ['Fill', 'next day, buy-stop AT the pivot, filled at max(pivot, open)'],
-              ['Exits', 'stop at −8% on the close → target at +25% → close below the 20-SMA'],
+              ['Fill', 'next day, buy-stop AT the pivot, filled at max(pivot, open) — and only if the day’s high reached the pivot'],
+              ['Exits', 'stop at −10% on the close → target at +25% → close below the 50-SMA'],
               ['Sizing', '8 slots at 18.75% of equity each'],
               ['Tie-break', 'when more than 8 candidates fire: highest 20-day traded value first'],
-              ['Market gate', 'none — it lost on 30 of 30 seeds'],
+              ['Market gate', 'no NEW entries while NIFTYBEES closes below its 150-day average; holdings unaffected'],
+              ['Capacity', 'do not size this sleeve past about ₹20–25L — at ₹1cr a position would be most of a day’s volume in these names'],
             ].map(([k, v]) => (
               <tr key={k}><td className={styles.sym}>{k}</td><td className={styles.muted}>{v}</td></tr>
             ))}

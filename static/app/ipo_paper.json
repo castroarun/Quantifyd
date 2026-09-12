@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-11 15:59:04.781428",
+ "updated": "2026-09-12 23:54:34.271858",
  "asof": "2026-09-11",
  "mode": "live",
  "positions": [
@@ -8,31 +8,31 @@
    "qty": 132,
    "buy": 323.85,
    "entry_date": "2026-09-08",
-   "stop": 297.94,
+   "stop": 291.47,
    "pivot": 313.6,
    "src": "executor",
-   "ltp": 328.7,
-   "value": 43388,
-   "pnl": 640,
-   "pnl_pct": 1.5,
-   "prev_close": 333.9,
-   "day_move_pct": -1.56,
-   "trail": 311.64,
+   "stop_prev": 297.94,
+   "stop_rebased_on": "2026-09-12",
+   "ltp": 328.4,
+   "value": 43349,
+   "pnl": 601,
+   "pnl_pct": 1.4,
+   "trail": 314.97,
    "target": 404.81,
-   "to_stop_pct": 10.3,
-   "to_trail_pct": 5.5,
+   "to_stop_pct": 12.7,
+   "to_trail_pct": 4.3,
    "days": 3,
    "weight": 18.9
   }
  ],
  "capital": 228711,
  "cash": 185856,
- "value": 43388,
- "nav": 229244,
- "pnl": 640,
+ "value": 43349,
+ "nav": 229205,
+ "pnl": 601,
  "realized": 0,
- "gain": 533,
- "return_pct": 0.23,
+ "gain": 494,
+ "return_pct": 0.22,
  "invested_pct": 18.9,
  "slots": 8,
  "slots_used": 1,
@@ -41,13 +41,76 @@
   {
    "d": "2026-09-08",
    "nav": 229609
+  },
+  {
+   "d": "2026-09-11",
+   "nav": 229205
   }
  ],
  "trades": [],
  "data_events": [],
- "failed_orders": [],
  "started": "2026-09-08",
  "log": [
-  "intraday mark - prices live, exits still decided by the 18:45 run"
- ]
+  "panel 20 names in the age band, asof 2026-09-11",
+  "GATE ON - NIFTYBEES 267.4 is below its 150-day average 273.81, so NO buy-stops are armed (0 would have qualified). Held positions unaffected."
+ ],
+ "failed_orders": [],
+ "spec": {
+  "version": "r167-A",
+  "study": "research/167_ipo_base_honest_reopt",
+  "changed": "2026-09-12",
+  "entry": "Close above the highest close of the last 25 bars, in a stock listed within 6 months with at least 60 bars of history, base no deeper than 30%, and 20-day median traded value of at least Rs 5 cr. Next session, a buy-stop at that pivot.",
+  "gate": "No new entries while NIFTYBEES closes below its 150-day average. Positions already held are untouched.",
+  "exits": "Stop at 10% below the fill, target 25% above it, otherwise trail out on a close below the 50-day average. Evaluated on closes, in that order.",
+  "book": "8 slots at 18.75% of equity, 25 bps a side.",
+  "what_changed": "Trail 20 -> 50 bars, stop 8% -> 10%, and the gate is new. The old dials were fitted against a fill no order could place; measured honestly they beat a random-entry control on only 14 of 30 runs, and the re-fit beats it on 30 of 30.",
+  "capacity": "Do not size this sleeve past about Rs 20-25L: at Rs 1cr a typical position would be most of a day volume in these names."
+ },
+ "gate": {
+  "ok": true,
+  "symbol": "NIFTYBEES",
+  "n": 150,
+  "asof": "2026-09-11",
+  "close": 267.4,
+  "sma": 273.81,
+  "above_pct": -2.34,
+  "blocked": true
+ },
+ "candidates": [],
+ "watchlist": [
+  {
+   "symbol": "CMRGREEN",
+   "pivot": 231.03,
+   "close": 216.5,
+   "depth_pct": 11.2,
+   "tv": 125551000.31,
+   "listed": "2026-06-10",
+   "age_days": 93,
+   "triggered": false,
+   "gap_pct": 6.71
+  },
+  {
+   "symbol": "VEDPOWER",
+   "pivot": 37.5,
+   "close": 33.73,
+   "depth_pct": 10.0,
+   "tv": 418208946.8,
+   "listed": "2026-06-15",
+   "age_days": 88,
+   "triggered": false,
+   "gap_pct": 11.18
+  },
+  {
+   "symbol": "VAML",
+   "pivot": 472.6,
+   "close": 422.6,
+   "depth_pct": 9.4,
+   "tv": 2562636485.75,
+   "listed": "2026-06-15",
+   "age_days": 88,
+   "triggered": false,
+   "gap_pct": 11.83
+  }
+ ],
+ "missed": []
 }

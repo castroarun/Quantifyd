@@ -141,6 +141,324 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    slug: 'ipo-base-honest-reopt-research167',
+    title: 'IPO Base, re-measured on an entry a real order can place — and re-fitted',
+    verdict:
+      'THE ADOPTED SPEC HAS NO EDGE; ONE DIAL FIXES IT. Measured on the entry the live book ' +
+      'actually uses, research/153’s rules return 14.90% after tax and LOSE to a ' +
+      'date-matched random-entry control on 16 of 30 paired runs. Re-fitted — trail ' +
+      'SMA-50 instead of SMA-20, stop 10% instead of 8%, plus a new NIFTYBEES<SMA-150 entry ' +
+      'gate — it returns 21.80% after tax at −26.6% drawdown and beats the control ' +
+      'on 30 of 30. The trail is the whole story: at trail ≤ 20 the edge over random is ' +
+      'zero or negative, at trail 50 it is +4.91pp. DEPLOYED to the live book on 12-Sep-2026.',
+    status: 'COMPLETE',
+    date: '2026-09-12',
+    cardBlurb:
+      'The IPO sleeve published 31.0%. That fill was unplaceable. Honestly measured the ' +
+      'adopted rules were indistinguishable from picking names at random — and one ' +
+      'parameter, the trail, turns them into a real edge.',
+    cardStats: [
+      { label: 'adopted spec, honest', value: '14.90%' },
+      { label: 're-fitted (Spec A)', value: '21.80%' },
+      { label: 'beats random null', value: '30 / 30' },
+    ],
+
+    systemRules: {
+      intro:
+        'The universe, the base geometry and the book sizing are research/153’s and were ' +
+        're-confirmed on the honest entry — the 128-cell geometry grid and the 18-cell ' +
+        'sizing grid both put the incumbent choice at the top. Only the exits and the gate moved.',
+      sharedCoreTitle: 'Unchanged from research/153 (and re-confirmed here)',
+      sharedCore: [
+        { k: 'Universe', v: 'NSE equities with a VETTED listing date (the naive first-row-in-the-database proxy is 70% accurate and was rejected); funds excluded by instrument long name, not by ticker; every row before the listing date masked' },
+        { k: 'Age band', v: 'listed within 6 months, and at least 60 bars of history — 60 because that is what the study harness actually admitted, whatever the written spec said' },
+        { k: 'Liquidity', v: '20-day median traded value at least ₹5 cr, measured at the prior close' },
+        { k: 'Base', v: 'last 25 bars; pivot = the highest CLOSE; depth from pivot to the base low no more than 30%; and the prior close below the pivot, so the name is not already extended' },
+        { k: 'Relative strength', v: 'OFF. A 252-day relative-strength score does not exist for a stock that has traded four months; requiring RS ≥ 70 yields zero signals in this band' },
+        { k: 'Trigger', v: 'close above the pivot' },
+        { k: 'Fill', v: 'NEXT day, buy-stop resting AT the pivot, filled at max(pivot, open) — and only when the day’s HIGH actually reached the pivot' },
+        { k: 'Book', v: '8 slots at 18.75% of equity, 25 bps a side, idle cash credited at 5% — 8 slots beat 5×20%, 10×10% and 16×6.25%' },
+      ],
+      riskLayer: {
+        title: 'What changed, and what each change is worth',
+        caption:
+          'Three dials. The trail is not a tuning improvement — it is the difference ' +
+          'between a book that beats random selection and one that does not.',
+        columns: ['Dial', 'research/153', 'research/167 Spec A', 'What it buys'],
+        rows: [
+          ['Trail', 'close below the 20-day average', 'close below the 50-day average', 'about +7pp of CAGR, and it is the ONLY dial that lifts the book above a random-entry control'],
+          ['Stop', '8% below the fill, on the close', '10% below the fill, on the close', 'about +0.8pp; 10% is the centre of a plateau (6 < 8 < 10 ≈ 15 > none) and 8% was one notch tight'],
+          ['Target', '+25% above the fill', '+25% above the fill (unchanged)', 'it interacts with the trail: at trail 20 no-target wins by 2.5pp, at trail 50 the +25% target wins by 2.3pp'],
+          ['Market gate', 'none', 'no NEW entries while NIFTYBEES closes below its 150-day average; holdings untouched', '17.8 points of drawdown removed on 30 of 30 paths, for a coin flip on return'],
+        ],
+      },
+    },
+
+    system: {
+      intro:
+        'The question was not whether the rules could be improved. It was whether the published ' +
+        'figure described a book anyone could have traded. research/158 and research/159 found ' +
+        'the same defect in Open Alpha: a trigger defined on the closing price, paired with a ' +
+        'fill at that same day’s open. It passes every generic look-ahead check — no ' +
+        'future bar is read, and the fill price genuinely traded — and it still deletes ' +
+        'every intraday failure from the record, because a stock that spiked and closed below ' +
+        'the pivot never enters the sample.',
+      rows: [
+        { k: 'What was replaced', v: 'the fill. Trigger and universe are identical to research/153; only the moment of purchase changes, from the signal day’s open to the next day’s buy-stop' },
+        { k: 'Five entry mechanics measured', v: 'the unplaceable same-bar open reference (31.32%), buying at the signal close ~15:10 (17.39%), a resting stop through the session (16.08%), the live next-day stop at the pivot (14.90%) and a next-day stop above the signal candle (13.95%)' },
+        { k: 'The null control', v: 'date-matched random entry: the same days, the same number of entries per day, names drawn at random from the same eligible young-and-liquid universe, and the SAME fill convention and gate on both arms. research/153 ran its own null only on the close-fill arm, which is why it passed there' },
+        { k: 'Why the trail axis was swept against the null', v: 'because a single cell beating a null can be luck. Sweeping real-minus-null ALONG the trail axis turns one number into a curve, and the curve is smooth, unanimous across a wide band, and reproduces at a second stop value' },
+        { k: 'Scale', v: '~350 cells: 5 mechanics × 2 universes, a 160-cell exit surface, 128 base geometries, 18 book-sizing cells, 11 index gates, 18 null-axis cells, 8 nulls and a 10-cell adoption battery' },
+      ],
+    },
+
+    conditions: {
+      intro:
+        'Everything after Indian tax at 20% short-term and 12.5% long-term with financial-year ' +
+        'loss netting and carry-forward, settled on 1 April; net of 25 bps a side; with 5% ' +
+        'credited on idle cash. Decisions on 30 paired seeds, scans on 10.',
+      rows: [
+        { k: 'Period', v: '2006-01-01 → 2026-09-04, 20.7 years' },
+        { k: 'Windows', v: 'WA 2006–2015 and WB 2016–2026 reported separately — the only out-of-sample evidence in the study' },
+        { k: 'Book', v: '₹10,00,000, 8 slots at 18.75%' },
+        { k: 'Seeds', v: '30 paired seeds on every decision. The seed is the tiebreak when more candidates trigger than there are slots, and it is worth 2.4pp of spread even on the best cell' },
+        { k: 'Cost ladder', v: '25 / 40 / 60 bps reported on every finalist' },
+        { k: 'Stress windows', v: '2008, 2020 H1, the 2018 grind, 2022 H1 and the 2025 drawdown, each measured from the running peak of the FULL curve rather than the window’s own first bar' },
+      ],
+    },
+
+    comparisons: [
+      {
+        title: 'Five entry mechanics, same rules, same days — only the moment of purchase differs',
+        caption:
+          'The first row is the one research/153 published and it cannot be placed as an order: ' +
+          'the signal is a close, and the fill is that close’s own opening price. The fourth ' +
+          'row is what the live book does. Everything after tax, 30-seed medians.',
+        columns: ['Entry mechanic', 'CAGR', 'Worst seed', 'Max drawdown', 'Calmar', 'Invested'],
+        rows: [
+          ['Same-bar open on a close trigger (NOT PLACEABLE — research/153’s)', '31.32%', '30.16%', '−21.2%', '1.476', '32.8%'],
+          ['Buy at the signal close, ~15:10', '17.39%', '15.34%', '−36.0%', '0.483', '33.1%'],
+          ['Resting stop through the session', '16.08%', '13.91%', '−47.6%', '0.338', '40.9%'],
+          ['Next-day stop at the pivot (THE LIVE BOOK)', '14.90%', '13.11%', '−38.6%', '0.386', '31.8%'],
+          ['Next-day stop above the signal candle', '13.95%', '12.31%', '−32.5%', '0.429', '27.6%'],
+        ],
+        highlightRows: [3],
+      },
+      {
+        title: 'The exit surface — and the trail inverts',
+        caption:
+          'After-tax CAGR, 30-seed medians, on the live entry, at the incumbent +25% target. ' +
+          'Read along any row: the incumbent 20-bar trail is far too short. It is a hump rather ' +
+          'than a ramp — it peaks at 50 and rolls back off by 100–150 — so this is ' +
+          'not an argument that longer is always better.',
+        columns: ['Stop \\ trail', '10', '15', '20', '30', '50', '75', '100', '150'],
+        rows: [
+          ['6%', '9.96', '11.31', '13.94', '14.97', '16.91', '12.88', '14.01', '13.02'],
+          ['8% (incumbent)', '9.33', '11.75', '14.90', '17.68', '20.78', '16.83', '17.21', '15.38'],
+          ['10% (Spec A)', '9.49', '12.02', '15.71', '17.46', '22.01', '18.65', '17.46', '14.54'],
+          ['15%', '9.09', '11.45', '15.61', '17.69', '22.40', '18.02', '15.83', '14.07'],
+          ['no stop', '9.05', '11.06', '15.24', '16.67', '21.13', '14.87', '14.64', '13.24'],
+        ],
+        highlightRows: [2],
+        heatmap: true,
+      },
+      {
+        title: 'THE TABLE THAT DECIDES IT — edge over a date-matched random-entry control, along the trail axis',
+        caption:
+          'Real minus control, in points of CAGR, 30 paired seeds at every cell, gated, measured ' +
+          'at two independent stop values. Across the incumbent’s entire region the ' +
+          'selection rule “a recently listed stock closed above its 25-bar base high” ' +
+          'adds NOTHING. The edge appears only once the winners are given room to run.',
+        columns: ['Trail (bars)', '10', '15', '20', '30', '40', '50', '60', '75', '100'],
+        rows: [
+          ['edge at stop 10%', '+0.04', '−0.71', '−0.10', '+1.26', '+3.08', '+4.78', '+2.05', '+0.43', '+0.31'],
+          ['edge at stop 15%', '−0.29', '−0.88', '−0.06', '+1.54', '+2.80', '+4.91', '+3.28', '+2.05', '+1.21'],
+          ['real wins / 30 paired seeds', '11', '5', '13', '30', '30', '30', '30', '30', '27'],
+          ['edge per trade (pp)', '0.01', '−0.08', '0.06', '0.47', '0.84', '1.57', '0.99', '0.76', '0.31'],
+        ],
+        highlightRows: [1],
+      },
+      {
+        title: 'The gate bake-off — insurance with no premium',
+        caption:
+          'Eleven index gates at the re-fitted geometry, paired on seed. The 150-day average is ' +
+          'a coin flip on return and removes 17.8 points of drawdown on EVERY path. The 200-day ' +
+          'agrees and the 100-day fails, so the region is bounded at both ends — which is ' +
+          'what a real effect looks like rather than a fitted one.',
+        columns: ['Gate', 'CAGR', 'Worst seed', 'Max drawdown', 'Calmar', 'Paired CAGR Δ', 'Shallower on'],
+        rows: [
+          ['no gate', '22.40%', '20.21%', '−46.9%', '0.477', '—', '—'],
+          ['NIFTYBEES below its 150-day average', '22.36%', '21.50%', '−29.3%', '0.762', '−0.03pp', '30 / 30'],
+          ['NIFTYBEES below its 200-day average', '21.18%', '19.74%', '−31.0%', '0.682', '−1.38pp', '30 / 30'],
+          ['NIFTYBEES 126-day momentum negative', '20.02%', '18.48%', '−33.5%', '0.600', '—', '—'],
+          ['NIFTYBEES below its 100-day average', '19.48%', '17.74%', '−42.0%', '0.464', '−3.15pp', '27 / 30'],
+          ['index drawdown deeper than 5%', '14.78%', '13.36%', '−34.6%', '0.434', '—', '—'],
+          ['index 63-day momentum negative', '14.77%', '12.73%', '−43.7%', '0.338', '—', '—'],
+        ],
+        highlightRows: [1],
+      },
+    ],
+
+    results: {
+      metrics: [
+        { label: 'Spec A, after tax', value: '21.80%', tone: 'pos' },
+        { label: 'Worst of 30 seeds', value: '20.83%' },
+        { label: 'Max drawdown (median)', value: '−26.6%' },
+        { label: 'Max drawdown (worst seed)', value: '−32.9%', tone: 'neg' },
+        { label: 'Calmar', value: '0.819' },
+        { label: 'Incumbent, honest', value: '14.90%', tone: 'neg' },
+        { label: 'Edge over random control', value: '+4.91pp' },
+        { label: 'Paired runs won', value: '30 / 30', tone: 'pos' },
+      ],
+      tables: [
+        {
+          title: 'The full adoption arithmetic — incumbent against both finalists',
+          caption:
+            'Spec A is the recommendation over B despite 0.56pp less CAGR: its worst-seed ' +
+            'drawdown is −32.9% against B’s −40.1%, its seed band is the tightest ' +
+            'in the study at 2.4pp wide, its longest losing streak is 11 rather than 14, and it ' +
+            'is the most cost-tolerant cell measured.',
+          columns: ['', 'Incumbent (research/153)', 'A — RECOMMENDED', 'B — best CAGR'],
+          rows: [
+            ['trail / stop / target / gate', 'SMA-20 / 8% / +25% / none', 'SMA-50 / 10% / +25% / NIFTYBEES<SMA-150', 'SMA-50 / 15% / +25% / SMA-150'],
+            ['CAGR after tax (median)', '14.90%', '21.80%', '22.36%'],
+            ['CAGR band, worst to best seed', '13.11 – 16.73', '20.83 – 23.19', '21.50 – 24.31'],
+            ['CAGR with idle cash at ZERO', '11.08%', '17.97%', '18.36%'],
+            ['share of the headline that is the cash sweep', '25.6%', '17.6%', '17.9%'],
+            ['mean invested fraction', '31.8%', '36.3%', '37.0%'],
+            ['max drawdown, median', '−38.6%', '−26.6%', '−29.3%'],
+            ['max drawdown, WORST seed', '−46.4%', '−32.9%', '−40.1%'],
+            ['Calmar, median / worst seed', '0.386 / 0.282', '0.819 / 0.634', '0.762 / 0.536'],
+            ['2006–2015 CAGR / drawdown', '14.14% / −12.8%', '16.12% / −15.9%', '15.89% / −16.2%'],
+            ['2016–2026 CAGR / drawdown', '15.04% / −38.0%', '27.20% / −26.6%', '29.23% / −28.1%'],
+            ['net expectancy per trade, after 50 bps', '+2.31%', '+6.24%', '+6.58%'],
+            ['win rate', '39.9%', '49.0%', '49.8%'],
+            ['average win / average loss', '+15.2% / −5.5%', '+21.5% / −7.4%', '+21.9% / −7.6%'],
+            ['longest losing streak', '18', '11', '14'],
+            ['trades a year · median hold', '33.2 · 18 days', '18.9 · 37 days', '18.5 · 38 days'],
+            ['cost ladder 25 / 40 / 60 bps', '14.90 / 12.94 / 10.47', '21.80 / 20.81 / 19.02', '22.36 / 21.04 / 19.67'],
+            ['top-10 trades’ share of summed return', '20%', '15%', '14%'],
+            ['per-trade mean excluding each seed’s 10 best', '2.30%', '5.89%', '6.24%'],
+            ['weekly correlation to OA Base Age / True North', '0.245 / 0.211', '0.282 / 0.256', '0.276 / 0.259'],
+            ['distinct names traded over 20.7 years', '331', '254', '253'],
+          ],
+          highlightRows: [2],
+        },
+        {
+          title: 'Year by year, after tax — return with that year’s worst intra-year fall beneath',
+          caption:
+            'Median seed. Drawdowns measured from the running peak of the FULL curve, never from ' +
+            'the window’s own first bar. 2008 is the honest black mark and it is not small: ' +
+            'the re-fit loses 10.3% where the incumbent made +0.4%, because the fast 20-bar trail ' +
+            'that costs 7 points a year in normal times is exactly what sidestepped that crash.',
+          columns: ['Year', 'Incumbent', 'A (recommended)', 'B'],
+          rows: [
+            ['2006', '+54.3 (−10.9)', '+71.0 (−10.1)', '+71.0 (−10.1)'],
+            ['2007', '+59.8 (−11.7)', '+51.5 (−15.9)', '+51.1 (−16.1)'],
+            ['2008', '+0.4 (−12.8)', '−10.3 (−15.8)', '−10.3 (−15.8)'],
+            ['2009', '+1.4 (−6.0)', '+3.8 (−12.7)', '+3.8 (−12.7)'],
+            ['2010', '+12.3 (−10.2)', '+21.0 (−9.8)', '+21.0 (−9.8)'],
+            ['2011', '+13.5 (−5.5)', '−2.6 (−10.3)', '−3.3 (−10.9)'],
+            ['2012', '+0.6 (−4.4)', '+11.7 (−10.1)', '+11.7 (−10.8)'],
+            ['2013', '+5.1 (−2.8)', '+4.6 (−0.4)', '+4.8 (−0.3)'],
+            ['2014', '+5.0 (0.0)', '+5.0 (0.0)', '+5.0 (0.0)'],
+            ['2015', '+5.4 (−9.5)', '+27.5 (−9.6)', '+26.1 (−10.7)'],
+            ['2016', '+53.1 (−12.7)', '+75.6 (−10.6)', '+75.9 (−10.6)'],
+            ['2017', '+32.1 (−9.9)', '+72.3 (−10.2)', '+66.6 (−10.2)'],
+            ['2018', '−6.2 (−20.7)', '−9.2 (−19.3)', '−5.4 (−19.8)'],
+            ['2019', '+9.3 (−13.5)', '+5.2 (−15.8)', '+3.0 (−14.2)'],
+            ['2020', '+68.9 (−9.8)', '+74.6 (−13.2)', '+74.3 (−13.2)'],
+            ['2021', '+2.0 (−19.2)', '+52.4 (−14.5)', '+51.6 (−14.7)'],
+            ['2022', '−8.8 (−32.3)', '+0.8 (−21.2)', '+1.9 (−20.6)'],
+            ['2023', '+34.7 (−36.8)', '+46.4 (−11.0)', '+68.2 (−9.7)'],
+            ['2024', '+1.9 (−19.3)', '+13.5 (−22.6)', '+16.4 (−14.9)'],
+            ['2025', '−27.5 (−35.7)', '+1.8 (−17.9)', '−5.8 (−23.6)'],
+            ['2026 YTD', '+48.5 (−41.8)', '+1.3 (−24.0)', '+5.2 (−27.9)'],
+            ['FULL PERIOD', '14.90% / −38.6% / 0.386', '21.80% / −26.6% / 0.819', '22.36% / −29.3% / 0.762'],
+          ],
+          highlightRows: [21],
+        },
+        {
+          title: 'The null controls — every arm that was run',
+          caption:
+            'The same days, the same number of entries, the same fill convention and the same ' +
+            'gate on both arms. Only the NAMES differ: chosen by the rule, or drawn at random ' +
+            'from the same eligible universe.',
+          columns: ['Arm', 'Real CAGR', 'Real per trade', 'Control CAGR', 'Control per trade', 'Paired edge', 'Real wins'],
+          rows: [
+            ['incumbent, ungated', '14.90%', '2.81%', '15.11%', '2.84%', '−0.15pp', '14 / 30'],
+            ['incumbent, next-open fill on both arms', '14.12%', '2.67%', '14.53%', '2.13%', '−0.49pp', '9 / 30'],
+            ['incumbent + SMA-150 gate', '13.53%', '2.93%', '13.79%', '2.97%', '−0.44pp', '8 / 30'],
+            ['RE-FIT trail 50 / stop 15% + SMA-150', '22.36%', '7.08%', '17.52%', '5.50%', '+4.91pp', '30 / 30'],
+            ['re-fit trail 30 / stop 10% + SMA-150', '17.26%', '4.52%', '15.77%', '4.08%', '+1.26pp', '30 / 30'],
+            ['cash only at 5%', '5.04%', '—', '—', '—', '—', '—'],
+            ['the young-and-liquid cohort, equal weight, GROSS', '17.46%', '—', '—', '—', '—', 'drawdown −82.6%'],
+          ],
+          highlightRows: [3],
+        },
+      ],
+    },
+
+    winners: [
+      {
+        config: 'Spec A — trail SMA-50, stop 10%, target +25%, NIFTYBEES<SMA-150 entry gate',
+        summary:
+          'Three dials changed and everything else in research/153 survived re-fitting. It is ' +
+          'not outlier-dependent: deleting each seed’s ten best trades of twenty years takes ' +
+          'the per-trade mean from 6.24% to 5.89%, and capping winners at +50% changes nothing ' +
+          'at all because the +25% target already caps them.',
+        metrics: [
+          { k: 'CAGR after tax', v: '21.80% (read as 19–22% after discounting ~350 cells)' },
+          { k: 'Seed band', v: '20.83 – 23.19, the tightest in the study' },
+          { k: 'Max drawdown', v: '−26.6% median, −32.9% on the worst seed' },
+          { k: 'Calmar', v: '0.819 median, 0.634 on the worst seed' },
+          { k: 'Edge over a random-entry control', v: '+4.91pp, winning 30 of 30 paired runs' },
+          { k: 'Cost tolerance', v: '−2.8pp from 25 to 60 bps — 18.9 trades a year held 37 days' },
+          { k: 'Out-of-sample', v: '+8.54% per trade 2006–2015, +5.54% 2016–2026' },
+          { k: 'Deployed', v: '12-Sep-2026 to the live book, with stops on the open position re-based' },
+        ],
+        rejected: [
+          'Spec B (stop 15%) — 0.56pp more CAGR but a −40.1% worst-seed drawdown against A’s −32.9%, and a 14-trade losing streak against 11',
+          'A +100% target instead of the gate — loses 3.83pp of CAGR on 30 of 30 AND ends up deeper',
+          'The 100-day index average as the gate — fails on 0 of 30 paired seeds; the region is bounded below as well as above',
+          'Every base-geometry and book-sizing change — the incumbent choices topped a 128-cell and an 18-cell grid respectively',
+        ],
+      },
+    ],
+
+    caveats: [
+      'MULTIPLE TESTING. ~350 cells were scored and the 30-seed band is 1.2–2.4pp wide, so the 22.40% peak should be discounted toward its neighbourhood: the trail 30–75 × stop 8–15% region averages about 19%. Read Spec A as 19–22%, not as a point estimate.',
+      'THE TRAIL AND THE GATE WERE BOTH CHOSEN AFTER SEEING THIS DATA. The only out-of-sample evidence is the two-window split, which both finalists pass strongly. There is no held-out period.',
+      'CAPACITY IS THE BINDING CONSTRAINT AND IT IS TIGHT. At ₹10L the 90th-percentile position is 1.56% of the name’s 20-day median traded value. Scaled to ₹1cr that is about 90% of a day’s volume, and ₹10cr is absurd. This book cannot exceed roughly ₹20–25L. It is a small, permanently small sleeve.',
+      'THE WORST-SEED DRAWDOWN IS −32.9%, NOT −26.6%. A reader who sees only the median is being misled about the unlucky path, on which Calmar is 0.634.',
+      '2008. The re-fit is 10.7pp WORSE than the incumbent there (−10.3% against +0.4%). The gate recovers part of it — ungated the re-fit loses 18.3% in 2008, gated 10.3% — but not all. If this pair needs a crash cushion, this is not it.',
+      'THE THREE-SLEEVE BLEND WAS NOT RUN HERE, and it is the question that decides what weight this sleeve should carry. The re-fit RAISES correlation to the other books (0.282 weekly to OA Base Age and 0.256 to True North, against the incumbent’s 0.245 and 0.211), so it can be worth more standalone and less to the portfolio. research/168 owns it.',
+      'SURVIVORSHIP AND THE RENAME DEFECT. The universe keeps delisted series — they get traded and stopped out — but names never onboarded to the broker’s instrument list are unmeasurable. Separately, the rename defect (LOTUSDEV becoming LOTUSDEV-BE) hits THIS book hardest of the three, because it trades exactly the young, thin names the exchange moves to trade-for-trade. Ten of eleven stale young names are missing from the instrument dump. It corrupts live signals, not the backtest, and is still not fixed.',
+      'A LIVE-BOOK DEFECT FOUND AND FIXED IN THE SAME WEEK. The forward book booked a fill at max(pivot, open) WITHOUT checking that the day’s high reached the pivot, so buy-stops that never triggered were recorded as filled — about 1.5% of signals, every one of them flattering. Fixed 12-Sep-2026.',
+      'NOT TESTED: VIX gates (India VIX starts 2015, so they need their own window and baseline); risk-based sizing and the structure stop; the pivot measured on highs rather than closes; the base-tightness dial; a walk-forward beyond the two-window split; and a RE-FIT of the buy-at-the-signal-close arm, which scored 17.39% against 14.90% at the INCUMBENT’s parameters and was never re-optimised — possibly about 2pp left on the table if a live process can act at 15:10.',
+    ],
+
+    reports: [
+      { label: 'RESULTS.md — the full write-up', href: 'https://github.com/castroarun/Quantifyd/blob/main/research/167_ipo_base_honest_reopt/results/RESULTS.md' },
+    ],
+
+    githubLinks: [
+      { label: 'research/167 — scripts and results', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/167_ipo_base_honest_reopt' },
+      { label: 'research/153 — the study this corrects', href: '/app/backtest/ipo-base-breakout-research153' },
+      { label: 'research/158 — where the fill defect was first measured', href: '/app/backtest/mpf-honest-entries-roster-2026-09' },
+      { label: 'The live book', href: '/app/ipo-paper' },
+    ],
+    projectPaths: [
+      'research/167_ipo_base_honest_reopt/results/RESULTS.md',
+      'research/167_ipo_base_honest_reopt/IPO_BASE_HONEST_ENTRY_DAILY_SWEEP_STATUS.md',
+      'research/167_ipo_base_honest_reopt/scripts/ipo_honest.py',
+      'research/167_ipo_base_honest_reopt/scripts/ipo_null_axis.py',
+      'research/167_ipo_base_honest_reopt/scripts/ipo_adopt.py',
+      'services/ipo_paper.py',
+    ],
+  },
+
+  {
     slug: 'mpf-honest-entries-roster-2026-09',
     title: 'The Momentum Portfolio on honest entries - every book side by side, after tax',
     verdict:
@@ -17375,7 +17693,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     slug: 'ipo-base-breakout-research153',
     title: 'IPO Base Breakout (bananapatterns) - the third sleeve that finally clears the bar, once the listing dates are rebuilt from scratch',
     verdict:
-      'CORRECTED 11-Sep-2026: the headline 31.03% below is a SAME-DAY entry that needs the closing price known at the open, which no order can do. The live engine correctly buys the NEXT morning and earns 15.00% at a -37.55% drawdown. It still beats the index on both, but read every figure below at about half. Details in the first caveat. --- The hard part of this study was not the strategy, it was the data. We have no listing-date table, and the obvious proxy - the first row a symbol has in our database - is only 70% accurate. It fails three ways, and one of them would have invalidated the whole study: bulk DATA-ONBOARDING WAVES. 451 symbols begin on 2005-01-03, 95 on 2015-01-01, 45 on 2026-08-17, 41 on 2026-04-20 and 15 on 2025-05-26 - and that last batch contains ABB, a company listed in the 1990s. Left alone, ABB is a 2025 IPO and its next breakout is an IPO base breakout. A second defect: DELHIVERY carries eight rows at Rs 5-11 from 2016, weeks apart on 150-500 shares, before its real 2022-05-24 listing at Rs 536 - a different instrument on the same ticker, and a 93x price jump sitting inside what a base window would measure. A vetted listing table was built to fix all three (reject start days shared by 8 or more symbols; strip leading junk rows by price jump, date gap and dust volume; require a listing-day volume or range fingerprint) and it was validated before use: 48 of 48 known NSE IPOs accepted, the listing date exact to within three days for 47 of them, and 0 of 12 known long-listed onboardings wrongly accepted. Only then was a single backtest run. WHAT THE SCREEN IS. A newly listed stock builds its first consolidation and breaks out of it. We swept the definition rather than matching the site, because the panel dials were never legible: 256 signal-geometry cells and 384 exit-and-book cells, each a seed ensemble on two windows, 680 cells in all. 207 of 256 and 383 of 384 clear a positive after-cost per-trade expectancy in BOTH windows - this is a broad plateau, not a peak. THE ANSWER TO THE OBVIOUS OBJECTION. How can the site apply an IBD relative-strength filter of 70 to a six-month-old listing when the score needs 252 trading days? It cannot: the strict filter returns literally zero signals below a 12-month age band, and every short-window substitute we built made the book worse. This screen is pure price structure. TWO OF THE SITE OWN DIALS ARE WRONG. Their Trail 30-week setting is the worst exit we tested (Calmar 0.49 against 0.99 for a 20-day trail) and their Breakout close entry costs 14 percentage points of CAGR against a buy-stop at the pivot, losing on 30 of 30 paired seeds. Their Take +25% dial, by contrast, is the single best thing in the study and helps in every geometry. THE VERDICT. Adopted spec: listed within 6 months, 25-day base no deeper than 30%, buy-stop at the base high, -8% close stop, exit below the 20-day SMA, +25% take-profit, 8 slots at 18.75%. Standalone, 30 seeds, after Indian tax and 25 bps a side, 2006 to Sep-2026: 31.03% CAGR [28.82..33.44], worst seed 28.82%, drawdown -20.88%, Calmar 1.50, 32.6 trades a year, and it keeps 4.89% per trade with each seed ten best trades deleted. Against a date-matched random-entry null it wins on 29 of 30 paired seeds by +0.96pp per trade. As a THIRD SLEEVE at 20% weight beside True North and Open Alpha it delivers +1.13pp of CAGR, -3.63pp of drawdown and +0.56 of Calmar against the deployed pair, at correlations of 0.16 daily to Open Alpha and 0.18 to True North - lower than the correlation between the two legs already running - and it beats a plain-cash sleeve at the same weight by 5.6pp of CAGR. Every leg of the pre-registered adoption bar is met with room. The honest caveats are that the entire edge lives in getting filled AT the pivot, and that the book earned nothing but the cash yield in 2013 and 2014 because the Indian IPO pipeline was shut.',
+      'SUPERSEDED 12-Sep-2026 — READ research/167 FIRST. The 31.03% below was earned on a fill no order can place: the trigger is a close above the pivot and the purchase was booked at that same day’s open. Measured on the entry the live book actually uses, these exact rules return 14.90% after tax and LOSE to a date-matched random-entry control. research/167 re-fitted them — trail SMA-50, stop 10%, plus an index gate — to 21.80% after tax at −26.6% drawdown, and that is what the live book now runs. Everything on this page about the UNIVERSE and the listing-date work stands; every performance figure on it does not. /app/backtest/ipo-base-honest-reopt-research167',
     status: 'COMPLETE',
     date: '2026-09-05',
     cardBlurb:

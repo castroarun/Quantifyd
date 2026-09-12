@@ -59,7 +59,7 @@ export const STATUS_LABEL: Record<SystemStatus, string> = {
   parked: 'Parked · not trading',
 };
 
-export const REGISTER_UPDATED = '11 Sep 2026';
+export const REGISTER_UPDATED = '12 Sep 2026';
 
 export const SYSTEMS: StrategySystem[] = [
   // ------------------------------------------------------------------ LIVE
@@ -389,34 +389,42 @@ export const SYSTEMS: StrategySystem[] = [
   {
     id: 'ipo-base',
     name: 'IPO Base',
-    subtitle: 'breakouts from bases built by recently listed stocks (research/153)',
-    status: 'paper',
-    size: '\u20b910,00,000 notional \u2014 arms for real money on the first Capital Desk deposit',
-    since: '6 Sep 2026',
-    rule: 'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% \u2192 buy-stop AT the pivot next day; \u22128% close stop, +25% target, exit below the 20-SMA; 8 slots at 18.75%, no market gate.',
+    subtitle: 'breakouts from bases built by recently listed stocks (research/167)',
+    status: 'live',
+    size: '\u20b92,28,711 real money \u2014 funded through the Capital Desk on 8 Sep 2026. HARD CAP \u20b920\u201325L: research/167 measured the 90th-percentile position at 1.56% of the name\u2019s own 20-day traded value at \u20b910L, which becomes ~90% of a day\u2019s volume at \u20b91cr',
+    since: '6 Sep 2026 (paper) \u00b7 8 Sep 2026 (real money)',
+    rule: 'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% \u2192 buy-stop AT the pivot next day, filled only if the day\u2019s high reaches it; \u221210% close stop, +25% target, exit below the 50-SMA; 8 slots at 18.75%; NO new entries while NIFTYBEES closes below its 150-SMA.',
     rules: [
       ['Universe', 'NSE equities with a VETTED listing date (research/153 table, 1,353 accepted), ETFs excluded, all pre-listing rows masked'],
       ['Age band', 'listed within 6 months AND at least 60 bars \u2014 60, not the spec\u2019s 25: the study\u2019s own harness only admitted stocks with 60+ bars, so 60 is what was validated'],
       ['Liquidity', '20-day median traded value \u2265 \u20b95 cr at t\u22121'],
       ['Signal', 'pivot = highest close of the last 25 bars; base depth \u2264 30%; not already extended; close > pivot'],
-      ['Entry', 'next day buy-stop AT the pivot, filled max(pivot, open) \u2014 filling at the close instead costs 14.08pp of CAGR'],
-      ['Exits', 'stop close \u2264 0.92\u00d7buy \u2192 target close \u2265 1.25\u00d7buy \u2192 close < SMA-20 (entry bar exempt)'],
-      ['Book', '8 slots at 18.75% of equity, 25 bps/side, NO market gate (it lost 30/30 seeds)'],
+      ['Entry', 'next day buy-stop AT the pivot, filled max(pivot, open) AND ONLY IF the day\u2019s HIGH reached the pivot. That last clause was missing until 12 Sep 2026: the book was recording buy-stops the market never reached as filled positions'],
+      ['Exits', 'stop close \u2264 0.90\u00d7buy \u2192 target close \u2265 1.25\u00d7buy \u2192 close < SMA-50 (entry bar exempt) \u2014 research/167: the trail is the ONLY dial that lifts this book above random stock selection'],
+      ['Market gate', 'NO new entries while NIFTYBEES closes below its 150-day average; holdings keep their own stop, target and trail. Removes 17.8pp of drawdown on 30 of 30 paths for a coin flip on return; the 200-SMA agrees and the 100-SMA fails, so the region is bounded at both ends'],
+      ['Book', '8 slots at 18.75% of equity, 25 bps/side \u2014 8 slots beat 5\u00d720%, 10\u00d710% and 16\u00d76.25% on the honest entry'],
       ['Tie-break', 'highest 20-day traded value first \u2014 PRE-REGISTERED, not backtested: the study drew lots across 30 seeds'],
       ['Data guard', 'a single-day close move \u2264 \u221240% is treated as a split/bonus: position HELD and alerted, never stopped out'],
     ],
-    rulesDoc: 'services/ipo_paper.py + research/153_ipo_base',
+    rulesDoc: 'services/ipo_paper.py + research/167_ipo_base_honest_reopt',
     dashboard: '/ipo-paper',
     studies: [
-      { slug: 'ipo-base-breakout-research153', title: 'IPO Base breakout \u2014 adopted spec, 680 cells', verdict: 'STRATEGY-CANDIDATE' },
+      { slug: 'ipo-base-honest-reopt-research167', title: 'Re-measured on a placeable entry, then re-fitted \u2014 the adopted spec had NO edge', verdict: 'STRATEGY' },
+      { slug: 'ipo-base-breakout-research153', title: 'IPO Base breakout \u2014 the original study, SUPERSEDED: its fill was unplaceable', verdict: 'CONCLUDED' },
       { slug: 'ipo-idle-cash-redeployment-research155', title: 'Should the idle cash work in OA or TN?', verdict: 'CONCLUDED' },
     ],
     changeLog: [
+      { date: '12 Sep 2026', text: 'SPEC CHANGED on research/167. The published 31.03% was earned on a fill no order can place \u2014 a close-above-pivot trigger bought at that same close\u2019s OPEN. Measured on the entry this book actually uses, the adopted rules return 14.90% after tax and LOSE to a date-matched random-entry control on 16 of 30 paired runs: there was no edge in the selection at all. One dial fixed it, the TRAIL. Real-minus-control along the trail axis runs +0.04 / \u22120.71 / \u22120.10 / +1.26 / +3.08 / +4.78 / +2.05 / +0.43 / +0.31 pp at trail 10/15/20/30/40/50/60/75/100 \u2014 zero or negative across the old spec\u2019s whole region, unanimous 30-of-30 across the 30\u201375 band. Deployed: trail SMA-20 \u2192 SMA-50, stop 8% \u2192 10%, and a new NIFTYBEES<SMA-150 entry gate. 21.80% after tax / \u221226.6% drawdown / Calmar 0.819, read down to 19\u201322% for ~350 cells scored. Worst seed drawdown \u221232.9%.' },
+      { date: '12 Sep 2026', text: 'FILL DEFECT FIXED. The book booked a fill at max(pivot, open) WITHOUT checking the day\u2019s high reached the pivot, so buy-stops the market never traded up to were recorded as filled positions \u2014 about 1.5% of signals, every one of them flattering. The day\u2019s high is now required.' },
+      { date: '12 Sep 2026', text: 'OUTAGE, FOUND AND FIXED: the book was DEAD for four sessions. Commit 3829ad71 (3 Sep, \u201cIPO Base marks intraday\u201d) rewrote the constants block and silently dropped two lines, IPO_TAG and SEEN_ORDERS. Both are read only inside the live branch, so nothing failed while the sleeve was on paper \u2014 then it was funded on 8 Sep and every nightly cycle and every reconcile crashed on a NameError from that moment. No exits were evaluated and no buy-stops armed on 9, 10 or 11 Sep. Re-checked: KISSHT would have been HELD on all three sessions under both the old and the new rules, so no exit was actually missed. Constants restored verbatim from 3bc0b4f4.' },
+      { date: '12 Sep 2026', text: 'Open position stops re-based to the new rule and the change recorded on the position row: KISSHT 297.94 \u2192 291.47 (0.92 \u2192 0.90 of the fill), with the prior value kept as stop_prev. A book running the new trail on half its positions and the old stop on the other half is neither spec.' },
+      { date: '12 Sep 2026', text: 'The page now shows the CANDIDATE PIPELINE \u2014 what triggered and was armed, what triggered and was passed over and why, and the names within 15% of their pivot that satisfy every other rule. An empty armed list means something very different when six names triggered and the gate blocked them than when nothing triggered.' },
+      { date: '8 Sep 2026', text: 'Funded with real money through the Capital Desk (\u20b92,28,711) and first real entry taken: KISSHT 132 shares at 323.85, order tagged IPO-ENTRY. The register was not updated at the time and still read \u2018paper, \u20b910L notional\u2019 until 12 Sep \u2014 corrected now.' },
       { date: '6 Sep 2026', text: 'Paper book started on the research/153 adopted spec. Reconciled against the study engine over 34 trading days BEFORE writing state: 20/21 signals agree. The single gap (KISSHT, 21-Jul) is the study admitting a stock to that day\u2019s scan on its TOTAL bar count (84 today) rather than its count at the time (51) \u2014 a look-ahead this engine does not repeat.' },
       { date: '6 Sep 2026', text: 'MIN_BARS set to 60, not the spec\u2019s 25. The study records min_bars 25, but its panel loader admits only symbols with n >= 60, so the published 31.03% CAGR was earned on stocks aged roughly 3-6 months. At 25 this engine found 7 genuine recent IPOs the study could never have traded (INDOMIM 27 bars, LASERPOWER 37, CORDELIA 48, TURTLEMINT 50, VAML/VEDPOWER 59). The wider band may well be better, but it is untested \u2014 that belongs in a study, not a live book.' },
       { date: '6 Sep 2026', text: 'Arun\u2019s funding rule: the book waits on paper so its trades are visible, and the FIRST real deposit routed to it from the Capital Desk arms it for real money. Execution stays manual-assisted either way \u2014 there is no executor on this book, exactly as with Open Alpha.' },
     ],
-    note: 'Soak pass criterion (pre-registered, research/153): modelled vs actual fill within 0.5% of the pivot and a miss rate under 15%, because the entire edge is getting filled AT the pivot. Review 15-Oct-2026. Expect long idle stretches \u2014 the sleeve is 32.7% invested on average and took no trades at all in 2013-14; research/155 tested redeploying that cash and rejected it.',
+    note: 'Soak pass criterion (pre-registered, research/153, unchanged): modelled vs actual fill within 0.5% of the pivot and a miss rate under 15%, because the entire edge is getting filled AT the pivot. Review 15-Oct-2026, plus a 19-Sep-2026 check that the book actually runs clean for a week after the four-session outage. Expect long idle stretches \u2014 the sleeve is about a third invested on average and took no trades at all in 2013-14; research/155 tested redeploying that cash and rejected it. WHAT IS STILL OPEN: the three-sleeve blend against True North and OA Base Age has never been run, and it decides what weight this sleeve should carry \u2014 the re-fit RAISES correlation to the other books (0.282 weekly to Base Age, 0.256 to True North, against 0.245 and 0.211 before), so it can be worth more standalone and less to the portfolio. research/168 owns it. And the re-fit is 10.7pp WORSE than the old spec in 2008: this book is not a crash cushion.',
   },
   {
     id: 'breakout-paper',
