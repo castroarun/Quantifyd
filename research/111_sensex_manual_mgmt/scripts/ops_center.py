@@ -247,17 +247,21 @@ REVIEWS = [
     ("research/160 - refresh the point-in-time Screener panel before any reuse",
      "2027-02-01", "PENDING",
      "The panel is now the shared store backtest_data/fundamentals.db (tables screener_annual, screener_quarterly, screener_top_ratios, symbol_map, features_pit_monthly; loader research/160_quality_growth_near_ath/scripts/load_fundamentals_db.py, idempotent INSERT OR REPLACE) as well as research/160_quality_growth_near_ath/results/ (features_pit_monthly.csv.gz + masks/ + masks_study/); fetched 11-Sep-2026 and stops at 2026-09-01. REFRESH = screener_fetch_full.py (delete or age-out the cache first, ~2.25 h) -> build_pit_panel.py -> load_fundamentals_db.py. Screener figures are RESTATED, not as-reported, and the free page depth is about 12 fiscal years, so the panel's earliest usable month walks forward every August as a new FY is filed. Before any future study reuses it, re-run scripts/screener_fetch_full.py (about 2.25 h, resumable) then build_pit_panel.py, build_masks.py and build_study_masks.py. Do NOT reuse a stale panel for a live decision."),
-    ("OA V2.0 (research/161) - RS>=70 test, reconcile with the OA honest re-optimisation, paper-book call",
+    ("Open Alpha - Base Age LIVE conversion: first two weeks - did the live fills, exits and cash "
+     "refusals track the study?",
      "2026-09-26", "PENDING",
-     "OA V2.0 (Arun's name, 11-Sep-2026) cleared all five pre-registered criteria standalone "
-     "(21.26% after tax, -34.80% DD, 30-seed median; worst seed 19.87%), "
-     "beats NIFTYBEES in both windows) but its portfolio-fit test could NOT be run: Open Alpha's "
-     "published ~34.9% rests on a same-bar look-ahead fill (found by r/159_oa_honest_reoptimization), "
-     "so the r/154 OA curve is unusable as a benchmark. WHEN that study lands, run the blend test: "
-     "daily and monthly correlation to the honest OA curve, and the 10/20/33% weight sweep on paired "
-     "seeds. PASS CRITERION: correlation below 0.40 to the honest OA AND +0.10 Calmar at some weight. "
-     "Also re-check whether the ST(14,4) exit (worth +11.85pp over OA's 15-SMA+8% pair on the same "
-     "entries) should be proposed as a change to the live OA book - that would be its own study."),
+     "Repurposed 12-Sep-2026 from the paper-book call: Arun ruled the live Open Alpha book CONVERTS to "
+     "Base Age (research/165 staged the code behind OA_RULESET, default legacy). At this review compare "
+     "actual AMO fills against the next-open assumption, SuperTrend(14,4) exits against the dry-run lines, "
+     "and the count of entries refused for cash against the research/164 base rate (1,955 of 3,619 events). "
+     "Also: is the 09:20 equity_executor OA top-up off the OA book. Runbook: "
+     "research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md section 9."),
+    ("Open Alpha - Base Age day-one check after the flip",
+     "2026-09-15", "PENDING",
+     "Did the 18:50 job run both legs (exit confirmation then entries), which AMO order type did Kite "
+     "accept (MARKET or the LIMIT fallback, per /tmp/oa_entry.log), did any exit or entry fill at the open, "
+     "and did the 09:20 equity_executor stay off the OA book. If the switch was not flipped, mark N/A and "
+     "carry to the next session."),
     ("research/159 rounding-base shelf breakout - re-check the post-2016-only verdict",
      "2027-03-12", "PENDING",
      "r/159 was killed as SIGNAL-not-STRATEGY on two legs: it misses the 20% CAGR floor "

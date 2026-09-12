@@ -203,3 +203,6 @@ venv/bin/python3 research/162_quality_summit_optimisation/scripts/partb_overlay.
 venv/bin/python3 research/162_quality_summit_optimisation/scripts/finalize_a.py       # ~95 s
 venv/bin/python3 research/162_quality_summit_optimisation/scripts/partc_blend.py
 ```
+
+## Reviews 2026-09-15 and 2026-09-26 - Open Alpha - Base Age LIVE conversion (added 12-Sep-2026)
+Live Open Alpha converts to Base Age (research/165, code staged behind `OA_RULESET` in `services/oa_real.py`, default legacy). 15-Sep: day-one check after the flip (18:50 job both legs, AMO type accepted, fills, 09:20 top-up off OA). 26-Sep (repurposed from the paper-book call): first two weeks - fills vs next-open, ST(14,4) exits vs dry-run, cash refusals vs the research/164 base rate. Registered in `ops_center.py` REVIEWS.

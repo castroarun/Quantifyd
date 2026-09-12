@@ -2,6 +2,10 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-09-12 - Open Alpha - Base Age live conversion - STAGED, SWITCH OFF, awaiting Arun flip
+
+Arun: "we must convert the existing OA trades into this OA base age system, manage the exits and continue to be live with further trades." Code is on the VPS behind `OA_RULESET` in `services/oa_real.py` (default `legacy`, so nothing has changed; commits 2a0f9074, b1eed5a1). Replication gate 100.00% vs the research/164 3,619-event list; all 11 live positions HOLD under SuperTrend(14,4) (13-26% above the line); Monday only candidate is PAYTM (21 sh, about Rs 38,157). **BLOCKER before the flip:** `services/equity_executor.py` (crontab line 107, 09:20) still tops up OA holdings with real OA-TOPUP orders - settle it (crontab-only `--book ipo-base`, or a guarded engine change with its own STATUS) or do not flip. Unverified until the first evening: which AMO order type Kite accepts (MARKET, else LIMIT at close +/-2%). Runbook + rollback: `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` section 9. Register row updated (Open Alpha - Base Age (converting)); reviews 2026-09-15 and 2026-09-26 in the Ops Centre.
+
 ## ✅ 2026-09-12 (evening) — every Momentum Portfolio book now credits idle cash at **5.2% post-tax — the arbitrage-fund rate** (research/163)
 
 Arun: *"the Momentum Portfolio report `/app/mpf-report` must credit idle cash at 5.2% a year
