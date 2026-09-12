@@ -50,6 +50,27 @@
   margin-top: 12px;
 }
 
+.verdictLead {
+  margin: 0 0 10px;
+  font-size: var(--text-md, 14px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.verdictP { margin: 0 0 10px; }
+.verdictH {
+  margin: 14px 0 6px;
+  font-size: var(--text-xs, 12px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted, var(--ink-faint));
+}
+.verdictList {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+.verdictList li { margin: 0 0 5px; }
+
 .headerMeta {
   display: flex;
   align-items: center;

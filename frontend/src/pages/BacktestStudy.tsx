@@ -5,6 +5,36 @@ import MetricCard from '../components/Cards/MetricCard';
 import DataTable, { type Column } from '../components/DataTable/DataTable';
 import { getStudy, type StudyTable, type KV } from '../data/backtests';
 
+/** A verdict string may carry structure: blank lines separate blocks, a block starting
+ *  with "## " is a sub-heading, a block whose lines all start with "- " is a list. The
+ *  first block is the verdict line and is set heavier. Single-paragraph verdicts (every
+ *  study before 12-Sep-2026) render exactly as before. */
+function VerdictText({ text }: { text: string }) {
+  const blocks = text.trim().split(/\n\s*\n/);
+  return (
+    <div className={styles.verdict}>
+      {blocks.map((b, i) => {
+        const lines = b.split(/\n/).map((l) => l.trim()).filter(Boolean);
+        if (lines.length === 1 && lines[0].startsWith('## ')) {
+          return <div key={i} className={styles.verdictH}>{lines[0].slice(3)}</div>;
+        }
+        if (lines.every((l) => l.startsWith('- '))) {
+          return (
+            <ul key={i} className={styles.verdictList}>
+              {lines.map((l, j) => <li key={j}>{l.slice(2)}</li>)}
+            </ul>
+          );
+        }
+        return (
+          <p key={i} className={i === 0 && blocks.length > 1 ? styles.verdictLead : styles.verdictP}>
+            {lines.join(' ')}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 const STATUS_CLASS: Record<string, string> = {
   COMPLETE: styles.stComplete,
   RUNNING: styles.stRunning,
@@ -300,7 +330,7 @@ export default function BacktestStudy() {
             {study.status}
           </span>
         </div>
-        <div className={styles.verdict}>{study.verdict}</div>
+        <VerdictText text={study.verdict} />
         {study.slug === 'momentum30-subselect' && (
           <Link
             to="/momentum-paper"
