@@ -30,7 +30,9 @@ export default function Backtest() {
       </div>
 
       <div className={styles.grid}>
-        {BACKTEST_STUDIES.map((s) => (
+        {/* newest first (Arun, 12-Sep-2026): entries are appended to the data file in
+            arbitrary order, so research/162 sat at the bottom of 46 cards */}
+        {[...BACKTEST_STUDIES].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0)).map((s) => (
           <Link key={s.slug} to={`/backtest/${s.slug}`} className={styles.card}>
             <div className={styles.cardHead}>
               <div className={styles.cardTitle}>{s.title}</div>
