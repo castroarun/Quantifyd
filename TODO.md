@@ -6,6 +6,91 @@ Cross-session source of truth for pending work. Each item: what / why / when.
 
 Arun: "we must convert the existing OA trades into this OA base age system, manage the exits and continue to be live with further trades." Code is on the VPS behind `OA_RULESET` in `services/oa_real.py` (default `legacy`, so nothing has changed; commits 2a0f9074, b1eed5a1). Replication gate 100.00% vs the research/164 3,619-event list; all 11 live positions HOLD under SuperTrend(14,4) (13-26% above the line); Monday only candidate is PAYTM (21 sh, about Rs 38,157). **BLOCKER before the flip:** `services/equity_executor.py` (crontab line 107, 09:20) still tops up OA holdings with real OA-TOPUP orders - settle it (crontab-only `--book ipo-base`, or a guarded engine change with its own STATUS) or do not flip. Unverified until the first evening: which AMO order type Kite accepts (MARKET, else LIMIT at close +/-2%). Runbook + rollback: `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` section 9. Register row updated (Open Alpha - Base Age (converting)); reviews 2026-09-15 and 2026-09-26 in the Ops Centre.
 
+## ✅ 2026-09-13 — research/168: the three-sleeve blend settles the IPO question — **adopt the RE-FIT, fund it at 25%; the INCUMBENT sleeve does not earn a place at any weight**
+
+The adoption blocker named in research/167 section 8 item 1, and the last open piece of the IPO
+line. r/167 had produced a better IPO standalone book that was a WORSE pairwise diversifier, so
+only the blend could decide which was worth more to the portfolio. It is now run.
+
+**Answer 1 — the re-fit is worth more, unanimously.** At the same weight, same rebalance, same 30
+paired paths: **+1.73pp of blend CAGR and +0.054 Calmar on 30 of 30 paths** at a 25% weight;
++2.42pp / +0.107 Calmar at 35%; +3.45pp / +0.267 at 50%. The sign is unanimous at **every** weight
+from 5% to 50%, on **both** cost bases, under **monthly rebalancing and under pure drift**, and in
+**both halves** of the window (WA +0.38pp 24/30, WB +1.38pp 30/30 against the two-sleeve book).
+
+**Answer 2 — r/167's correlation-based worry was backwards, and the inference from it is
+retracted.** The refit IS the worse pairwise diversifier (monthly 0.348 to True North and 0.329 to
+OA·BaseAge, against the incumbent's 0.259 and 0.319) and is still far the better blend sleeve,
+because the correlation rise is swamped by the return improvement. **Pairwise correlation was the
+wrong screen for this decision.**
+
+**Answer 3 — the INCUMBENT sleeve fails the pre-registered bar at every weight.** It costs the
+blend CAGR at every weight (**0 of 30** paths positive, −0.32pp at 10% to −2.03pp at 50%) and never
+reaches +0.10 Calmar (best **+0.089** at a 30% weight). Against plain cash **at the same portfolio
+drawdown** it is worth only **+1.17pp of CAGR at 25%**, +1.25pp at its best, and it **loses** at
+50% (5/30). IPO-INC is insurance with a premium, and the premium is roughly what an arbitrage fund
+would have paid for nothing. IPO-A beats cash-at-equal-drawdown by **+2.52pp at 25% and +4.79pp at
+50%, on 30 of 30 paths at every weight**.
+
+**Answer 4 — r/167's 2008 black mark washes out in the blend.** The 10.7pp standalone gap
+(−10.3% for the refit vs +0.4% for the incumbent) becomes **2.5pp** at blend weight (−19.3% vs
+−16.8%), and **both** arms improve on the two-sleeve book's −22.3%. Plain cash at the same weight
+delivers the same 2008 cushion the incumbent does, for free. The crash-cushion argument does not
+rescue the incumbent.
+
+**RECOMMENDED WEIGHT — True North 37.5% / OA · Base Age 37.5% / IPO-A 25%, rebalanced monthly:**
+**21.18% CAGR after tax [worst path 19.17%] / −24.01% MaxDD [worst path −26.39%] / Calmar 0.885**
+over 2006-04-03 → 2026-09-03, against the two-sleeve book's 20.28% / −26.91% / 0.749 — **+0.91pp
+CAGR and +2.9pp of drawdown on 30 of 30 paths**. 20% is the floor at which the bar clears on every
+path; 35% is where the refit's edge over the incumbent also clears the pre-registered magnitude;
+25% is the capacity-aware choice inside that band, fundable on a book up to ₹80–100 L because the
+sleeve itself caps at ~₹20–25 L.
+
+**Reported but NOT recommended:** the Calmar surface peaks at a **45–60%** IPO-A weight (1.05–1.06,
+a flat plateau) and the unconstrained 231-combination simplex wants **TN 45 / OA 0 / IPO 55**.
+Three reasons not to: the sleeve's ₹20–25 L capacity ceiling, no held-out period anywhere in the
+chain (r/167 chose the trail and gate on this same window, and these weights were chosen on it
+again), and it would delete a live book with twenty years of its own evidence.
+
+**Two method findings worth carrying forward.**
+1. **Calmar cannot adjudicate a cash null.** Cash has zero drawdown, so Calmar rises without bound
+   with the cash weight — 100% cash scores Calmar **infinity** — and a weight-matched comparison
+   flatters cash above about a 30% weight. The decision-grade form is the **risk-matched cash
+   null**: solve the cash weight that reproduces the candidate blend's drawdown, then compare CAGR.
+2. **A bug of mine, caught before it reached the report.** The first blend engine measured each
+   rebalance period's returns from the rebalance day itself rather than the previous close, which
+   **discarded the return of every rebalance day** and manufactured a fake frequency premium
+   (monthly appeared to cost 1.8pp of CAGR against drift; quarterly to earn +1.4pp). The tells were
+   a non-monotonic frequency response and a move far too large for the change made. Fixed, with a
+   self-test that a 100% single-sleeve blend must reproduce that sleeve exactly under every
+   frequency. Real effect: monthly is worth **+0.54pp of CAGR over drift**, monotone, phase
+   dispersion under 0.005 of Calmar. **Any "quarterly beats monthly" reading from that session is
+   retracted.**
+
+**A separate finding that is NOT this study's question, now registered:** the two-sleeve book itself
+prefers a True North tilt — TN 85 : OA 15 scores Calmar 0.826 against 50:50's 0.749, and every top
+simplex cell pushes OA·BaseAge toward zero. That is a re-weighting of the live pair and needs its
+own study (Ops Centre review, 2026-09-26). Every headline figure in r/168 holds the deployed 50:50
+ratio fixed precisely so the IPO question is answered on its own.
+
+**Housekeeping.** Every sleeve was re-measured at the common **5.2% post-tax idle-cash standard**
+(research/163) through a reproduction gate first — True North bit-exact (0 of 5,066 rows differ),
+OA·BaseAge bit-exact on all 30 paths, both IPO arms exact to +0.000pp against r/167's stage 9 —
+because the four curves had been produced at 6.5% / 5.5% / 5.0% while the books hold 57% / 27% / 68%
+cash, and blending them as produced would have biased the weights. One basis is NOT harmonised and
+is inherited, not introduced: True North runs at 15 bps a side (r/144's `rt = 0.003`) against 25 bps
+for the other two; every conclusion was re-measured with True North also at 25 bps and is unchanged.
+
+**Nothing was deployed by this study.** `services/` and `frontend/` were not touched. The re-fitted
+spec is already live in the IPO paper book (see the 12-Sep entry below); this study says the
+**weight** it should eventually be funded at is **25%**, not the 0–15% a correlation-only reading of
+r/167 would have suggested.
+
+- Full write-up: `research/168_three_sleeve_blend/results/RESULTS.md`
+- Status doc: `research/168_three_sleeve_blend/THREE_SLEEVE_BLEND_IPO_WEIGHT_DAILY_SWEEP_STATUS.md`
+- Per-year house table: `research/168_three_sleeve_blend/results/peryear_table.md`
+- The test that kills the incumbent: `research/168_three_sleeve_blend/results/risk_matched_cash_null.csv`
+
 ## ✅ 2026-09-12 (evening) — every Momentum Portfolio book now credits idle cash at **5.2% post-tax — the arbitrage-fund rate** (research/163)
 
 Arun: *"the Momentum Portfolio report `/app/mpf-report` must credit idle cash at 5.2% a year
@@ -198,12 +283,20 @@ pivot makes it an order — unless the gate is on that evening.
 
 ### Still open
 
-1. **The three-sleeve blend** against True North and OA Base Age — dispatched as research/168,
-   running now. It decides what weight this sleeve should carry, and the re-fit argues against
-   itself there: it RAISES correlation to the other books (0.282 weekly to Base Age and 0.256
-   to True North, against 0.245 and 0.211 before).
-2. **2008.** The re-fit loses 10.3% where the old spec made +0.4%. This book is not a crash
-   cushion, and should not be relied on as one.
+1. ~~**The three-sleeve blend**~~ — **ANSWERED 13-Sep-2026 by research/168: fund the re-fit at
+   25%** (True North 37.5 / OA Base Age 37.5 / IPO-A 25, monthly → 21.18% CAGR after tax /
+   −24.01% DD / Calmar 0.885 against the two-sleeve 20.28 / −26.91 / 0.749). The re-fit beats the
+   incumbent on **30 of 30 paired paths at every weight tested**, and the correlation worry quoted
+   here was **backwards** — the refit is the worse pairwise diversifier and still the far better
+   blend sleeve. The **incumbent** sleeve fails the bar at every weight and is worth only ~1pp of
+   CAGR over plain cash at equal drawdown. Remaining item, owed by **Arun, not research**: the
+   funding call (Ops Centre review 2026-09-26), and a live-fill check before going past 25%
+   (review 2026-11-28).
+2. ~~**2008**~~ — **largely closed by research/168.** The 10.7pp standalone gap becomes **2.5pp at
+   blend weight** (−19.3% for the refit vs −16.8% for the incumbent at a 25% weight), and **both**
+   arms improve on the two-sleeve book's −22.3%. Plain cash at the same weight delivers the same
+   2008 cushion the incumbent does, for free — so the crash-cushion argument does not rescue the
+   old spec. The book is still not a crash cushion and should not be relied on as one.
 3. **Cron-crash alerting** across every paper and real book (above).
 4. **The rename defect** (`LOTUSDEV` → `LOTUSDEV-BE`) hits this book hardest of the three. Ten
    of eleven stale young names are missing from the instrument dump. It corrupts live signals,

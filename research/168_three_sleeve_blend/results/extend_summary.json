@@ -1,0 +1,17 @@
+{
+ "best_two_sleeve": {
+  "third": "INC",
+  "w_tn": 85,
+  "w_ba": 15,
+  "w_ipo": 0,
+  "freq": "monthly",
+  "cagr": 19.951,
+  "maxdd": -24.36,
+  "calmar": 0.8259,
+  "calmar_lo": 0.8259,
+  "calmar_hi": 0.8259,
+  "cagr_lo": 19.951,
+  "cagr_hi": 19.951,
+  "nph": 1
+ }
+}

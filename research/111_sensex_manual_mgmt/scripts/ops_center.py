@@ -178,7 +178,55 @@ REVIEWS = [
      "published curve at the old yield before changing it, so the re-run is self-gating. "
      "Evidence: research/163_mpf_cash_yield_harmonisation/"
      "MPF_CASH_YIELD_5P2_DAILY_RUN_STATUS.md"),
-    ('research/167 - IPO Base: adopt the re-fitted spec, or keep the incumbent? The 3-sleeve blend test is what blocks the call', '2026-09-26', 'PENDING', "research/167 (12-Sep-2026) re-measured the ADOPTED r/153 IPO spec on an entry an order can actually place, and it is NO EDGE: 14.90% after tax, -38.6% drawdown, and it LOSES to a date-matched random-entry null run on the same days with the same fill rule (14.90 vs 15.11, real wins 14 of 30 paired seeds; gated, 8 of 30). r/153's own null passed only because it was run on the close-fill arm rather than the live next-day-stop arm. Re-fitted, ONE dial carries the whole edge and it is the trail: real-minus-null is zero or negative at trail <=20, the incumbent's own region, and +4.91pp at trail 50, unanimous 30 of 30 across the whole 30-75 band and reproducing at two independent stop values. Spec A - trail SMA-50, stop 10%, target +25%, plus a NEW no-new-entries-while-NIFTYBEES-is-below-its-150-day-SMA gate - gives 21.80% after tax [20.83..23.19 across 30 seeds], -26.6% median drawdown, Calmar 0.819, against the incumbent's 14.90 / -38.6 / 0.386. The gate is insurance with no premium: a coin flip on return (14 of 30) that removes 17.8pp of drawdown on 30 of 30 paths. TWO THINGS BLOCK ADOPTION. (1) The 3-sleeve blend against True North + OA Base Age was never run, and that is the question that decides it - the refit RAISES correlation to the other books (0.282 to Base Age and 0.256 to True North, against the incumbent's 0.245 and 0.211), so it can be worth less to the portfolio while being worth more standalone. (2) The refit is 10.7pp WORSE than the incumbent in 2008, -10.3% against +0.4%, because the fast SMA-20 trail that costs 7pp a year in normal times is exactly what sidestepped that crash. Read before deciding: 21.80% should be discounted to 19-22% for the ~350 cells scored, the worst-seed drawdown is -32.9% not -26.6%, and capacity caps this sleeve at roughly Rs 20-25L permanently. Decide on the same date as the Base Age paper-book call so the two are settled together."),
+    ('research/167+168 - IPO Base: the blend test is DONE and says ADOPT THE RE-FIT AT 25%. Arun owes the funding call', '2026-09-26', 'PENDING', "ANSWERED 13-Sep-2026 by research/168, which ran the 3-sleeve blend this review was waiting for. THE ANSWER: the re-fit (Spec A) is worth more to the portfolio than the incumbent on 30 of 30 paired paths at EVERY weight from 5% to 50%, on both cost bases, under monthly rebalancing and under pure drift, and in both halves of the window - +1.73pp of blend CAGR and +0.054 Calmar at a 25% weight, +2.42pp / +0.107 at 35%, +3.45pp / +0.267 at 50%. r/167's correlation-based worry was BACKWARDS and the inference from it is retracted: the refit IS the worse pairwise diversifier (monthly 0.348 to True North, 0.329 to OA Base Age, against the incumbent's 0.259 and 0.319) and is still far the better blend sleeve, because the correlation rise is swamped by the return improvement. The INCUMBENT sleeve fails the pre-registered bar at every weight: it costs blend CAGR on 0 of 30 paths at every weight, never reaches +0.10 Calmar (best +0.089 at 30%), and at the SAME portfolio drawdown it is worth only +1.17pp of CAGR over plain cash at 25%, +1.25pp at its best, and LOSES at 50%. The 2008 concern washes out: the 10.7pp standalone gap becomes 2.5pp at blend weight and BOTH arms improve on the two-sleeve book's -22.3%, while plain cash at the same weight gives the same 2008 cushion the incumbent does for free. RECOMMENDED WEIGHT: True North 37.5% / OA Base Age 37.5% / IPO-A 25%, monthly - 21.18% CAGR after tax [worst path 19.17%] / -24.01% drawdown [worst -26.39%] / Calmar 0.885, against the two-sleeve book's 20.28 / -26.91 / 0.749. 20% is the floor at which the bar clears on every path; 35% is where the refit's edge over the incumbent also clears the pre-registered magnitude; 25% is the capacity-aware choice, fundable on a book up to Rs 80-100L because the sleeve itself caps at ~Rs 20-25L. The Calmar surface actually peaks at a 45-60% weight and the unconstrained simplex wants TN 45 / OA 0 / IPO 55 - NOT recommended (capacity, no held-out period, and it deletes a live book). WHAT IS OWED ON THIS DATE, BY ARUN, NOT BY RESEARCH: the funding decision - what weight the IPO sleeve is actually given, and whether the other two move to make room. Evidence: research/168_three_sleeve_blend/results/RESULTS.md. ORIGINAL r/167 CONTEXT FOLLOWS. ""research/167 (12-Sep-2026) re-measured the ADOPTED r/153 IPO spec on an entry an order can actually place, and it is NO EDGE: 14.90% after tax, -38.6% drawdown, and it LOSES to a date-matched random-entry null run on the same days with the same fill rule (14.90 vs 15.11, real wins 14 of 30 paired seeds; gated, 8 of 30). r/153's own null passed only because it was run on the close-fill arm rather than the live next-day-stop arm. Re-fitted, ONE dial carries the whole edge and it is the trail: real-minus-null is zero or negative at trail <=20, the incumbent's own region, and +4.91pp at trail 50, unanimous 30 of 30 across the whole 30-75 band and reproducing at two independent stop values. Spec A - trail SMA-50, stop 10%, target +25%, plus a NEW no-new-entries-while-NIFTYBEES-is-below-its-150-day-SMA gate - gives 21.80% after tax [20.83..23.19 across 30 seeds], -26.6% median drawdown, Calmar 0.819, against the incumbent's 14.90 / -38.6 / 0.386. The gate is insurance with no premium: a coin flip on return (14 of 30) that removes 17.8pp of drawdown on 30 of 30 paths. TWO THINGS BLOCK ADOPTION. (1) The 3-sleeve blend against True North + OA Base Age was never run, and that is the question that decides it - the refit RAISES correlation to the other books (0.282 to Base Age and 0.256 to True North, against the incumbent's 0.245 and 0.211), so it can be worth less to the portfolio while being worth more standalone. (2) The refit is 10.7pp WORSE than the incumbent in 2008, -10.3% against +0.4%, because the fast SMA-20 trail that costs 7pp a year in normal times is exactly what sidestepped that crash. Read before deciding: 21.80% should be discounted to 19-22% for the ~350 cells scored, the worst-seed drawdown is -32.9% not -26.6%, and capacity caps this sleeve at roughly Rs 20-25L permanently. Decide on the same date as the Base Age paper-book call so the two are settled together."),
+    ("research/168 - the TWO-SLEEVE weights themselves: does True North deserve a bigger "
+     "share than Open Alpha . Base Age?",
+     "2026-09-26", "PENDING",
+     "A finding that fell out of research/168 and is NOT what that study was asked: the "
+     "two-sleeve True North + OA Base Age book does not prefer the deployed 50:50. On the full "
+     "231-combination weight simplex (2006-04-03 to 2026-09-03, 30 paired paths, after tax, "
+     "5.2% post-tax idle cash), TN 85 : BA 15 scores Calmar 0.826 against 50:50's 0.749, and "
+     "EVERY top simplex cell pushes OA Base Age toward zero (the best three-sleeve cells hold "
+     "OA at 0-15%). The mechanism is visible in the sleeve table: the two books earn almost the "
+     "same CAGR (True North 19.63%, OA Base Age 19.92%) but OA Base Age carries 8 points more "
+     "drawdown (-34.05% vs -25.99%) and is the more index-correlated of the two (0.484 to "
+     "NIFTYBEES vs 0.394), so the blend keeps the return and sheds the risk by tilting to True "
+     "North. WHY THIS IS NOT YET ACTIONABLE: it is an in-sample Calmar surface on one window, "
+     "it would shrink a live book that has twenty years of its own evidence, r/164 and r/166 "
+     "are still re-deriving Base Age's slots / sizing / drift, and research/168 deliberately "
+     "held the deployed 50:50 ratio FIXED so that study's own question (the IPO weight) was "
+     "answered on its own. WHAT TO DO BY THIS DATE: decide whether to open a study on the "
+     "TN:OA ratio. If yes it needs its own STATUS doc and its own pre-registered bar, paired "
+     "across True North's 12 rebalance-day offsets and Base Age's 30 seeds, with BOTH halves of "
+     "the window required to agree and a cash-null at the weight being shifted - the same bar "
+     "r/168 used. PASS = either a dated study folder exists, or this is recorded as "
+     "deliberately declined with the reason. Evidence: "
+     "research/168_three_sleeve_blend/results/extend_grid.csv.gz and section 8 of "
+     "research/168_three_sleeve_blend/results/RESULTS.md"),
+    ("research/168 - IPO Base weight: re-check the 25% recommendation against the live book's "
+     "own fills before funding more than 25%",
+     "2026-11-28", "PENDING",
+     "research/168 recommends funding the re-fitted IPO Base at 25% of the three-sleeve book "
+     "(True North 37.5 / OA Base Age 37.5 / IPO-A 25) and says 35% is justified by the same "
+     "evidence IF the live book tracks the model. This review is the gate on that step. THE "
+     "MODEL TO BEAT, from r/167 Spec A at 5.2% post-tax idle cash: 22.08% CAGR [worst seed "
+     "21.09%], -26.57% median drawdown [worst seed -32.76%], 18.9 trades a year, median hold 37 "
+     "days, 49.0% win rate, +6.24% net expectancy a trade. WHAT TO VERIFY: (1) fills within "
+     "about 0.5% of the modelled max(pivot, open) on the next-day buy-stop, measured trade by "
+     "trade, not in aggregate; (2) the MISS rate - how many armed buy-stops never triggered - "
+     "against the model's ~1.5%, which also settles the known paper-branch defect that books a "
+     "fill without checking the day's high reached the pivot; (3) trades a year and median hold "
+     "in the live sample against 18.9 and 37 days; (4) that the NIFTYBEES < 150-day-SMA gate "
+     "fired when it should have, with the dates. WHY IT MATTERS FOR THE WEIGHT: the whole "
+     "3-sleeve case rests on IPO-A's return, not on its diversification - it is the worse "
+     "pairwise diversifier of the two arms - so a live shortfall in expectancy cuts the "
+     "justified weight roughly proportionally. CAPACITY IS THE OTHER CAP: the sleeve's p90 "
+     "position is 9.0% of the name's 20-day median traded value on a Rs 10L book, so it does "
+     "not scale past roughly Rs 20-25L and 25% of the book is only fundable while the book is "
+     "under about Rs 80-100L. PASS = a trade-by-trade fill comparison exists and either "
+     "supports the step to 35% or records the measured shortfall and the weight it implies. "
+     "Evidence: research/168_three_sleeve_blend/results/RESULTS.md section 10, "
+     "research/167_ipo_base_honest_reopt/results/stage9_adoption.csv"),
     ("research/164 - Open Alpha - Base Age: test POSITION DRIFT, the first-order constraint the "
      "slot study exposed",
      "2026-10-10", "PENDING",

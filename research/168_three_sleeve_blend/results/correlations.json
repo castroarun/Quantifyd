@@ -1,0 +1,113 @@
+{
+ "daily": {
+  "TN": {
+   "TN": 1.0,
+   "OA BaseAge": 0.502,
+   "IPO-INC": 0.1962,
+   "IPO-A": 0.231,
+   "NIFTYBEES": 0.2991
+  },
+  "OA BaseAge": {
+   "TN": 0.502,
+   "OA BaseAge": 1.0,
+   "IPO-INC": 0.2793,
+   "IPO-A": 0.323,
+   "NIFTYBEES": 0.4507
+  },
+  "IPO-INC": {
+   "TN": 0.1962,
+   "OA BaseAge": 0.2793,
+   "IPO-INC": 1.0,
+   "IPO-A": 0.6996,
+   "NIFTYBEES": 0.1551
+  },
+  "IPO-A": {
+   "TN": 0.231,
+   "OA BaseAge": 0.323,
+   "IPO-INC": 0.6996,
+   "IPO-A": 1.0,
+   "NIFTYBEES": 0.1757
+  },
+  "NIFTYBEES": {
+   "TN": 0.2991,
+   "OA BaseAge": 0.4507,
+   "IPO-INC": 0.1551,
+   "IPO-A": 0.1757,
+   "NIFTYBEES": 1.0
+  }
+ },
+ "weekly": {
+  "TN": {
+   "TN": 1.0,
+   "OA BaseAge": 0.4485,
+   "IPO-INC": 0.2049,
+   "IPO-A": 0.2555,
+   "NIFTYBEES": 0.3206
+  },
+  "OA BaseAge": {
+   "TN": 0.4485,
+   "OA BaseAge": 1.0,
+   "IPO-INC": 0.2449,
+   "IPO-A": 0.2746,
+   "NIFTYBEES": 0.4849
+  },
+  "IPO-INC": {
+   "TN": 0.2049,
+   "OA BaseAge": 0.2449,
+   "IPO-INC": 1.0,
+   "IPO-A": 0.7122,
+   "NIFTYBEES": 0.1677
+  },
+  "IPO-A": {
+   "TN": 0.2555,
+   "OA BaseAge": 0.2746,
+   "IPO-INC": 0.7122,
+   "IPO-A": 1.0,
+   "NIFTYBEES": 0.1843
+  },
+  "NIFTYBEES": {
+   "TN": 0.3206,
+   "OA BaseAge": 0.4849,
+   "IPO-INC": 0.1677,
+   "IPO-A": 0.1843,
+   "NIFTYBEES": 1.0
+  }
+ },
+ "monthly": {
+  "TN": {
+   "TN": 1.0,
+   "OA BaseAge": 0.4415,
+   "IPO-INC": 0.2588,
+   "IPO-A": 0.3484,
+   "NIFTYBEES": 0.3936
+  },
+  "OA BaseAge": {
+   "TN": 0.4415,
+   "OA BaseAge": 1.0,
+   "IPO-INC": 0.3187,
+   "IPO-A": 0.3286,
+   "NIFTYBEES": 0.4835
+  },
+  "IPO-INC": {
+   "TN": 0.2588,
+   "OA BaseAge": 0.3187,
+   "IPO-INC": 1.0,
+   "IPO-A": 0.7166,
+   "NIFTYBEES": 0.1462
+  },
+  "IPO-A": {
+   "TN": 0.3484,
+   "OA BaseAge": 0.3286,
+   "IPO-INC": 0.7166,
+   "IPO-A": 1.0,
+   "NIFTYBEES": 0.1636
+  },
+  "NIFTYBEES": {
+   "TN": 0.3936,
+   "OA BaseAge": 0.4835,
+   "IPO-INC": 0.1462,
+   "IPO-A": 0.1636,
+   "NIFTYBEES": 1.0
+  }
+ }
+}
