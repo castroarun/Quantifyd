@@ -117,10 +117,17 @@ function Section({
   );
 }
 
-function Figure({ src, caption }: { src: string; caption: string }) {
+/** `narrow` caps the rendered width — for square charts such as the correlation heatmaps,
+ *  which look like posters when stretched to the card width. */
+function Figure({ src, caption, narrow }: { src: string; caption: string; narrow?: boolean }) {
   return (
     <figure className={styles.figure}>
-      <img src={src} alt={caption} className={styles.figureImg} loading="lazy" />
+      <img
+        src={src}
+        alt={caption}
+        className={narrow ? `${styles.figureImg} ${styles.figureNarrow}` : styles.figureImg}
+        loading="lazy"
+      />
       <figcaption className={styles.figureCap}>{caption}</figcaption>
     </figure>
   );
@@ -865,12 +872,13 @@ export default function MpfReport() {
 
         <Figure
           src={d.charts.corr20y}
-          caption="The same correlations as a heatmap. IPO Base is the pale column — the only book here that is genuinely doing something else."
+          narrow
+          caption={`The same correlations as a heatmap, weekly returns over ${H.window[0]} to ${H.window[1]} (${H.weeks} weeks). Scale fixed 0 to 1 on both heatmaps; red means a pair moves together. IPO Base is the pale column — the only book here that is genuinely doing something else.`}
         />
 
         <Figure
           src={d.charts.invested}
-          caption="How much of each book is actually in the market. True North holds cash 57% of the time and still finishes near the top; Open Alpha · Base Age is a measurement gap, not a zero."
+          caption="How much of each book is actually in the market. True North holds cash 57% of the time and still finishes near the top. Open Alpha · Base Age was the one gap here; it was measured on 12-Sep-2026 — 72.9% invested, 30-seed median, band 72.7–73.1% — so the bar is now a measurement rather than a placeholder."
         />
         <div className={styles.noteBox}>{d.notes.invested_timeseries}</div>
       </Section>
@@ -923,7 +931,8 @@ export default function MpfReport() {
 
         <Figure
           src={d.charts.corr2018}
-          caption="Quality Summit sits closest to Open Alpha · Base Age and to the index. It is not a third source of return."
+          narrow
+          caption={`Weekly returns on the 2018 window (${W.weeks} weeks), same 0-to-1 scale as the 20-year heatmap so the two can be read across. Quality Summit sits closest to Open Alpha · Base Age and to the index. It is not a third source of return.`}
         />
 
         <div className={styles.noteBox}>{d.notes.two_curve_files}</div>

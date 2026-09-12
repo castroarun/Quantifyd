@@ -353,6 +353,15 @@
   background: #0e1116;
 }
 
+/* A 4x4 correlation matrix does not need the full card width: stretched that wide each
+   cell became enormous and the picture read as a poster. Capped and centred instead.
+   Genuinely wide charts - the curves, the yearly bars, rolling 3y, invested - keep 100%. */
+.figureNarrow {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
 .figureCap {
   margin-top: 8px;
   font-size: 11px;

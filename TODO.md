@@ -2,6 +2,52 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-12 — research/163: every book on /app/mpf-report now credits idle cash at 5%, and the last "NOT MEASURED" is gone
+
+Arun: *"every book must credit idle cash at the SAME rate, 5% a year, post-tax"*, plus three
+display asks on the same page. **Nothing about any system changed** — no rule, no engine under
+`services/`, no live or paper book, no backend restart.
+
+**What was inconsistent.** True North's curve came from research/144, which assumed **6.5%** idle
+cash, and Open Alpha · Base Age's from research/161, which assumed **5.5%**. Every other book was
+already at 5%. True North holds cash 57% of the time, so the assumption alone was worth about a
+point a year to it.
+
+**What was done.** Both books were re-run on their OWN engines with `cash_y` / `idle_yield` at 5%.
+Each re-run first reproduced its published curve at the old yield: True North matched
+`nav_INC_cash_n8_d15_tax1.csv` on 5,052 of 5,066 bars to machine precision (the last 14 differ
+because `market_data.db` has been refreshed since 3-Sep — worth +0.05pp, reported separately), and
+Base Age matched `curves161.npz['WINNER']` **bit-exactly**.
+
+| Row, 20.4-year window | before | after | Δ CAGR |
+|---|---|---|---|
+| True North | 19.48% / −23.67% / 0.82 | **18.56% / −24.95% / 0.74** | −0.92 |
+| Open Alpha · Base Age | 20.27% / −32.45% / 0.62 | **19.93% / −32.73% / 0.61** | −0.34 |
+| TN + Base Age 50-50 | 20.42% / −25.24% / 0.81 | **19.80% / −25.68% / 0.77** | −0.62 |
+
+IPO Base, Quality Summit, Open Alpha · ATH + VIX and NIFTYBEES are **bit-identical on both
+windows**, asserted by `scripts/check_unchanged.py`. Nothing reorders. The post-tax check passed on
+all four engines: every one credits the yield daily and none taxes it.
+
+**Open Alpha · Base Age is now MEASURED at 72.89% invested** (30-seed median, band 72.73–73.05%),
+with a daily series at `research/163_.../results/baseage_invested_daily.csv`. That **contradicts
+the handover's unsourced ~67%** by about six points; the measurement is used. Consistency check:
+the measured series predicts 0.127pp of CAGR per 0.5pp of yield, the paired per-seed median delta
+is 0.180pp with an SE of ~0.13pp — agreement within noise.
+
+**Charts redrawn** on the same page: line-weight hierarchy inverted (the compared books lead, the
+blend is a thin dashed slate), drawdown fills removed, growth panel drawn weekly / measured daily,
+correlation heatmaps shrunk to ~5in with the colourbar dropped and the diagonal greyed, and capped
+at 560px on the page.
+
+**What this leaves.** Nothing is owed and no periodic job was created — the generator now defaults
+to research/163's curve files. Still open from before: a daily invested series for True North, IPO
+Base and Quality Summit (only Base Age has one), and the proper blend/allocation study.
+
+- Full write-up: `research/163_mpf_cash_yield_harmonisation/results/RESULTS.md`
+- Status doc: `research/163_mpf_cash_yield_harmonisation/MPF_CASH_YIELD_HARMONISATION_DAILY_RUN_STATUS.md`
+- Page: http://94.136.185.54:5000/app/mpf-report
+
 ## ✅ 2026-09-12 — research/162: Quality Summit could NOT be improved, and the quality screen does NOT belong inside Base Age
 
 Arun said **"go"** at ~23:35 on 11-Sep and asked for the overlay review that research/160 had

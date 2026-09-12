@@ -150,15 +150,18 @@ group "Momentum Portfolio report (/app/mpf-report)").
 | **Schedule** | on demand / after any mpf system change — NOT a cron |
 | **Script** | `research/_utilities/mpf_report_build.py` |
 | **What** | Regenerates every number and all ten charts on `/app/mpf-report`, the single report page for True North, Open Alpha · Base Age, IPO Base and Quality Summit. Writes `static/app/mpf_report.json`, `frontend/public/mpf_report.json` and `frontend/public/mpf-report-*.png`. |
-| **Reads** | `research/159_oa_honest_reoptimization/results/{full_period_after_tax.csv, all_systems_after_tax.csv, after_tax_tables.csv, all_systems_summary.json}` and `research/160_quality_growth_near_ath/results/F_Bb7_equity.csv`. Read-only: no DB, no engine, no live state. |
-| **Manual command** | `cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py` then `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build` |
+| **Reads** | `research/163_mpf_cash_yield_harmonisation/results/{full_period_after_tax_cash05.csv, all_systems_after_tax_cash05.csv}` (the two curve files, since 12-Sep-2026 — research/159's, with True North and Open Alpha · Base Age replaced by 5%-idle-cash re-runs of their own engines), plus `research/159_oa_honest_reoptimization/results/{after_tax_tables.csv, all_systems_summary.json}` and `research/160_quality_growth_near_ath/results/F_Bb7_equity.csv`. Read-only: no DB, no engine, no live state. |
+| **Manual command** | `cd /home/arun/quantifyd && venv/bin/python3 research/_utilities/mpf_report_build.py` then `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH; cd frontend && npm run build`. `--curves-dir` (with `--full-period-csv` / `--roster-csv`) points it at a different curve set — pass research/159's results folder with the un-suffixed file names to rebuild the page exactly as it stood before the 12-Sep-2026 cash-yield harmonisation. |
 | **When to run it** | Whenever a Momentum-Portfolio book changes rules, size or status, or whenever any of the curve files above is re-run. Otherwise the page keeps showing the previous evidence. The frontend rebuild is what moves the PNGs into `static/app/`. |
 | **Build doc** | `research/160_quality_growth_near_ath/MPF_REPORT_PAGE_BUILD_STATUS.md` — carries the full provenance table and the three-window resolution. |
 
-**Everything on that page is AFTER TAX** and every table states which systems, which window and
-which basis. The page does not print a figure it cannot point at a file for: average invested
-for Open Alpha · Base Age renders as a visible "not measured" gap rather than the ~67% the
-handover asserts, because no file on disk carries it.
+**Everything on that page is AFTER TAX**, **every book credits idle cash at 5% a year post-tax,
+accrued daily** (harmonised 12-Sep-2026 by research/163; True North's own study used 6.5% and
+Base Age's 5.5%), and every table states which systems, which window and which basis. The page
+does not print a figure it cannot point at a file for — a missing value still renders as a
+visible gap rather than a zero. Average invested for Open Alpha · Base Age WAS such a gap; it
+was measured in research/163 at **72.89%** (30-seed median, daily series in that folder), which
+supersedes the ~67% the handover asserted without a source.
 
 ## research/162 — Quality Summit optimisation and the Base Age quality overlay (added 2026-09-12)
 

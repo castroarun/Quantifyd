@@ -107,7 +107,7 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate detail', v: 'NIFTYBEES below its 100-day SMA on a Friday close → LIQUIDATE the whole book to cash. It does not merely block new buys' },
     ],
     evidence: [
-      { k: 'Own study window', v: '20.9% after-tax CAGR at −23.7%, Calmar 0.88, on 2012 → 3-Sep-2026 — the study’s primary window WA. Source: research/144_truenorth_reassessment/results/RESULTS.md §(b)' },
+      { k: 'Own study window', v: '20.9% after-tax CAGR at −23.7%, Calmar 0.88, on 2012 → 3-Sep-2026 — the study’s primary window WA (that study credited idle cash at 6.5%, so it reads a little above the rows on this page, which credit 5%). Source: research/144_truenorth_reassessment/results/RESULTS.md §(b)' },
       { k: 'Robustness band', v: '12 rebalance-day offsets: median 20.7% [14.9 .. 25.1], drawdown median −25.1%, WORST OFFSET −28.3%' },
       { k: 'Both sub-windows', v: 'W1 (2016-06 → 2019-12) 13.6% median · W2 (2020 → now) 27.3% median — positive in both' },
       { k: 'Cells disclosed', v: '71-cell gate bake-off + 27-cell action/frequency sweep + 240-run slots × exits sweep, all ranked after tax' },
@@ -119,7 +119,7 @@ export const SYSTEMS: SystemReport[] = [
       'Remove the gate and the same book returns MORE — 23.9% against 20.9% — at a −46.5% fall instead of −23.7%, so Calmar collapses from 0.88 to 0.51. The gate is not a return filter that happens to help in crashes; it IS the product. And it had to be that gate: 71 cells of alternatives were tested and no other series and no other construction beat NIFTYBEES-SMA100 on drawdown-constrained return. Only a NIFTYBEES-based gate protects 2008 at all, because the index series in the database begin in 2011. The cash that gate parks is also why this book sits out 57% of the time and still finishes near the top.',
     caveats: [
       'TRUE NORTH IS A SINGLE PATH while Open Alpha · Base Age and IPO Base are their studies’ drawn curves and Quality Summit is a 12-offset median. That is not identical treatment, and a like-for-like ensemble re-run of True North is OWED before the columns are compared to the decimal.',
-      'ITS CASH YIELD IS 6.5%, NOT 5%. True North’s curve comes from research/144’s own after-tax NAV file, which credits idle cash at 6.5% while every other book on this page is credited at 5%. Holding cash 57% of the time, that is worth roughly 0.9 points a year to it. Not enough to reorder the table; not like-for-like either.',
+      'ITS CASH YIELD WAS 6.5% UNTIL 12-SEP-2026 — it is 5% now, like every other book here. research/144 assumed 6.5%, and this book holds cash 57% of the time, so the assumption alone was worth about a point a year to it. research/163 re-ran the identical cell on research/144’s own engine at 5%: the run first reproduced the published 6.5% curve exactly, then the yield change cost 0.97 points of CAGR (19.53% → 18.56% on the 20.4-year window) and 1.3 points of drawdown. Those lower numbers are what the tables on this page now show; the study’s own page still quotes the 6.5% figures.',
       'Survivorship: market_data.db keeps only 102 stopped series in 2,158 over eleven years, fewer than NSE actually delisted. Pressure is upward on every arm here, benchmarks included.',
       'market_data.db is NOT retroactively split-adjusted. Smaller exposure for a Nifty-200 momentum book than for an all-time-high screen, but not zero.',
       'Residual phantom rows (OHLC = previous close, volume 0) exist on 2025-03-18 and 2024-01-15 for small-caps. Benign for a Nifty-200 system; flagged for a future purge.',
@@ -169,13 +169,13 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Gate', v: 'NONE — no market gate and no VIX gate. The VIX gate belongs to the ATH + VIX variant below, not to this one' },
     ],
     evidence: [
-      { k: 'Own study window', v: '21.26% after-tax CAGR at −34.80%, Calmar 0.618, on 3-Jan-2005 → 11-Sep-2026, 30-seed median. Source: research/161_ath_base_age_breakout/results/RESULTS.md §1' },
+      { k: 'Own study window', v: '21.26% after-tax CAGR at −34.80%, Calmar 0.618, on 3-Jan-2005 → 11-Sep-2026, 30-seed median (that study credited idle cash at 5.5%, so it reads a little above the rows on this page, which credit 5%). Source: research/161_ath_base_age_breakout/results/RESULTS.md §1' },
       { k: 'Robustness band', v: '30 seeds: 19.87 .. 21.89%. WORST PATH 19.87% — a whisker BELOW the pre-registered 20% floor. On a median reading it passes; anyone who meant "every path clears 20%" should read it as a fail by 0.13pp' },
       { k: 'Both sub-windows', v: 'pre-2016 19.33% at −32.45% · 2016+ 23.24% at −32.43% — index-beating in both' },
       { k: 'Null control', v: 'A date-matched random-entry control on the same days returns 12.11%. The rule beats it by +9.15pp' },
       { k: 'Trade profile', v: '49.2% win rate, +37.2% average win against −11.6% average loss, expectancy +12.4% a trade, 31.7 trades a year, longest losing streak 14' },
       { k: 'Cost ladder', v: '25 / 40 / 60 bps → 21.26 / 20.34 / 19.35% — a shallow slope, this is a low-turnover book' },
-      { k: 'Idle cash', v: 'With no cash carry at all it still returns 19.27%, so the yield contributes about 2.0pp and the equity engine does the rest' },
+      { k: 'Idle cash', v: 'Credited at 5% on this page (research/161’s own study used 5.5%; re-running it at 5% cost 0.34 points on the 20.4-year window). Measured 72.9% invested over 30 seeds, band 72.7–73.1%, so about a quarter of the book earns the sweep. With no cash carry at all the study returned 19.27% against 21.26%' },
       { k: 'Cells disclosed', v: '864 (6 base ages × 3 depths × 4 volume levels × 2 shapes × 6 exits), 810 completed. The winner is reported as a plateau, not a spike' },
     ],
     distinctiveTitle: 'The exit is worth +11.85pp; base age is worth +2.6pp and −6.8pp of drawdown',

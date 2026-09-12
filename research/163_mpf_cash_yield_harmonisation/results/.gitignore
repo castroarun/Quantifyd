@@ -1,0 +1,15 @@
+# The repo-wide rule (.gitignore:167 research/**/results/*.csv) keeps heavy sweep output out
+# of git. Every CSV this study produces is small and LOAD-BEARING — the two curve files are
+# what research/_utilities/mpf_report_build.py reads to build /app/mpf-report, and the rest
+# are the reproduction proofs and the invested measurement. So they are un-ignored by name.
+!full_period_after_tax_cash05.csv
+!all_systems_after_tax_cash05.csv
+!tn_nav_INC_cash_n8_d15_tax1_cash05.csv
+!tn_nav_INC_cash_n8_d15_tax1_cash065_reproduced.csv
+!ba_nav_winner_cash05.csv
+!ba_nav_winner_cash055_reproduced.csv
+!ba_seed_stats.csv
+!baseage_invested_daily.csv
+
+# panel163.pkl is a ~130 MB rebuildable price-panel cache; it stays ignored.
+panel163.pkl

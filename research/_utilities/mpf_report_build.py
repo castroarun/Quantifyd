@@ -42,14 +42,18 @@ WHICH BASIS.
 --------------------------------------------------------------------------------------------
 INPUTS (the evidence files)
 --------------------------------------------------------------------------------------------
-  research/159_oa_honest_reoptimization/results/full_period_after_tax.csv
+  research/163_mpf_cash_yield_harmonisation/results/full_period_after_tax_cash05.csv
       HEADLINE. After-tax daily curves 2006-04-03 -> 2026-09-03 for
       'Open Alpha - Base Age', 'True North', 'IPO Base - First Base', 'NIFTYBEES (index)'.
+      This is research/159's full_period_after_tax.csv with the True North and Base Age
+      columns replaced by 5%-idle-cash re-runs of their own engines (their studies used
+      6.5% and 5.5%); every other column is byte-identical. Override with --curves-dir.
   research/159_oa_honest_reoptimization/results/full_period_summary.json
       the measured average-invested figures that go on the table.
-  research/159_oa_honest_reoptimization/results/all_systems_after_tax.csv
-      the 2016-2026 roster curves — used ONLY to build the 2018 section, so that section
-      reproduces the published roster page exactly.
+  research/163_mpf_cash_yield_harmonisation/results/all_systems_after_tax_cash05.csv
+      the 2016-2026 roster curves, same two columns swapped — used ONLY to build the 2018
+      section, so that section still reproduces the published roster page for every series
+      the cash-yield harmonisation did not touch.
   research/160_quality_growth_near_ath/results/F_Bb7_equity.csv
       Quality Summit, 12 rebalance offsets, 2018-08-01 -> 2026-09-10.
   research/159_oa_honest_reoptimization/results/after_tax_tables.csv
@@ -66,7 +70,10 @@ HOUSE RULES HONOURED
     and the proper blend/allocation study across TN + Base Age + IPO is still owed.
 
 CHARTS (all dark, colours constant everywhere: gold True North, green Base Age,
-coral Quality Summit, purple IPO Base, blue blend, grey index)
+coral Quality Summit, purple IPO Base, muted slate DASHED blend, grey index).
+The books being compared are always the heaviest strokes; the blend and the index are
+deliberately secondary. See LEAD / LW / line_kw below — that is one place, honoured by
+every line chart on the page.
   mpf-report-curves-20y.png      log growth of 100 + drawdown panel, 20.4 years
   mpf-report-curves-2018.png     the same on the Quality Summit window
   mpf-report-yearly-bars.png     yearly returns, systems side by side, 20.4 years
@@ -79,6 +86,7 @@ coral Quality Summit, purple IPO Base, blue blend, grey index)
   mpf-report-heat-ipobase.png
   mpf-report-heat-qualitysummit.png
 """
+import argparse
 import json
 from datetime import datetime
 from pathlib import Path
@@ -89,6 +97,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+import matplotlib.transforms
 from matplotlib.colors import TwoSlopeNorm
 import textwrap
 
@@ -101,8 +110,30 @@ def wrap(s, width=168):
 ROOT = Path('/home/arun/quantifyd')
 R159 = ROOT / 'research/159_oa_honest_reoptimization/results'
 R160 = ROOT / 'research/160_quality_growth_near_ath/results'
+R163 = ROOT / 'research/163_mpf_cash_yield_harmonisation/results'
 PUB = ROOT / 'frontend/public'
 OUT_JSONS = [ROOT / 'static/app/mpf_report.json', PUB / 'mpf_report.json']
+
+# ---- WHERE THE TWO CURVE FILES COME FROM.
+# research/163 re-ran True North (research/144's engine, which used 6.5%) and Open Alpha ·
+# Base Age (research/161's engine, which used 5.5%) with idle cash at 5% so that EVERY book
+# on this page credits idle cash at the same rate. Those harmonised files are the default.
+# `--curves-dir` points the generator at a different folder. To rebuild the page exactly as
+# it stood before 12-Sep-2026 (True North at 6.5%, Base Age at 5.5%):
+#   --curves-dir research/159_oa_honest_reoptimization/results \
+#   --full-period-csv full_period_after_tax.csv --roster-csv all_systems_after_tax.csv
+_ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+_ap.add_argument('--curves-dir', default=str(R163),
+                 help='folder holding full_period_after_tax*.csv and all_systems_after_tax*.csv')
+_ap.add_argument('--full-period-csv', default='full_period_after_tax_cash05.csv')
+_ap.add_argument('--roster-csv', default='all_systems_after_tax_cash05.csv')
+ARGS = _ap.parse_args()
+CURVES = Path(ARGS.curves_dir)
+FULL_CSV = CURVES / ARGS.full_period_csv
+ROSTER_CSV = CURVES / ARGS.roster_csv
+for _p in (FULL_CSV, ROSTER_CSV):
+    if not _p.exists():
+        raise SystemExit('curve file missing: %s' % _p)
 
 # ---- names. Arun asked for systems to be NAMED, never versioned: these are different
 # signals, not revisions of one another.
@@ -118,8 +149,35 @@ FULL_RENAME = {'True North': TN, 'Open Alpha - Base Age': BA,
 ROSTER_RENAME = {'TN incumbent': TN, 'OA v2': BA, 'IPO (honest)': IPO, 'NIFTYBEES': BM}
 
 COLOR = {TN: '#e3b341', BA: '#3fb950', QS: '#ff7b72', IPO: '#bc8cff',
-         BLEND: '#58a6ff', BM: '#8b949e'}
+         BLEND: '#6e8b9e', BM: '#8b949e'}
 SLUG = {TN: 'truenorth', BA: 'baseage', IPO: 'ipobase', QS: 'qualitysummit'}
+
+# ---- LINE WEIGHT IS THE ARGUMENT, not decoration (redrawn 12-Sep-2026).
+# The chart previously drew the 50-50 blend thickest, in bright light blue, which buried
+# True North and Base Age — the two lines the page is actually comparing. The books being
+# compared now LEAD; the blend is a thin muted dashed line, secondary by construction; the
+# index is the thinnest grey. Nothing is 3px. Quality Summit leads on the 2018 window,
+# where it is one of the books being compared, and does not appear on the 20-year one.
+# Colour-blind check: gold / green / purple / coral separate on lightness as well as hue,
+# and the two lines a red-green reader could confuse — Base Age green and Quality Summit
+# coral — never share a chart with the blend in a similar tone, which is why the blend was
+# moved off blue-that-reads-as-teal and onto a desaturated slate, and is dashed as well.
+LEAD = {TN, BA, QS}
+LW = {k: (1.9 if k in LEAD else 1.25) for k in COLOR}
+LW[IPO] = 1.35
+LW[BLEND] = 1.2
+LW[BM] = 1.0
+DASH = {BLEND: (4, 2.2)}
+
+
+def line_kw(k, scale=1.0):
+    """One place that decides how any series is stroked, on every chart on this page."""
+    kw = dict(color=COLOR[k], lw=LW[k] * scale, zorder=3 if k in LEAD else 2)
+    if k in DASH:
+        kw['dashes'] = DASH[k]
+    if k == BM:
+        kw['alpha'] = 0.85
+    return kw
 
 BG, PANEL, INK, MUT, GRID = '#0e1116', '#161b22', '#e6edf3', '#8b949e', '#30363d'
 plt.rcParams.update({'figure.facecolor': BG, 'axes.facecolor': PANEL, 'savefig.facecolor': BG,
@@ -129,14 +187,18 @@ plt.rcParams.update({'figure.facecolor': BG, 'axes.facecolor': PANEL, 'savefig.f
 # Measured average-invested, from each engine's own reporting. Anything not measured stays
 # None and prints as "not measured" — the handover asserts ~67% for Base Age but NO FILE
 # carries it, and this page does not print numbers it cannot point at.
-INVESTED = {TN: 43.0, IPO: 32.7, BM: 100.0, BA: None, QS: 91.2}
+INVESTED = {TN: 43.0, IPO: 32.7, BM: 100.0, BA: 72.9, QS: 91.2}
 INVESTED_SRC = {
     TN: 'research/144 phase A avg_inv 0.43 (via research/159 scripts/full_period.py)',
     IPO: 'research/153 G3 "invested 32.7% of NAV" (via the same script)',
     BM: 'fully invested by definition',
-    BA: 'NOT MEASURED. research/159 scripts/full_period.py records None with the comment '
-        '"to be measured in its own harness"; research/161 saved no invested series. The '
-        'handover doc asserts ~67% but no file on disk carries it.',
+    BA: 'MEASURED 12-Sep-2026 in research/163: research/161’s engine re-run with the daily '
+        'invested fraction (market value of open positions / NAV) recorded, 30 seeds. '
+        'Median 72.89%, band 72.73–73.05% — a very tight band, because the fraction is set by '
+        'how often the 16 slots are full, not by which names win them. The daily series for '
+        'the drawn seed is research/163_mpf_cash_yield_harmonisation/results/'
+        'baseage_invested_daily.csv. NOTE: the handover doc asserted ~67% from memory with '
+        'no source file; that figure is superseded by this measurement.',
     QS: 'research/160 RESULTS.md decomposition table, Family B "% inv" = 91.2',
 }
 
@@ -227,7 +289,7 @@ def block(frame, contenders, benchmarks, window_why, source, basis):
 
 # --------------------------------------------------------------- HEADLINE: 20.4 years
 
-full = pd.read_csv(R159 / 'full_period_after_tax.csv', index_col=0, parse_dates=True)
+full = pd.read_csv(FULL_CSV, index_col=0, parse_dates=True)
 full = full.rename(columns=FULL_RENAME)[[TN, BA, IPO, BM]].ffill().dropna()
 full = full / full.iloc[0]
 full = add_blend(full, TN, BA, BLEND)
@@ -239,14 +301,19 @@ headline = block(
                 'set by the shortest series, True North’s, and it is the window that '
                 'matters because it contains BOTH 2008 and 2020 — the two falls a window '
                 'starting in 2018 throws away.'),
-    source='research/159_oa_honest_reoptimization/results/full_period_after_tax.csv',
-    basis=('After tax, 25 bps a side, 5% on idle cash. True North is a single after-tax NAV '
-           'path from research/144; Open Alpha · Base Age and IPO Base are their studies’ '
-           'drawn curves. Placeable entries only: decided on the close, filled at the next open.'))
+    source='research/163_mpf_cash_yield_harmonisation/results/full_period_after_tax_cash05.csv '
+           '— research/159’s full_period_after_tax.csv with the True North and Open Alpha · '
+           'Base Age columns replaced by 5%-idle-cash re-runs of their own engines. Every '
+           'other column is byte-identical to research/159’s file.',
+    basis=('After tax, 25 bps a side, 5% a year on idle cash for EVERY book, accrued daily '
+           'and not taxed again. True North is a single after-tax NAV path from research/144’s '
+           'engine; Open Alpha · Base Age is the median-CAGR seed of 30 from research/161’s '
+           'engine; IPO Base is its study’s drawn curve. Placeable entries only: decided on '
+           'the close, filled at the next open.'))
 
 # -------------------------------------------- SECOND WINDOW: where Quality Summit exists
 
-roster = pd.read_csv(R159 / 'all_systems_after_tax.csv', index_col=0, parse_dates=True)
+roster = pd.read_csv(ROSTER_CSV, index_col=0, parse_dates=True)
 roster = roster.rename(columns=ROSTER_RENAME)[[TN, BA, IPO, BM]]
 qs_all = pd.read_csv(R160 / 'F_Bb7_equity.csv', index_col=0, parse_dates=True)
 
@@ -272,11 +339,14 @@ window2018 = block(
                 'figures are NOT comparable with the 20.4-year table above.'),
     source=('research/160_quality_growth_near_ath/results/F_Bb7_equity.csv for Quality Summit '
             '(the median-CAGR offset of 12) and '
-            'research/159_oa_honest_reoptimization/results/all_systems_after_tax.csv for the '
-            'others — the roster curve file, so this section reproduces the published '
-            'roster page exactly. It is a DIFFERENT run from the 20.4-year table’s file.'),
-    basis=('After tax, 25 bps a side, 5% on idle cash. Quality Summit is the median-CAGR '
-           'rebalance offset of twelve, never an average of paths.'))
+            'research/163_mpf_cash_yield_harmonisation/results/all_systems_after_tax_cash05.csv '
+            'for the others — research/159’s roster curve file with True North and Base Age '
+            'swapped for their 5%-idle-cash re-runs, so this section still reproduces the '
+            'roster page for every other series. It is a DIFFERENT run from the 20.4-year '
+            'table’s file.'),
+    basis=('After tax, 25 bps a side, 5% a year on idle cash for every book, accrued daily '
+           'and not taxed again. Quality Summit is the median-CAGR rebalance offset of '
+           'twelve, never an average of paths.'))
 window2018['qsOffsets'] = QS_OFFSETS
 
 # ------------------------------------------------ THE CORRECTION: after-tax evidence only
@@ -329,17 +399,23 @@ NOTES['aftertax_incomplete'] = (
     'read across.')
 NOTES['invested_gap'] = INVESTED_SRC[BA]
 NOTES['cash_yield'] = (
-    'Idle cash is credited at 5% a year everywhere on this page EXCEPT True North, whose '
-    'curve comes from research/144’s own after-tax NAV file at 6.5%. True North holds '
-    'cash 57% of the time, so that inconsistency is worth roughly 0.9 points a year to it. '
-    'Not enough to reorder the table, but it is not like-for-like. Cash yield is not a small '
-    'term for any of these books: at 5%, roughly 2.8 of True North’s points and 3.4 of '
-    'IPO Base’s are the sweep rather than the strategy, while NIFTYBEES is fully '
-    'invested and gets none of it.')
+    'EVERY book on this page credits idle cash at 5% a year, post-tax, accrued daily — the '
+    'cash yield is credited to the cash balance each bar and is never passed through the '
+    'capital-gains settlement, which touches realised equity gains only. That was made true '
+    'on 12-Sep-2026 by research/163: True North’s own study (research/144) had assumed 6.5% '
+    'and Open Alpha · Base Age’s (research/161) 5.5%, so both were re-run at 5% on their own '
+    'engines. Re-running True North cost it 0.97 points of CAGR (19.53% → 18.56% on the '
+    '20.4-year window) because it holds cash 57% of the time; Base Age, 73% invested, lost '
+    '0.34 (20.27% → 19.93%). Each re-run first reproduced its own published curve at the old '
+    'yield before the yield was changed. Cash yield is not a small term for any of these '
+    'books: roughly 2.8 of True North’s points and 3.4 of IPO Base’s are the sweep rather '
+    'than the strategy, while NIFTYBEES is fully invested and gets none of it.')
 NOTES['invested_timeseries'] = (
-    'No engine wrote a daily invested-fraction series, so the "when is each book in cash" '
-    'chart is a bar of the MEASURED averages rather than a strip over time. A time-series '
-    'version needs the engines to emit that column and is owed.')
+    'The "when is each book in cash" chart is a bar of MEASURED averages rather than a strip '
+    'over time. Open Alpha · Base Age now has a daily invested series — measured in '
+    'research/163 and saved as baseage_invested_daily.csv — but True North, IPO Base and '
+    'Quality Summit still only report a window average, so a time-series version is still '
+    'owed and needs those three engines to emit the column.')
 NOTES['two_curve_files'] = (
     'The 20.4-year section and the 2018 section are built from DIFFERENT curve files for the '
     'same systems — full_period_after_tax.csv and all_systems_after_tax.csv. They are '
@@ -379,8 +455,9 @@ res = {
     'postTaxOnly': True,
     'standard': ('After tax — 20% short-term, 12.5% long-term above 365 days, netted '
                  'within the Indian financial year with loss carry-forward — 25 bps a '
-                 'side, 5% a year on idle cash (6.5% inside True North’s own curve), and '
-                 'placeable entries only: decided on the close, filled at the next open.'),
+                 'side, 5% a year on idle cash for every book, accrued daily and not taxed '
+                 'again, and placeable entries only: decided on the close, filled at the '
+                 'next open.'),
     'names': {'TN': TN, 'BA': BA, 'IPO': IPO, 'QS': QS, 'BM': BM, 'BLEND': BLEND},
     'blendNote': ('Computed by this generator from the True North and Open Alpha · Base '
                   'Age daily curves, 50-50, rebalanced monthly. It is NOT a study result. The '
@@ -393,9 +470,11 @@ res = {
     'correction': correction,
     'notes': NOTES,
     'sources': {
-        '20.4-year curves': 'research/159_oa_honest_reoptimization/results/full_period_after_tax.csv',
-        'average invested': 'research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py',
-        '2018-window curves (TN, Base Age, IPO, index)': 'research/159_oa_honest_reoptimization/results/all_systems_after_tax.csv',
+        '20.4-year curves': str(FULL_CSV).replace('/home/arun/quantifyd/', ''),
+        'True North at 5% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/tn_nav_INC_cash_n8_d15_tax1_cash05.csv (research/144’s engine, its own study used 6.5%)',
+        'Open Alpha · Base Age at 5% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/ba_nav_winner_cash05.csv (research/161’s engine, its own study used 5.5%; median-CAGR seed of 30)',
+        'average invested': 'research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py; Base Age measured in research/163 (baseage_invested_daily.csv)',
+        '2018-window curves (TN, Base Age, IPO, index)': str(ROSTER_CSV).replace('/home/arun/quantifyd/', ''),
         'Quality Summit, 12 offsets': 'research/160_quality_growth_near_ath/results/F_Bb7_equity.csv',
         'after-tax entry surface / null / price gates': 'research/159_oa_honest_reoptimization/results/after_tax_tables.csv',
         'ATH + VIX summary row': 'research/159_oa_honest_reoptimization/results/all_systems_summary.json',
@@ -407,31 +486,59 @@ res = {
 # --------------------------------------------------------------------------- charts
 
 def growth_chart(frame, rows, path, title, foot1, foot2, ticks):
+    """Growth of 100 on a log axis, with a drawdown panel underneath.
+
+    DRAWN WEEKLY, MEASURED DAILY. Twenty years of daily closes on a log axis is a hairy
+    line: five of them overlap into noise. The growth panel is resampled to Friday closes
+    for DRAWING ONLY — every number in `rows`, every legend figure and the drawdown panel
+    itself come from the daily series, untouched.
+
+    The drawdown panel keeps its daily resolution (it must show the true depth) and has NO
+    fills: five translucent filled series on top of one another was unreadable. Only the
+    index keeps a very faint fill, as the reference the others are read against.
+    """
     g = 100.0 * frame
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8.4), sharex=True,
-                                   gridspec_kw={'height_ratios': [2.4, 1]})
+    gw = g.resample('W-FRI').last().ffill()          # drawing only
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8.8), sharex=True,
+                                   gridspec_kw={'height_ratios': [2.0, 1.2]})
     for k in g.columns:
-        lw = 2.6 if k == BLEND else (1.1 if k == BM else 1.8)
-        ax1.plot(g.index, g[k], color=COLOR[k], lw=lw,
-                 label='%s  —  %.1f%%/yr, %.0f%% worst fall, Calmar %.2f'
-                       % (k, rows[k]['cagr'], rows[k]['maxdd'], rows[k]['calmar']))
+        ax1.plot(gw.index, gw[k],
+                 label='%s  —  %.1f%%/yr, Calmar %.2f'
+                       % (k, rows[k]['cagr'], rows[k]['calmar']),
+                 **line_kw(k))
     ax1.set_yscale('log')
     ax1.set_yticks(ticks)
     ax1.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax1.set_ylabel('growth of 100 (log scale)')
-    ax1.grid(True, which='both', color=GRID, lw=0.5, alpha=0.6)
-    ax1.legend(loc='upper left', frameon=False, fontsize=8.5)
+    ax1.grid(True, which='both', color=GRID, lw=0.5, alpha=0.5)
     ax1.set_title(title, color=INK, fontsize=12, loc='left', pad=12)
+    # The first years are empty at the top left on a log growth chart, so the legend sits
+    # there without covering a curve; it is checked against the drawn maximum below.
+    leg_loc = 'upper left'
+    early = gw.iloc[:int(len(gw) * 0.45)]
+    if float(early.max().max()) > float(gw.max().max()) * 0.30:
+        leg_loc = 'lower right'
+    ax1.legend(loc=leg_loc, frameon=False, fontsize=8.5, labelspacing=0.35)
+
     for k in g.columns:
         dd = (g[k] / g[k].cummax() - 1) * 100
-        ax2.plot(dd.index, dd, color=COLOR[k], lw=2.0 if k == BLEND else (1.0 if k == BM else 1.3))
-        ax2.fill_between(dd.index, dd, 0, color=COLOR[k], alpha=0.07)
-    ax2.set_ylabel('drawdown %')
-    ax2.grid(True, color=GRID, lw=0.5, alpha=0.6)
+        kw = line_kw(k)
+        kw['lw'] = max(0.85, kw['lw'] * 0.60)        # thin: five daily series overlap here
+        ax2.plot(dd.index, dd, **kw)
+        if k == BM:
+            ax2.fill_between(dd.index, dd, 0, color=COLOR[k], alpha=0.10, lw=0, zorder=1)
+    ax2.set_ylabel('drawdown %  (daily)')
+    ax2.grid(True, color=GRID, lw=0.5, alpha=0.5)
     ax2.axhline(0, color=GRID, lw=0.8)
-    fig.text(0.012, 0.030, wrap(foot1), color=MUT, fontsize=7.5)
-    fig.text(0.012, 0.009, wrap(foot2), color=MUT, fontsize=7.5)
-    fig.tight_layout(rect=(0, 0.045, 1, 1))
+    # Footnotes are laid out from the BOTTOM UP so a long one cannot collide with the one
+    # above it or run off the canvas — they used to do both.
+    w1, w2 = wrap(foot1), wrap(foot2)
+    lh = 7.5 * 1.45 / (8.8 * 72)                     # one text line as a fraction of the figure
+    y2 = 0.010
+    y1 = y2 + (w2.count('\n') + 1) * lh + 0.006
+    fig.text(0.012, y1, w1, color=MUT, fontsize=7.5, va='bottom', linespacing=1.45)
+    fig.text(0.012, y2, w2, color=MUT, fontsize=7.5, va='bottom', linespacing=1.45)
+    fig.tight_layout(rect=(0, y1 + (w1.count('\n') + 1) * lh + 0.008, 1, 1))
     fig.savefig(path, dpi=125)
     plt.close(fig)
     print('wrote', path)
@@ -441,12 +548,22 @@ growth_chart(
     full, headline['rows'], PUB / 'mpf-report-curves-20y.png',
     'THE MOMENTUM PORTFOLIO — every book being chosen between, after tax, %s to %s (20.4 years)'
     % (full.index[0].date(), full.index[-1].date()),
-    'WHAT TO SEE: the lower panel. The 50-50 blend ends highest of all, because it keeps most '
-    'of Open Alpha · Base Age’s return while inheriting True North’s shallower falls: Base Age '
-    'gives up a third of the book at its worst, the blend only a quarter.',
-    'Log scale, because over twenty years a 43x book plotted linearly flattens every other '
-    'line and hides 2008 entirely. After tax, 25 bps a side, 5% on idle cash (6.5% inside '
-    'True North’s own curve). The blend is computed by this generator, not by a study.',
+    # computed, not typed, so the sentence cannot go stale when a curve file changes
+    ('WHAT TO SEE: the lower panel. The 50-50 blend keeps almost all of Open Alpha · Base Age’s '
+     'return — %.1f%% a year against %.1f%% — while inheriting True North’s shallower falls: '
+     'Base Age gives up %.0f%% of the book at its worst, the blend %.0f%%. That is the best '
+     'return-per-unit-of-fall on the chart, Calmar %.2f against %.2f for True North and %.2f '
+     'for Base Age.'
+     % (headline['rows'][BLEND]['cagr'], headline['rows'][BA]['cagr'],
+        abs(headline['rows'][BA]['maxdd']), abs(headline['rows'][BLEND]['maxdd']),
+        headline['rows'][BLEND]['calmar'], headline['rows'][TN]['calmar'],
+        headline['rows'][BA]['calmar'])),
+    'Log scale, because over twenty years a 30x book plotted linearly flattens every other '
+    'line and hides 2008 entirely. The growth panel is DRAWN WEEKLY and MEASURED DAILY — '
+    'Friday closes only, to keep five twenty-year lines legible; every figure in the legend '
+    'and the whole drawdown panel come from the daily series. After tax, 25 bps a side, 5% a '
+    'year on idle cash for every book. The blend is a thin dashed line because it is this '
+    'generator’s own arithmetic, not a study result.',
     [100, 400, 1600, 6400])
 
 growth_chart(
@@ -458,7 +575,8 @@ growth_chart(
     'quality filter, not a different kind of risk.',
     'This window exists only because point-in-time fundamentals need four filed fiscal years. '
     'It throws away 2008 and 2020, so it flatters everything: read it alongside the 20-year '
-    'chart, never instead of it. Quality Summit is the median-CAGR offset of twelve.',
+    'chart, never instead of it. Quality Summit is the median-CAGR offset of twelve. Growth '
+    'panel drawn weekly, measured daily; drawdown panel daily.',
     [100, 200, 400, 800])
 
 # ---- yearly grouped bars
@@ -469,7 +587,17 @@ x = np.arange(len(yrs))
 w = 0.16
 for i, k in enumerate(bars):
     v = [headline['yoy'][k].get(y, [np.nan])[0] for y in yrs]
-    ax.bar(x + (i - (len(bars) - 1) / 2) * w, v, w, color=COLOR[k], label=k)
+    # same hierarchy as the line charts: the books being compared are solid, the blend and
+    # the index are outlined so they read as context rather than as contenders.
+    if k == BLEND:                       # secondary: outlined, so it reads as derived
+        ax.bar(x + (i - (len(bars) - 1) / 2) * w, v, w, label=k, color='none',
+               edgecolor=COLOR[k], linewidth=1.1)
+    elif k == BM:                        # context: filled but faded right back
+        ax.bar(x + (i - (len(bars) - 1) / 2) * w, v, w, label=k, color=COLOR[k],
+               alpha=0.40, linewidth=0)
+    else:                                # the books being compared
+        ax.bar(x + (i - (len(bars) - 1) / 2) * w, v, w, label=k, color=COLOR[k],
+               linewidth=0)
 ax.set_xticks(x)
 ax.set_xticklabels(yrs, rotation=45, ha='right')
 ax.axhline(0, color=GRID, lw=0.9)
@@ -479,12 +607,14 @@ ax.legend(frameon=False, fontsize=8.5, ncol=5, loc='upper left')
 ax.set_title('YEAR BY YEAR, after tax, %s to %s — who carried which year'
              % (full.index[0].date(), full.index[-1].date()),
              color=INK, fontsize=12, loc='left', pad=12)
-fig.text(0.012, 0.015,
-         wrap('WHAT TO SEE: the years nobody else carried. True North is the only green bar in 2008 '
-         'and 2011; IPO Base is the tall one in 2020; Base Age owns 2017, 2021 and 2023. That '
-         'pattern is the entire argument for holding more than one of them.'),
-         color=MUT, fontsize=7.5)
-fig.tight_layout(rect=(0, 0.045, 1, 1))
+fig.text(0.012, 0.012,
+         wrap('WHAT TO SEE: the years nobody else carried. IPO Base is the only book that finishes '
+         '2008 and 2011 above water at all, and it is the tall bar in 2020; True North is the '
+         'one that barely moves in 2018 and 2022, when the other two are deep red; Base Age '
+         'owns 2017, 2021 and 2023. That pattern is the entire argument for holding more than '
+         'one of them.'),
+         color=MUT, fontsize=7.5, va='bottom', linespacing=1.45)
+fig.tight_layout(rect=(0, 0.105, 1, 1))
 fig.savefig(PUB / 'mpf-report-yearly-bars.png', dpi=125)
 plt.close(fig)
 print('wrote yearly bars')
@@ -495,11 +625,13 @@ win = 756
 for k in [TN, BA, IPO, BLEND, BM]:
     s = full[k]
     roll = (s / s.shift(win)) ** (1 / 3.0) - 1
-    ax.plot(roll.index, roll * 100, color=COLOR[k],
-            lw=2.2 if k == BLEND else (1.0 if k == BM else 1.5), label=k)
+    ax.plot(roll.index, roll * 100, label=k, **line_kw(k))
 ax.axhline(0, color=GRID, lw=0.9)
 ax.axhline(25, color='#d29922', lw=0.9, ls='--')
-ax.text(full.index[int(len(full) * 0.02)], 26, "Arun's 25% bar", color='#d29922', fontsize=8)
+# in AXES x / DATA y: the rolling series only begins three years in, so a date taken from the
+# full frame put this label off the left edge, on top of the y-axis title.
+_bt = matplotlib.transforms.blended_transform_factory(ax.transAxes, ax.transData)
+ax.text(0.012, 25.9, "Arun's 25% bar", color='#d29922', fontsize=8, transform=_bt)
 ax.set_ylabel('trailing 3-year CAGR, %  (after tax)')
 ax.grid(True, color=GRID, lw=0.5, alpha=0.6)
 ax.legend(frameon=False, fontsize=8.5, ncol=5, loc='upper right')
@@ -518,41 +650,61 @@ print('wrote rolling 3y')
 
 # ---- correlation heatmaps
 def corr_chart(frame, path, title, foot):
+    """A small square heatmap — sized to the matrix, not to the page (rewritten 12-Sep-2026).
+
+    It used to render a 4x4 at near-full page width with a colourbar, which made each cell
+    enormous and pushed the title off the right edge. Now: about 5 inches square for a 4x4,
+    no colourbar (every cell is annotated, so the bar told the reader nothing and only added
+    width), the always-1.00 diagonal greyed out so the eye goes to the off-diagonal pairs
+    that are the actual content, and a FIXED 0-to-1 scale on both heatmaps so the two can be
+    compared. Red means "moves with the others" — bad for diversification.
+    """
     wk = frame.drop(columns=[BLEND]).resample('W-FRI').last().pct_change().dropna()
     c = wk.corr()
-    fig, ax = plt.subplots(figsize=(1.35 * len(c) + 3.4, 1.05 * len(c) + 2.6))
-    im = ax.imshow(c.values, cmap='RdYlGn_r', vmin=0, vmax=1)
-    ax.set_xticks(range(len(c)))
-    ax.set_xticklabels(c.columns, rotation=30, ha='right', fontsize=8.5)
-    ax.set_yticks(range(len(c)))
-    ax.set_yticklabels(c.index, fontsize=8.5)
-    for i in range(len(c)):
-        for j in range(len(c)):
-            ax.text(j, i, '%.2f' % c.values[i, j], ha='center', va='center',
-                    color='#0e1116' if c.values[i, j] > 0.45 else '#e6edf3',
-                    fontsize=9.5, fontweight='bold' if i != j else 'normal')
-    ax.set_title(title, color=INK, fontsize=11, loc='left', pad=12)
-    fig.colorbar(im, ax=ax, fraction=0.035, pad=0.03)
-    fig.text(0.012, 0.012, wrap(foot, 140), color=MUT, fontsize=7.5)
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
-    fig.savefig(path, dpi=130)
+    n = len(c)
+    side = 0.72 * n + 2.15                      # 4x4 -> 5.0in, 5x5 -> 5.8in, 6x6 -> 6.5in
+    fig, ax = plt.subplots(figsize=(side, side * 0.90), constrained_layout=True)
+    m = np.array(c.values, dtype=float)
+    np.fill_diagonal(m, np.nan)                 # the diagonal is not information
+    im = ax.imshow(m, cmap='RdYlGn_r', vmin=0, vmax=1)
+    im.cmap.set_bad(PANEL)
+    ax.set_xticks(range(n))
+    ax.set_xticklabels([s.replace('Open Alpha · ', '') for s in c.columns],
+                       rotation=30, ha='right', fontsize=7.5)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels([s.replace('Open Alpha · ', '') for s in c.index], fontsize=7.5)
+    ax.tick_params(length=0)
+    for i in range(n):
+        for j in range(n):
+            v = c.values[i, j]
+            if i == j:
+                ax.text(j, i, '—', ha='center', va='center', color=GRID, fontsize=8)
+            else:
+                ax.text(j, i, '%.2f' % v, ha='center', va='center',
+                        color='#0e1116' if v > 0.45 else '#e6edf3',
+                        fontsize=8, fontweight='bold')
+    ax.set_title(title, color=INK, fontsize=9.5, loc='left', pad=8)
+    # `foot` is deliberately NOT drawn inside the figure any more: at this size it collided
+    # with the rotated tick labels. The page caption carries it (MpfReport.tsx), which is
+    # also where the week count and the scale explanation now live.
+    fig.savefig(path, dpi=140)
     plt.close(fig)
     print('wrote', path)
 
 
+# Titles are short so they fit the small figure; the week count and the window live in the
+# page caption instead.
 corr_chart(full, PUB / 'mpf-report-corr-20y.png',
-           'WEEKLY-RETURN CORRELATION, after tax, %s to %s (%d weeks)'
-           % (full.index[0].date(), full.index[-1].date(), headline['weeks']),
-           'WHAT TO SEE: IPO Base is the only genuine diversifier — it is loosely coupled '
-           'to everything, including the index. True North and Base Age are moderately '
-           'related, which is why a 50-50 of them still smooths the ride.')
+           'WEEKLY-RETURN CORRELATION — 20.4 years',
+           'Scale fixed 0 to 1; red = moves with the others. IPO Base is the only genuine '
+           'diversifier. True North and Base Age are moderately related, which is why a '
+           '50-50 of them still smooths the ride.')
 
 corr_chart(w18, PUB / 'mpf-report-corr-2018.png',
-           'WEEKLY-RETURN CORRELATION on the 2018 window, after tax (%d weeks)'
-           % window2018['weeks'],
-           'WHAT TO SEE: Quality Summit is closest to Base Age and to the index. It is not a '
-           'third source of return — it is a weaker sampling of a family the book already '
-           'trades, which is why research/160 left it unpapered.')
+           'WEEKLY-RETURN CORRELATION — the 2018 window',
+           'Same 0-to-1 scale as the 20-year heatmap, so the two can be read across. '
+           'Quality Summit is closest to Base Age and to the index — not a third source of '
+           'return, a weaker sampling of a family the book already trades.')
 
 # ---- invested vs cash
 fig, ax = plt.subplots(figsize=(10, 4.4))
@@ -583,7 +735,9 @@ fig.text(0.012, 0.015,
          wrap('WHAT TO SEE: True North holds cash 57% of the time and still produces one of the two '
          'best returns — that is the gate, and it is a stronger result than the CAGR alone '
          'says. IPO Base is two thirds cash by design, so reading its CAGR beside a fully '
-         'invested index is not like for like.'),
+         'invested index is not like for like. Open Alpha · Base Age was measured on '
+         '12-Sep-2026 (research/163, 30 seeds, median 72.9%, band 72.7-73.1%) and is no '
+         'longer a gap; the handover doc’s unsourced 67% is superseded.'),
          color=MUT, fontsize=7.5)
 fig.tight_layout(rect=(0, 0.09, 1, 1))
 fig.savefig(PUB / 'mpf-report-invested.png', dpi=130)
