@@ -55,8 +55,8 @@ against drift, and quarterly appeared to *earn* +1.4pp. The tell was that the fr
 was non-monotonic — a frequency beating its neighbours on both sides — and that the move was far
 too large for the change made. The fixed engine carries a self-test (a 100% single-sleeve blend
 must reproduce that sleeve **exactly** under every frequency) and shows the real effect: monthly
-rebalancing is worth **+0.54pp of CAGR and +0.06 Calmar over drift**, monotone in frequency, with
-phase dispersion under 0.005 of Calmar. **Any "quarterly beats monthly" reading of an interim
+rebalancing is worth **+0.54pp of CAGR and +0.021 Calmar over drift** (20.28%/0.749 against
+19.74%/0.728 at TN:OA 50:50), monotone in frequency, with phase dispersion under 0.005 of Calmar. **Any "quarterly beats monthly" reading of an interim
 number from this session is retracted.**
 
 **(b) The weight-matched cash null is not decision-grade on Calmar.** Cash has zero drawdown, so
