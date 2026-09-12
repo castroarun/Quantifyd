@@ -2,6 +2,48 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-12 — research/164: Open Alpha · Base Age slot count and position size finally tested — **16 × 6.25% survives, no spec change**
+
+Arun: the sixteen-slot, 6.25%-per-slot book was never tested for Base Age. It was **inherited**
+from the old Open Alpha, whose 680-cell sweep (research/142) was scored entirely against a
+**same-bar look-ahead entry** — and research/158 / research/159 showed those surfaces INVERT
+once the entry is made placeable. research/161 swept age, depth, volume, saucer, exits and hard
+stops but has **no slot column at all**. That gap is now closed.
+
+**Nothing was deployed or papered. No engine under `services/` was touched, no backend restart,
+no frontend change** (another agent held `frontend/` for research/163).
+
+**Harness proof first.** Reproduced research/161's published winner to the last digit at 5.5%
+idle cash (21.26% / −34.80% / Calmar 0.618, worst seed 19.87%) and research/163's independent
+5.0% re-run exactly (20.94% / −35.50% / 0.601, worst 19.81%, 72.9% invested), on an event list
+rebuilt from scratch that contains the same 3,619 events.
+
+| Question | Answer |
+|---|---|
+| How many slots? | About **ten**, not sixteen — Calmar humps at 9-12 (0.629 / 0.669 / 0.670 / 0.633 vs 0.601). Worth +1.1 to +1.4pp CAGR, 25-27 of 30 paired seeds, both windows, on a plateau, surviving 40 and 60 bps. **Below the pre-registered bar** of +0.10 Calmar or +2pp CAGR. 0 of 32 cells clear it. |
+| At what size per slot? | **Keep 6.25%, tied to the slot count.** With the count fixed, shrinking the position only de-levers — not one of the 11 eligible cells comes from that axis. |
+| Does a cash buffer help at 5%? | **No.** Best buffered cell 15.46% / −23.69% / 0.647; 11 slots fully invested gives a better ratio (0.670) AND 6.6pp more return. |
+| Who wins a contested slot? | **The most liquid candidate** — the only rule that beats the random null at both slot counts (+2.60pp at 8, 30/30 seeds; +0.78pp at 16, 29/30), both windows. Relative strength wins at 8 and LOSES at 16, so it is noise here. |
+| Change the spec before 26-Sep? | **No.** Nothing cleared the bar, and the two things the bar does not measure — outlier dependence (ten best trades go from 35.7% to 53.4% of profit) and capacity (median position 0.43% → 0.77% of the name's own traded value, ×10 at ₹1 crore) — both argue against concentrating. |
+
+**The finding that matters most is not on any of the four axes.** At every slot count, the
+commonest reason a qualifying signal is NOT taken is that the book **has no cash**, not that it
+has no free slot: 3,619 events → 688 entries, 977 refused for want of a slot, **1,955 refused
+for want of cash**. The book never trims a winner, so a few bloated positions absorb 95% of NAV
+while slots sit nominally free. **Position drift is the untested first-order knob; the slot
+count is second-order.**
+
+**Pending — dated review 2026-10-10 (registered in the Ops & Review Center):** test position
+drift on Base Age — trim a bloated winner toward its target weight, or size the next entry to
+available cash instead of skipping it. Do not re-open the slot count until that is answered.
+
+**Pending — not yet published.** `research/164_baseage_slots_sizing/results/PUBLISH_NOTE.md`
+holds the exact `BacktestStudy` entry and the two charts to draw; publish once the other
+agent's `frontend/` work is committed, then `cd frontend && npm run build` (frontend-only, safe
+any hour).
+
+Evidence: `research/164_baseage_slots_sizing/results/RESULTS.md`.
+
 ## ✅ 2026-09-12 — research/163: every book on /app/mpf-report now credits idle cash at 5%, and the last "NOT MEASURED" is gone
 
 Arun: *"every book must credit idle cash at the SAME rate, 5% a year, post-tax"*, plus three

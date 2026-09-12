@@ -1,0 +1,6 @@
+# heavy / regenerable — see the STATUS doc's crash-recovery section
+panel164.pkl
+ath_events.csv
+curves161.npz
+navs_*/
+*.log

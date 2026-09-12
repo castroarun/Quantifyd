@@ -142,6 +142,35 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("research/164 - Open Alpha - Base Age: test POSITION DRIFT, the first-order constraint the "
+     "slot study exposed",
+     "2026-10-10", "PENDING",
+     "research/164 (12-Sep-2026) re-fitted the slot count and position size of Open Alpha - Base "
+     "Age, which had been INHERITED from the old Open Alpha's look-ahead-scored sweep and never "
+     "tested. VERDICT: 16 slots at 6.25% SURVIVES - the Calmar curve does hump at 9-12 slots "
+     "(0.629/0.669/0.670/0.633 vs the incumbent 0.601, worth +1.1 to +1.4pp CAGR on 25-27 of 30 "
+     "paired seeds and 29-30/30 in the fit window, on a plateau, surviving 40 and 60 bps), but "
+     "that is below the pre-registered bar of +0.10 Calmar or +2pp CAGR, and 0 of 32 cells cleared "
+     "it. The bar's blind spots argue the other way: concentrating 16->10 slots lifts the ten "
+     "best trades' share of total profit from 35.7% to 53.4% and doubles the capacity footprint "
+     "(median position 0.43%->0.77% of the held name's own 20-day traded value, 33%->46% of trades "
+     "above 1%, ten times larger again on a Rs 1 crore book). WHY THIS REVIEW EXISTS: the study's "
+     "biggest finding is that the slot count is the SECOND-order knob. At every slot count the "
+     "commonest reason a qualifying signal is not taken is that the book has no CASH, not that it "
+     "has no SLOT - 3,619 qualifying events produce 688 entries, 977 refused for want of a slot "
+     "and 1,955 refused for want of cash - because the book never trims a winner, so a few bloated "
+     "positions absorb 95% of NAV while slots sit nominally free. TO DO BY THIS DATE: test "
+     "position drift on the same harness (research/164_baseage_slots_sizing/scripts/sim164.py, "
+     "which reproduces research/161 exactly) - trim a bloated winner back toward its target weight, "
+     "and/or size the next entry to available cash instead of skipping it. Do NOT re-open the slot "
+     "count until that is answered: the slot curve measured in r/164 is the curve of a book that "
+     "cannot fill its own slots. Secondary: give the contested-slot liquidity tie-break its own "
+     "test - ranking same-day candidates by 20-day traded value beat the random draw at both slot "
+     "counts (+2.60pp at 8 slots on 30/30 seeds, +0.78pp at 16 on 29/30) in both windows, is free, "
+     "needs no new data and is deterministic, which matters because a LIVE book cannot draw a seed "
+     "and the spec gives the operator no written tie-break today. Evidence: "
+     "research/164_baseage_slots_sizing/results/RESULTS.md"),
+
     ("research/160 quality-growth near ATH - quality as an OVERLAY inside Open Alpha's entries - DONE 12-Sep-2026, FAILED",
      None, "DONE",
      "CLOSED EARLY (due was 2026-10-10) by research/162 Part B, run against the HONEST book - "

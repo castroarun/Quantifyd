@@ -1,0 +1,38 @@
+{
+ "A_s16_eq": {
+  "total_pnl": 67725152,
+  "top10_share_pct": 35.7,
+  "cagr_all": 20.94,
+  "cagr_drop10": 18.62,
+  "cost_pp": 2.31,
+  "med_seed": 29,
+  "events_removed": 10
+ },
+ "A_s11_eq": {
+  "total_pnl": 82697880,
+  "top10_share_pct": 48.5,
+  "cagr_all": 22.03,
+  "cagr_drop10": 19.99,
+  "cost_pp": 2.04,
+  "med_seed": 23,
+  "events_removed": 10
+ },
+ "A_s10_eq": {
+  "total_pnl": 88980656,
+  "top10_share_pct": 53.4,
+  "cagr_all": 22.46,
+  "cagr_drop10": 20.29,
+  "cost_pp": 2.18,
+  "med_seed": 22,
+  "events_removed": 10
+ },
+ "D_tv_s16": {
+  "total_pnl": 77999144,
+  "top10_share_pct": 35.7,
+  "cagr_all": 21.72,
+  "cagr_drop10": 19.88,
+  "cost_pp": 1.84,
+  "med_seed": 16,
+  "events_removed": 10
+ }
+}
