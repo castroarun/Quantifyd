@@ -1,0 +1,11 @@
+st166.pkl
+navs_*/
+*.log
+panel*.pkl
+
+# keep the small decision evidence (the root .gitignore drops research/**/results/*.csv)
+!cells_*.csv
+!paired166.csv
+!events166.csv
+!seedstats_full.csv
+!seedstats_ctrl.csv
