@@ -40,6 +40,23 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
+# ─────────────────────────── THE RULESET SWITCH ───────────────────────────
+# 'legacy'  : the book as seeded on 04-Sep-2026 — buy-stop-at-the-pivot entries (paused),
+#             -8% hard stop on CLOSE, 15-SMA close trail, exits placed at 15:18.
+# 'baseage' : Open Alpha · Base Age, adopted in research/161 and re-fitted in research/164 —
+#             new-ATH-close entry with a >= 60-bar-old prior high and a >= 20% base depth,
+#             filled at the NEXT day's open; SuperTrend(14,4) close trail as the ONLY exit,
+#             no hard stop, no time stop; 16 slots at 6.25% of NAV.
+#
+# THIS IS THE ONLY THING THAT HAS TO CHANGE TO CONVERT THE BOOK, and it is deliberately a
+# constant in the source rather than an environment variable or a state-file field: a
+# real-money ruleset should be visible in `git log`, reviewable in a diff, and impossible to
+# flip by accident from a shell. `services/oa_entry.py` and `services/oa_baseage_entry.py`
+# both read it from here, so the entry and the exit can never disagree about which book is
+# running. Staged 12-Sep-2026; see
+# research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md.
+OA_RULESET = 'legacy'          # 'legacy' | 'baseage'
+
 ROOT = Path(__file__).resolve().parents[1]
 # Run as a script, Python puts services/ on the path, not the repo root -
 # so `import services.x` fails and every alert delivery died silently in a
@@ -188,6 +205,57 @@ def _live(kite, syms):
     return q
 
 
+# ───────────────────── the Base Age exit: SuperTrend(14,4) ─────────────────────
+# The SAME function research/161 measured the book with, imported rather than re-typed
+# (`services/oa_baseage.supertrend_dir` is bt_core's byte-for-byte). An exit that is
+# "basically the same SuperTrend" is a different book, and the 11.85 percentage points this
+# trail is worth over the 15-SMA-plus-8%-stop is the largest single number in that study.
+
+def _st14(syms, live=None, quotes=None, asof=None):
+    """{symbol: dict(dir, line, close, src)} under SuperTrend(14,4).
+
+    With `live`/`quotes` the still-forming bar is appended as a CLOSE PROXY — today's open,
+    running high, running low and the last traded price — which is how the 15:18 check reads
+    the rule before the official close exists. That reading is advisory ONLY: it alerts, it
+    never sells. Without them the answer is the official one from `market_data.db`, which is
+    what `confirm()` acts on.
+    """
+    from services import oa_baseage as spec
+    out = {}
+    con = spec.connect()
+    try:
+        for s in syms:
+            proxy = None
+            if live and live.get(s):
+                oh = (quotes or {}).get('NSE:' + s, {}).get('ohlc', {}) or {}
+                lp = float(live[s])
+                proxy = (float(oh.get('open') or lp),
+                         max(float(oh.get('high') or lp), lp),
+                         min(float(oh.get('low') or lp), lp), lp)
+            d, line, c, last = spec.st_state(s, asof=asof, proxy=proxy, con=con)
+            if d is None:
+                continue
+            out[s] = dict(dir=d, line=round(line, 2) if line == line else None,
+                          close=round(c, 2), src='proxy' if proxy else last)
+    finally:
+        con.close()
+    return out
+
+
+def _db_bar(sym, asof=None):
+    """(date, close, prev_close) of the most recent OFFICIAL daily bar in the DB."""
+    from services import oa_baseage as spec
+    con = spec.connect()
+    try:
+        d, _ = spec.load_bars(con, sym, asof)
+    finally:
+        con.close()
+    if d is None or len(d) < 2:
+        return None, None, None
+    return (str(d['date'].iloc[-1])[:10], float(d['close'].iloc[-1]),
+            float(d['close'].iloc[-2]))
+
+
 # ───────────────────────── money in and out ─────────────────────────
 
 def deposit(amount, dry_run=True):
@@ -324,7 +392,15 @@ def mark():
     syms = [p['symbol'] for p in st['positions']]
     q = _live(kite, syms)
     live = {s: q.get('NSE:' + s, {}).get('last_price') for s in syms}
-    smas = _sma15(kite, syms, live)
+    # The page shows whichever trail the ACTIVE ruleset would exit on, under the same
+    # `trail` / `to_trail_pct` field names — so the dashboard needs no change to tell the
+    # truth, and it cannot show a 15-SMA the book no longer obeys.
+    if OA_RULESET == 'baseage':
+        stx = _st14(syms, live, q)
+        smas = {s: v['line'] for s, v in stx.items() if v['line']}
+    else:
+        stx = {}
+        smas = _sma15(kite, syms, live)
     rows, tot_val, tot_pnl = [], 0.0, 0.0
     for p in st['positions']:
         lp = live.get(p['symbol'])
@@ -341,6 +417,11 @@ def mark():
                          value=round(val), pnl=round(pnl),
                          pnl_pct=round((lp / p['buy'] - 1) * 100, 2) if lp else None,
                          trail=round(sma, 2) if sma else None,
+                         trail_rule='ST(14,4)' if OA_RULESET == 'baseage' else '15-SMA',
+                         st_dir=stx.get(p['symbol'], {}).get('dir'),
+                         # the -8% stop is not a rule under 'baseage'; the field stays for
+                         # the rollback path but the page must not read it as live
+                         stop_active=(OA_RULESET != 'baseage'),
                          to_stop_pct=round((lp / p['stop'] - 1) * 100, 1) if lp else None,
                          to_trail_pct=round((lp / sma - 1) * 100, 1) if lp and sma else None))
     cash = float(st.get('cash', 0.0))
@@ -373,7 +454,7 @@ def mark():
               gain=round(gain),
               pnl_pct=round(100 * tot_pnl / cost, 2) if cost else 0,
               return_pct=round(100 * gain / capital, 2) if capital else 0,
-              slots=SLOTS, slots_used=len(rows),
+              slots=SLOTS, slots_used=len(rows), ruleset=OA_RULESET,
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),
@@ -441,7 +522,7 @@ def ui_only():
               pnl=round(tot_pnl), realized=round(realized), gain=round(gain),
               pnl_pct=round(100 * tot_pnl / cost, 2) if cost else 0,
               return_pct=round(100 * gain / capital, 2) if capital else 0,
-              slots=SLOTS, slots_used=len(rows),
+              slots=SLOTS, slots_used=len(rows), ruleset=OA_RULESET,
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),
@@ -612,6 +693,179 @@ def place_exit(kite, symbol, qty, ltp, tick=0.05):
         return None, str(e)
 
 
+def place_exit_amo(kite, symbol, qty, ref_close, tick=0.05):
+    """One AMO sell for TOMORROW's open. Returns (order_id, order_type_used, error).
+
+    MARKET FIRST, LIMIT AS THE FALLBACK, and the choice is logged. The study exits at the
+    next open with no floor, which only a market order reproduces; Zerodha's RMS has
+    historically refused after-market MARKET orders on some segments, and `place_exit` above
+    already carries the scar of a bare market order being refused through the API. So the
+    refusal is expected and answered with a LIMIT 2% UNDER the last close rather than being
+    allowed to skip the exit. An exit that silently does not go is the one failure this book
+    cannot have.
+
+    Not test-fired: which branch this account takes is settled by the first real evening run,
+    and both are safe. A LIMIT floored 2% under the close fills at the open in any ordinary
+    session and refuses only to dump into a collapse.
+    """
+    if _resting(kite, symbol, 'SELL'):
+        return None, None, 'a SELL is already live'
+    err = None
+    try:
+        oid = kite.place_order(variety='amo', exchange='NSE', tradingsymbol=symbol,
+                               transaction_type='SELL', quantity=int(qty), product='CNC',
+                               order_type='MARKET', validity='DAY', tag=EXIT_TAG)
+        return oid, 'MARKET', None
+    except Exception as e:
+        err = str(e)
+        print('       AMO MARKET refused (%s); falling back to LIMIT' % err[:90])
+    import math
+    floor = round(math.floor((ref_close * (1 - EXIT_FLOOR)) / tick) * tick, 2)
+    try:
+        oid = kite.place_order(variety='amo', exchange='NSE', tradingsymbol=symbol,
+                               transaction_type='SELL', quantity=int(qty), product='CNC',
+                               order_type='LIMIT', price=floor, validity='DAY', tag=EXIT_TAG)
+        return oid, 'LIMIT %.2f' % floor, err
+    except Exception as e2:
+        return None, None, '%s | LIMIT also refused: %s' % (err, e2)
+
+
+def _check_baseage(arm=False):
+    """15:18 close-proxy check under Base Age. QUEUES an exit; never sells.
+
+    WHY THIS DOES NOT PLACE AN ORDER, even with --arm. The Base Age exit is a CLOSE signal:
+    SuperTrend(14,4) flips on the official close and the study fills at the NEXT open. A
+    15:18 proxy is a forecast of that close, and forecasts reverse — an intraday poke through
+    the band that the last twelve minutes take back would, under the legacy 15:18 behaviour,
+    have sold a position the rule never told us to sell. So the proxy's whole job here is to
+    give Arun warning, and the decision is made tonight on the real close by `confirm()`.
+    """
+    kite = _kite()
+    st = load_state()
+    syms = [p['symbol'] for p in st['positions']]
+    if not syms:
+        print('no positions')
+        return
+    q = _live(kite, syms)
+    live = {s: q.get('NSE:' + s, {}).get('last_price') for s in syms}
+    stx = _st14(syms, live, q)
+    queued = []
+    for p in st['positions']:
+        v = stx.get(p['symbol'])
+        lp = live.get(p['symbol'])
+        if not v or not lp:
+            continue
+        if v['dir'] == -1:
+            queued.append((p, lp, v))
+    if not queued:
+        _alert('OA-REAL 15:18 check (Base Age): all clear',
+               '%d positions, SuperTrend(14,4) still long on every one' % len(syms), 'low')
+        print('all clear (%d positions, ST(14,4) long)' % len(syms))
+        return
+    body = []
+    for p, lp, v in queued:
+        body.append('%s x%d at %.2f, ST line %.2f (entry %.2f, %+.1f%%)'
+                    % (p['symbol'], p['qty'], lp, v['line'] or 0, p['buy'],
+                       (lp / p['buy'] - 1) * 100))
+        print('QUEUED (not sold):', body[-1])
+    _alert('OA-REAL: %d Base Age exit(s) QUEUED for tonight' % len(queued),
+           'SuperTrend(14,4) would flip down on this close-proxy. NOTHING IS SOLD NOW. '
+           'The flip is confirmed tonight on the official close and an after-market sell '
+           'is placed for tomorrow\'s open.\n  ' + '\n  '.join(body), 'low')
+
+
+def confirm(arm=False, asof=None):
+    """The Base Age exit decision, on the OFFICIAL close. This is the one that sells.
+
+    Runs in the evening, AFTER the 17:45 nightly universe refresh has written the day's
+    daily bars. Three guards, each of which has a live incident behind it somewhere in this
+    repo:
+
+      1. NEVER ON A PARTIAL CANDLE. It refuses to run before 17:50 IST on a weekday, and it
+         refuses any symbol whose latest DB bar is not the latest session. A SuperTrend read
+         off a half-formed bar is not the rule.
+      2. NEVER SELL INTO A SPLIT. A single-day close move of -40% or worse is treated as a
+         corporate action, the position is HELD and an alert is raised, exactly as
+         `services/ipo_paper.py` does. `market_data.db` is not retroactively split-adjusted.
+      3. NEVER TWICE. `place_exit_amo` refuses a symbol that already has a live SELL.
+
+    Under 'legacy' this is a no-op, so the mode is safe to wire into cron before any flip.
+    """
+    if OA_RULESET != 'baseage':
+        print('OA_RULESET is %r - Base Age exit confirmation does not apply; nothing done.'
+              % OA_RULESET)
+        return
+    now = datetime.now()
+    if arm and now.weekday() < 5 and (now.hour, now.minute) < (17, 50):
+        print('%s - the daily bars are not in yet (universe refresh runs 17:45); '
+              'refusing to confirm an exit on a partial candle' % now)
+        return
+    from services import oa_baseage as spec
+    st = load_state()
+    syms = [p['symbol'] for p in st['positions']]
+    if not syms:
+        print('no positions')
+        return
+    session = asof or spec.last_session()
+    stx = _st14(syms, asof=asof)
+    kite = _kite() if arm else None
+    due, stale, held_split = [], [], []
+    for p in st['positions']:
+        s = p['symbol']
+        v = stx.get(s)
+        if not v:
+            stale.append((s, 'no usable price history'))
+            continue
+        d, c, prev = _db_bar(s, asof)
+        if d != session:
+            # The name did not trade today, or the refresh missed it. Either way the rule
+            # has not been evaluated on today's close, so the position is simply not acted
+            # on - loudly.
+            stale.append((s, 'last DB bar %s, latest session %s' % (d, session)))
+            continue
+        if prev and prev > 0 and (c / prev - 1) <= spec.DATA_EVENT_DROP:
+            held_split.append((s, prev, c))
+            continue
+        if v['dir'] == -1:
+            due.append((p, v, c))
+    for s, why in stale:
+        print('  STALE %-14s %s' % (s, why))
+    if stale:
+        _alert('OA-REAL Base Age confirm: %d position(s) not evaluated' % len(stale),
+               'No exit decision was made for: '
+               + '; '.join('%s (%s)' % (s, w) for s, w in stale)
+               + '. Check the 17:45 universe refresh.')
+    for s, prev, c in held_split:
+        print('  DATA EVENT %-14s %.2f -> %.2f  HELD, not sold' % (s, prev, c))
+        _alert('OA-REAL data event: %s' % s,
+               '%s close %.2f -> %.2f in one day. Treated as a split or bonus: the position '
+               'is HELD, not exited. Verify the price series before the next session.'
+               % (s, prev, c))
+    if not due:
+        print('confirm %s: no Base Age exit due (%d positions)' % (session, len(syms)))
+        _alert('OA-REAL Base Age confirm: no exit due',
+               '%d positions, SuperTrend(14,4) long on every one as of the %s close'
+               % (len(syms) - len(stale) - len(held_split), session), 'low')
+        return
+    for p, v, c in due:
+        head = ('SELL %s x%d CNC at tomorrow\'s open - SuperTrend(14,4) flipped down on the '
+                '%s close %.2f (trail %.2f). Entry %.2f, %+.1f%%.'
+                % (p['symbol'], p['qty'], session, c, v['line'] or 0, p['buy'],
+                   (c / p['buy'] - 1) * 100))
+        if not arm:
+            print('EXIT DUE (not armed):', head)
+            continue
+        oid, kind, err = place_exit_amo(kite, p['symbol'], p['qty'], c)
+        if oid:
+            print('EXIT PLACED:', p['symbol'], oid, kind)
+            _alert('OA-REAL EXIT PLACED (Base Age): %s' % p['symbol'],
+                   head + ' After-market order %s is in as %s.' % (oid, kind))
+        else:
+            _alert('OA-REAL EXIT FAILED TO PLACE: %s' % p['symbol'],
+                   head + ' The order was NOT sent: %s. Place it by hand before 09:15.' % err)
+            print('EXIT FAILED:', p['symbol'], err)
+
+
 def check(arm=False):
     """15:18 close-proxy rule check.
 
@@ -619,7 +873,11 @@ def check(arm=False):
     it was alert-only, and the alert went to a log nobody read - so SPORTKING sat a full
     day below its trail with the right order sitting in a file. Arun approved automatic
     exits the same evening.
+
+    Under 'baseage' the whole meaning of 15:18 changes - see `_check_baseage`.
     """
+    if OA_RULESET == 'baseage':
+        return _check_baseage(arm)
     kite = _kite()
     st = load_state()
     syms = [p['symbol'] for p in st['positions']]
@@ -660,7 +918,13 @@ def check(arm=False):
 
 
 if __name__ == '__main__':
+    def _asof():
+        return sys.argv[sys.argv.index('--asof') + 1] if '--asof' in sys.argv else None
+
     _modes = {'seed': seed, 'mark': mark, 'ui-only': ui_only,
               'check': lambda: check(arm='--arm' in sys.argv),
+              # Base Age only; a no-op under 'legacy', so it is safe to leave in cron
+              'confirm': lambda: confirm(arm='--arm' in sys.argv, asof=_asof()),
+              'ruleset': lambda: print(OA_RULESET),
               'reconcile': lambda: reconcile(dry='--arm' not in sys.argv)}
     _modes[sys.argv[1] if len(sys.argv) > 1 else 'mark']()

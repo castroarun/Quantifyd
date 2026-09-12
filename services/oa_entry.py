@@ -381,6 +381,27 @@ def main():
     ap.add_argument('--top', type=int, default=12, help='how many candidates to print')
     a = ap.parse_args()
 
+    # ── ruleset dispatch ──────────────────────────────────────────────────────
+    # The cron line is the same under both rulesets, so the switch in oa_real.py is the
+    # single place the book changes shape. Under 'baseage' this whole module - the r/142
+    # setup screen, the buy-stop-at-the-pivot arming, the RS percentile, the 09:25 re-arm -
+    # is bypassed, not patched: research/158 showed its entry has no placeable edge and its
+    # condition was inverted, and the Base Age entry is a different mechanic (next-open
+    # fill), not a corrected version of this one. It stays in the tree so the rollback path
+    # is a one-word edit rather than a git revert.
+    from services.oa_real import OA_RULESET
+    if OA_RULESET == 'baseage':
+        from services import oa_baseage_entry
+        print('OA_RULESET=baseage - exits first, then the Base Age entry scan.')
+        # Exits before entries: a confirmed sell frees a slot and the cash for tomorrow's
+        # open, and both legs are placed as after-market orders for the SAME open, so the
+        # order between them inside this job is the only thing that decides whether a
+        # replacement can be funded on the day a name leaves.
+        from services.oa_real import confirm
+        confirm(arm=a.arm)
+        oa_baseage_entry.run(arm=a.arm)
+        return
+
     cand, last = signal(a.verify)
     print('scan as of %s: %d candidates in setup (RS >= %g, TV >= Rs%.0fcr)'
           % (str(last)[:10], len(cand), RS_MIN, TV_FLOOR / 1e7))

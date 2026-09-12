@@ -1,0 +1,23 @@
+{
+ "gate_window_start": "2025-01-31",
+ "lookback": 400,
+ "phaseA_rate": 100.0,
+ "phaseA_miss": 0,
+ "phaseA_extra": 0,
+ "phaseB_rate": 98.577,
+ "phaseB_miss": 8,
+ "phaseB_extra": 4,
+ "universe_study": 2492,
+ "universe_prod": 2369,
+ "walk": {
+  "cash": 34631,
+  "positions": 15,
+  "nav": 673106,
+  "refused_cash": 21,
+  "refused_slot": 86,
+  "start": "2026-06-19",
+  "end": "2026-09-11"
+ },
+ "buys": 20,
+ "sells": 5
+}
