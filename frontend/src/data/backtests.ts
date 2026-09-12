@@ -18773,6 +18773,35 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
         },
       ],
     },
+    conditions: {
+      intro: 'Held identical across every cell.',
+      rows: [
+        { k: 'Window', v: '03-Jan-2005 to 11-Sep-2026. Fit window W1 2005-01 to 2015-12; holdout W2 2016-01 to 2026-09, opened once at the end.' },
+        { k: 'Tax', v: '20% short-term, 12.5% long-term above 365 days, Indian financial-year loss netting.' },
+        { k: 'Costs', v: '25 bps a side; the shortlist re-scored at 40 and 60 bps.' },
+        { k: 'Idle cash', v: '5.0% post-tax, credited daily on the cash balance, never taxed again. The same standard as the whole Momentum Portfolio report.' },
+        { k: 'Path dependence', v: '30-seed random-selection ensembles; medians with the range and the worst seed. Ranked tie-break rules are deterministic and are scored against all 30 random-draw paths.' },
+        { k: 'Adoption bar', v: 'Pre-registered before the first cell: paired on the same 30 seeds, at least +0.10 Calmar or +2pp CAGR at no worse drawdown, winning at least 20 of 30 seeds, in both windows, on a plateau, surviving 40 bps, and passing the tradeability gate.' },
+      ],
+    },
+    comparisons: [],
+    winners: [
+      {
+        config: 'Keep the incumbent: 16 slots at 6.25%, random draw for a contested slot',
+        summary: 'Nothing cleared the bar. The 9-12 slot hump is real (+1.1 to +1.4pp CAGR, wins 25-27 of 30 seeds, both windows, survives 60 bps) and too small for a bar written down before the run; the outlier share and capacity footprint both worsen with concentration. The one change worth its own test is the liquidity tie-break, which is free and deterministic.',
+        metrics: [
+          { k: 'Incumbent, after tax', v: '20.94% CAGR, -35.50% DD, Calmar 0.601, worst seed 19.81%, 72.9% invested' },
+          { k: 'Best cell (11 slots)', v: '22.03%, -33.85%, 0.670: +0.058 Calmar on 26/30 seeds' },
+          { k: 'Liquidity tie-break at 16', v: '21.72%, -32.67%, 0.665: +0.064 Calmar on 29/30 seeds' },
+          { k: 'Why not concentrate', v: 'ten best trades 35.7% -> 53.4% of profit; median position 0.43% -> 0.77% of the name\u2019s traded value' },
+        ],
+        rejected: [
+          'Any cash buffer at 5% idle yield: de-levers the ratio, loses 2-6pp of return.',
+          'Relative strength as the tie-break: wins at 8 slots, loses at 16 (5 of 30).',
+          'Longest base age as the tie-break: raises CAGR, deepens drawdown, Calmar 9 of 30.',
+        ],
+      },
+    ],
     caveats: [
       'NOTHING HERE IS ADOPTED OR PAPERED. The adopted spec is unchanged: 16 slots at 6.25% goes into the 26-Sep-2026 paper-book call exactly as research/161 left it.',
       'THE TOP CELL WAS ADDED AFTER PRE-REGISTRATION. 11 slots is one of six slot counts (7, 9, 11, 13, 14, 18) added to execute the pre-registered plateau test, so 32 cells were selected over rather than the 26 pre-registered. An improvement of +0.058 Calmar found at the peak of a 32-cell grid is the size of thing multiple testing manufactures. 10 and 11 slots are statistically indistinguishable (0.669 vs 0.670) — the finding is "about ten", never "eleven".',
@@ -18780,6 +18809,17 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
       'THE LIQUIDITY TIE-BREAK IS 1 OF 8 CELLS ON ITS AXIS. Discount it for multiple testing. It is also the weakest of the shortlist at 60 bps (Calmar 0.536 against the incumbent’s 0.560). What recommends it is not its size but its shape: it is free, needs no new data, is deterministic — a LIVE book cannot "draw a seed", and the spec currently gives the operator no written tie-break at all — and it tilts toward larger names, which helps capacity.',
       'THE CORRELATION AND BLEND TESTS WERE NOT RE-RUN, by construction: this study changes no entry and no exit, so the book’s correlation with True North and IPO Base is research/161’s and research/154’s, unchanged.',
       'INHERITED DATA DEFECT: market_data.db is not retroactively split-adjusted, so the event builder truncates each series after any day-over-day fall worse than -35%. This is research/161’s guard, carried over unchanged, and it is a mitigation rather than a fix.',
+    ],
+    githubLinks: [
+      { label: 'research/164 on GitHub', href: 'https://github.com/castroarun/Quantifyd/tree/main/research/164_baseage_slots_sizing' },
+    ],
+    projectPaths: [
+      'research/164_baseage_slots_sizing/BASEAGE_SLOTS_AND_SIZING_DAILY_SWEEP_STATUS.md',
+      'research/164_baseage_slots_sizing/results/RESULTS.md',
+      'research/164_baseage_slots_sizing/results/cells_full.csv',
+      'research/164_baseage_slots_sizing/results/paired164.csv',
+      'research/164_baseage_slots_sizing/results/tables164.md',
+      'research/164_baseage_slots_sizing/scripts/',
     ],
   },
 ];
