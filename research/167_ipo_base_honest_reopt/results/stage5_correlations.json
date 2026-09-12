@@ -1,0 +1,79 @@
+{
+ "INCUMBENT r/153 (trail20 tp25 sl8)": {
+  "Open Alpha - Base Age": 0.245,
+  "True North": 0.211,
+  "IPO Base - First Base": 0.962,
+  "NIFTYBEES (index)": 0.165,
+  "n_weeks": 1065
+ },
+ "S1 bestCAGR s1_tr50_tp25_sl15": {
+  "Open Alpha - Base Age": 0.297,
+  "True North": 0.247,
+  "IPO Base - First Base": 0.77,
+  "NIFTYBEES (index)": 0.224,
+  "n_weeks": 1065
+ },
+ "S1 bestCAGR s1_tr50_tp25_sl10": {
+  "Open Alpha - Base Age": 0.293,
+  "True North": 0.245,
+  "IPO Base - First Base": 0.748,
+  "NIFTYBEES (index)": 0.217,
+  "n_weeks": 1065
+ },
+ "S1 bestCalmar s1_tr50_tp100_sl8": {
+  "Open Alpha - Base Age": 0.299,
+  "True North": 0.189,
+  "IPO Base - First Base": 0.517,
+  "NIFTYBEES (index)": 0.178,
+  "n_weeks": 1065
+ },
+ "S1 bestCalmar s1_tr50_tp100_sl10": {
+  "Open Alpha - Base Age": 0.295,
+  "True North": 0.18,
+  "IPO Base - First Base": 0.482,
+  "NIFTYBEES (index)": 0.177,
+  "n_weeks": 1065
+ },
+ "S1 bestCalmar s1_tr50_tp100_sl6": {
+  "Open Alpha - Base Age": 0.312,
+  "True North": 0.209,
+  "IPO Base - First Base": 0.535,
+  "NIFTYBEES (index)": 0.178,
+  "n_weeks": 1065
+ },
+ "S1 bestCalmar s1_tr50_notp_sl10": {
+  "Open Alpha - Base Age": 0.314,
+  "True North": 0.16,
+  "IPO Base - First Base": 0.471,
+  "NIFTYBEES (index)": 0.174,
+  "n_weeks": 1065
+ },
+ "S2a geometry bestcagr s2a_a6_L25_d30_off": {
+  "Open Alpha - Base Age": 0.297,
+  "True North": 0.247,
+  "IPO Base - First Base": 0.77,
+  "NIFTYBEES (index)": 0.224,
+  "n_weeks": 1065
+ },
+ "S2a geometry bestcalmar s2a_a3_L60_d60_off": {
+  "Open Alpha - Base Age": 0.115,
+  "True North": 0.107,
+  "IPO Base - First Base": 0.195,
+  "NIFTYBEES (index)": 0.122,
+  "n_weeks": 1065
+ },
+ "S2b book bestcagr s2b_a6_L25_d30_off_n8x1875": {
+  "Open Alpha - Base Age": 0.297,
+  "True North": 0.247,
+  "IPO Base - First Base": 0.77,
+  "NIFTYBEES (index)": 0.224,
+  "n_weeks": 1065
+ },
+ "S2b book bestcalmar s2b_a6_L25_d30_off_n5x2000": {
+  "Open Alpha - Base Age": 0.301,
+  "True North": 0.237,
+  "IPO Base - First Base": 0.718,
+  "NIFTYBEES (index)": 0.225,
+  "n_weeks": 1065
+ }
+}

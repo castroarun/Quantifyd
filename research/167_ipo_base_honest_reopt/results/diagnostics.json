@@ -1,0 +1,139 @@
+{
+  "trades_total_median": 686.0,
+  "trades_below_-40pct": 0,
+  "frac_below_-40pct": 0.0,
+  "trades_below_-50pct": 0,
+  "frac_below_-50pct": 0.0,
+  "trades_below_-70pct": 0,
+  "frac_below_-70pct": 0.0,
+  "worst_20_trades": [
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "ESAFSFB-BE",
+      "ret": -18.2,
+      "held": 1,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    },
+    {
+      "symbol": "GVKPIL-BE",
+      "ret": -17.4,
+      "held": 26,
+      "reason": "stop"
+    }
+  ],
+  "one_day_collapse_exits": [],
+  "n_one_day_collapse_exits": 0,
+  "invested_pct_median": 31.8,
+  "cash_pct_median": 68.2,
+  "cash_sweep_pp_estimate": 3.41,
+  "w2_cagr_with_cash_yield": 14.9,
+  "w2_cagr_zero_cash_yield": 11.08,
+  "cash_sweep_pp_measured": 3.82
+}

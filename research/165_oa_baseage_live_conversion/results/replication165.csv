@@ -1,0 +1,13 @@
+phase,kind,symbol,trigger_date,reason
+B,miss,GROWWDEFNC,2026-05-06,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,ICICIB22,2026-01-29,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MAHKTECH,2025-02-06,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MASPTOP50,2025-08-12,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MODEFENCE,2025-04-29,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MODEFENCE,2026-05-06,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MOM100,2025-11-12,"excluded by the curated fund list (D4), kept by the study pattern"
+B,miss,MON100,2025-09-30,"excluded by the curated fund list (D4), kept by the study pattern"
+B,extra,PAYTM,2026-09-11,trigger after the study list ends (live last-bar allowance)
+B,extra,SHANTIGOLD,2026-08-17,"kept by the curated fund list (D4), excluded by the study pattern"
+B,extra,SILVERTUC,2026-05-07,"kept by the curated fund list (D4), excluded by the study pattern"
+B,extra,SKYGOLD,2026-05-07,"kept by the curated fund list (D4), excluded by the study pattern"

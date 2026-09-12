@@ -1,0 +1,133 @@
+day,action,symbol,qty,price,ret_pct,why
+2026-06-22,BUY,WABAG,19,2014.9,0,"ATH close 2026-06-19, base 378 bars, depth 45%, TV 77.62 cr"
+2026-06-22,BUY,PANAMAPET,77,499.85,0,"ATH close 2026-06-19, base 467 bars, depth 46%, TV 10.09 cr"
+2026-06-23,BUY,AIAENG,7,4860.0,0,"ATH close 2026-06-22, base 460 bars, depth 37%, TV 34.98 cr"
+2026-06-23,BUY,KPIL,26,1460.0,0,"ATH close 2026-06-22, base 427 bars, depth 40%, TV 22.82 cr"
+2026-06-23,BUY,ZYDUSWELL,71,540.1,0,"ATH close 2026-06-22, base 187 bars, depth 29%, TV 11.21 cr"
+2026-06-23,BUY,SETL,185,208.33,0,"ATH close 2026-06-22, base 352 bars, depth 47%, TV 6.34 cr"
+2026-06-23,BUY,SKFINDUS,13,2762.0,0,"ATH close 2026-06-22, base 94 bars, depth 25%, TV 4.74 cr"
+2026-06-25,BUY,SKMEGGPROD,140,274.0,0,"ATH close 2026-06-24, base 694 bars, depth 70%, TV 16.87 cr"
+2026-06-25,BUY,SPAL,34,1109.1,0,"ATH close 2026-06-24, base 442 bars, depth 43%, TV 2.92 cr"
+2026-06-29,BUY,TALBROAUTO,93,407.0,0,"ATH close 2026-06-25, base 471 bars, depth 46%, TV 6.60 cr"
+2026-07-01,BUY,AUROPHARMA,24,1578.7,0,"ATH close 2026-06-30, base 452 bars, depth 35%, TV 164.78 cr"
+2026-07-01,BUY,NEULANDLAB,2,18750.0,0,"ATH close 2026-06-30, base 156 bars, depth 36%, TV 57.87 cr"
+2026-07-01,BUY,CAPLIPOINT,14,2652.0,0,"ATH close 2026-06-30, base 371 bars, depth 42%, TV 37.35 cr"
+2026-07-02,BUY,PSPPROJECT,38,1040.0,0,"ATH close 2026-07-01, base 152 bars, depth 43%, TV 12.13 cr"
+2026-07-03,BUY,SUVEN,130,305.0,0,"ATH close 2026-07-02, base 237 bars, depth 57%, TV 40.60 cr"
+2026-07-03,BUY,RATEGAIN,42,949.8,0,"ATH close 2026-07-02, base 583 bars, depth 53%, TV 40.14 cr"
+2026-07-03,REFUSED,RISHABH,0,0,0,no free slot (tie-break rank by TV 6.95 cr)
+2026-07-03,REFUSED,MARKOLINES,0,0,0,no free slot (tie-break rank by TV 6.49 cr)
+2026-07-03,REFUSED,BHARATSE,0,0,0,no free slot (tie-break rank by TV 2.63 cr)
+2026-07-06,REFUSED,BOSCHLTD,0,0,0,no free slot (tie-break rank by TV 162.94 cr)
+2026-07-06,REFUSED,LTF,0,0,0,no free slot (tie-break rank by TV 154.01 cr)
+2026-07-06,REFUSED,IPCALAB,0,0,0,no free slot (tie-break rank by TV 27.56 cr)
+2026-07-07,REFUSED,CHOLAFIN,0,0,0,no free slot (tie-break rank by TV 252.83 cr)
+2026-07-07,REFUSED,PHOENIXLTD,0,0,0,no free slot (tie-break rank by TV 120.28 cr)
+2026-07-07,REFUSED,ABDL,0,0,0,no free slot (tie-break rank by TV 17.04 cr)
+2026-07-08,REFUSED,IOLCP,0,0,0,no free slot (tie-break rank by TV 40.57 cr)
+2026-07-08,REFUSED,AEGISVOPAK,0,0,0,no free slot (tie-break rank by TV 27.24 cr)
+2026-07-08,REFUSED,RELTD,0,0,0,no free slot (tie-break rank by TV 10.39 cr)
+2026-07-10,REFUSED,INDNIPPON,0,0,0,no free slot (tie-break rank by TV 3.28 cr)
+2026-07-13,REFUSED,J&KBANK,0,0,0,no free slot (tie-break rank by TV 56.51 cr)
+2026-07-13,REFUSED,GODREJIND,0,0,0,no free slot (tie-break rank by TV 19.59 cr)
+2026-07-13,REFUSED,NORTHARC,0,0,0,no free slot (tie-break rank by TV 15.09 cr)
+2026-07-13,REFUSED,BETA,0,0,0,no free slot (tie-break rank by TV 7.13 cr)
+2026-07-13,REFUSED,RPGLIFE,0,0,0,no free slot (tie-break rank by TV 2.10 cr)
+2026-07-14,REFUSED,UJJIVANSFB,0,0,0,no free slot (tie-break rank by TV 69.69 cr)
+2026-07-15,REFUSED,GNA,0,0,0,no free slot (tie-break rank by TV 13.54 cr)
+2026-07-15,REFUSED,WANBURY,0,0,0,no free slot (tie-break rank by TV 4.74 cr)
+2026-07-16,REFUSED,GABRIEL,0,0,0,no free slot (tie-break rank by TV 38.72 cr)
+2026-07-16,REFUSED,AJANTPHARM,0,0,0,no free slot (tie-break rank by TV 28.28 cr)
+2026-07-17,REFUSED,FILATEX,0,0,0,no free slot (tie-break rank by TV 13.69 cr)
+2026-07-17,REFUSED,INDIAGLYCO,0,0,0,no free slot (tie-break rank by TV 13.55 cr)
+2026-07-20,REFUSED,SUMEETINDS,0,0,0,no free slot (tie-break rank by TV 24.95 cr)
+2026-07-20,REFUSED,AEROPLANE,0,0,0,no free slot (tie-break rank by TV 15.00 cr)
+2026-07-21,REFUSED,TINNARUBR,0,0,0,no free slot (tie-break rank by TV 5.42 cr)
+2026-07-22,REFUSED,KARURVYSYA,0,0,0,no free slot (tie-break rank by TV 65.36 cr)
+2026-07-22,REFUSED,GHCLTEXTIL,0,0,0,no free slot (tie-break rank by TV 7.80 cr)
+2026-07-23,REFUSED,BLUESTONE,0,0,0,no free slot (tie-break rank by TV 24.19 cr)
+2026-07-23,REFUSED,SWANDEF-BE,0,0,0,no free slot (tie-break rank by TV 2.99 cr)
+2026-07-24,REFUSED,SOTL,0,0,0,no free slot (tie-break rank by TV 13.88 cr)
+2026-07-28,REFUSED,E2E-BE,0,0,0,no free slot (tie-break rank by TV 50.46 cr)
+2026-07-28,REFUSED,SSWL,0,0,0,no free slot (tie-break rank by TV 24.98 cr)
+2026-07-28,REFUSED,ALGOQUANT,0,0,0,no free slot (tie-break rank by TV 7.46 cr)
+2026-07-29,SELL,KPIL,26,1265.5,-13.32,"ST(14,4) flip on 2026-07-28 close"
+2026-07-29,SELL,SKMEGGPROD,140,278.95,1.81,"ST(14,4) flip on 2026-07-28 close"
+2026-07-30,BUY,APCOTEXIND,54,700.0,0,"ATH close 2026-07-29, base 1031 bars, depth 56%, TV 5.00 cr"
+2026-07-31,BUY,SMLMAH,6,5550.0,0,"ATH close 2026-07-30, base 107 bars, depth 32%, TV 25.60 cr"
+2026-08-03,REFUSED,BAJFINANCE,0,0,0,no free slot (tie-break rank by TV 815.71 cr)
+2026-08-03,REFUSED,PRICOLLTD,0,0,0,no free slot (tie-break rank by TV 24.48 cr)
+2026-08-04,REFUSED,M&MFIN,0,0,0,no free slot (tie-break rank by TV 126.88 cr)
+2026-08-04,REFUSED,LLOYDSENGG,0,0,0,no free slot (tie-break rank by TV 79.49 cr)
+2026-08-04,REFUSED,REDINGTON,0,0,0,no free slot (tie-break rank by TV 58.94 cr)
+2026-08-04,REFUSED,DEEPINDS,0,0,0,no free slot (tie-break rank by TV 11.64 cr)
+2026-08-04,REFUSED,VADILALIND,0,0,0,no free slot (tie-break rank by TV 7.83 cr)
+2026-08-05,REFUSED,PICCADIL,0,0,0,no free slot (tie-break rank by TV 14.81 cr)
+2026-08-05,REFUSED,ALIVUS,0,0,0,no free slot (tie-break rank by TV 6.55 cr)
+2026-08-05,REFUSED,KDDL,0,0,0,no free slot (tie-break rank by TV 4.40 cr)
+2026-08-05,REFUSED,PNGSREVA,0,0,0,no free slot (tie-break rank by TV 3.90 cr)
+2026-08-06,REFUSED,SHRIRAMFIN,0,0,0,no free slot (tie-break rank by TV 472.28 cr)
+2026-08-06,REFUSED,SONACOMS,0,0,0,no free slot (tie-break rank by TV 191.91 cr)
+2026-08-06,REFUSED,RICOAUTO,0,0,0,no free slot (tie-break rank by TV 22.70 cr)
+2026-08-06,REFUSED,ASKAUTOLTD,0,0,0,no free slot (tie-break rank by TV 15.58 cr)
+2026-08-06,REFUSED,JGCHEM,0,0,0,no free slot (tie-break rank by TV 6.27 cr)
+2026-08-06,REFUSED,INDOTECH,0,0,0,no free slot (tie-break rank by TV 5.51 cr)
+2026-08-06,REFUSED,VSSL,0,0,0,no free slot (tie-break rank by TV 3.32 cr)
+2026-08-06,REFUSED,BOSCH-HCIL,0,0,0,no free slot (tie-break rank by TV 2.56 cr)
+2026-08-10,REFUSED,MARINE,0,0,0,no free slot (tie-break rank by TV 18.99 cr)
+2026-08-10,REFUSED,MPSLTD,0,0,0,no free slot (tie-break rank by TV 13.13 cr)
+2026-08-10,REFUSED,FIEMIND,0,0,0,no free slot (tie-break rank by TV 10.04 cr)
+2026-08-10,REFUSED,AGARWALEYE,0,0,0,no free slot (tie-break rank by TV 4.19 cr)
+2026-08-10,REFUSED,TRAVELFOOD,0,0,0,no free slot (tie-break rank by TV 2.28 cr)
+2026-08-11,REFUSED,MACPOWER,0,0,0,no free slot (tie-break rank by TV 3.38 cr)
+2026-08-12,SELL,ZYDUSWELL,71,507.95,-5.95,"ST(14,4) flip on 2026-08-11 close"
+2026-08-12,BUY,ANTHEM,43,898.0,0,"ATH close 2026-08-11, base 220 bars, depth 31%, TV 58.67 cr"
+2026-08-12,REFUSED,LUMAXTECH,0,0,0,no free slot (tie-break rank by TV 17.22 cr)
+2026-08-12,REFUSED,INDSWFTLAB,0,0,0,no free slot (tie-break rank by TV 9.64 cr)
+2026-08-13,REFUSED,PIDILITIND,0,0,0,no free slot (tie-break rank by TV 167.40 cr)
+2026-08-13,REFUSED,TI,0,0,0,no free slot (tie-break rank by TV 44.09 cr)
+2026-08-13,REFUSED,KRN,0,0,0,no free slot (tie-break rank by TV 7.81 cr)
+2026-08-13,REFUSED,DIVGIITTS,0,0,0,no free slot (tie-break rank by TV 3.79 cr)
+2026-08-14,REFUSED,LMW,0,0,0,no free slot (tie-break rank by TV 6.36 cr)
+2026-08-17,REFUSED,LGEINDIA,0,0,0,no free slot (tie-break rank by TV 30.59 cr)
+2026-08-17,REFUSED,UNIMECH,0,0,0,no free slot (tie-break rank by TV 15.25 cr)
+2026-08-17,REFUSED,MANORAMA,0,0,0,no free slot (tie-break rank by TV 14.78 cr)
+2026-08-18,SELL,AIAENG,7,4383.6,-9.8,"ST(14,4) flip on 2026-08-17 close"
+2026-08-18,BUY,SHANTIGOLD,144,269.0,0,"ATH close 2026-08-17, base 245 bars, depth 38%, TV 15.58 cr"
+2026-08-19,REFUSED,ASIANENE,0,0,0,no free slot (tie-break rank by TV 14.79 cr)
+2026-08-20,REFUSED,STYLEBAAZA,0,0,0,no free slot (tie-break rank by TV 11.00 cr)
+2026-08-21,REFUSED,RATNAVEER,0,0,0,no free slot (tie-break rank by TV 190.95 cr)
+2026-08-21,REFUSED,MOREPENLAB,0,0,0,no free slot (tie-break rank by TV 109.32 cr)
+2026-08-21,REFUSED,BALRAMCHIN,0,0,0,no free slot (tie-break rank by TV 35.69 cr)
+2026-08-21,REFUSED,AVADHSUGAR,0,0,0,no free slot (tie-break rank by TV 6.90 cr)
+2026-08-21,REFUSED,ADOR,0,0,0,no free slot (tie-break rank by TV 5.51 cr)
+2026-08-21,REFUSED,PVP,0,0,0,no free slot (tie-break rank by TV 3.29 cr)
+2026-08-24,REFUSED,IIFL,0,0,0,no free slot (tie-break rank by TV 91.82 cr)
+2026-08-25,REFUSED,MANGLMCEM,0,0,0,no free slot (tie-break rank by TV 2.05 cr)
+2026-08-26,REFUSED,WELENT,0,0,0,no free slot (tie-break rank by TV 17.07 cr)
+2026-08-26,REFUSED,ENTERO,0,0,0,no free slot (tie-break rank by TV 12.76 cr)
+2026-08-27,REFUSED,TVSSRICHAK,0,0,0,no free slot (tie-break rank by TV 5.67 cr)
+2026-08-28,REFUSED,MEDANTA,0,0,0,no free slot (tie-break rank by TV 33.09 cr)
+2026-08-28,REFUSED,VINCOFE,0,0,0,no free slot (tie-break rank by TV 30.55 cr)
+2026-08-31,SELL,PSPPROJECT,38,889.0,-14.52,"ST(14,4) flip on 2026-08-28 close"
+2026-08-31,REFUSED,COFORGE,19,2015.0,0,"refused for cash: needs Rs 38,285, have Rs 34,631"
+2026-08-31,REFUSED,QPOWER,26,1502.7,0,"refused for cash: needs Rs 39,070, have Rs 34,631"
+2026-09-01,REFUSED,ICIL,85,470.95,0,"refused for cash: needs Rs 40,031, have Rs 34,631"
+2026-09-01,REFUSED,PRUDENT,10,3700.0,0,"refused for cash: needs Rs 37,000, have Rs 34,631"
+2026-09-02,REFUSED,BAJAJ-AUTO,3,12211.0,0,"refused for cash: needs Rs 36,633, have Rs 34,631"
+2026-09-02,REFUSED,TBZ,106,380.0,0,"refused for cash: needs Rs 40,280, have Rs 34,631"
+2026-09-02,REFUSED,DYCL,74,542.0,0,"refused for cash: needs Rs 40,108, have Rs 34,631"
+2026-09-07,REFUSED,WELSPUNLIV,195,210.0,0,"refused for cash: needs Rs 40,950, have Rs 34,631"
+2026-09-08,REFUSED,RAYMOND,53,775.0,0,"refused for cash: needs Rs 41,075, have Rs 34,631"
+2026-09-08,REFUSED,WINDLAS,35,1164.0,0,"refused for cash: needs Rs 40,740, have Rs 34,631"
+2026-09-08,REFUSED,ARTEMISMED,118,347.5,0,"refused for cash: needs Rs 41,005, have Rs 34,631"
+2026-09-08,REFUSED,MMP,90,454.75,0,"refused for cash: needs Rs 40,928, have Rs 34,631"
+2026-09-09,REFUSED,CYIENTDLM,42,980.0,0,"refused for cash: needs Rs 41,160, have Rs 34,631"
+2026-09-09,REFUSED,KABRAEXTRU,62,656.45,0,"refused for cash: needs Rs 40,700, have Rs 34,631"
+2026-09-09,REFUSED,BODALCHEM,221,186.4,0,"refused for cash: needs Rs 41,194, have Rs 34,631"
+2026-09-09,REFUSED,SHANTIGEAR,57,711.5,0,"refused for cash: needs Rs 40,556, have Rs 34,631"
+2026-09-10,REFUSED,STAR,34,1189.0,0,"refused for cash: needs Rs 40,426, have Rs 34,631"
+2026-09-10,REFUSED,RACLGEAR,25,1643.9,0,"refused for cash: needs Rs 41,098, have Rs 34,631"
+2026-09-10,REFUSED,STLNETWORK,1190,34.76,0,"refused for cash: needs Rs 41,364, have Rs 34,631"
+2026-09-11,REFUSED,NEOGEN,17,2390.0,0,"refused for cash: needs Rs 40,630, have Rs 34,631"
+2026-09-11,REFUSED,AHCL,2351,17.73,0,"refused for cash: needs Rs 41,683, have Rs 34,631"

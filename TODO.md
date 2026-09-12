@@ -2,6 +2,99 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-12 — research/167: IPO Base re-optimised on a placeable entry — **the adopted spec has NO EDGE; the re-fit is a STRATEGY candidate, nothing deployed**
+
+Arun: *"The largest piece of work not started is the one you named: improving IPO Base. proceed"*.
+
+**The correction first.** research/153 published 31.0% for IPO Base. That figure rests on the
+same-bar look-ahead fill this project found across three books (research/158, research/159): the
+trigger is a close above the pivot and the fill is that same day's open, which no order can place.
+Measured on the entry the **live book actually uses** — next-day buy-stop at the broken pivot,
+filled `max(pivot, open)` — the adopted spec returns **14.90% after tax, −38.6% drawdown,
+Calmar 0.386**.
+
+**And at those parameters it is NO EDGE, not merely weaker.** Against a date-matched random-entry
+null — same days, same number of entries, names drawn at random from the same young-and-liquid
+universe, the same fill convention and the same gate on both arms — it returns 14.90% against the
+null's 15.11% and wins only **14 of 30 paired seeds**. Gated, 8 of 30. research/153's own null
+showed +5.8pp, but it was run on the close-fill arm rather than the live next-day-stop arm.
+
+**One dial carries the entire edge, and it is the trail.** Real-minus-null in points of CAGR along
+the trail axis, 30 paired seeds at every cell, stop 15%:
+
+| trail | 10 | 15 | 20 | 30 | 40 | **50** | 60 | 75 | 100 |
+|---|---|---|---|---|---|---|---|---|---|
+| edge (pp) | −0.29 | −0.88 | −0.06 | +1.54 | +2.80 | **+4.91** | +3.28 | +2.05 | +1.21 |
+| real wins /30 | 11 | 5 | 13 | 30 | 30 | 30 | 30 | 30 | 27 |
+
+Zero or negative across the incumbent's whole region (≤20), unanimous across the entire 30–75
+band, and the same shape at a second independent stop value. A smooth plateau maximum, not a spike.
+
+**Spec A — the recommendation, not an adoption.** Three dials change from research/153: trail
+SMA-20 → **SMA-50**, stop 8% → **10%**, and a **new** gate blocking new entries while NIFTYBEES sits
+below its 150-day SMA. Everything else in research/153 survives re-fitting: the base geometry
+(age ≤6 months, 25-bar base, depth ≤30%, RS off) tops a 128-cell grid, and 8 slots at 18.75%
+beats 5×20%, 10×10% and 16×6.25%.
+
+| | incumbent | **Spec A** |
+|---|---|---|
+| CAGR after tax (30-seed median) | 14.90% | **21.80%** |
+| seed band | 13.11 – 16.73 | **20.83 – 23.19** |
+| CAGR with idle cash at 0% | 11.08% | **17.97%** |
+| max drawdown, median / worst seed | −38.6% / −46.4% | **−26.6% / −32.9%** |
+| Calmar, median / worst seed | 0.386 / 0.282 | **0.819 / 0.634** |
+| mean invested fraction | 31.8% | 36.3% |
+| per-trade expectancy after 50 bps | +2.31% | **+6.24%** |
+| win rate / longest losing streak | 39.9% / 18 | 49.0% / 11 |
+| cost ladder 25 / 40 / 60 bps | 14.90 / 12.94 / 10.47 | 21.80 / 20.81 / 19.02 |
+
+**The gate is insurance with no premium:** a coin flip on return (14 of 30 paired seeds) that
+removes **17.8 points of drawdown on 30 of 30 paths**. SMA-200 agrees, SMA-100 fails, so the
+region is bounded at both ends.
+
+**Cash yield answered, because Arun asked.** Every figure above credits 5% on idle cash, as the
+engine default does and as the live books genuinely earn by sweeping to CASHIETF. At zero yield
+the incumbent falls to 11.08% — **a quarter of its headline was the sweep** — and Spec A to
+17.97%, which is 17.6% of its headline.
+
+**NOTHING DEPLOYED, and two things block the call.**
+
+1. **The 3-sleeve blend was never run.** It is the question that decides adoption, and the refit
+   argues against itself here: it **raises** correlation to the other books (0.282 weekly to OA
+   Base Age and 0.256 to True North, against the incumbent's 0.245 and 0.211). A sleeve can be
+   worth more standalone and less to the portfolio.
+2. **2008 is the honest black mark.** The refit loses 10.3% in 2008 where the incumbent made
+   +0.4% — the fast SMA-20 trail that costs 7 points a year in normal times is exactly what
+   sidestepped that crash. The gate recovers part of it (−18.3% ungated → −10.3% gated), not all.
+
+**Read the headline down.** ~350 cells were scored, so 21.80% should be read as **19–22%**; the
+trail and the gate were both chosen after seeing the data, with only the 2006–2015 / 2016–2026
+split as out-of-sample evidence (both pass: +8.5% and +5.5% per trade); and **capacity caps this
+sleeve at roughly ₹20–25L permanently** — the p90 position is 1.56% of the name's own 20-day
+traded value at ₹10L and about 90% of a day's volume at ₹1cr.
+
+**Two live-book defects surfaced, neither touched.**
+
+- `services/ipo_paper.py` books `fill = max(pivot, open)` **without checking the day's high
+  reached the pivot**, so a buy-stop that never triggered is recorded as filled. 1.5% of signals;
+  it makes the paper book's fills slightly optimistic against this study.
+- The rename defect (`LOTUSDEV` → `LOTUSDEV-BE`) hits **this book hardest of the three**, because
+  it trades exactly the young, thin names NSE moves to trade-for-trade. Ten of eleven stale young
+  names are missing from the instrument dump. It corrupts live signals, not the backtest.
+
+**Not tested:** the blend (above), VIX gates, risk-based sizing and the structure stop, pivot on
+highs rather than closes, a walk-forward beyond the two-window split, and — the one worth
+returning to — **a re-fit of the 15:10 close-fill arm**, which scored 17.39% against 14.90% at the
+*incumbent's* parameters and was never re-optimised. Possibly ~2pp left on the table.
+
+- Full write-up: `research/167_ipo_base_honest_reopt/results/RESULTS.md`
+- Status doc: `research/167_ipo_base_honest_reopt/IPO_BASE_HONEST_ENTRY_DAILY_SWEEP_STATUS.md`
+- Index row filed; review registered for **2026-09-26**, the same date as the Base Age paper-book
+  call, so the two sleeves are decided together.
+- Folder renumbered 163 → 167: a sibling session already held 163, and 164–166 are taken.
+
+---
+
 ## ✅ 2026-09-12 — research/164: Open Alpha · Base Age slot count and position size finally tested — **16 × 6.25% survives, no spec change**
 
 Arun: the sixteen-slot, 6.25%-per-slot book was never tested for Base Age. It was **inherited**

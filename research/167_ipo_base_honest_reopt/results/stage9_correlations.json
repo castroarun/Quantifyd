@@ -1,0 +1,23 @@
+{
+ "incumbent_r153_ungated": {
+  "Open Alpha - Base Age": 0.245,
+  "True North": 0.211,
+  "IPO Base - First Base": 0.962,
+  "NIFTYBEES (index)": 0.165,
+  "n_weeks": 1065
+ },
+ "A_trail50_sl10_tp25_sma150": {
+  "Open Alpha - Base Age": 0.282,
+  "True North": 0.256,
+  "IPO Base - First Base": 0.727,
+  "NIFTYBEES (index)": 0.182,
+  "n_weeks": 1065
+ },
+ "B_trail50_sl15_tp25_sma150": {
+  "Open Alpha - Base Age": 0.276,
+  "True North": 0.259,
+  "IPO Base - First Base": 0.718,
+  "NIFTYBEES (index)": 0.185,
+  "n_weeks": 1065
+ }
+}

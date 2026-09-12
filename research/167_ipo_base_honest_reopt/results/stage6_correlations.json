@@ -1,0 +1,51 @@
+{
+ "incumbent": {
+  "Open Alpha - Base Age": 0.245,
+  "True North": 0.211,
+  "IPO Base - First Base": 0.962,
+  "NIFTYBEES (index)": 0.165,
+  "n_weeks": 1065
+ },
+ "refit_nogate": {
+  "Open Alpha - Base Age": 0.297,
+  "True North": 0.247,
+  "IPO Base - First Base": 0.77,
+  "NIFTYBEES (index)": 0.224,
+  "n_weeks": 1065
+ },
+ "refit_sma150": {
+  "Open Alpha - Base Age": 0.276,
+  "True North": 0.259,
+  "IPO Base - First Base": 0.718,
+  "NIFTYBEES (index)": 0.185,
+  "n_weeks": 1065
+ },
+ "refit_sma200": {
+  "Open Alpha - Base Age": 0.294,
+  "True North": 0.258,
+  "IPO Base - First Base": 0.718,
+  "NIFTYBEES (index)": 0.195,
+  "n_weeks": 1065
+ },
+ "refit_sma100": {
+  "Open Alpha - Base Age": 0.279,
+  "True North": 0.267,
+  "IPO Base - First Base": 0.708,
+  "NIFTYBEES (index)": 0.187,
+  "n_weeks": 1065
+ },
+ "refit_calmar_tp100_sl10_nogate": {
+  "Open Alpha - Base Age": 0.295,
+  "True North": 0.18,
+  "IPO Base - First Base": 0.482,
+  "NIFTYBEES (index)": 0.177,
+  "n_weeks": 1065
+ },
+ "refit_calmar_tp100_sl10_sma150": {
+  "Open Alpha - Base Age": 0.269,
+  "True North": 0.181,
+  "IPO Base - First Base": 0.447,
+  "NIFTYBEES (index)": 0.149,
+  "n_weeks": 1065
+ }
+}
