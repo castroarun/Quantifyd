@@ -4,3 +4,9 @@ ath_events.csv
 curves161.npz
 navs_*/
 *.log
+
+# the root .gitignore excludes research/**/results/*.csv wholesale. Keep that, but keep the
+# small decision-relevant summaries in the repo: one row per cell, and the paired-test table.
+# Everything else (events, per-seed stats) regenerates in about four minutes from scripts/.
+!cells_*.csv
+!paired164.csv
