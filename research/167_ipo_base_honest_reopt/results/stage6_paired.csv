@@ -1,0 +1,7 @@
+a,b,cagr_delta_med,cagr_delta_min,cagr_delta_max,a_wins_cagr,dd_delta_med,a_shallower_dd
+refit_nogate,incumbent,7.36,4.35,11.06,30,-7.3,2
+refit_sma150,refit_nogate,-0.03,-1.89,3.18,14,17.8,30
+refit_sma200,refit_nogate,-1.38,-3.75,1.77,6,15.66,30
+refit_sma100,refit_nogate,-3.15,-5.8,-0.06,0,5.11,27
+refit_calmar_tp100_sl10_nogate,refit_nogate,-2.86,-4.88,0.28,1,9.45,29
+refit_calmar_tp100_sl10_sma150,refit_sma150,-3.83,-5.5,-1.93,0,-4.96,2

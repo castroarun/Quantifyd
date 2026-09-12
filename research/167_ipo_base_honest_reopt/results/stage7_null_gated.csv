@@ -1,0 +1,5 @@
+spec,real_cagr,real_worst,real_dd,real_dd_worst,real_calmar,real_inv,real_mean_tr,real_tpy,null_cagr,null_dd,null_calmar,null_mean_tr,paired_cagr_delta,paired_lo,paired_hi,real_wins,paired_dd_delta
+incumbent_gated,13.53,12.11,-32.0,-35.59,0.423,26.2,2.926,27.5,13.79,-27.72,0.497,2.968,-0.44,-1.45,1.09,8,-4.46
+refit_sma150,22.36,21.5,-29.34,-40.12,0.762,37.0,7.076,18.5,17.52,-34.81,0.503,5.505,4.91,2.25,6.94,30,4.97
+plateau_tr30_sl10_sma150,17.26,16.38,-30.16,-40.86,0.572,31.6,4.519,22.5,15.77,-27.98,0.564,4.079,1.26,0.03,4.05,30,-2.95
+plateau_tr30_sl10_nogate,17.46,16.11,-48.63,-59.22,0.359,37.6,4.061,26.9,17.1,-41.65,0.41,3.872,0.48,-3.47,2.87,22,-9.03
