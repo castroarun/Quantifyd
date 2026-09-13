@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """One-shot rebalance of the three Momentum Portfolio books to TN 37.5 / OA 37.5 / IPO 25.
 
+RUNS TUESDAY 15-SEP-2026 - moved from Mon 14-Sep-2026, an NSE holiday (Ganesh Chaturthi).
+
 Arun, 13-Sep-2026: "now that entire TN is in cash fund, can v now make the distribution in the
 correct ratio?" — approved as "fix IPO, move all Monday". This is a ONE-OFF override of the
 05-Sep rule that True North is never sold down to rebalance; the deposit router keeps that
@@ -29,8 +31,8 @@ while the units stay held. So this job:
 It runs once: a marker file blocks a second execution.
 
 Usage:
-  rebalance_mpf_20260914.py --dry [--allow-stale]   plan and dry-run only; changes nothing
-  rebalance_mpf_20260914.py --execute               the real move; date- and window-locked
+  rebalance_mpf_20260915.py --dry [--allow-stale]   plan and dry-run only; changes nothing
+  rebalance_mpf_20260915.py --execute               the real move; date- and window-locked
 """
 import json
 import sys
@@ -43,11 +45,11 @@ ROOT = Path('/home/arun/quantifyd')
 sys.path.insert(0, str(ROOT))
 API = 'http://127.0.0.1:5000'
 LOGDIR = ROOT / 'logs'
-RESULT = LOGDIR / 'rebalance_mpf_20260914.json'
-DONE = LOGDIR / 'rebalance_mpf_20260914.done'
+RESULT = LOGDIR / 'rebalance_mpf_20260915.json'
+DONE = LOGDIR / 'rebalance_mpf_20260915.done'
 FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 
-RUN_DATE = '2026-09-14'
+RUN_DATE = '2026-09-15'
 WINDOW = ('09:40', '14:30')          # after the open settles; before TN's 14:45 / 15:05 jobs
 TARGETS = {'truenorth': 0.375, 'openalpha': 0.375, 'ipo': 0.25}
 PLANNED_TN_OUT = 253616              # the figure Arun approved, on 13-Sep values
@@ -250,7 +252,7 @@ def execute(tn_out, oa_in, ipo_in, total):
              moved=dict(tn_out=tn_out, oa_in=oa_in, ipo_in=ipo_in))
 
     # ---- F. record the one-off override on the Capital Desk changelog ----
-    note = ('14-Sep-2026 ONE-OFF REBALANCE (Arun, approved 13-Sep): True North withdrew Rs %s, '
+    note = ('15-Sep-2026 ONE-OFF REBALANCE (Arun, approved 13-Sep): True North withdrew Rs %s, '
             'Open Alpha +Rs %s, IPO +Rs %s, on current values totalling Rs %s, to land on 37.5 / '
             '37.5 / 25. This overrides, for this transfer only, the 05-Sep rule that True North '
             'is never sold down to rebalance; the deposit router keeps that rule for new money.'

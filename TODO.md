@@ -2,7 +2,7 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
-## ⏳ 2026-09-15 — Idle-cash park: IPO Base and Open Alpha idle cash into CASHIETF — built, SWITCHED OFF, live test due
+## ⏳ 2026-09-16 — Idle-cash park: IPO Base and Open Alpha idle cash into CASHIETF — built, SWITCHED OFF, live test due
 
 Arun (13-Sep): *"can we do arb fund for ipo cash?"* → then chose the **automated liquid-ETF sweep**.
 
@@ -24,7 +24,7 @@ A book's `cash` still includes parked money at cost, so sizing is unchanged; NAV
 that sends an order uses free cash. The park run also holds back cash tied up in the book's own resting
 buy orders. 21 tests pass, including the executor's release path on a fake broker. States untouched.
 
-**Next — 15-Sep, after the rebalance lands:** switch IPO on with the ₹10,000 cap, watch one park at 15:10
+**Next — 16-Sep, after the 15-Sep rebalance lands and IPO takes the cash in at 18:45:** switch IPO on with the ₹10,000 cap, watch one park at 15:10
 and one explicit release, reconcile against the broker, then lift the cap. Steps in the Ops & Review
 Centre entry. **Owed at switch-on:** changelog entries on both rows of the Strategies register.
 
@@ -32,7 +32,9 @@ Centre entry. **Owed at switch-on:** changelog entries on both rows of the Strat
 
 ---
 
-## ⏳ 2026-09-14 — Capital Desk: ONE-OFF REBALANCE to TN 37.5 / OA 37.5 / IPO 25 runs Monday 09:45
+## ⏳ 2026-09-15 — Capital Desk: ONE-OFF REBALANCE to TN 37.5 / OA 37.5 / IPO 25 runs Tuesday 15-Sep 09:45
+
+**Rescheduled 13-Sep:** moved from Mon 14-Sep-2026, an NSE holiday (Ganesh Chaturthi). The armed Monday job was killed before it could try to sell into a closed market.
 
 Arun (13-Sep): *"now that entire TN is in cash fund, can v now make the distribution in the correct
 ratio?"* — approved as "fix IPO, move all Monday".
@@ -43,7 +45,7 @@ a paper→live switch (once, 8-Sep). Now a FUNDING SYNC runs on every live cycle
 take cash below zero is refused and alerted. Tested with a pretend deposit and a pretend oversized
 withdrawal, nothing saved, state byte-identical.
 
-**The move (13-Sep values; recomputed live on Monday):**
+**The move (13-Sep values; recomputed live on Tuesday):**
 
 | Book | Now | Target | Move |
 |---|---|---|---|
@@ -53,8 +55,8 @@ withdrawal, nothing saved, state byte-identical.
 
 Overrides, for this transfer only, the 05-Sep rule that True North is never sold to rebalance.
 
-**Job:** `scripts/deferred_rebalance_20260914.sh` → `scripts/rebalance_mpf_20260914.py --execute`. Dry run
-passed 13-Sep. Check `logs/rebalance_mpf_20260914.json` on Monday; IPO's cash updates at the 18:45 run.
+**Job:** `scripts/deferred_rebalance_20260915.sh` → `scripts/rebalance_mpf_20260915.py --execute`. Dry run
+passed 13-Sep. Check `logs/rebalance_mpf_20260915.json` on Tuesday; IPO's cash updates at the 18:45 run.
 
 **Known cost:** the moved money sits as plain cash in Open Alpha and IPO — neither sweeps idle cash into
 a fund. About ₹1,100 a month on the moved sum, and ~₹3.75L across the two books is already idle.

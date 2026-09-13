@@ -223,17 +223,17 @@ Live Open Alpha converts to Base Age (research/165, code staged behind `OA_RULES
 ## Review 2026-09-19 - IPO Base MIN_BARS 60 vs the validated 25 (research/169, added 13-Sep-2026)
 The live IPO book (`services/ipo_paper.py`) runs `MIN_BARS = 60`; research/167 validated Spec A at 25. research/167’s own engine: 21.80% after tax at 25, 11.57% at 60; inside TN/OA/IPO 37.5/37.5/25 the 60-bar book lowers blend CAGR by −2.46pp on 30 of 30 paths. Owed by Arun before the 26-Sep funding call: a recorded MIN_BARS decision (a change is its own STATUS doc, capacity check and after-15:40 deploy). Registered in `ops_center.py` REVIEWS. Evidence: `research/169_ipo_rules_universe_transplant/results/RESULTS.md` Q5-Q6.
 
-## One-shot: Capital Desk rebalance to 37.5 / 37.5 / 25 (Mon 14-Sep-2026)
+## One-shot: Capital Desk rebalance to 37.5 / 37.5 / 25 (Tue 15-Sep-2026 — moved from Mon 14-Sep-2026, an NSE holiday (Ganesh Chaturthi))
 
 | Item | Value |
 |---|---|
-| Launcher | `scripts/deferred_rebalance_20260914.sh` — detached, sleeps to 09:45 IST, re-checks date and 09:40–14:30 window |
-| Executor | `scripts/rebalance_mpf_20260914.py --execute` (`--dry [--allow-stale]` plans only) |
+| Launcher | `scripts/deferred_rebalance_20260915.sh` — detached, sleeps to 09:45 IST, re-checks date and 09:40–14:30 window |
+| Executor | `scripts/rebalance_mpf_20260915.py --execute` (`--dry [--allow-stale]` plans only) |
 | What it does | True North redeems CASHIETF and withdraws; Open Alpha and IPO are credited; all via the Capital Desk |
-| Safety | amounts on live values, refused beyond 15% of the approved plan; units sold and verified before any ledger cut; re-dry-run must pay from cash alone; runs once (`logs/rebalance_mpf_20260914.done`) |
-| Logs | `logs/deferred_rebalance_20260914.log`, `logs/rebalance_mpf_20260914.json` |
+| Safety | amounts on live values, refused beyond 15% of the approved plan; units sold and verified before any ledger cut; re-dry-run must pay from cash alone; runs once (`logs/rebalance_mpf_20260915.done`) |
+| Logs | `logs/deferred_rebalance_20260915.log`, `logs/rebalance_mpf_20260915.json` |
 | Approved | Arun, 13-Sep-2026 |
-| Review | Ops & Review Centre, due 2026-09-14 |
+| Review | Ops & Review Centre, due 2026-09-15 |
 
 ## Idle-cash park — IPO Base and Open Alpha idle cash into CASHIETF (built 13-Sep-2026, switched OFF)
 
@@ -246,4 +246,4 @@ The live IPO book (`services/ipo_paper.py`) runs `MIN_BARS = 60`; research/167 v
 | Kill | `backtest_data/executor_kill.flag` (shared with the executor) |
 | Once a day | `backtest_data/cash_park_orders.json` |
 | Status doc | `docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md` |
-| Review | Ops & Review Centre, live test due 2026-09-15 |
+| Review | Ops & Review Centre, live test due 2026-09-16 |

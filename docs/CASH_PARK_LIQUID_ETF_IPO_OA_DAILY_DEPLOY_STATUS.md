@@ -1,6 +1,6 @@
 # Idle-Cash Park — IPO Base and Open Alpha idle cash into a liquid ETF (CASHIETF)
 
-**STATUS: DEPLOYED SWITCHED OFF — live test on IPO Base due 15-Sep-2026**
+**STATUS: DEPLOYED SWITCHED OFF — live test on IPO Base due 16-Sep-2026**
 
 ## 1. The ask
 
@@ -62,7 +62,7 @@ cancelled and alerted, and the ledger is only updated for what actually filled.
 4. Open Alpha engine: NAV includes the park gain in `mark()` and `ui_only()`; the page gets a park
    block; a withdrawal is checked against free cash.
 5. Dry runs on the live states. Deploy with both books OFF.
-6. **Live test after the 14-Sep rebalance lands:** IPO only, `max_order` ₹10,000 — one park, one
+6. **Live test after the 15-Sep rebalance lands:** IPO only, `max_order` ₹10,000 — one park, one
    release through the executor path — then check fills, ledger, NAV and reconcile.
 7. Remove the cap, switch IPO on; switch Open Alpha on once it has a non-zero parkable amount.
 
