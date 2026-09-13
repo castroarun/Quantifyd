@@ -2038,6 +2038,10 @@ def register(app, scheduler):
 
     def _mp_reconcile_job():                              # morning DB<->broker reconcile (live-only; alerts on mismatch)
         try:
+            from services.trading_calendar import get_default_calendar
+            from datetime import date as _d
+            if not get_default_calendar().is_trading_day(_d.today()):
+                return                                    # NSE holiday: nothing to reconcile
             if _is_live():
                 reconcile_holdings()
         except Exception as _e:

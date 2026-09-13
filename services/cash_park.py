@@ -277,6 +277,12 @@ def _armable(book, c):
     now = ist()
     if now.weekday() >= 5:
         return 'weekend'
+    try:
+        from services.trading_calendar import get_default_calendar
+        if not get_default_calendar().is_trading_day(now.date()):
+            return 'NSE holiday'
+    except Exception as e:
+        print('trading calendar unreadable (%s), using the weekday rule' % e)
     if not ((9, 20) <= (now.hour, now.minute) <= (15, 20)):
         return 'outside 09:20-15:20 IST'
     return None

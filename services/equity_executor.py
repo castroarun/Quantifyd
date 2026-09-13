@@ -481,6 +481,15 @@ def main():
         if now.weekday() >= 5:
             print(f'{now:%a %H:%M} IST — weekend, not arming')
             return
+        # NSE HOLIDAY (13-Sep-2026): cron fires mon-fri regardless, and on a closed day every
+        # order is refused and lands as a failure banner on the book page.
+        try:
+            from services.trading_calendar import get_default_calendar
+            if not get_default_calendar().is_trading_day(now.date()):
+                print(f'{now:%Y-%m-%d} is an NSE holiday, not arming')
+                return
+        except Exception as e:
+            print('trading calendar unreadable (%s), arming on the weekday rule' % e)
         if not ((9, 20) <= (now.hour, now.minute) <= (15, 0)):
             print(f'{now:%H:%M} IST — outside 09:20-15:00, not arming')
             return

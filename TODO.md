@@ -2,6 +2,24 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — Every True North, Open Alpha and IPO Base job now respects NSE holidays
+
+Arun: *"this has to be the case for all jobs - monthly/weekly etc. for tn, oa, ipo all"*. Audit:
+True North's month-end, backstop and report jobs already asked the calendar; its weekly gate was
+fixed earlier today. **Not safe:** Open Alpha's 18:50 order job (its duplicate check reads the
+broker's day-scoped order book, so a holiday re-run could re-place Sunday's PAYTM order), IPO's
+09:20 order job and the cash park (weekday + time only), and Open Alpha's 18:46 mark (a fake flat
+day in its value curve). Now: a trading-day wrapper in front of all 13 Open Alpha / IPO / executor /
+cash-park cron jobs, plus in-code guards on the executor, the cash park and True North's 09:20
+reconcile. Fails open if the calendar is unreadable. First live test: Mon 14-Sep.
+
+**Owed:** `config/nse_holidays_2027.json` before 1-Jan-2027 (review 15-Dec) — without it every 2027
+weekday counts as a trading day.
+
+- Status doc: `docs/HOLIDAY_GUARD_ALL_BOOK_JOBS_DEPLOY_STATUS.md`
+
+---
+
 ## ✅ 2026-09-13 — True North: the weekly gate now runs on the last TRADING day of the week
 
 Arun: *"pls fix this"*. The weekly gate check skipped weekends but not NSE holidays, and the 15:05

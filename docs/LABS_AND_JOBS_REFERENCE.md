@@ -247,3 +247,11 @@ The live IPO book (`services/ipo_paper.py`) runs `MIN_BARS = 60`; research/167 v
 | Once a day | `backtest_data/cash_park_orders.json` |
 | Status doc | `docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md` |
 | Review | Ops & Review Centre, live test due 2026-09-16 |
+
+## NSE holiday guard for book jobs (13-Sep-2026)
+
+Every Open Alpha, IPO Base, equity-executor and cash-park cron line runs through
+`scripts/on_trading_day.sh`, which exits quietly on an NSE holiday (calendar:
+`config/nse_holidays_<year>.json`, cached per day in `/tmp/nse_trading_day_<date>`, fails open).
+True North's decision jobs run inside the web app and check the calendar in code. The 2027 holiday
+file is due by 15-Dec-2026. Status doc: `docs/HOLIDAY_GUARD_ALL_BOOK_JOBS_DEPLOY_STATUS.md`.
