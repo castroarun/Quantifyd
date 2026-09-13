@@ -2,6 +2,22 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — IPO Base exits are automated: placed by the book, booked only when the broker fills
+
+Arun: *"pls automate this"*. Before, a live IPO exit booked the sale at the signal close and alerted
+"Place it" — no order, and the reconcile ignored sells. Now the 18:45 run marks the exit due, places a
+next-open SELL tagged IPO-EXIT (MARKET, LIMIT −2% fallback, retried next evening if refused, CRITICAL
+alert on refusal), and the sale is booked only on the broker's fill at the broker's price. Exiting
+positions free their slot for arming (as the backtest does); the 09:20 order job reconciles first so a
+morning sale's cash is counted. Paper mode unchanged. Tested with a fake broker.
+
+**Open:** the backtest sells AT the signal close; live sells at the next open. A research run is
+measuring the cost against a pre-registered bar. First live exit check registered.
+
+- Status doc: `docs/IPO_BASE_AUTOMATED_EXITS_DAILY_DEPLOY_STATUS.md`
+
+---
+
 ## ✅ 2026-09-13 — Every True North, Open Alpha and IPO Base job now respects NSE holidays
 
 Arun: *"this has to be the case for all jobs - monthly/weekly etc. for tn, oa, ipo all"*. Audit:

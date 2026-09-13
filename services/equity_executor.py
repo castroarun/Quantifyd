@@ -363,6 +363,14 @@ def deploy_open_alpha(arm, led):
 
 # ───────────────────────── IPO Base: place the armed buy-stops ─────────────────────────
 def deploy_ipo(arm, led):
+    if arm:
+        # Book this morning's IPO-EXIT sells (AMOs fill at the 09:15 open) and any overnight
+        # buys BEFORE sizing, so a freed slot's cash is counted when the buy-stops go out.
+        try:
+            from services import ipo_paper
+            ipo_paper.reconcile_now()
+        except Exception as e:
+            print('ipo reconcile before placing failed (%s) - using the book as is' % e)
     st = json.load(open(IPO_STATE))
     if st.get('mode') != 'live':
         print('ipo-base: still on paper, nothing to place')

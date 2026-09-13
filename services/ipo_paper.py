@@ -160,6 +160,8 @@ FEED = ROOT / 'backtest_data' / 'book_alerts.jsonl'
 # symbol handed Open Alpha 481 shares of a stock it held 9 of on 08-Sep. The tag must keep
 # this exact value or the already-applied KISSHT order stops being recognised.
 IPO_TAG = 'IPO-ENTRY'
+# Exits are placed by this book since 13-Sep-2026 (before: an alert saying "Place it").
+IPO_EXIT_TAG = 'IPO-EXIT'
 SEEN_ORDERS = ROOT / 'backtest_data' / 'ipo_applied_orders.json'
 
 CAPITAL = 1_000_000          # notional while on paper
@@ -633,6 +635,151 @@ def write_ui(st, wide, asof, log, dry=False):
 
 
 # ───────────────────────── engine ─────────────────────────
+def own_sell_fills(seen):
+    """{symbol: (qty, avg)} for THIS BOOK'S completed exit sells not yet applied.
+
+    Same discipline as own_fills(): the order book, this book's tag only, never holdings, and
+    `seen` so an order is applied once. Returns None when the broker is unreachable."""
+    try:
+        orders = _kite().orders()
+    except Exception as e:
+        print('order book unreachable for exit fills:', e)
+        return None
+    out = {}
+    for o in orders:
+        oid = str(o.get('order_id'))
+        if (o.get('status') != 'COMPLETE' or o.get('transaction_type') != 'SELL'
+                or o.get('product') != 'CNC' or not o.get('filled_quantity')):
+            continue
+        if (o.get('tag') or '') != IPO_EXIT_TAG or oid in seen:
+            continue
+        s = o['tradingsymbol']
+        q, px = int(o['filled_quantity']), float(o['average_price'])
+        pq, pv = out.get(s, (0, 0.0))
+        out[s] = (pq + q, pv + q * px)
+        seen[oid] = dict(ts=str(datetime.now()), symbol=s, qty=q, price=px, side='SELL')
+    return {s: (q, v / q) for s, (q, v) in out.items()}
+
+
+def apply_sell_fills(st, sells, today):
+    """Book broker-confirmed exit sells onto state. -> list of human-readable lines.
+
+    The sale is recorded at the BROKER'S price, with the signal close it was decided on and the
+    slippage against it, because the study sells at that close and the soak has to see the gap."""
+    booked = []
+    for s, (q, avg) in (sells or {}).items():
+        p = next((x for x in st['positions'] if x['symbol'] == s), None)
+        if p is None:
+            _alert('IPO exit fill for a name the book does not hold: %s' % s,
+                   'A tagged IPO-EXIT SELL for %s x%d filled at %.2f, but the book has no such '
+                   'position. Nothing applied - check whether it was already booked by hand.'
+                   % (s, q, avg))
+            continue
+        q = min(int(q), int(p['qty']))
+        ed = p.get('exit_due') or {}
+        proceeds = q * avg
+        st['cash'] = round(float(st['cash']) + proceeds - COST * proceeds, 2)
+        gross = q * (avg - p['buy'])
+        costs = COST * q * (avg + p['buy'])
+        sc = ed.get('signal_close')
+        st.setdefault('trades', []).append(dict(
+            symbol=s, qty=q, buy=p['buy'], sell=round(avg, 2), entry_date=p['entry_date'],
+            exit_date=str(today)[:10], reason=ed.get('reason', 'EXIT'), signal_date=ed.get('date'),
+            signal_close=sc, slip_vs_close_pct=round((avg / sc - 1) * 100, 2) if sc else None,
+            net_pnl=round(gross - costs), pnl_pct=round((avg / p['buy'] - 1) * 100, 2)))
+        if q >= int(p['qty']):
+            st['positions'] = [x for x in st['positions'] if x['symbol'] != s]
+        else:
+            p['qty'] = int(p['qty']) - q           # partial: the rest stays exiting
+        booked.append('%s x%d @%.2f (%s, signal close %s)' % (s, q, avg, ed.get('reason', 'EXIT'), sc))
+    return booked
+
+
+def record_exit(st, p, why, px, asof, log):
+    """A stop, target or trail fired on the close.
+
+    LIVE: mark it due and KEEP the position until the broker fills the sale -> True.
+    PAPER: book the sale at the signal close, as the backtest does -> False."""
+    s = p['symbol']
+    if st.get('mode') == 'live':
+        p['exit_due'] = dict(reason=why, signal_close=round(float(px), 2),
+                             date=str(asof)[:10], orders=[])
+        log.append(f'EXIT DUE {why} {s} @{px:.2f} ({(px/p["buy"]-1)*100:+.1f}%) - sell for the next open')
+        return True
+    gross = p['qty'] * (px - p['buy'])
+    costs = COST * p['qty'] * (px + p['buy'])
+    st['cash'] += p['qty'] * px - COST * p['qty'] * px
+    st.setdefault('trades', []).append(dict(
+        symbol=s, qty=p['qty'], buy=p['buy'], sell=round(px, 2),
+        entry_date=p['entry_date'], exit_date=str(asof)[:10], reason=why,
+        net_pnl=round(gross - costs), pnl_pct=round((px / p['buy'] - 1) * 100, 2)))
+    log.append(f'EXIT {why} {s} @{px:.2f} ({(px/p["buy"]-1)*100:+.1f}%)')
+    _alert(f'IPO EXIT (paper): {s}',
+           f'SELL {s} x{p["qty"]} - {why} at {px:.2f} (entry {p["buy"]}). Paper book: no order needed.',
+           'low')
+    return False
+
+
+def place_exit_orders(st, log, kite=None, placer=None):
+    """Place one next-open SELL per exiting position that has none placed today. -> placed lines.
+
+    Uses Open Alpha's place_exit_amo: MARKET AMO first, LIMIT 2% under the signal close if the
+    broker refuses MARKET, and never a second SELL while one is live. A refusal is CRITICAL and is
+    retried at the next evening run - an exit that silently does not go is the one failure a
+    book cannot have."""
+    due = [p for p in st.get('positions', []) if p.get('exit_due')]
+    if not due:
+        return []
+    today = str(date.today())
+    if placer is None:
+        from services.oa_real import place_exit_amo as placer
+    if kite is None:
+        try:
+            kite = _kite()
+        except Exception as e:
+            _alert('IPO EXIT NOT PLACED - broker unreachable',
+                   'Exits due: %s. Sell by hand, or they are retried at the next evening run. (%s)'
+                   % (', '.join('%s x%d' % (p['symbol'], p['qty']) for p in due), e))
+            return []
+    ticks = {}
+    try:
+        from services import equity_executor as ex
+        ex.load_ticks(kite)
+        ticks = ex._TICKS
+    except Exception as e:
+        print('tick sizes unavailable (%s) - 0.05 fallback' % e)
+    placed = []
+    for p in due:
+        s, ed = p['symbol'], p['exit_due']
+        if any(o.get('d') == today for o in ed.get('orders', [])):
+            continue
+        oid, kind, err = placer(kite, s, int(p['qty']), float(ed['signal_close']),
+                                tick=ticks.get(s, 0.05), tag=IPO_EXIT_TAG)
+        if oid:
+            ed.setdefault('orders', []).append(dict(d=today, ts=str(datetime.now())[:19],
+                                                    order_id=str(oid), kind=kind))
+            line = '%s x%d %s (%s on the close %.2f)' % (s, p['qty'], kind, ed['reason'], ed['signal_close'])
+            placed.append(line)
+            log.append('EXIT PLACED ' + line)
+            _alert('IPO EXIT PLACED: %s' % s,
+                   'SELL %s x%d at the next open (%s) - %s fired on the close %.2f. Nothing to do.'
+                   % (s, p['qty'], kind, ed['reason'], ed['signal_close']), 'low')
+        elif err and 'already live' in err:
+            log.append('EXIT %s: a sell is already resting' % s)
+        else:
+            log.append('EXIT FAILED TO PLACE %s: %s' % (s, err))
+            _alert('IPO EXIT FAILED TO PLACE: %s' % s,
+                   'SELL %s x%d (%s on the close %.2f) was refused: %s. Sell by hand, or it is '
+                   'retried at the next evening run.' % (s, p['qty'], ed['reason'], ed['signal_close'], err))
+    return placed
+
+
+def free_slots(st):
+    """Slots open for arming. An exiting position counts as FREE: the backtest frees the slot at
+    the exit close, so the next open's entry may use it."""
+    return max(0, SLOTS - len([p for p in st.get('positions', []) if not p.get('exit_due')]))
+
+
 def reconcile_now():
     """Apply this book's completed orders to state and rebake the page.
 
@@ -646,6 +793,7 @@ def reconcile_now():
     if fills is None:
         print('order book unreachable; nothing applied')
         return
+    sells = own_sell_fills(seen) or {}
     if not acquire_lock():
         print('book busy')
         return
@@ -677,6 +825,7 @@ def reconcile_now():
             st['cash'] = round(max(0.0, float(st['cash']) - cost), 2)
             st['pending'] = [c for c in st.get('pending', []) if c['symbol'] != s]
             booked.append('%s x%d @%.2f' % (s, qty, avg))
+        booked += ['EXIT ' + x for x in apply_sell_fills(st, sells, date.today())]
         if booked:
             save_state(st)
             json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
@@ -840,6 +989,9 @@ def main():
         keep = []
         for p in st['positions']:
             s = p['symbol']
+            if p.get('exit_due'):                     # already exiting: its sell is handled below
+                keep.append(p)
+                continue
             if s not in close.columns:
                 keep.append(p)
                 continue
@@ -872,17 +1024,8 @@ def main():
             if not why:
                 keep.append(p)
                 continue
-            gross = p['qty'] * (px - p['buy'])
-            costs = COST * p['qty'] * (px + p['buy'])
-            st['cash'] += p['qty'] * px - COST * p['qty'] * px
-            st.setdefault('trades', []).append(dict(
-                symbol=s, qty=p['qty'], buy=p['buy'], sell=round(px, 2),
-                entry_date=p['entry_date'], exit_date=str(asof)[:10], reason=why,
-                net_pnl=round(gross - costs), pnl_pct=round((px / p['buy'] - 1) * 100, 2)))
-            log.append(f'EXIT {why} {s} @{px:.2f} ({(px/p["buy"]-1)*100:+.1f}%)')
-            _alert(f'IPO EXIT DUE: {s}',
-                   f'SELL {s} x{p["qty"]} — {why} at {px:.2f} (entry {p["buy"]}). '
-                   f'{"Place it" if st.get("mode") == "live" else "Paper book: no order needed"}.')
+            if record_exit(st, p, why, px, asof, log):
+                keep.append(p)
         st['positions'] = keep
 
         # ---- 2. fills from YESTERDAY's pending buy-stops ----
@@ -925,6 +1068,8 @@ def main():
                         entry_date=str(asof)[:10], stop=round(float(avg) * (1 - STOP), 2),
                         pivot=cand['pivot'], listed=cand.get('listed'), src='broker'))
                     log.append(f'CONFIRMED {s} x{qty} @{avg:.2f} (from an order this book placed)')
+                for line in apply_sell_fills(st, own_sell_fills(seen) or {}, asof):
+                    log.append('EXIT FILLED ' + line)
                 if seen is not None:
                     json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
             st['pending'] = still
@@ -976,13 +1121,22 @@ def main():
                      'low')
         st['pending'] = still
 
+        # ---- 2b. place tomorrow-open SELLs for every exit that is due (LIVE) ----
+        if st.get('mode') == 'live':
+            if dry:
+                for p in st['positions']:
+                    if p.get('exit_due'):
+                        log.append('DRY: would place SELL %s x%d for the next open' % (p['symbol'], p['qty']))
+            else:
+                place_exit_orders(st, log)
+
         # ---- 3. scan today for TOMORROW's buy-stops ----
         held = {p['symbol'] for p in st['positions']}
         rows = [c for c in scan(wide, listing, asof, include_near=True)
                 if c['symbol'] not in held]
         cands = [c for c in rows if c['triggered']]
         watch = [c for c in rows if not c['triggered']]
-        free = max(0, SLOTS - len(st['positions']))
+        free = free_slots(st)                        # exiting positions free their slot
 
         # THE GATE, applied here and nowhere else: it blocks NEW entries only, and the
         # place a new entry is created is the arming of a buy-stop. Held positions run
