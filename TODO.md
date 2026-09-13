@@ -2,6 +2,24 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — research/173: IPO Base exits at the NEXT OPEN cost nothing versus the study's close exit — IMMATERIAL (it is ~1pp better)
+
+IPO. The live book now sells at the next open for an exit decided on the close (MARKET AMO,
+LIMIT −2% fallback; commit 01bc4bce); research/167 sold at the signal close. On research/167's
+own engine and panel, same exits and 30 paired seeds, 2006→2026, after tax:
+
+- Close exit (as published) 21.80% / −26.63% / Calmar 0.819, reproduced exactly.
+- Next open 22.97% / −26.10% / 0.880: **+1.18pp CAGR, the close exit wins on 0 of 30 seeds**.
+- Next open with the 2% floor 23.42% / −26.16% / 0.895: **+1.59pp, 0 of 30**.
+- Both halves and 5.2% cash agree. The pre-registered bar (a cost of >1.0pp or >0.10 Calmar on ≥20/30 seeds) is not met; the sign is favourable.
+- Overnight gap on the exit signals: mean +0.46%, 4.3% of exits open more than 2% lower, worst −6.85%.
+- The floor bites on ~1 exit a year (5.3%; stops 10.6%) for 1.1 extra days on average.
+- Cost side: worst-seed DD is 1.3pp deeper on the unfloored arm.
+
+**Do NOT build a 15:05 close-proxy exit**: it moves toward the arm that loses on 30 of 30 seeds.
+No live change, nothing owed.
+`research/173_ipo_exit_next_open/results/RESULTS.md`
+
 ## ✅ 2026-09-13 — IPO Base exits are automated: placed by the book, booked only when the broker fills
 
 Arun: *"pls automate this"*. Before, a live IPO exit booked the sale at the signal close and alerted
