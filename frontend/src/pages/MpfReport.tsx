@@ -802,8 +802,9 @@ export default function MpfReport() {
               run (research/168). What matters most now: the inverted entry condition in{' '}
               <span className={styles.mono}>services/oa_entry.py</span> is not fixed and its buying
               stays paused; the rename defect still freezes the young, thin names IPO Base trades;
-              and moving the Capital Desk targets from 40 / 40 / 20 to 37.5 / 37.5 / 25 is a
-              decision nobody has taken yet.
+              and IPO Base&apos;s edge turns out to live in a stock&apos;s first 25–40 sessions
+              after listing, where research/169 found it narrow. The Capital Desk moved to
+              37.5 / 37.5 / 25 on 13-Sep-2026.
             </div>
           </div>
         </div>

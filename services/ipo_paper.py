@@ -28,6 +28,13 @@ across the entire 30-75 band, the same shape at a second independent stop value.
 base breakout in a young stock is a real edge only if it is given room to run. The old
 20-bar trail sold every winner back into the noise that produced it.
 
+CORRECTED 13-SEP-2026 (research/169). That random-control comparison ran on a panel whose
+rolling windows had gaps, which quietly handicapped the random arm. On a gap-free panel the
+edge at trail 50 is +2.25pp over the whole period: it holds for 2006-2015 and ties random
+young names in 2016-2026. The return is real and the blend value stands, because
+research/168's curves reproduce exactly; what is weaker than first stated is the claim that
+the breakout itself picks better than drawing young names at random.
+
 So three dials moved: trail 20 -> 50, stop 8% -> 10%, and a NEW market gate. Everything
 else research/153 found was re-confirmed on the honest entry and is unchanged: the base
 geometry tops a 128-cell grid, and 8 slots at 18.75% beats 5x20%, 10x10% and 16x6.25%.
@@ -42,8 +49,10 @@ coin flip on return (14 of 30 runs) that removes 17.8 points of drawdown on 30 o
 Bounded at both ends: the 200-day average agrees, the 100-day average fails, which is what
 a real effect looks like rather than a fitted one.
 
-WHAT THIS BOOK MUST NOT BE SIZED PAST. At Rs 10L the 90th-percentile position is 1.56% of
-the name's own 20-day median traded value. At Rs 1cr it is ~90% of a day's volume. This
+WHAT THIS BOOK MUST NOT BE SIZED PAST. At Rs 10L the MEDIAN position is 1.56% of the name's
+own 20-day median traded value and the 90th percentile is 9.05% (research/167 labelled the
+median as the 90th percentile; research/169 caught it). At Rs 1cr the 90th percentile is
+~90% of a day's volume. This
 sleeve cannot exceed roughly Rs 20-25L, ever, and that is a property of the universe
 rather than of the rules.
 
@@ -61,8 +70,8 @@ book has no executor, so it alerts with the exact order and Arun places it.
 THE SPEC (research/167 "Spec A"; what changed on 12-Sep-2026 is marked):
   universe    NSE equities with a VETTED listing date, ETFs excluded, all rows before
               the listing date masked
-  age band    listed <= 6 months ago AND >= 25 bars of history (see MIN_BARS below —
-              the book runs 60, matching what was actually validated)
+  age band    listed <= 6 months ago AND >= 25 bars at the signal date. The book ran 60
+              from 6 to 13-Sep-2026 on a misreading of the harness; see MIN_BARS
   liquidity   20-day median traded value >= Rs 5 cr at t-1
   base        last 25 bars; pivot = highest CLOSE, shifted 1; depth (pivot to lowest
               low) <= 30%; and close[t-1] < pivot, so it is not already extended
@@ -169,7 +178,15 @@ SIZE_PCT = 0.1875
 STOP = 0.10                  # close <= fill * 0.90
 TARGET = 0.25                # close >= fill * 1.25
 TRAIL_SMA = 50               # close < SMA-50, entry bar exempt
-SPEC_VERSION = 'r167-A'
+SPEC_VERSION = 'r167-A-mb25'
+SPEC_NOTES = {
+    'r167-A': ('research/167 Spec A: trail SMA-20 -> SMA-50, stop 8%% -> 10%%, new '
+               'NIFTYBEES < SMA-150 entry gate, and the buy-stop now requires the day high '
+               'to have reached the pivot. Stops re-based on %d open position(s).'),
+    'r167-A-mb25': ('research/169: MIN_BARS 60 -> 25, the floor Spec A was validated at. '
+                    'The 60 rested on reading a row-count-today filter as a bars-at-signal '
+                    'rule. No exit rule changed; %d stop(s) re-based.'),
+}
 
 # The market gate. NEW on 12-Sep-2026, and it gates ENTRIES ONLY — nothing about a held
 # position changes when it comes on. NIFTYBEES is the NIFTY 50 ETF and stands in for the
@@ -179,27 +196,30 @@ GATE_SMA = 150
 BASE_L = 25                  # base window, in bars
 MAX_AGE_M = 6
 
-# MIN_BARS: the spec says 25. The BACKTEST NEVER TESTED 25.
+# MIN_BARS = 25, the floor Spec A was VALIDATED at. Corrected 13-Sep-2026 (research/169).
 #
-# research/153's adopted spec records `min_bars: 25`, and ipo_replay.build_trigger()
-# honours it — but the panel that harness scans is built by Ctx with
+# From 6-Sep to 13-Sep-2026 this book ran 60, on the reasoning that research/153's harness
+# admitted only symbols with 60+ bars. That was a misreading. The loader's
 #   "... group by symbol) where n >= 60"
-# so a stock is invisible to the study until it has SIXTY daily bars, about three
-# months of trading. The 25-bar floor is therefore never the binding constraint in the
-# published result: the 31.03% CAGR was earned on stocks aged roughly 3-6 months, not
-# 25 days to 6 months.
+# counts a symbol's rows over the WHOLE database TODAY, so a name with 2,000 rows today is
+# scanned from its 25th bar at the signal date. The bar test that decides a signal is
+# `ctx.BARS >= min_bars`, evaluated on the day, and research/167 ran it at 25. The 6-Sep
+# reconciliation saw 75% agreement because it only looked at the last ~60 sessions, which is
+# exactly the window the row-count filter hides.
 #
-# Found on 06-Sep-2026 by reconciling this engine against ipo_replay over the last 34
-# trading days. At min_bars=25 the two agreed on only 75% of signals, and every single
-# disagreement was this engine seeing a genuine recent IPO the study could not:
-# INDOMIM (27 bars), LASERPOWER (37), CORDELIA (48), TURTLEMINT (50), VAML and
-# VEDPOWER (59). Notably the study never produced a signal this engine missed.
+# What the misreading cost, on research/167's own engine and panel, 30 seeds, after tax:
+#   min bars 25   21.80% CAGR, -26.6% drawdown, beats its random control on 30 of 30
+#   min bars 40   17.87%,      -32.4%,          loses to it on 27 of 30
+#   min bars 60   11.57%,      -39.0%
+# So the return is concentrated in a stock's first 25-40 sessions after listing. That is
+# also where the book buys its thinnest names: at today's sleeve size a position is well
+# under 1% of those names' daily traded value, but re-check it as the sleeve grows.
 #
-# A forward book must run the strategy that was VALIDATED, not a more permissive
-# reading of its written spec, so this matches the harness at 60. The wider band may
-# well be better — those are real breakouts on real IPOs — but that is an untested
-# hypothesis and belongs in a study, not in a live book. Registered for review.
-MIN_BARS = 60
+# One interaction to know: the SMA-50 trail needs 50 closes, so a position entered at bar
+# 25 carries no trail exit until bar 50 - only its stop and target. research/167's engine
+# behaves identically (a 50-bar rolling mean is undefined until then), so this is the
+# validated behaviour, not a gap.
+MIN_BARS = 25
 MAX_DEPTH = 0.30
 TV_FLOOR = 5e7               # Rs 5 cr, 20-day median traded value
 COST = 0.0025
@@ -328,9 +348,7 @@ def migrate_spec(st, log=None):
     st['spec_version'] = SPEC_VERSION
     st.setdefault('spec_history', []).append(dict(
         on=str(date.today()), to=SPEC_VERSION,
-        note='research/167 Spec A: trail SMA-20 -> SMA-50, stop 8%% -> 10%%, new '
-             'NIFTYBEES < SMA-150 entry gate, and the buy-stop now requires the day high '
-             'to have reached the pivot. Stops re-based on %d open position(s).' % len(moved),
+        note=SPEC_NOTES[SPEC_VERSION] % len(moved),
         rebased=moved))
     msg = ('SPEC MIGRATED to %s; stops re-based: %s'
            % (SPEC_VERSION, '; '.join(moved) if moved else 'none needed'))

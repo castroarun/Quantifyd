@@ -305,7 +305,7 @@ export const SYSTEMS: SystemReport[] = [
       'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% → buy-stop AT the pivot the next day, filled only if the day’s high reaches it; −10% close stop, +25% target, exit below the 50-SMA; 8 slots at 18.75%; no new entries while NIFTYBEES closes below its 150-day average.',
     rules: [
       { k: 'Universe', v: 'NSE equities with a VETTED listing date (research/153 table, 1,353 accepted), funds excluded by instrument long name, all pre-listing rows masked' },
-      { k: 'Age band', v: 'Listed within 6 months AND at least 60 bars — 60 because that is what the study harness actually admitted' },
+      { k: 'Age band', v: 'Listed within 6 months AND at least 25 bars on the signal day — the floor Spec A was validated at. The book ran 60 from 6 to 13 Sep on a misreading of the harness; research/169 measured that version at about half the return' },
       { k: 'Liquidity', v: '20-day median traded value ≥ ₹5 cr at t−1' },
       { k: 'Signal', v: 'Pivot = the highest close of the last 25 bars; base depth ≤ 30%; not already extended; close > pivot' },
       { k: 'Market gate', v: 'NEW 12-Sep-2026: no new entries while NIFTYBEES closes below its 150-day average. Holdings keep their own exits' },
@@ -328,9 +328,9 @@ export const SYSTEMS: SystemReport[] = [
       { k: 'Re-fitted, own study', v: '21.80% after tax at −26.6% median drawdown (−32.9% worst seed), Calmar 0.819, 30 seeds, 2006 → Sep-2026, idle cash 5.0%. Seed band 20.83–23.19. Source: research/167 results/stage9_adoption.csv' },
       { k: 'Re-fitted, this page’s basis', v: 'At 5.2% idle cash on this page’s 20.4-year window the 30-seed median is 22.08%, band 21.09–23.49; the drawn path is the median-CAGR seed. Source: research/168 ipo_navs_cash052.npz, arm A_25bps_y52' },
       { k: 'The old spec, honestly measured', v: '14.90% after tax at −38.6%, and it LOST to a date-matched random-entry control: 14.90 vs 15.11, real rules winning 14 of 30 paired seeds, 8 of 30 with a gate. The published 31.03% was a same-bar look-ahead fill. Source: research/167 §3' },
-      { k: 'Why the trail', v: 'Edge over random, in points of CAGR at trail 10 / 15 / 20 / 30 / 40 / 50 / 60 / 75 / 100: +0.04 / −0.71 / −0.10 / +1.26 / +3.08 / +4.78 / +2.05 / +0.43 / +0.31. Zero or negative across the old spec’s whole region, unanimous 30 of 30 from 30 to 75' },
+      { k: 'Why the trail', v: 'Edge over random, in points of CAGR at trail 10 / 15 / 20 / 30 / 40 / 50 / 60 / 75 / 100: +0.04 / −0.71 / −0.10 / +1.26 / +3.08 / +4.78 / +2.05 / +0.43 / +0.31. Zero or negative across the old spec’s whole region, unanimous 30 of 30 from 30 to 75. CORRECTED 13-Sep-2026 by research/169: that control ran on a panel with gaps that handicapped the random arm; on a clean panel the edge at trail 50 is +2.25 points, holding for 2006–2015 and tying random young names in 2016–2026' },
       { k: 'In the portfolio', v: 'research/168: the re-fit is worth more to the blend than the old spec at EVERY weight from 5% to 50%, 30 of 30 paired paths; the old spec earns no place at any weight. Against arbitrage-fund cash at equal risk it adds 2.52 points of CAGR at a 25% weight, 30 of 30' },
-      { k: 'Recommended weight', v: '25% of the book — True North 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885 (30-path medians). The Capital Desk still targets 20%; changing it is an open decision' },
+      { k: 'Recommended weight', v: '25% of the book — True North 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885 (30-path medians). Adopted on the Capital Desk on 13-Sep-2026, with the live book switched to the validated 25-bar floor in the same change' },
       { k: 'Diversification', v: 'Still the loosest-coupled book, but the re-fit is a little MORE correlated than the old spec (monthly 0.348 to True North and 0.329 to Base Age, against 0.259 and 0.319) — and still the better blend sleeve. Pairwise correlation was the wrong screen' },
       { k: 'Cells disclosed', v: '~350 in research/167 (read the 21.80% as 19–22%), plus the research/168 weight grid' },
     ],
@@ -338,9 +338,10 @@ export const SYSTEMS: SystemReport[] = [
     distinctive:
       'research/153 published 31.0%. Its fill was unplaceable, and measured on the entry this book actually uses the same rules returned 14.90% — and lost to drawing names at random from the same universe. A 25-bar base breakout in a young stock is an edge only if the winner is given room to run: at a 20-day trail the rules add nothing over chance, at a 50-day trail they add almost five points a year and win every paired run. The re-fit is live, and research/168 then showed it is also the better blend sleeve, so the question left is the weight, not the rules.',
     caveats: [
+      'THE EDGE LIVES IN THE FIRST FEW WEEKS AFTER LISTING, AND IT IS NARROW. research/169: at a 25-bar floor the rules return 21.80% after tax; at 40 bars they LOSE to random young names on 27 of 30 runs; at 60 bars they return 11.57%. The live book ran 60 by mistake from 6 to 13-Sep-2026 and now runs 25. Every other universe tried — Nifty 50 through all stocks — fails its random control.',
       '2008 IS THE HONEST BLACK MARK. The re-fit loses 10.3% in 2008 where the old spec made +0.4%, because the fast 20-day trail that costs seven points a year in normal times is exactly what sidestepped that crash. At a 25% blend weight the gap shrinks to about 2.5 points (research/168), and plain cash at the same weight would give the same cushion. This book is not a crash hedge.',
       'THE TRAIL AND THE GATE WERE BOTH CHOSEN AFTER SEEING THE DATA. ~350 cells were scored, so read the 21.80% as 19–22%. The only out-of-sample evidence is the 2006–2015 / 2016–2026 split, which it passes strongly. There is no held-out period.',
-      'CAPACITY IS THE BINDING CONSTRAINT. At ₹10L the 90th-percentile position is 1.56% of the name’s own 20-day traded value; at ₹1cr it is about 90% of a day’s volume. A 25% weight is fundable today but binds once the whole book passes about ₹85L.',
+      'CAPACITY IS THE BINDING CONSTRAINT. At ₹10L the MEDIAN position is 1.56% of the name’s own 20-day traded value and the 90th percentile 9.05% (research/167 had labelled the median as the 90th percentile); at ₹1cr the 90th percentile is about 90% of a day’s volume. A 25% weight is fundable today but binds once the whole book passes about ₹85L.',
       'RENAMED SYMBOLS GO STALE SILENTLY, AND THIS BOOK IS THE MOST EXPOSED. LOTUSDEV is absent from the instrument dump — the tradeable symbol is LOTUSDEV-BE — so the nightly refresh asks for the dead name and treats nothing as "no new bars". Ten of eleven stale young names are missing from the dump. NOT FIXED.',
       'A CRASHING CRON WRITES A TRACEBACK TO A FILE NOBODY READS. That is how four sessions of a live book passed unnoticed. The same shape exists on every paper and real book; a health check is registered for 19-Sep-2026 and the alerting fix is still owed.',
       'IPO BASE SITS ABOUT TWO THIRDS IN CASH by design, so its Calmar is the fairer read against a fully invested index, and multi-year dead zones are structural rather than decay.',
@@ -415,7 +416,7 @@ export const OWED: { title: string; state: string; what: string }[] = [
     title: '1 · IPO Base re-optimisation on the honest entry',
     state: 'DONE 12-Sep-2026 — deployed to the live book',
     what:
-      'research/167. The old spec, measured on the entry the book places, lost to a random-entry control (14 of 30). Re-fitted on ~350 cells: trail SMA-20 → SMA-50, stop 8% → 10%, plus a NIFTYBEES<SMA-150 entry gate — 21.80% after tax, −26.6% median drawdown, beating the control 30 of 30. Base geometry and 8-slot sizing were re-confirmed unchanged. Live since 12-Sep-2026, with the open position’s stop re-based. Published: /app/backtest/ipo-base-honest-reopt-research167.',
+      'research/167. The old spec, measured on the entry the book places, lost to a random-entry control (14 of 30). Re-fitted on ~350 cells: trail SMA-20 → SMA-50, stop 8% → 10%, plus a NIFTYBEES<SMA-150 entry gate — 21.80% after tax, −26.6% median drawdown, beating the control 30 of 30. Base geometry and 8-slot sizing were re-confirmed unchanged. Live since 12-Sep-2026, with the open position’s stop re-based; its bar floor was corrected from 60 to the validated 25 on 13-Sep-2026 (research/169). Published: /app/backtest/ipo-base-honest-reopt-research167.',
   },
   {
     title: '2 · services/oa_entry.py still has the inverted condition AND the old ETF filter',
@@ -449,9 +450,9 @@ export const OWED: { title: string; state: string; what: string }[] = [
   },
   {
     title: '7 · Blend and allocation work across True North + Base Age + IPO Base',
-    state: 'DONE 12-Sep-2026 — the weight change itself is NOT yet decided',
+    state: 'DONE 12-Sep-2026 — weights adopted on the Capital Desk 13-Sep-2026',
     what:
-      'research/168. Recommended TN 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885, against the 50-50 pair’s 20.28%, −26.91%, 0.749 — better on both on 30 of 30 paired paths. It does not reach 25%. The Calmar surface peaks at a 45–60% IPO weight, reported but not recommended because of capacity and the lack of a held-out period. Open: the Capital Desk still targets 40 / 40 / 20, and research/168 also found the two-sleeve pair itself prefers a True North tilt (85:15, Calmar 0.826) — a review dated 26-Sep-2026.',
+      'research/168. Recommended TN 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885, against the 50-50 pair’s 20.28%, −26.91%, 0.749 — better on both on 30 of 30 paired paths. It does not reach 25%. The Calmar surface peaks at a 45–60% IPO weight, reported but not recommended because of capacity and the lack of a held-out period. Adopted on the Capital Desk on 13-Sep-2026. Still open: research/168 also found the two-sleeve pair itself prefers a True North tilt (85:15, Calmar 0.826) — a review dated 26-Sep-2026.',
   },
   {
     title: '8 · The after-tax re-run of the entry-mechanic tables is incomplete',

@@ -1,5 +1,5 @@
 {
- "updated": "2026-09-12 23:54:34.271858",
+ "updated": "2026-09-13 09:34:23.799036",
  "asof": "2026-09-11",
  "mode": "live",
  "positions": [
@@ -51,15 +51,15 @@
  "data_events": [],
  "started": "2026-09-08",
  "log": [
-  "panel 20 names in the age band, asof 2026-09-11",
-  "GATE ON - NIFTYBEES 267.4 is below its 150-day average 273.81, so NO buy-stops are armed (0 would have qualified). Held positions unaffected."
+  "panel 52 names in the age band, asof 2026-09-11",
+  "GATE ON - NIFTYBEES 267.4 is below its 150-day average 273.81, so NO buy-stops are armed (1 would have qualified). Held positions unaffected."
  ],
  "failed_orders": [],
  "spec": {
-  "version": "r167-A",
+  "version": "r167-A-mb25",
   "study": "research/167_ipo_base_honest_reopt",
   "changed": "2026-09-12",
-  "entry": "Close above the highest close of the last 25 bars, in a stock listed within 6 months with at least 60 bars of history, base no deeper than 30%, and 20-day median traded value of at least Rs 5 cr. Next session, a buy-stop at that pivot.",
+  "entry": "Close above the highest close of the last 25 bars, in a stock listed within 6 months with at least 25 bars of history, base no deeper than 30%, and 20-day median traded value of at least Rs 5 cr. Next session, a buy-stop at that pivot.",
   "gate": "No new entries while NIFTYBEES closes below its 150-day average. Positions already held are untouched.",
   "exits": "Stop at 10% below the fill, target 25% above it, otherwise trail out on a close below the 50-day average. Evaluated on closes, in that order.",
   "book": "8 slots at 18.75% of equity, 25 bps a side.",
@@ -76,8 +76,33 @@
   "above_pct": -2.34,
   "blocked": true
  },
- "candidates": [],
+ "candidates": [
+  {
+   "symbol": "CORDELIA",
+   "pivot": 109.5,
+   "close": 112.95,
+   "depth_pct": 26.1,
+   "tv": 275223388.15,
+   "listed": "2026-07-01",
+   "age_days": 72,
+   "triggered": true,
+   "gap_pct": -3.05,
+   "armed": false,
+   "passed_over": "gate"
+  }
+ ],
  "watchlist": [
+  {
+   "symbol": "SBIFUNDS",
+   "pivot": 577.5,
+   "close": 545.25,
+   "depth_pct": 7.1,
+   "tv": 920124077.3,
+   "listed": "2026-07-21",
+   "age_days": 52,
+   "triggered": false,
+   "gap_pct": 5.91
+  },
   {
    "symbol": "CMRGREEN",
    "pivot": 231.03,
@@ -88,6 +113,17 @@
    "age_days": 93,
    "triggered": false,
    "gap_pct": 6.71
+  },
+  {
+   "symbol": "LCL",
+   "pivot": 598.2,
+   "close": 547.0,
+   "depth_pct": 17.5,
+   "tv": 280982170.3,
+   "listed": "2026-07-30",
+   "age_days": 43,
+   "triggered": false,
+   "gap_pct": 9.36
   },
   {
    "symbol": "VEDPOWER",

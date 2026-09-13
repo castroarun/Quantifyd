@@ -59,7 +59,7 @@ export const STATUS_LABEL: Record<SystemStatus, string> = {
   parked: 'Parked · not trading',
 };
 
-export const REGISTER_UPDATED = '12 Sep 2026';
+export const REGISTER_UPDATED = '13 Sep 2026';
 
 export const SYSTEMS: StrategySystem[] = [
   // ------------------------------------------------------------------ LIVE
@@ -393,12 +393,12 @@ export const SYSTEMS: StrategySystem[] = [
     name: 'IPO Base',
     subtitle: 'breakouts from bases built by recently listed stocks (research/167)',
     status: 'live',
-    size: '\u20b92,28,711 real money \u2014 funded through the Capital Desk on 8 Sep 2026. HARD CAP \u20b920\u201325L: research/167 measured the 90th-percentile position at 1.56% of the name\u2019s own 20-day traded value at \u20b910L, which becomes ~90% of a day\u2019s volume at \u20b91cr',
+    size: '\u20b92,28,711 real money \u2014 funded through the Capital Desk on 8 Sep 2026; Capital Desk target 25% of the book from 13 Sep 2026 (was 20%). HARD CAP \u20b920\u201325L: research/167 measured the MEDIAN position at 1.56% of the name\u2019s own 20-day traded value at \u20b910L (90th percentile 9.05%), which becomes ~90% of a day\u2019s volume at \u20b91cr',
     since: '6 Sep 2026 (paper) \u00b7 8 Sep 2026 (real money)',
     rule: 'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% \u2192 buy-stop AT the pivot next day, filled only if the day\u2019s high reaches it; \u221210% close stop, +25% target, exit below the 50-SMA; 8 slots at 18.75%; NO new entries while NIFTYBEES closes below its 150-SMA.',
     rules: [
       ['Universe', 'NSE equities with a VETTED listing date (research/153 table, 1,353 accepted), ETFs excluded, all pre-listing rows masked'],
-      ['Age band', 'listed within 6 months AND at least 60 bars \u2014 60, not the spec\u2019s 25: the study\u2019s own harness only admitted stocks with 60+ bars, so 60 is what was validated'],
+      ['Age band', 'listed within 6 months AND at least 25 bars at the signal date \u2014 the floor Spec A was validated at. The book ran 60 from 6 to 13 Sep 2026 on a misreading of the study harness, whose 60-row filter counts rows in the database TODAY, not bars on the signal day (research/169)'],
       ['Liquidity', '20-day median traded value \u2265 \u20b95 cr at t\u22121'],
       ['Signal', 'pivot = highest close of the last 25 bars; base depth \u2264 30%; not already extended; close > pivot'],
       ['Entry', 'next day buy-stop AT the pivot, filled max(pivot, open) AND ONLY IF the day\u2019s HIGH reached the pivot. That last clause was missing until 12 Sep 2026: the book was recording buy-stops the market never reached as filled positions'],
@@ -417,6 +417,7 @@ export const SYSTEMS: StrategySystem[] = [
       { slug: 'ipo-idle-cash-redeployment-research155', title: 'Should the idle cash work in OA or TN?', verdict: 'CONCLUDED' },
     ],
     changeLog: [
+      { date: '13 Sep 2026', text: "RULE CHANGED: MIN_BARS 60 \u2192 25, the floor Spec A was validated at (research/169). The 6-Sep reason for 60 misread the harness: its n >= 60 counts rows in the database today, not bars on the signal day. On research/167\u2019s own engine, 25 bars returns 21.80% after tax, 40 bars 17.87% and loses to its random control on 27 of 30, 60 bars 11.57%. In the same change the Capital Desk targets moved from 40 / 40 / 20 to 37.5 / 37.5 / 25 (research/168), and the capacity figure was corrected: at \u20b910L the MEDIAN position is 1.56% of the name\u2019s 20-day traded value and the 90th percentile 9.05%. Nothing traded differently: KISSHT is past 50 bars, and the market gate is on, so no buy-stop is armed for 14 Sep under either floor." },
       { date: '13 Sep 2026', text: "research/169 FINDING, NO RULE CHANGED: MIN_BARS 60 is not what was validated. The 6-Sep reading of the harness was wrong — its “n >= 60” counts rows over the whole database today, not bars at the signal date, so research/153 and research/167 did scan stocks from their 25th bar. research/167’s own engine: min_bars 25 → 21.80% after tax, 60 → 11.57%. Inside TN 37.5 / OA 37.5 / IPO 25 the 60-bar book costs −2.46pp of CAGR on 30 of 30 paths against the validated spec. Also: the HARD CAP line’s “90th percentile” figure from research/167 is its MEDIAN (1.56%); the p90 position is 9.05% of a name’s 20-day traded value at ₹10 L. Decision owed before the 26-Sep funding call; review 19-Sep-2026. /app/backtest/ipo-rules-universe-transplant-research169" },
       { date: '12 Sep 2026', text: 'SPEC CHANGED on research/167. The published 31.03% was earned on a fill no order can place \u2014 a close-above-pivot trigger bought at that same close\u2019s OPEN. Measured on the entry this book actually uses, the adopted rules return 14.90% after tax and LOSE to a date-matched random-entry control on 16 of 30 paired runs: there was no edge in the selection at all. One dial fixed it, the TRAIL. Real-minus-control along the trail axis runs +0.04 / \u22120.71 / \u22120.10 / +1.26 / +3.08 / +4.78 / +2.05 / +0.43 / +0.31 pp at trail 10/15/20/30/40/50/60/75/100 \u2014 zero or negative across the old spec\u2019s whole region, unanimous 30-of-30 across the 30\u201375 band. Deployed: trail SMA-20 \u2192 SMA-50, stop 8% \u2192 10%, and a new NIFTYBEES<SMA-150 entry gate. 21.80% after tax / \u221226.6% drawdown / Calmar 0.819, read down to 19\u201322% for ~350 cells scored. Worst seed drawdown \u221232.9%.' },
       { date: '12 Sep 2026', text: 'FILL DEFECT FIXED. The book booked a fill at max(pivot, open) WITHOUT checking the day\u2019s high reached the pivot, so buy-stops the market never traded up to were recorded as filled positions \u2014 about 1.5% of signals, every one of them flattering. The day\u2019s high is now required.' },

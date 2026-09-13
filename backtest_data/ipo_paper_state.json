@@ -31,7 +31,7 @@
  "missed": [],
  "data_events": [],
  "started": "2026-09-08",
- "last_run": "2026-09-12 23:54:34.270390",
+ "last_run": "2026-09-13 09:34:23.797683",
  "discarded_on_arming": [
   {
    "symbol": "MARSONS",
@@ -55,7 +55,7 @@
    "positions_touched": false
   }
  ],
- "spec_version": "r167-A",
+ "spec_version": "r167-A-mb25",
  "spec_history": [
   {
    "on": "2026-09-12",
@@ -64,6 +64,12 @@
    "rebased": [
     "KISSHT 297.94 -> 291.47"
    ]
+  },
+  {
+   "on": "2026-09-13",
+   "to": "r167-A-mb25",
+   "note": "research/169: MIN_BARS 60 -> 25, the floor Spec A was validated at. The 60 rested on reading a row-count-today filter as a bars-at-signal rule. No exit rule changed; 0 stop(s) re-based.",
+   "rebased": []
   }
  ],
  "gate": {
@@ -76,8 +82,33 @@
   "above_pct": -2.34,
   "blocked": true
  },
- "candidates": [],
+ "candidates": [
+  {
+   "symbol": "CORDELIA",
+   "pivot": 109.5,
+   "close": 112.95,
+   "depth_pct": 26.1,
+   "tv": 275223388.15,
+   "listed": "2026-07-01",
+   "age_days": 72,
+   "triggered": true,
+   "gap_pct": -3.05,
+   "armed": false,
+   "passed_over": "gate"
+  }
+ ],
  "watchlist": [
+  {
+   "symbol": "SBIFUNDS",
+   "pivot": 577.5,
+   "close": 545.25,
+   "depth_pct": 7.1,
+   "tv": 920124077.3,
+   "listed": "2026-07-21",
+   "age_days": 52,
+   "triggered": false,
+   "gap_pct": 5.91
+  },
   {
    "symbol": "CMRGREEN",
    "pivot": 231.03,
@@ -88,6 +119,17 @@
    "age_days": 93,
    "triggered": false,
    "gap_pct": 6.71
+  },
+  {
+   "symbol": "LCL",
+   "pivot": 598.2,
+   "close": 547.0,
+   "depth_pct": 17.5,
+   "tv": 280982170.3,
+   "listed": "2026-07-30",
+   "age_days": 43,
+   "triggered": false,
+   "gap_pct": 9.36
   },
   {
    "symbol": "VEDPOWER",

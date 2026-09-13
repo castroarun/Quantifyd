@@ -2,6 +2,38 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — IPO Base: the live book now runs the spec it is funded on (MIN_BARS 60 → 25), and the Capital Desk is on 37.5 / 37.5 / 25
+
+Arun: *"Capital Desk target from 40/40/20 to 37.5/37.5/25 is your call - lets do this. but b4
+that, pls chk this..."* — and the check (research/169) is what found the problem.
+
+**The universe question.** IPO Base's rules fail on every other universe tried — Nifty-50-like
+through all stocks, 0 of 16 beat their random-entry control. The return lives in a stock's first
+weeks after listing, so IPO Base stays the only third sleeve.
+
+**The problem it found.** `services/ipo_paper.py` ran `MIN_BARS = 60`. research/167 validated
+**25**. The 6-Sep reason for 60 read research/153's `where n >= 60` as "60 bars on the signal day";
+it counts a symbol's rows in the database today. On research/167's own engine: 25 bars 21.80%, 40
+bars 17.87% (and loses to random on 27 of 30), 60 bars 11.57%. Funding a 25% sleeve on the 60-bar
+book would have cost the blend 2.46 points of CAGR on every one of 30 paths.
+
+**Done, in one change.**
+- `MIN_BARS = 25`, the misreading explained in place, spec version `r167-A-mb25` logged on state.
+- Capital Desk targets **TN 37.5 / OA 37.5 / IPO 25** through the Capital Desk route, with its
+  changelog entry.
+- Two figures corrected everywhere they had spread: 1.56% is the **median** position at ₹10L (the
+  90th percentile is 9.05%), and the edge over random is **+2.25pp** on a clean panel, tying random
+  young names since 2016 — not +4.78pp.
+- Register, IPO page, portfolio report and the research/167 study entry updated.
+
+**Nothing traded differently.** The gate is on (NIFTYBEES 2.34% below its 150-day average), so no
+buy-stop is armed for 14-Sep under either floor. CORDELIA would have triggered at 25 bars.
+
+- Status doc: `research/167_ipo_base_honest_reopt/IPO_BASE_MIN_BARS_25_DAILY_DEPLOY_STATUS.md`
+- Review: 15-Oct-2026 — early-entry fills, capacity, and which age band entries actually fall in.
+
+---
+
 ## 🔴 2026-09-13 — research/169: why IPO Base is IPO-specific — the rules do NOT transplant, and **the live IPO book runs MIN_BARS 60, not the validated 25**
 
 Arun asked why the IPO system only trades IPOs, and what happens on Nifty 50 / 100 / 200 / Midcap / 500 /

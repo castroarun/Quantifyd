@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-13 07:58 IST",
+ "generated": "2026-09-13 09:34 IST",
  "generator": "research/_utilities/mpf_report_build.py",
  "postTaxOnly": true,
  "standard": "After tax \u2014 20% short-term, 12.5% long-term above 365 days, netted within the Indian financial year with loss carry-forward \u2014 25 bps a side, 5.2% a year on idle cash for every book, accrued daily and not taxed again, and placeable entries only: decided on the close, filled at the next open.",
@@ -23,7 +23,7 @@
   "BLEND": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
   "BLEND2": "TN + Base Age (50-50, monthly)"
  },
- "blendNote": "TWO BLEND ROWS, BOTH COMPUTED BY THIS GENERATOR from the drawn daily curves above, rebalanced monthly. The first uses research/168\u2019s RECOMMENDED weights, True North 37.5 / Base Age 37.5 / IPO Base 25; the second is the old 50-50 pair, kept so the value of the third sleeve is visible. The weights are a study result; these rows are not \u2014 research/168 quotes 30-path medians of 21.18% after tax, \u221224.01% drawdown, Calmar 0.885 for the three-sleeve book against 20.28%, \u221226.91%, 0.749 for the pair, better on both counts on 30 of 30 paired paths, and a single drawn path will sit near but not on those. It found the re-fitted IPO Base worth more to the portfolio than the old spec at every weight from 5% to 50% (30 of 30), and the old spec worth no place at any weight. Moving the Capital Desk targets from 40 / 40 / 20 to these weights is a decision still to be taken.",
+ "blendNote": "TWO BLEND ROWS, BOTH COMPUTED BY THIS GENERATOR from the drawn daily curves above, rebalanced monthly. The first uses research/168\u2019s RECOMMENDED weights, True North 37.5 / Base Age 37.5 / IPO Base 25; the second is the old 50-50 pair, kept so the value of the third sleeve is visible. The weights are a study result; these rows are not \u2014 research/168 quotes 30-path medians of 21.18% after tax, \u221224.01% drawdown, Calmar 0.885 for the three-sleeve book against 20.28%, \u221226.91%, 0.749 for the pair, better on both counts on 30 of 30 paired paths, and a single drawn path will sit near but not on those. It found the re-fitted IPO Base worth more to the portfolio than the old spec at every weight from 5% to 50% (30 of 30), and the old spec worth no place at any weight. The Capital Desk adopted these weights on 13-Sep-2026.",
  "investedSources": {
   "True North": "research/144 phase A avg_inv 0.43 (via research/159 scripts/full_period.py)",
   "IPO Base": "research/167 stage 9, Spec A: mean invested fraction 36.3% of NAV across 30 seeds (measured at 5.0% idle cash; the cash rate barely moves an invested fraction). The research/153 spec it replaced was 32.7% \u2014 the longer trail holds winners for 37 days rather than 18.",

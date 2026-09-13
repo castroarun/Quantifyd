@@ -514,7 +514,7 @@ export default function IpoPaper() {
           <tbody>
             {[
               ['Universe', 'NSE equities with a vetted listing date, ETFs excluded, pre-listing rows masked'],
-              ['Age band', 'listed within 6 months, and at least 60 bars of history'],
+              ['Age band', 'listed within 6 months, and at least 25 bars on the signal day'],
               ['Liquidity', '20-day median traded value at least ₹5 cr'],
               ['Base', 'last 25 bars; pivot = highest close; depth to the base low ≤ 30%; not already extended'],
               ['Trigger', 'close above the pivot'],
@@ -532,9 +532,7 @@ export default function IpoPaper() {
         <p className={styles.note}>
           <b>Two rules here were not in the backtest</b>, and are pre-registered rather than
           discovered: the deterministic tie-break (the study drew lots across 30 seeds, which a
-          live book cannot do), and the data-event guard above. The bar floor is <b>60</b>, not
-          the 25 the written spec says — the study&apos;s own harness only ever admitted stocks
-          with 60+ bars, so 60 is what was actually validated.
+          live book cannot do), and the data-event guard above. The bar floor is <b>25</b>, the value the study validated. From 6 to 13 September it ran at 60, on a misreading of the study harness: its 60-row filter counts a stock&apos;s rows in the database today, not its bars on the signal day. research/169 measured the 60-bar book at about half the return.
         </p>
       </div>
     </div>

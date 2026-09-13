@@ -1,8 +1,8 @@
 {
  "targets": {
-  "truenorth": 0.4,
-  "openalpha": 0.4,
-  "ipo": 0.2
+  "truenorth": 0.375,
+  "openalpha": 0.375,
+  "ipo": 0.25
  },
  "base": "truenorth",
  "ipo_status": "live",
@@ -18,6 +18,10 @@
   {
    "date": "2026-09-08",
    "text": "IPO sleeve armed for real money by a Rs 228,711 deposit through the Capital Desk. Execution stays manual-assisted until an executor exists."
+  },
+  {
+   "date": "2026-09-13 09:32:30",
+   "text": "13-Sep-2026, Arun: TN 37.5 / OA 37.5 / IPO 25, per research/168 (three-sleeve blend 21.18 pct after tax, -24.01 pct drawdown, Calmar 0.885, against 20.28 pct, -26.91 pct, 0.749 for TN+OA 50-50, better on 30 of 30 paths). research/169 found no universe transplant beats IPO Base as the third sleeve, and that 25 pct is supported only for the validated 25-bar floor, which the live IPO book is switched to in the same change."
   }
  ],
  "ipo_funded": 228711.0,

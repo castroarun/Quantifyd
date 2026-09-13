@@ -618,9 +618,8 @@ res = {
                   'pair, better on both counts on 30 of 30 paired paths, and a single drawn '
                   'path will sit near but not on those. It found the re-fitted IPO Base '
                   'worth more to the portfolio than the old spec at every weight from 5% to '
-                  '50% (30 of 30), and the old spec worth no place at any weight. Moving '
-                  'the Capital Desk targets from 40 / 40 / 20 to these weights is a '
-                  'decision still to be taken.'),
+                  '50% (30 of 30), and the old spec worth no place at any weight. The '
+                  'Capital Desk adopted these weights on 13-Sep-2026.'),
     'investedSources': INVESTED_SRC,
     'headline': headline,
     'window2018': window2018,
