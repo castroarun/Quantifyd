@@ -2,6 +2,36 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-09-14 — Capital Desk: ONE-OFF REBALANCE to TN 37.5 / OA 37.5 / IPO 25 runs Monday 09:45
+
+Arun (13-Sep): *"now that entire TN is in cash fund, can v now make the distribution in the correct
+ratio?"* — approved as "fix IPO, move all Monday".
+
+**Fixed first, deployed 13-Sep:** a Capital Desk deposit into the already-live IPO book never reached
+the cash it buys with. `services/ipo_paper.py` copied `ipo_funded` into its own capital and cash only on
+a paper→live switch (once, 8-Sep). Now a FUNDING SYNC runs on every live cycle; a withdrawal that would
+take cash below zero is refused and alerted. Tested with a pretend deposit and a pretend oversized
+withdrawal, nothing saved, state byte-identical.
+
+**The move (13-Sep values; recomputed live on Monday):**
+
+| Book | Now | Target | Move |
+|---|---|---|---|
+| True North | ₹9,15,949 | ₹6,62,333 | −₹2,53,615 (₹27,578 cash + ~₹2.26L CASHIETF) |
+| Open Alpha · Base Age | ₹6,21,068 | ₹6,62,333 | +₹41,265 |
+| IPO Base | ₹2,29,205 | ₹4,41,556 | +₹2,12,350 |
+
+Overrides, for this transfer only, the 05-Sep rule that True North is never sold to rebalance.
+
+**Job:** `scripts/deferred_rebalance_20260914.sh` → `scripts/rebalance_mpf_20260914.py --execute`. Dry run
+passed 13-Sep. Check `logs/rebalance_mpf_20260914.json` on Monday; IPO's cash updates at the 18:45 run.
+
+**Known cost:** the moved money sits as plain cash in Open Alpha and IPO — neither sweeps idle cash into
+a fund. About ₹1,100 a month on the moved sum, and ~₹3.75L across the two books is already idle.
+Arun asked (13-Sep) whether IPO's cash can go to an arbitrage fund — see the next entry once decided.
+
+---
+
 ## ✅ 2026-09-13 — OA · Base Age: "swap the last 2 instead of 1?" and "top up the winners we already hold?" — both NO EDGE, nothing changed
 
 Arun: *"what if we swap the last 2 ranks instead of 1? can we find out an optimized number? or

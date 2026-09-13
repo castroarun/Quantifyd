@@ -780,6 +780,37 @@ def main():
                 _alert('IPO book mode change',
                        f'now {mode.upper()} with capital Rs {cap:,.0f}', 'low')
             st['mode'] = mode
+
+        # ---- FUNDING SYNC (13-Sep-2026) ----
+        # Money moved through the Capital Desk while the book is ALREADY live. Before this,
+        # capital and cash were copied from `ipo_funded` only on a paper->live switch, so a
+        # later deposit never reached the cash that sizes buys.
+        if mode == 'live' and abs(cap - float(st['capital'])) >= 1.0:
+            delta = cap - float(st['capital'])
+            if float(st['cash']) + delta < -1.0:
+                _alert('IPO funding NOT applied',
+                       'The Capital Desk shows Rs %s funded against the book capital Rs %s. '
+                       'Applying Rs %s would take cash to Rs %s, below zero, so nothing was '
+                       'changed. A withdrawal is never funded by selling positions.'
+                       % (format(round(cap), ','), format(round(st['capital']), ','),
+                          format(round(delta), ','),
+                          format(round(float(st['cash']) + delta), ',')))
+                print('funding sync refused: cash would go negative')
+            else:
+                st['capital'] = cap
+                st['cash'] = float(st['cash']) + delta
+                st.setdefault('fund_flows', []).append(dict(
+                    ts=str(datetime.now())[:19], kind='deposit' if delta > 0 else 'withdraw',
+                    amount=round(abs(delta), 2), via='capital desk',
+                    capital_after=round(cap, 2), cash_after=round(float(st['cash']), 2)))
+                _alert('IPO funding applied',
+                       '%s Rs %s. Capital now Rs %s, cash Rs %s; new buys size off it.'
+                       % ('Deposit' if delta > 0 else 'Withdrawal',
+                          format(round(abs(delta)), ','), format(round(cap), ','),
+                          format(round(float(st['cash'])), ',')), 'low')
+                print('funding sync: %+.0f applied, capital %.0f cash %.0f'
+                      % (delta, cap, float(st['cash'])))
+
         loaded = load_wide()
         if loaded is None:
             print('no symbols inside the age band today')
