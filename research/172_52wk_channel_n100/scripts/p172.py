@@ -172,6 +172,7 @@ class Panel:
 
         C, O, H, L_, TVp, PREVC = f32(), f32(), f32(), f32(), f32(), f32()
         ATR = f32()
+        ATR22 = f32()      # Phase 2: chandelier stop uses ATR(22) from the highest high
         ATHC = f32()                                   # running all-time-high close
         BARS = np.zeros((T, N), dtype=np.int32)
         RS252 = f32()                                  # 252-day relative strength
@@ -230,6 +231,7 @@ class Panel:
                 SMA[n_][idx, j] = cs.rolling(n_, min_periods=n_).mean().to_numpy()
             EMA50[idx, j] = cs.ewm(span=50, adjust=False, min_periods=50).mean().to_numpy()
             ATR[idx, j] = wilder_atr(ha, la, ca, 14)
+            ATR22[idx, j] = wilder_atr(ha, la, ca, 22)
             ST['ST_7_3'][idx, j] = supertrend_dir(ha, la, ca, 7, 3.0)
             ST['ST_10_3'][idx, j] = supertrend_dir(ha, la, ca, 10, 3.0)
             ST['ST_14_4'][idx, j] = supertrend_dir(ha, la, ca, 14, 4.0)
@@ -266,6 +268,7 @@ class Panel:
         # held name prints a fake -100% NAV spike.
         self.CM = pd.DataFrame(C).ffill().to_numpy(np.float32)
         self.TVp, self.PREVC, self.BARS, self.ATR = TVp, PREVC, BARS, ATR
+        self.ATR22 = ATR22
         self.ATHC, self.RS252, self.RANK = ATHC, RS252, RANK
         self.PIV_C, self.PIV_H, self.LO_C, self.LO_L = PIV_C, PIV_H, LO_C, LO_L
         self.SMA, self.EMA50, self.ST = SMA, EMA50, ST
@@ -283,7 +286,7 @@ class Panel:
         # ---- benchmark + gates (NIFTYBEES; NIFTY50 index only starts 2011)
         nb = nb_raw.reindex(dates).ffill()
         self.bench = nb.to_numpy(np.float64)
-        for w in (100, 200):
+        for w in (50, 100, 200):
             g_ = (nb > nb.rolling(w, min_periods=w).mean()).shift(1)
             setattr(self, 'GATE%d' % w, g_.reindex(dates).ffill().fillna(False).to_numpy(bool))
         self.GATE_NONE = np.ones(T, dtype=bool)

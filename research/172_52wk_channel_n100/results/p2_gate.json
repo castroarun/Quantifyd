@@ -1,0 +1,10 @@
+{
+ "winner": "TRAIL10_T63_g0_BK20",
+ "entry": "E189",
+ "calmar": 0.606,
+ "cagr": 12.19,
+ "maxdd": -20.09,
+ "opt_calmar": 0.575,
+ "threshold": 0.625,
+ "ran_null_and_blend": false
+}

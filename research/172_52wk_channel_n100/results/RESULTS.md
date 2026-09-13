@@ -2,6 +2,12 @@
 
 # VERDICT: **NO EDGE as written. SIGNAL when optimised — not a STRATEGY. Nothing adopted.**
 
+> **Phase 2 (stop-loss and trailing-stop combinations) did not change the label.** It
+> sharpened it: on the best stop stack the momentum-matched null still beats the system on
+> return (21–29 of 30 draws) and now **loses to it on risk-adjusted return (27–30 of 30)**.
+> The 52-week high carries **no return information and real risk information**. Section 11
+> onward.
+
 research/172 · 13-Sep-2026 · window 2006-01-02 → 2026-09-11 (20.7 years) · VPS canonical
 
 **The book is called 52W.** Every figure below is a ₹1,00,00,000 (₹1 crore) NSE-cash
@@ -359,3 +365,250 @@ dropped** (2014-04-24, 2014-10-15). Funds excluded by instrument name via
 4. **A new entry on the known-dead-ends list**: *channel / 52-week-high breakout on a
    large-cap Indian universe — SIGNAL, dominated by momentum ranking, correlation 0.69 to
    Open Alpha.*
+
+
+---
+
+# PHASE 2 — stop-loss and trailing-stop combinations
+
+*Added 13-Sep-2026 on Arun's mid-turn instruction: "u can add some stop loss
+variations/trailing SL etc, try different combinations as well."*
+
+Book held at the Phase 1 settings (₹1 crore, 20 slots @ 5%, next-open fills, 15 bps/side,
+5.2% idle cash, after tax, 2006-2026). **Only the exit stack varies, and every stack runs
+on BOTH entries** — the plateau centre **E189** (189-day close channel) and the literal Spec
+A entry **E252** (252-day close channel) — so every comparison is paired on identical
+signals. Engine: `scripts/bt172b.py`; `bt172.py` untouched, so Phase 1 stays bit-exact.
+~300 cells.
+
+## 11. Q1 — Do initial hard stops help or hurt, and where does the surface turn?
+
+**They do neither. The surface does not turn — it is noise, and the paired entry proves it.**
+
+Initial stop from the entry price, with the literal 52-week-low as the other exit:
+
+| Initial stop | −5% | −8% | −10% | −12% | −15% | −20% | −25% | −30% | none |
+|---|---|---|---|---|---|---|---|---|---|
+| **Calmar, E189** | 0.385 | **0.408** | 0.324 | 0.349 | 0.372 | 0.319 | 0.326 | 0.321 | 0.326 |
+| **Calmar, E252** | 0.330 | 0.301 | 0.317 | 0.293 | 0.296 | 0.314 | 0.315 | 0.316 | 0.305 |
+| CAGR, E189 | 14.44 | 16.24 | 13.72 | 14.89 | 16.19 | 13.87 | 14.35 | 14.36 | 14.72 |
+| CAGR, E252 | 13.83 | 12.90 | 13.62 | 12.82 | 12.88 | 13.43 | 14.27 | 13.89 | 14.25 |
+| MaxDD, E252 | −41.95 | −42.91 | −42.94 | −43.69 | −43.48 | −42.75 | −45.24 | −44.04 | −46.73 |
+
+The E189 row looks like it has a −8% optimum at 0.408. **E252 scores the same cell 0.301 —
+below its own no-stop row.** One entry says the best stop in the grid, the other says the
+worst. That is the definition of an artifact, and it is exactly why every cell was run on
+two entries. ATR-based initial stops behave the same way (1.5×ATR: 0.409 on E189, 0.315 on
+E252).
+
+**And the mechanism explains it.** A −30% stop only moves max drawdown from −46.7% to
+−44.0%. **A stop on the position does not fix a drawdown made of twenty positions falling
+together.** What a tight stop does buy is a collapsing win rate (68.1% with no stop →
+35.9% at −8% → 25.8% at −5%) and a longer losing streak (6 → 30), for no risk reduction.
+
+## 12. Q2 — Which trailing family wins, and is it monotonic?
+
+**Trailing wins decisively over fixed-from-entry — the r/71 ordering holds. But the
+percentage trail is twin-peaked, not monotonic.**
+
+| Trail from the highest close since entry | −8% | −10% | −12% | −15% | −20% | −25% | −30% |
+|---|---|---|---|---|---|---|---|
+| **Calmar, E189** | 0.444 | **0.585** | 0.490 | 0.501 | **0.580** | 0.441 | 0.436 |
+| **Calmar, E252** | 0.367 | 0.522 | 0.527 | 0.529 | **0.594** | 0.454 | 0.428 |
+| CAGR, E189 | 10.69 | 12.19 | 12.27 | 13.75 | **16.01** | 13.80 | 13.01 |
+| Trades | 1,690 | 1,230 | 945 | 623 | **350** | 217 | 132 |
+
+Two peaks, at −10% and −20%, with a trough between. **Only the −20% peak survives the
+paired entry** (0.580 / 0.594 on both); the −10% peak is E189-only (0.585 vs 0.522). And
+−20% is the one carrying the return: 16.01% against 12.19%.
+
+**Chandelier (k × ATR(22) from the highest high) IS monotonic**, and it points the same way:
+2× → 0.281, 3× → 0.498, 4× → 0.512. **Wider is better** — the same "slow trail wins" shape
+r/159 and r/161 found, and the reason SuperTrend(14,4) beat SuperTrend(7,3) in Phase 1.
+
+Ranking the whole trailing family by Calmar (E189 / E252): 20% trail **0.580 / 0.594** ›
+10% trail 0.585 / 0.522 › SuperTrend(14,4) 0.557 / 0.575 › SuperTrend(10,3) 0.556 / 0.552 ›
+EMA50 0.516 / 0.525 › chandelier 4× 0.512 / 0.476 › Donchian-close-42 0.497 / 0.496 ›
+Donchian-close-63 0.483 / 0.473 › Donchian-close-126 0.409 / 0.404 › **the literal
+52-week-low 0.326 / 0.305**.
+
+**So the answer to "trailing ≫ target ≫ tight stop": the first half reproduces (trailing
+0.43–0.59 versus fixed-from-entry 0.29–0.41). No target arm was in scope in either phase,
+so the middle term is untested here — stated rather than assumed.**
+
+## 13. Q3 — Do combinations beat the best single exit?
+
+**Marginally, and only one combination does: the time stop. Everything else is a wash, an
+artifact, or arithmetic.**
+
+| Stack | CAGR E189 / E252 | MaxDD E189 / E252 | Calmar E189 / E252 |
+|---|---|---|---|
+| **52W STOPPED — 20% trail + exit after 63 days if not up ≥ 0%** | **16.73 / 16.54** | −27.64 / −26.57 | **0.605 / 0.622** |
+| 20% trail + 63-day time stop at a +5% bar | 16.43 / 16.26 | −28.84 / −26.94 | 0.570 / 0.604 |
+| 20% trail + 126-day time stop | 16.27 / 15.46 | −27.86 / −27.74 | 0.584 / 0.557 |
+| 20% trail alone | 16.01 / 15.89 | −27.61 / −26.77 | 0.580 / 0.594 |
+| −20% hard stop + 20% trail | 16.01 / 15.89 | — | 0.580 / 0.594 *(identical — see below)* |
+| −15% hard stop + SuperTrend(14,4) | 15.14 / 14.94 | −26.96 / −25.82 | 0.562 / 0.579 |
+| 52W OPT — SuperTrend(14,4) alone | 15.28 / 14.95 | −27.44 / −26.01 | 0.557 / 0.575 |
+| Breakeven at +10% + SuperTrend(14,4) | 15.21 / 14.63 | −26.76 / −26.36 | 0.568 / 0.555 |
+| Profit-lock at +50% → −10% trail + ST(14,4) | 14.11 / 14.54 | −25.72 / −22.74 | 0.549 / **0.639** |
+| Stop-out blocks re-entry for 63 bars (on −15% + ST(14,4)) | 14.77 / 15.10 | −26.65 / −25.86 | 0.554 / 0.584 |
+| Stop-out blocks re-entry **for good** | 12.58 / 12.46 | −25.61 / −27.06 | 0.491 / 0.460 |
+| −10% hard stop + Donchian-close-63 | 15.64 / 15.23 | −34.53 / −33.37 | 0.453 / 0.457 |
+
+- **A hard stop wider than the trail is inert by construction.** `−20% hard + −20% trail`
+  reproduces `−20% trail` to the digit, because the trail is measured from a peak that is
+  never below the entry price, so the hard stop can never be the binding level. Same for
+  −15%+−15% and for −15%/−20% with a 3×ATR chandelier. **Three rows of this table are
+  arithmetic, not evidence**, and are marked as such.
+- **Breakeven moves are a wash** (0.568/0.555 versus 0.557/0.575 for the bare rule).
+- **Profit-locks are entry-specific noise**: the best cell scores 0.639 on E252 and 0.549 on
+  E189. Do not read the 0.639.
+- **Blocking re-entry for good starves the book** — 96 trades in 20.7 years, 8.8% CAGR.
+  Blocking for 63 bars is neutral. Spec A's permissiveness was right.
+- **The book-level trailing-drawdown kill is a disaster.** At −20% on the winner: **−2.66%
+  CAGR, −81.4% drawdown, 15,990 trades.** At −15%: −4.10% and −80.2%. It liquidates,
+  re-arms when NIFTYBEES reclaims its 50-SMA, buys back into the same falling tape and is
+  killed again, churning the book to death. This is the r/71/r/75 index-gate result in its
+  most violent form: **on this family, top-down risk-off machinery destroys value.**
+- **The winning combination adds +0.025 / +0.028 of Calmar and +0.7pp of CAGR** over the
+  bare 20% trail. Real, consistent across both entries, and small.
+
+### The auto-ranked winner was a trap, and the pre-registered clauses caught it
+
+Ranking E189 Calmar blindly picks `TRAIL10_T63_g0_BK20` at **0.606** — fractionally above
+52W STOPPED's 0.605. It fails three pre-registered clauses:
+
+| Clause | 52W STOPPED | The trap |
+|---|---|---|
+| Plateau (neighbours agree) | −15%/−20% kill both ≈ disaster, but the *stack without any kill* scores 0.605/0.622 | its −15% neighbour returns **−1.06% CAGR** |
+| Cost ladder 0/15/30/45 bps | 0.630 / 0.605 / 0.598 / 0.569 | 0.480 / 0.606 / **−0.080** / **−0.186** |
+| 12 start-offsets | 0.603 [0.565 … 0.615] | 0.573 [**−0.009** … 0.606] |
+| CAGR | 16.73% | 12.19% |
+
+## 14. Robustness of 52W STOPPED
+
+| Ensemble | CAGR median [min … max] | Calmar median [min … max] |
+|---|---|---|
+| 12 monthly start-offsets, E189 | 16.66% [15.61 … 16.99] | 0.603 [0.565 … 0.615] |
+| 12 monthly start-offsets, E252 | 16.59% [15.57 … 16.98] | 0.640 [0.622 … 0.660] |
+
+Cost ladder (0 / 15 / 30 / 45 bps a side): CAGR **17.13 / 16.73 / 16.39 / 15.85** on E189 and
+**16.91 / 16.54 / 16.06 / 15.66** on E252; Calmar 0.630 / 0.605 / 0.598 / 0.569 and
+0.638 / 0.622 / 0.604 / 0.588. About **−0.4pp of CAGR per +15 bps** — the same shallow slope
+as Phase 1, and it survives 45 bps comfortably.
+
+## 15. Q4 — Does any stack change the verdict, or the blend?
+
+**No. And the gate that would have stopped us finding that out was deliberately overridden.**
+
+The pre-registered rule was to skip the nulls and the blend unless the best Phase 2 stack
+beat 52W OPT's Calmar of 0.575 by ≥ 0.05. 52W STOPPED clears it by **+0.030 (E189)** and
+**+0.047 (E252)** — just inside the threshold, so the automatic gate skipped. That was the
+wrong place to stop, for a reason worth recording: the gate exists to save compute, and the
+question it was about to skip is the one the whole study turns on. The nulls and the blend
+were therefore re-run for 52W STOPPED, costing 186 cheap cells, and **the override is
+disclosed in `scripts/run172e.py`'s docstring, in the STATUS log and here — not done
+quietly.**
+
+**The momentum-matched nulls, re-run on the winner's own exit stack, 30 draws each:**
+
+| Control (52W STOPPED = 16.73% / Calmar 0.605 on E189; 16.54% / 0.622 on E252) | CAGR median [min … max] | Calmar median | Beats the system on **CAGR** | Beats it on **Calmar** |
+|---|---|---|---|---|
+| N3 momentum-matched, E189 | **18.16** [15.37 … 20.77] | 0.507 | **24 / 30** | **1 / 30** |
+| N4 trend + momentum matched, E189 | **18.71** [16.25 … 20.69] | 0.560 | **29 / 30** | **3 / 30** |
+| N3 momentum-matched, E252 | **17.27** [15.12 … 20.01] | 0.489 | **21 / 30** | **0 / 30** |
+| N4 trend + momentum matched, E252 | **17.20** [14.96 … 20.10] | 0.530 | **24 / 30** | **2 / 30** |
+
+**This is the single most informative table in the study.** Picking names at random from the
+top half of the same universe by 252-day relative strength, and running the *identical* 20%
+trail and 63-day time stop, earns **more return** than the 52-week-high entry on 21–29 draws
+out of 30 — and does so at a **materially worse drawdown**, losing on Calmar on 27–30 of 30.
+
+So the 52-week high is **not** telling you which stock will go up. It is telling you which
+stock's *path* will be smoother. In Phase 1 the system sat at the null's Calmar median
+(0.575 against 0.584 / 0.579) — a coin flip. The stop stack is what converts that into a
+clean 27–30 of 30 win. **The stops did not create return; they revealed the risk edge that
+was already there.**
+
+**Blend, same r/168 engine, 30 paired paths, against TN 37.5 / OA 37.5 / IPO-A 25
+(21.18% / −24.01% / Calmar 0.885):**
+
+| Sleeve | w | Blend Calmar | Δ Calmar | Δ CAGR | Δ DD | Paths won /30 |
+|---|---|---|---|---|---|---|
+| 52W STOPPED (E252) | 5% | 0.912 | +0.027 | −0.24 | +1.00 | 26 |
+| **52W STOPPED (E252) — its best cell** | **10%** | 0.918 | **+0.043** | −0.48 | +1.65 | 23 |
+| 52W STOPPED (E252) | 25% | 0.868 | −0.012 | −1.22 | +1.13 | 11 |
+| 52W OPT (Phase 1) | 10% | 0.909 | +0.033 | −0.67 | +1.61 | 22 |
+| **PLAIN CASH at 5.2%** | 15% | 0.932 | **+0.045** | −2.38 | +3.73 | **30** |
+| **PLAIN CASH at 5.2%** | 33% | 1.029 | **+0.135** | −5.26 | +8.35 | **30** |
+
+The bar was **+0.10 Calmar or −2pp drawdown at no worse CAGR**. 52W STOPPED reaches **+0.043
+at −0.48pp of CAGR on 23 of 30 paths** — an improvement on Phase 1's +0.033, and still a
+clear fail. A plain cash sleeve matches it at 15% weight on **30 of 30** and beats it
+outright above that. Correlation to Open Alpha is **0.679 daily / 0.639 monthly** (Phase 1:
+0.689 / 0.662) — barely moved, still far above the 0.40 bar.
+
+**Verdict unchanged: NO EDGE as written, SIGNAL when optimised, not a STRATEGY. Nothing
+adopted.**
+
+## 16. Q5 — Tradeability of 52W STOPPED versus 52W OPT and Spec A
+
+| | 52W Spec A (literal) | 52W OPT (ST 14,4) | **52W STOPPED (20% trail + 63d time stop)** |
+|---|---|---|---|
+| CAGR after tax | 14.25% | 14.95% | **16.73% / 16.54%** |
+| MaxDD | −46.73% | −26.01% | −27.64% / −26.57% |
+| Calmar | 0.305 | 0.575 | **0.605 / 0.622** |
+| Sharpe | 0.835 | 0.991 | **1.058** |
+| Trades | 144 (7.0/yr) | 949 (45.9/yr) | 538 (26.0/yr) |
+| Win rate | **68.1%** | 46.0% | **38.1%** |
+| Average win | +87.6% | +25.7% | +55.5% |
+| Average loss | −15.5% | −7.9% | **−7.9%** |
+| Expectancy per trade | +54.68% | +7.58% | +16.24% |
+| Median hold | 737 d | 84 d | 98 d |
+| p95 hold | 1,701 d | 273 d | 693 d |
+| **Max consecutive losers** | 6 | 12 | **21** |
+| Worst position drawdown | −59.2% | −33.7% | **−25.6%** |
+| Median position drawdown | −10.3% | −5.2% | −6.3% |
+| 5th-pct position drawdown | −34.1% | −14.6% | −20.5% |
+| Top-10 trades' share of profit | 59.0% | 44.5% | 53.3% |
+| Mean trade with winners capped at +50% | +19.8% | +4.84% | +5.51% |
+| Average invested | 93.4% | 71.2% | 83.5% |
+| Exit mix | 88.9% channel-low, 11.1% end-of-data | 98.8% SuperTrend | **54.3% trailing stop, 42.8% time stop** |
+
+**What it would feel like.** 52W STOPPED is the best book in the study on every headline —
+return, Sharpe, Calmar, worst single-position loss — and it has the **worst win rate
+(38.1%) and the longest losing streak (21 in a row)** of the three. Two out of every five
+positions are sold by a clock rather than by price. It is the hardest of the three to sit
+through, and it still is not adoptable.
+
+## 17. Per-year, Phase 2 (return with intra-year drawdown from the full curve's peak)
+
+| Year | 52W STOPPED E189 | 52W OPT | 52W Spec A | NIFTYBEES |
+|---|---|---|---|---|
+| 2008 | **−21.2 (−25.1)** | −22.2 (−25.7) | −43.5 (−46.2) | −52.1 (−59.7) |
+| 2011 | −21.9 (−25.6) | **−12.8 (−19.6)** | −21.8 (−30.9) | −24.0 (−27.3) |
+| 2018 | −5.4 (−16.8) | −2.9 (−11.5) | **+6.2 (−16.7)** | +4.8 (−14.1) |
+| 2020 | +18.2 (−22.0) | **+27.2 (−13.7)** | +13.5 (−30.9) | +15.4 (−36.3) |
+| 2022 | **+18.1 (−18.1)** | +4.6 (−21.0) | +5.6 (−23.9) | +5.5 (−16.1) |
+| 2024 | **+40.2 (−12.2)** | +22.4 (−14.6) | +29.2 (−11.6) | +10.4 (−10.5) |
+| **FULL** | **16.73 / −27.6 (0.605)** | 14.95 / −26.0 (0.575) | 14.25 / −46.7 (0.305) | 11.37 / −59.7 (0.190) |
+
+Full 21-row table in `results/p2_peryear.csv`. 52W STOPPED wins the 2022 grind (+18.1%
+against +4.6%) and loses 2020's V-recovery (+18.2% against +27.2%) — the signature of a
+tighter trail: better in a grind, worse in a snapback.
+
+## 18. Phase 2 files
+
+| File | What |
+|---|---|
+| `scripts/bt172b.py` | the exit-stack simulator (ratcheting levels, book-level kill, re-entry block) |
+| `scripts/run172d.py` | phases A / B / C — 65 stacks × 2 entries, time stop, book kill, offsets, cost ladder, per-year |
+| `scripts/run172e.py` | the deliberate gate override: nulls N3/N4 and the cost ladder for the honest winner |
+| `scripts/blend172b.py` | correlation + 4-sleeve blend for 52W STOPPED |
+| `scripts/report172b.py` | the Phase 2 three-panel figure |
+| `results/stops.csv` | every Phase 2 cell, one row each, both entries |
+| `results/p2_nulls.csv`, `p2_null_summary.json` | 120 momentum-matched null draws |
+| `results/p2_blend.csv`, `p2_correlations.json` | blend and correlation |
+| `results/p2_peryear.csv`, `p2_outliers.csv`, `p2_summary.json`, `p2_curves.npz` | per-year, outlier dependence, curves |
+| `results/p2_gate.json`, `p2_top5.json` | the automatic gate decision that was overridden, and the auto top-5 |

@@ -33,6 +33,43 @@ reuse: the third ST(14,4) confirmation; a number to subtract (~4.2pp) whenever a
 the current NIFTY50/NIFTYNEXT50 CSVs; and a **momentum-matched null** that is much sharper
 than a plain random draw and should join the standard control set for long-equity studies.
 
+
+**PHASE 2 (same day, Arun mid-turn: *"u can add some stop loss variations/trailing SL etc,
+try different combinations as well"*) — ~300 more cells, every stack run on BOTH the 189-day
+and the literal 252-day entry so each comparison is paired. Verdict unchanged, and sharper:**
+
+- **Initial hard stops from the entry price do nothing, and the paired entry is what proves
+  it.** The −8% cell scores Calmar 0.408 on the 189d entry and 0.301 on the 252d entry —
+  below its own no-stop line of 0.305. A −30% stop moves book drawdown only −46.7% → −44.0%:
+  a stop on one position cannot fix a drawdown made of twenty positions falling together.
+  What it does buy is a win rate collapsing 68.1% → 25.8% and a losing streak going 6 → 30.
+- **Trailing beats fixed-from-entry** (Calmar 0.43–0.59 vs 0.29–0.41 — the r/71 ordering
+  reproduces). Chandelier is **monotonic in width** (2×→0.281, 3×→0.498, 4×→0.512); the
+  percentage trail is **twin-peaked** at −10% and −20%, and only −20% survives both entries.
+- **One combination of dozens adds anything — a time stop. 52W STOPPED** = 20% trail from
+  the highest close since entry + sell after 63 days if not up: **16.73% / −27.64% / Calmar
+  0.605 (189d)** and **16.54% / −26.57% / 0.622 (252d)**; 12-offset band 0.603
+  [0.565..0.615] and 0.640 [0.622..0.660]; survives 45 bps.
+- **A hard stop wider than the trail is inert BY CONSTRUCTION** (−20% stop + −20% trail
+  reproduces the bare trail to the digit). Breakeven moves and profit-locks are washes or
+  entry-specific noise. Blocking re-entry after a stop-out for good starves the book (96
+  trades, 8.8% CAGR). **The book-level −20% drawdown kill is a disaster: −2.66% CAGR at
+  −81.4% drawdown on 15,990 trades**, re-arming into the same falling tape.
+- **The auto-ranked Calmar winner (0.606) was a trap** and the pre-registered clauses caught
+  it: its −15% neighbour returns −1.06% CAGR, it collapses to −7.47% at 30 bps, one of its
+  twelve start-offsets scores Calmar −0.009.
+- **THE DECISIVE RESULT.** Re-running the momentum-matched nulls on the winner's own exit
+  stack: they **beat it on RETURN on 21–29 of 30 draws** (medians 18.16 / 18.71 / 17.27 /
+  17.20%) and **lose to it on CALMAR on 27–30 of 30**. **The 52-week high carries no return
+  information and real risk information** — it tells you which stock's path will be
+  smoother, not which stock will go up. In Phase 1 the system sat at the null's Calmar
+  median, a coin flip; the stop stack is what makes the risk edge visible.
+- Blend still fails: **+0.043 Calmar at 10% weight against a +0.10 bar**, cash still wins
+  30/30 at every weight, correlation to OA·Base Age still **0.679** daily.
+- **A pre-registered gate was deliberately overridden** (the nulls were to be skipped unless
+  the winner beat 52W OPT by +0.05 Calmar; it cleared by +0.030/+0.047). Disclosed in
+  `scripts/run172e.py`, the STATUS log and RESULTS.md §15 — not done quietly.
+
 `research/172_52wk_channel_n100/results/RESULTS.md` ·
 http://94.136.185.54:5000/app/backtest/52wk-channel-n100-research172
 

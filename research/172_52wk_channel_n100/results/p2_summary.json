@@ -1,0 +1,47 @@
+{
+ "TRAIL10_T63_g0_BK20 E189": {
+  "cagr": 12.19,
+  "maxdd": -20.09,
+  "calmar": 0.606
+ },
+ "TRAIL10_T63_g0_BK20 E252": {
+  "cagr": 11.43,
+  "maxdd": -20.22,
+  "calmar": 0.565
+ },
+ "TRAIL10_T63_g0 E189": {
+  "cagr": 12.22,
+  "maxdd": -20.18,
+  "calmar": 0.605
+ },
+ "TRAIL10_T63_g0 E252": {
+  "cagr": 11.46,
+  "maxdd": -21.52,
+  "calmar": 0.533
+ },
+ "TRAIL20_T63_g0 E189": {
+  "cagr": 16.73,
+  "maxdd": -27.64,
+  "calmar": 0.605
+ },
+ "TRAIL20_T63_g0 E252": {
+  "cagr": 16.54,
+  "maxdd": -26.57,
+  "calmar": 0.622
+ },
+ "52W_OPT": {
+  "cagr": 14.95,
+  "maxdd": -26.01,
+  "calmar": 0.575
+ },
+ "52W_Spec_A": {
+  "cagr": 14.25,
+  "maxdd": -46.73,
+  "calmar": 0.305
+ },
+ "NIFTYBEES": {
+  "cagr": 11.37,
+  "maxdd": -59.71,
+  "calmar": 0.19
+ }
+}

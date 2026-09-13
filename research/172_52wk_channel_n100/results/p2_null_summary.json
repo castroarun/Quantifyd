@@ -1,0 +1,38 @@
+{
+ "P2N3mom_E189": {
+  "n": 30,
+  "cagr_med": 18.16,
+  "cagr_min": 15.37,
+  "cagr_max": 20.77,
+  "calmar_med": 0.507,
+  "calmar_min": 0.421,
+  "calmar_max": 0.61
+ },
+ "P2N4trendmom_E189": {
+  "n": 30,
+  "cagr_med": 18.71,
+  "cagr_min": 16.25,
+  "cagr_max": 20.69,
+  "calmar_med": 0.56,
+  "calmar_min": 0.473,
+  "calmar_max": 0.636
+ },
+ "P2N3mom_E252": {
+  "n": 30,
+  "cagr_med": 17.27,
+  "cagr_min": 15.12,
+  "cagr_max": 20.01,
+  "calmar_med": 0.489,
+  "calmar_min": 0.442,
+  "calmar_max": 0.565
+ },
+ "P2N4trendmom_E252": {
+  "n": 30,
+  "cagr_med": 17.2,
+  "cagr_min": 14.96,
+  "cagr_max": 20.1,
+  "calmar_med": 0.53,
+  "calmar_min": 0.461,
+  "calmar_max": 0.63
+ }
+}

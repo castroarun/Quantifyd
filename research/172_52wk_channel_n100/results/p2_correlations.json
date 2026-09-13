@@ -1,0 +1,42 @@
+{
+ "daily": {
+  "TRAIL20_T63_g0_E189": {
+   "TN": 0.519,
+   "OA BaseAge": 0.6794,
+   "IPO-A": 0.2939,
+   "NIFTYBEES": 0.6159
+  },
+  "TRAIL20_T63_g0_E252": {
+   "TN": 0.5195,
+   "OA BaseAge": 0.6781,
+   "IPO-A": 0.2978,
+   "NIFTYBEES": 0.6055
+  },
+  "52W_OPT": {
+   "TN": 0.5542,
+   "OA BaseAge": 0.6886,
+   "IPO-A": 0.3052,
+   "NIFTYBEES": 0.5066
+  }
+ },
+ "monthly": {
+  "TRAIL20_T63_g0_E189": {
+   "TN": 0.5537,
+   "OA BaseAge": 0.6388,
+   "IPO-A": 0.3411,
+   "NIFTYBEES": 0.6748
+  },
+  "TRAIL20_T63_g0_E252": {
+   "TN": 0.5457,
+   "OA BaseAge": 0.6304,
+   "IPO-A": 0.3763,
+   "NIFTYBEES": 0.6457
+  },
+  "52W_OPT": {
+   "TN": 0.5902,
+   "OA BaseAge": 0.6618,
+   "IPO-A": 0.3903,
+   "NIFTYBEES": 0.6033
+  }
+ }
+}

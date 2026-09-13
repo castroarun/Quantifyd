@@ -267,3 +267,5 @@ a dated review in the Ops & Review Centre (due 2027-03-13): the **momentum-match
 
 Reproduce on the VPS (~12 min):
 `run172.py all` → `run172b.py all` → `run172c.py all` → `blend172.py` → `report172.py`.
+
+Phase 2 added the same day (stop-loss and trailing-stop combinations, ~300 more cells): `run172d.py all` → `run172e.py` → `blend172b.py` → `report172b.py`. Its two reusable results are registered as the same dated 2027-03-13 review: the **paired-entry discipline** that exposed a -8% hard stop scoring Calmar 0.408 on one entry and 0.301 on the other, and the finding that a **book-level trailing-drawdown kill that re-arms on a moving average destroys the book** (-2.66% CAGR, -81% drawdown, 15,990 trades).

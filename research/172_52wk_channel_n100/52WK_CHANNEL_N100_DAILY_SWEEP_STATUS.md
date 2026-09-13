@@ -1,8 +1,11 @@
 # 52W — Buy the 52-week-high close, sell the 52-week-low close, on Nifty 100
 
-**STATUS: DONE — 13-Sep-2026.** Verdict: **NO EDGE as written; SIGNAL when optimised;
-not a STRATEGY. Nothing adopted, no live book touched.** Full write-up in
-`results/RESULTS.md`; published at `/app/backtest/52wk-channel-n100-research172`.
+**STATUS: DONE (Phase 1 + Phase 2) — 13-Sep-2026.** Verdict: **NO EDGE as written;
+SIGNAL when optimised; not a STRATEGY. Nothing adopted, no live book touched.**
+Phase 2 (stop-loss and trailing-stop combinations, Arun mid-turn) did not change the
+label, and it did sharpen what the signal IS: **a risk signal, not a return signal.**
+Full write-up in `results/RESULTS.md`; published at
+`/app/backtest/52wk-channel-n100-research172`.
 
 Book name for every report line in this study: **52W**.
 
@@ -198,7 +201,15 @@ explicitly in RESULTS.md.
 | 2026-09-13 ~20:05 | Part B: 60 matched nulls at the optimum AND at the literal spec, risk-matched cash null, 24 start-date offsets, per-year curves | **Spec A loses to its own null** (14.25 vs median 16.47) |
 | 2026-09-13 ~20:10 | Part C: four adversarial nulls x 30 draws, shortlist x 4 cost levels, blend vs TN/OA/IPO | **the momentum-matched null N3/N4 beats the optimum on CAGR outside its whole range** |
 | 2026-09-13 ~20:12 | Report artifacts: factsheet PNG, curves PNG, YoY house table | published |
-| 2026-09-13 ~20:20 | RESULTS.md written, study published, INDEX/TODO/ops updated | DONE |
+| 2026-09-13 ~20:20 | RESULTS.md written, study published, INDEX/TODO/ops updated | Phase 1 DONE |
+| 2026-09-13 ~20:25 | **PHASE 2 opened** — Arun mid-turn: *"u can add some stop loss variations/trailing SL etc, try different combinations as well"* | sections below written before any Phase 2 cell ran |
+| 2026-09-13 ~20:30 | `bt172b.py` written — a fork of the Phase 1 simulator taking a full exit STACK; `bt172.py` left untouched so Phase 1 stays bit-reproducible. Panel gains ATR(22) and a NIFTYBEES 50-SMA re-arm gate | additive only; Phase 1 numbers unchanged |
+| 2026-09-13 ~20:33 | Phase 2A: 65 stacks x 2 entries = 130 paired rows in 0.9 min | hard-stop surface is a saw-tooth; the two entries disagree |
+| 2026-09-13 ~20:34 | **BUG: `best.stack` resolved to the DataFrame METHOD, not the column.** Caught by the traceback, fixed to `best['stack']`, phase B resumed from the incremental CSV | no result was ever reported from the broken run |
+| 2026-09-13 ~20:36 | Phase 2B: time stop, book-level kill, 12 start-offsets x 5 stacks x 2 entries, cost ladder, per-year | **book-level kill is catastrophic** (-2.7% to -4.1% CAGR, -81% DD) |
+| 2026-09-13 ~20:37 | Phase 2C auto-gate SKIPPED the nulls (best auto-ranked Calmar 0.606 < 0.625) | the auto-ranked winner was a TRAP - see below |
+| 2026-09-13 ~20:40 | **GATE OVERRIDDEN DELIBERATELY** and the nulls + blend run for the HONEST winner `TRAIL20_T63_g0` | disclosed in `scripts/run172e.py` docstring and in RESULTS.md, not done quietly |
+| 2026-09-13 ~20:45 | Phase 2 figure, RESULTS.md Phase 2 section, study page updated, rebuilt, committed | **PHASE 2 DONE** |
 
 ### Findings as they landed
 
@@ -304,3 +315,99 @@ Verdict: **NO EDGE as written; SIGNAL when optimised; not a STRATEGY.** Nothing 
 | Regime dependence | Per-year table, W1/W2 split, 2008 and 2020 crash windows and 2018 / 2022H1 grind windows reported separately, each measured from the **full curve's running peak** (r/154 convention fix). |
 | Correlation / single factor | Daily and monthly correlation to TN, OA and IPO; blend value measured against the incumbent 3-sleeve book and against a cash sleeve at the same weight. |
 | Capacity / shortability | Long-only cash equity on the Nifty 100 — the most liquid names on the exchange. Position size at ₹1 crore / 20 slots = ₹5 lakh is reported against the held names' median traded value. |
+
+
+---
+
+## 9. PHASE 2 — stop-loss and trailing-stop combinations
+
+**The ask (Arun, mid-turn, verbatim):** *"u can add some stop loss variations/trailing SL
+etc, try different combinations as well"*.
+
+**What is held fixed.** The Phase 1 book, exactly: Nifty 100 current list, 20 slots at 5%
+of a Rs 1 crore book, next-open fills on BOTH legs, 15 bps a side, 5.2% post-tax idle cash,
+after tax (20/12.5, FY-netted, Rs 1.25 L LTCG exemption), 2006-01-02 to 2026-09-11.
+Ranking metric and eligibility clause unchanged: after-tax Calmar, CAGR must clear
+NIFTYBEES 11.37%.
+
+**What varies.** Only the exit stack. **Every stack is run on BOTH entries** - the plateau
+centre (189-day close channel) and the literal Spec A entry (252-day close channel) - so
+each comparison is stack-versus-stack on identical signals, and a result that only appears
+on one entry is visibly not a result.
+
+**Engine.** `scripts/bt172b.py`, a fork of the Phase 1 simulator whose exit is a STACK of
+levels rather than one rule: initial hard stop (% or k x ATR(14) at entry), breakeven move,
+profit-lock trail tightening, percentage trail from the highest close, chandelier
+(k x ATR(22) from the highest high), ATR trail, a rule array (SuperTrend / EMA / Donchian),
+a time stop, a re-entry block after a stop-out, and a book-level trailing-drawdown kill.
+**The stop level RATCHETS** - it can never fall, because no broker order loosens itself
+when ATR expands. `bt172.py` was not touched, so every Phase 1 number remains bit-exact.
+
+**The grid (~300 cells, budget was 400):**
+
+| Group | Cells (x2 entries) |
+|---|---|
+| Initial hard stop ALONE, otherwise the literal 52-week-low exit: -5/-8/-10/-12/-15/-20/-25/-30%, plus 1.5/2/3/4 x ATR(14) | 12 |
+| Trailing ALONE: -8/-10/-12/-15/-20/-25/-30% from the highest close; chandelier 2/3/4 x ATR(22); plus 6 trend-exit reference rows | 16 |
+| COMBINATIONS: initial hard stop {-10,-15,-20} x trailing {-15%, -20%, chandelier 3xATR, ST(14,4), Donchian-close-63, 52-week-low} | 18 |
+| Breakeven move after +10% / +20%, then the trail takes over | 6 |
+| Profit-lock: after +30% / +50% the trail tightens to -10% | 6 |
+| Re-entry after a stop-out: allowed (Phase 1 behaviour) / blocked 63 bars / blocked for good | 6 |
+| Time stop: exit after 63 / 126 days if not up >= 0% / +5%, on the best two trails | 8 |
+| Book-level trailing drawdown kill at -15% / -20%, re-arming when NIFTYBEES reclaims its 50-SMA | 6 |
+| 12 start-date offsets x top 5 stacks x 2 entries | 120 |
+| Cost ladder 0/30/45 bps on the winner; momentum-matched nulls N3/N4 x 30 draws x 2 entries | 126 |
+
+**Pre-registered before running:** the nulls and the blend would only be re-run if the best
+Phase 2 stack beat 52W OPT's Calmar of 0.575 by at least 0.05. **That gate was deliberately
+overridden** - see `scripts/run172e.py` and RESULTS.md section 15 - because the automatic
+winner was a trap and the honest winner's margin (+0.030 / +0.047) sat just inside the
+threshold on a question the whole study turns on.
+
+### Phase 2 findings
+
+| Stack (both entries: 189d / 252d channel) | CAGR | MaxDD | Calmar |
+|---|---|---|---|
+| **52W STOPPED = 20% trail from the highest close + exit after 63 days if not up** | **16.73 / 16.54** | -27.64 / -26.57 | **0.605 / 0.622** |
+| 20% trail alone | 16.01 / 15.89 | -27.61 / -26.77 | 0.580 / 0.594 |
+| 52W OPT - SuperTrend(14,4), the Phase 1 winner | 15.28 / 14.95 | -27.44 / -26.01 | 0.557 / 0.575 |
+| Best initial-hard-stop-alone cell (-8%) | 16.24 / 12.90 | -39.75 / -42.91 | 0.408 / **0.301** |
+| No stop at all - the literal 52-week-low exit | 14.72 / 14.25 | -45.14 / -46.73 | 0.326 / 0.305 |
+
+1. **Initial hard stops from the entry price do not work and the paired entry proves it.**
+   The E189 surface zig-zags (0.385 / 0.408 / 0.324 / 0.349 / 0.372 / 0.319 / 0.326 / 0.321
+   at -5 to -30%) while E252 is flat around the no-stop line (0.330 / 0.301 / 0.317 / 0.293
+   / 0.296 / 0.314 / 0.315 / 0.316 against no-stop 0.305). Same rule, different entry,
+   opposite conclusion - so the E189 bump is noise. Drawdown barely moves (-37.5% to -44.7%)
+   because the book's drawdown is 20 correlated positions falling together, not one blow-up.
+2. **Trailing stops dominate fixed stops - the r/71 ordering holds.** Trailing Calmar
+   0.44-0.59 against hard-stop 0.29-0.41. Chandelier is monotonic in width
+   (2x -> 0.281, 3x -> 0.498, 4x -> 0.512): wider is better, the same "slow trail wins"
+   shape as r/159 and r/161.
+3. **The percentage trail is NOT monotonic - it is twin-peaked at 10% and 20%** with a
+   trough between (E189: 8% 0.444, 10% 0.585, 12% 0.490, 15% 0.501, 20% 0.580, 25% 0.441,
+   30% 0.436). Both entries share the 20% peak; only E189 shows the 10% one. 20% is the
+   robust choice, and it is the one with the CAGR (16.0% against 12.2%).
+4. **A hard stop wider than the trail is inert BY CONSTRUCTION.** H20+TRAIL20 reproduces
+   TRAIL20 to the digit, H15+TRAIL15 reproduces TRAIL15, H15/H20+CHAND30 reproduce CHAND30.
+   Worth stating because a table of such rows looks like evidence of robustness and is
+   arithmetic.
+5. **Breakeven moves and profit-locks are washes or entry-specific noise.** Best
+   profit-lock cell (LOCK50+ST(14,4)) scores 0.639 on E252 and 0.549 on E189.
+6. **The only combination that adds anything is the time stop**: +0.025 / +0.028 of Calmar
+   and +0.7pp of CAGR over the bare 20% trail, consistently on both entries.
+7. **Blocking re-entry after a stop-out is neutral at 63 bars and ruinous for good**
+   (8.8% / 8.1% CAGR on 96 trades - it starves the book).
+8. **The book-level drawdown kill is catastrophic**: -2.7% CAGR at -81% drawdown on 15,990
+   trades. It liquidates, re-arms on NIFTYBEES > 50-SMA, buys back, is killed again, and
+   churns itself to death at 15 bps a side.
+9. **The auto-ranked winner was a trap and the pre-registered clauses caught it.**
+   TRAIL10_T63_g0_BK20 topped the E189 Calmar table at 0.606 with only 12.19% CAGR. Its
+   -15% neighbour returns -1.06%, it collapses to -7.47% at 30 bps, and one of its twelve
+   start-offsets scores Calmar -0.009. Plateau clause, cost clause and offset band all fail.
+10. **The verdict does not change, but what the signal IS becomes clear.** On the winner's
+    own exit stack, the momentum-matched nulls beat it on CAGR on **21-29 of 30 draws** and
+    lose to it on Calmar on **27-30 of 30**. The 52-week-high entry carries **no return
+    information** over "pick a strong name at random" and **real risk information**.
+    It is still not a STRATEGY: the blend clears +0.043 against a +0.10 bar, correlation to
+    Open Alpha is still 0.68, and a plain cash sleeve still wins 30/30 at every weight.
