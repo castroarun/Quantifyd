@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-12 23:47 IST",
+ "generated": "2026-09-13 07:58 IST",
  "generator": "research/_utilities/mpf_report_build.py",
  "postTaxOnly": true,
  "standard": "After tax \u2014 20% short-term, 12.5% long-term above 365 days, netted within the Indian financial year with loss carry-forward \u2014 25 bps a side, 5.2% a year on idle cash for every book, accrued daily and not taxed again, and placeable entries only: decided on the close, filled at the next open.",
@@ -20,12 +20,13 @@
   "IPO": "IPO Base",
   "QS": "Quality Summit",
   "BM": "NIFTYBEES",
-  "BLEND": "TN + Base Age (50-50, monthly)"
+  "BLEND": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+  "BLEND2": "TN + Base Age (50-50, monthly)"
  },
- "blendNote": "Computed by this generator from the True North and Open Alpha \u00b7 Base Age daily curves, 50-50, rebalanced monthly. It is NOT a study result. The proper blend and allocation study across True North + Base Age + IPO Base has NOT been started, and it is the only structure that plausibly clears the 25% target.",
+ "blendNote": "TWO BLEND ROWS, BOTH COMPUTED BY THIS GENERATOR from the drawn daily curves above, rebalanced monthly. The first uses research/168\u2019s RECOMMENDED weights, True North 37.5 / Base Age 37.5 / IPO Base 25; the second is the old 50-50 pair, kept so the value of the third sleeve is visible. The weights are a study result; these rows are not \u2014 research/168 quotes 30-path medians of 21.18% after tax, \u221224.01% drawdown, Calmar 0.885 for the three-sleeve book against 20.28%, \u221226.91%, 0.749 for the pair, better on both counts on 30 of 30 paired paths, and a single drawn path will sit near but not on those. It found the re-fitted IPO Base worth more to the portfolio than the old spec at every weight from 5% to 50% (30 of 30), and the old spec worth no place at any weight. Moving the Capital Desk targets from 40 / 40 / 20 to these weights is a decision still to be taken.",
  "investedSources": {
   "True North": "research/144 phase A avg_inv 0.43 (via research/159 scripts/full_period.py)",
-  "IPO Base": "research/153 G3 \"invested 32.7% of NAV\" (via the same script)",
+  "IPO Base": "research/167 stage 9, Spec A: mean invested fraction 36.3% of NAV across 30 seeds (measured at 5.0% idle cash; the cash rate barely moves an invested fraction). The research/153 spec it replaced was 32.7% \u2014 the longer trail holds winners for 37 days rather than 18.",
   "NIFTYBEES": "fully invested by definition",
   "Open Alpha \u00b7 Base Age": "MEASURED 12-Sep-2026 in research/163: research/161\u2019s engine re-run with the daily invested fraction (market value of open positions / NAV) recorded, 30 seeds. Median 72.91%, band 72.74\u201373.03% at the 5.2% cash rate (72.89%, 72.73\u201373.05% at 5.0% \u2014 the rate barely touches it) \u2014 a very tight band, because the fraction is set by how often the 16 slots are full, not by which names win them. The daily series for the drawn seed is research/163_mpf_cash_yield_harmonisation/results/cash052/baseage_invested_daily_052.csv. NOTE: the handover doc asserted ~67% from memory with no source file; that figure is superseded by this measurement.",
   "Quality Summit": "research/160 RESULTS.md decomposition table, Family B \"% inv\" = 91.2"
@@ -37,12 +38,13 @@
   ],
   "years": 20.4,
   "windowWhy": "The full common period of every book actually being chosen between. It is set by the shortest series, True North\u2019s, and it is the window that matters because it contains BOTH 2008 and 2020 \u2014 the two falls a window starting in 2018 throws away.",
-  "source": "research/163_mpf_cash_yield_harmonisation/results/cash052/full_period_after_tax_cash052.csv \u2014 research/159\u2019s full_period_after_tax.csv with True North, Open Alpha \u00b7 Base Age and IPO Base each replaced by a 5.2%-idle-cash re-run of that book\u2019s own engine. NIFTYBEES holds no cash and is byte-identical to research/159\u2019s file.",
-  "basis": "After tax, 25 bps a side, 5.2% a year on idle cash for EVERY book, accrued daily and not taxed again. True North is a single after-tax NAV path from research/144\u2019s engine; Open Alpha \u00b7 Base Age is one seed of 30 from research/161\u2019s engine, held at the seed the 5.0% page drew; IPO Base is its study\u2019s drawn curve. Placeable entries only: decided on the close, filled at the next open.",
+  "source": "research/163_mpf_cash_yield_harmonisation/results/cash052/full_period_after_tax_cash052.csv \u2014 research/159\u2019s full_period_after_tax.csv with True North, Open Alpha \u00b7 Base Age and IPO Base each replaced by a 5.2%-idle-cash re-run of that book\u2019s own engine. NIFTYBEES holds no cash and is byte-identical to research/159\u2019s file. IPO Base is NOT taken from that file: it is research/168_three_sleeve_blend/results/ipo_specA_drawn_curve_cash052.csv, because the file\u2019s IPO column is the research/153 spec the live book stopped running on 12-Sep-2026.",
+  "basis": "After tax, 25 bps a side, 5.2% a year on idle cash for EVERY book, accrued daily and not taxed again. True North is a single after-tax NAV path from research/144\u2019s engine; Open Alpha \u00b7 Base Age is one seed of 30 from research/161\u2019s engine, held at the seed the 5.0% page drew; IPO Base is research/167\u2019s RE-FITTED Spec A (trail SMA-50, stop 10%, target +25%, no new entries while NIFTYBEES is below its 150-day average) \u2014 the median-CAGR seed of 30 on this window. The blends are this generator\u2019s arithmetic on these drawn curves at research/168\u2019s weights, rebalanced monthly. Placeable entries only: decided on the close, filled at the next open.",
   "order": [
    "True North",
    "Open Alpha \u00b7 Base Age",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)",
    "NIFTYBEES"
   ],
@@ -50,6 +52,7 @@
    "True North",
    "Open Alpha \u00b7 Base Age",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)"
   ],
   "benchmarks": [
@@ -75,13 +78,22 @@
     "seriesSpan": "2005-01 \u2192 2026-09"
    },
    "IPO Base": {
-    "cagr": 15.26,
-    "maxdd": -35.77,
-    "calmar": 0.43,
-    "growth100": 1816,
-    "invested": 32.7,
-    "cash": 67.3,
+    "cagr": 22.11,
+    "maxdd": -23.97,
+    "calmar": 0.92,
+    "growth100": 5910,
+    "invested": 36.3,
+    "cash": 63.7,
     "seriesSpan": "2006-01 \u2192 2026-09"
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "cagr": 20.85,
+    "maxdd": -22.88,
+    "calmar": 0.91,
+    "growth100": 4782,
+    "invested": null,
+    "cash": null,
+    "seriesSpan": ""
    },
    "TN + Base Age (50-50, monthly)": {
     "cagr": 19.89,
@@ -277,88 +289,174 @@
    },
    "IPO Base": {
     "2006": [
-     52.6,
-     -10.9
+     69.1,
+     -10.1
     ],
     "2007": [
-     54.2,
-     -11.7
+     51.6,
+     -15.9
     ],
     "2008": [
-     1.1,
-     -12.3
+     -10.1,
+     -15.8
     ],
     "2009": [
-     1.6,
-     -5.9
+     4.0,
+     -12.5
     ],
     "2010": [
-     12.5,
-     -10.2
+     21.1,
+     -9.8
     ],
     "2011": [
-     13.7,
-     -5.5
+     -2.4,
+     -10.2
     ],
     "2012": [
-     0.8,
-     -4.4
+     11.9,
+     -9.8
     ],
     "2013": [
-     5.3,
-     -2.7
+     4.8,
+     -0.4
     ],
     "2014": [
      5.2,
      0.0
     ],
     "2015": [
-     5.6,
-     -9.5
+     27.7,
+     -9.6
     ],
     "2016": [
-     48.3,
-     -12.6
+     75.8,
+     -10.6
     ],
     "2017": [
-     33.9,
-     -9.4
+     72.4,
+     -10.2
     ],
     "2018": [
-     -8.5,
-     -21.2
+     -9.1,
+     -19.2
     ],
     "2019": [
-     9.5,
-     -13.9
+     5.4,
+     -15.6
     ],
     "2020": [
-     69.1,
-     -9.8
+     74.8,
+     -13.2
     ],
     "2021": [
-     -0.8,
-     -18.0
+     52.5,
+     -14.5
     ],
     "2022": [
-     -8.7,
-     -31.3
+     0.9,
+     -21.2
     ],
     "2023": [
-     53.6,
-     -35.8
+     46.5,
+     -11.0
+    ],
+    "2024": [
+     13.6,
+     -22.6
+    ],
+    "2025": [
+     1.9,
+     -17.9
+    ],
+    "2026": [
+     -0.2,
+     -24.0
+    ]
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "2006": [
+     20.4,
+     -8.9
+    ],
+    "2007": [
+     67.2,
+     -10.5
+    ],
+    "2008": [
+     -19.2,
+     -21.8
+    ],
+    "2009": [
+     42.8,
+     -20.8
+    ],
+    "2010": [
+     14.1,
+     -9.8
+    ],
+    "2011": [
+     -6.2,
+     -14.4
+    ],
+    "2012": [
+     21.2,
+     -14.2
+    ],
+    "2013": [
+     4.8,
+     -4.1
+    ],
+    "2014": [
+     36.8,
+     -6.7
+    ],
+    "2015": [
+     3.5,
+     -10.1
+    ],
+    "2016": [
+     30.2,
+     -8.3
+    ],
+    "2017": [
+     64.5,
+     -6.4
+    ],
+    "2018": [
+     -14.2,
+     -22.8
+    ],
+    "2019": [
+     9.9,
+     -22.9
+    ],
+    "2020": [
+     62.3,
+     -14.9
+    ],
+    "2021": [
+     69.0,
+     -7.8
+    ],
+    "2022": [
+     1.8,
+     -15.9
+    ],
+    "2023": [
+     45.1,
+     -7.2
     ],
     "2024": [
      9.3,
-     -18.8
+     -19.5
     ],
     "2025": [
-     -22.7,
-     -34.7
+     5.4,
+     -10.7
     ],
     "2026": [
-     25.8,
-     -34.7
+     13.3,
+     -12.6
     ]
    },
    "TN + Base Age (50-50, monthly)": {
@@ -556,7 +654,7 @@
     "bestOverall": "True North"
    },
    "2010": {
-    "bestCagr": "Open Alpha \u00b7 Base Age",
+    "bestCagr": "IPO Base",
     "leastDD": "IPO Base",
     "bestOverall": "IPO Base"
    },
@@ -587,13 +685,13 @@
    },
    "2016": {
     "bestCagr": "IPO Base",
-    "leastDD": "IPO Base",
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
     "bestOverall": "IPO Base"
    },
    "2017": {
-    "bestCagr": "Open Alpha \u00b7 Base Age",
-    "leastDD": "TN + Base Age (50-50, monthly)",
-    "bestOverall": "TN + Base Age (50-50, monthly)"
+    "bestCagr": "IPO Base",
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+    "bestOverall": "IPO Base"
    },
    "2018": {
     "bestCagr": "True North",
@@ -621,19 +719,19 @@
     "bestOverall": "True North"
    },
    "2023": {
-    "bestCagr": "IPO Base",
-    "leastDD": "TN + Base Age (50-50, monthly)",
-    "bestOverall": "Open Alpha \u00b7 Base Age"
+    "bestCagr": "Open Alpha \u00b7 Base Age",
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+    "bestOverall": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)"
    },
    "2024": {
-    "bestCagr": "True North",
+    "bestCagr": "IPO Base",
     "leastDD": "True North",
     "bestOverall": "True North"
    },
    "2025": {
     "bestCagr": "True North",
-    "leastDD": "TN + Base Age (50-50, monthly)",
-    "bestOverall": "TN + Base Age (50-50, monthly)"
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+    "bestOverall": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)"
    },
    "2026": {
     "bestCagr": "Open Alpha \u00b7 Base Age",
@@ -668,35 +766,48 @@
    "True North": {
     "True North": 1.0,
     "Open Alpha \u00b7 Base Age": 0.46,
-    "IPO Base": 0.21,
+    "IPO Base": 0.26,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.8,
     "TN + Base Age (50-50, monthly)": 0.85,
     "NIFTYBEES": 0.32
    },
    "Open Alpha \u00b7 Base Age": {
     "True North": 0.46,
     "Open Alpha \u00b7 Base Age": 1.0,
-    "IPO Base": 0.26,
+    "IPO Base": 0.29,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.82,
     "TN + Base Age (50-50, monthly)": 0.86,
     "NIFTYBEES": 0.5
    },
    "IPO Base": {
-    "True North": 0.21,
-    "Open Alpha \u00b7 Base Age": 0.26,
+    "True North": 0.26,
+    "Open Alpha \u00b7 Base Age": 0.29,
     "IPO Base": 1.0,
-    "TN + Base Age (50-50, monthly)": 0.28,
-    "NIFTYBEES": 0.17
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.61,
+    "TN + Base Age (50-50, monthly)": 0.32,
+    "NIFTYBEES": 0.18
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "True North": 0.8,
+    "Open Alpha \u00b7 Base Age": 0.82,
+    "IPO Base": 0.61,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 1.0,
+    "TN + Base Age (50-50, monthly)": 0.95,
+    "NIFTYBEES": 0.47
    },
    "TN + Base Age (50-50, monthly)": {
     "True North": 0.85,
     "Open Alpha \u00b7 Base Age": 0.86,
-    "IPO Base": 0.28,
+    "IPO Base": 0.32,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.95,
     "TN + Base Age (50-50, monthly)": 1.0,
     "NIFTYBEES": 0.48
    },
    "NIFTYBEES": {
     "True North": 0.32,
     "Open Alpha \u00b7 Base Age": 0.5,
-    "IPO Base": 0.17,
+    "IPO Base": 0.18,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.47,
     "TN + Base Age (50-50, monthly)": 0.48,
     "NIFTYBEES": 1.0
    }
@@ -705,6 +816,7 @@
    "True North",
    "Open Alpha \u00b7 Base Age",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)",
    "NIFTYBEES"
   ],
@@ -717,13 +829,14 @@
   ],
   "years": 8.1,
   "windowWhy": "Quality Summit cannot be drawn before Aug-2018: point-in-time fundamentals need four filed fiscal years and Screener history begins FY2015. So every system is RE-MEASURED here on the only window all five can share. These figures are NOT comparable with the 20.4-year table above.",
-  "source": "research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv for Quality Summit \u2014 research/160\u2019s F_Bb7 finalist cell re-run at 5.2% idle cash on its own frozen panel (the 5.0% re-run reproduced research/160\u2019s file exactly first), the median-CAGR offset of 12 \u2014 and research/163_mpf_cash_yield_harmonisation/results/cash052/all_systems_after_tax_cash052.csv for the others \u2014 research/159\u2019s roster curve file with True North, Base Age and IPO Base swapped for their 5.2%-idle-cash re-runs, so this section still reproduces the roster page\u2019s construction. It is a DIFFERENT run from the 20.4-year table\u2019s file.",
+  "source": "research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv for Quality Summit \u2014 research/160\u2019s F_Bb7 finalist cell re-run at 5.2% idle cash on its own frozen panel (the 5.0% re-run reproduced research/160\u2019s file exactly first), the median-CAGR offset of 12 \u2014 and research/163_mpf_cash_yield_harmonisation/results/cash052/all_systems_after_tax_cash052.csv for the others \u2014 research/159\u2019s roster curve file with True North, Base Age and IPO Base swapped for their 5.2%-idle-cash re-runs, so this section still reproduces the roster page\u2019s construction. It is a DIFFERENT run from the 20.4-year table\u2019s file. IPO Base in this window is research/167\u2019s Spec A drawn curve, sliced from the same file the 20.4-year table uses \u2014 not the roster file\u2019s research/153 column.",
   "basis": "After tax, 25 bps a side, 5.2% a year on idle cash for every book, accrued daily and not taxed again. Quality Summit is the median-CAGR rebalance offset of twelve, never an average of paths.",
   "order": [
    "True North",
    "Open Alpha \u00b7 Base Age",
    "Quality Summit",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)",
    "NIFTYBEES"
   ],
@@ -732,6 +845,7 @@
    "Open Alpha \u00b7 Base Age",
    "Quality Summit",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)"
   ],
   "benchmarks": [
@@ -766,13 +880,22 @@
     "seriesSpan": "2018-08 \u2192 2026-09"
    },
    "IPO Base": {
-    "cagr": 13.08,
-    "maxdd": -35.77,
-    "calmar": 0.37,
-    "growth100": 270,
-    "invested": 32.7,
-    "cash": 67.3,
+    "cagr": 20.21,
+    "maxdd": -23.97,
+    "calmar": 0.84,
+    "growth100": 443,
+    "invested": 36.3,
+    "cash": 63.7,
     "seriesSpan": "2006-01 \u2192 2026-09"
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "cagr": 23.06,
+    "maxdd": -19.52,
+    "calmar": 1.18,
+    "growth100": 536,
+    "invested": null,
+    "cash": null,
+    "seriesSpan": ""
    },
    "TN + Base Age (50-50, monthly)": {
     "cagr": 23.48,
@@ -910,40 +1033,78 @@
    },
    "IPO Base": {
     "2018": [
-     -3.0,
-     -5.8
+     -9.1,
+     -13.2
     ],
     "2019": [
-     9.5,
-     -8.4
+     5.4,
+     -13.2
     ],
     "2020": [
-     69.1,
-     -9.8
+     74.8,
+     -13.2
     ],
     "2021": [
-     -0.8,
-     -18.0
+     52.5,
+     -14.5
     ],
     "2022": [
-     -8.7,
-     -31.3
+     0.9,
+     -21.2
     ],
     "2023": [
-     53.6,
-     -35.8
+     46.5,
+     -11.0
+    ],
+    "2024": [
+     13.6,
+     -22.6
+    ],
+    "2025": [
+     1.9,
+     -17.9
+    ],
+    "2026": [
+     1.4,
+     -24.0
+    ]
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "2018": [
+     -8.1,
+     -11.1
+    ],
+    "2019": [
+     9.9,
+     -11.3
+    ],
+    "2020": [
+     62.3,
+     -5.5
+    ],
+    "2021": [
+     69.0,
+     -7.8
+    ],
+    "2022": [
+     1.8,
+     -15.9
+    ],
+    "2023": [
+     45.1,
+     -7.2
     ],
     "2024": [
      9.3,
-     -18.8
+     -19.5
     ],
     "2025": [
-     -22.7,
-     -34.7
+     5.4,
+     -10.7
     ],
     "2026": [
-     28.1,
-     -34.7
+     13.7,
+     -12.6
     ]
    },
    "TN + Base Age (50-50, monthly)": {
@@ -1025,18 +1186,18 @@
   },
   "bestOf": {
    "2018": {
-    "bestCagr": "IPO Base",
-    "leastDD": "IPO Base",
-    "bestOverall": "IPO Base"
+    "bestCagr": "True North",
+    "leastDD": "True North",
+    "bestOverall": "True North"
    },
    "2019": {
     "bestCagr": "Open Alpha \u00b7 Base Age",
-    "leastDD": "IPO Base",
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
     "bestOverall": "Open Alpha \u00b7 Base Age"
    },
    "2020": {
     "bestCagr": "IPO Base",
-    "leastDD": "TN + Base Age (50-50, monthly)",
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
     "bestOverall": "IPO Base"
    },
    "2021": {
@@ -1051,8 +1212,8 @@
    },
    "2023": {
     "bestCagr": "Quality Summit",
-    "leastDD": "TN + Base Age (50-50, monthly)",
-    "bestOverall": "Open Alpha \u00b7 Base Age"
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+    "bestOverall": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)"
    },
    "2024": {
     "bestCagr": "Quality Summit",
@@ -1061,11 +1222,11 @@
    },
    "2025": {
     "bestCagr": "True North",
-    "leastDD": "TN + Base Age (50-50, monthly)",
-    "bestOverall": "TN + Base Age (50-50, monthly)"
+    "leastDD": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
+    "bestOverall": "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)"
    },
    "2026": {
-    "bestCagr": "IPO Base",
+    "bestCagr": "Open Alpha \u00b7 Base Age",
     "leastDD": "True North",
     "bestOverall": "Open Alpha \u00b7 Base Age"
    }
@@ -1086,7 +1247,8 @@
     "True North": 1.0,
     "Open Alpha \u00b7 Base Age": 0.37,
     "Quality Summit": 0.38,
-    "IPO Base": 0.19,
+    "IPO Base": 0.24,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.74,
     "TN + Base Age (50-50, monthly)": 0.8,
     "NIFTYBEES": 0.28
    },
@@ -1094,7 +1256,8 @@
     "True North": 0.37,
     "Open Alpha \u00b7 Base Age": 1.0,
     "Quality Summit": 0.67,
-    "IPO Base": 0.3,
+    "IPO Base": 0.34,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.82,
     "TN + Base Age (50-50, monthly)": 0.85,
     "NIFTYBEES": 0.48
    },
@@ -1102,23 +1265,35 @@
     "True North": 0.38,
     "Open Alpha \u00b7 Base Age": 0.67,
     "Quality Summit": 1.0,
-    "IPO Base": 0.38,
+    "IPO Base": 0.37,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.66,
     "TN + Base Age (50-50, monthly)": 0.65,
     "NIFTYBEES": 0.58
    },
    "IPO Base": {
-    "True North": 0.19,
-    "Open Alpha \u00b7 Base Age": 0.3,
-    "Quality Summit": 0.38,
+    "True North": 0.24,
+    "Open Alpha \u00b7 Base Age": 0.34,
+    "Quality Summit": 0.37,
     "IPO Base": 1.0,
-    "TN + Base Age (50-50, monthly)": 0.3,
-    "NIFTYBEES": 0.2
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.64,
+    "TN + Base Age (50-50, monthly)": 0.35,
+    "NIFTYBEES": 0.21
+   },
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": {
+    "True North": 0.74,
+    "Open Alpha \u00b7 Base Age": 0.82,
+    "Quality Summit": 0.66,
+    "IPO Base": 0.64,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 1.0,
+    "TN + Base Age (50-50, monthly)": 0.94,
+    "NIFTYBEES": 0.46
    },
    "TN + Base Age (50-50, monthly)": {
     "True North": 0.8,
     "Open Alpha \u00b7 Base Age": 0.85,
     "Quality Summit": 0.65,
-    "IPO Base": 0.3,
+    "IPO Base": 0.35,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.94,
     "TN + Base Age (50-50, monthly)": 1.0,
     "NIFTYBEES": 0.47
    },
@@ -1126,7 +1301,8 @@
     "True North": 0.28,
     "Open Alpha \u00b7 Base Age": 0.48,
     "Quality Summit": 0.58,
-    "IPO Base": 0.2,
+    "IPO Base": 0.21,
+    "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)": 0.46,
     "TN + Base Age (50-50, monthly)": 0.47,
     "NIFTYBEES": 1.0
    }
@@ -1136,6 +1312,7 @@
    "Open Alpha \u00b7 Base Age",
    "Quality Summit",
    "IPO Base",
+   "TN \u00b7 Base Age \u00b7 IPO (37.5 / 37.5 / 25, monthly)",
    "TN + Base Age (50-50, monthly)",
    "NIFTYBEES"
   ],
@@ -1189,56 +1366,56 @@
      "label": "buy at breakout close",
      "placeable": true,
      "cagr": [
-      3.22,
-      8.64,
-      12.11,
-      13.79,
-      17.7,
+      3.1,
+      8.83,
+      12.02,
+      13.84,
+      17.9,
       20.81,
-      18.3,
-      17.29
+      18.2,
+      17.49
      ]
     },
     {
      "label": "stop above breakout candle",
      "placeable": true,
      "cagr": [
-      -1.68,
-      5.23,
-      7.34,
-      12.58,
-      14.72,
-      18.66,
-      16.28,
-      16.72
+      -1.56,
+      5.34,
+      7.5,
+      12.48,
+      15.0,
+      18.62,
+      15.9,
+      16.87
      ]
     },
     {
      "label": "next-day stop at pivot",
      "placeable": true,
      "cagr": [
-      -4.39,
-      3.14,
-      6.63,
-      12.07,
-      17.01,
-      19.86,
-      18.42,
-      17.94
+      -4.23,
+      2.99,
+      6.74,
+      12.46,
+      17.03,
+      20.02,
+      18.74,
+      18.04
      ]
     },
     {
      "label": "LOOK-AHEAD reference",
      "placeable": false,
      "cagr": [
-      37.5,
-      34.08,
-      32.27,
-      28.02,
-      26.76,
-      26.27,
-      22.2,
-      20.92
+      37.63,
+      34.17,
+      32.5,
+      28.04,
+      27.01,
+      26.45,
+      22.32,
+      21.05
      ]
     }
    ]
@@ -1254,167 +1431,167 @@
     {
      "label": "rule: buy at close",
      "cagr": [
-      17.7,
+      17.9,
       20.81,
-      18.3,
-      17.29
+      18.2,
+      17.49
      ]
     },
     {
      "label": "null: random names",
      "cagr": [
-      9.01,
-      10.93,
-      11.97,
-      12.2
+      8.96,
+      10.55,
+      11.87,
+      12.49
      ]
     }
    ],
    "edge": [
-    8.69,
-    9.88,
+    8.94,
+    10.26,
     6.33,
-    5.09
+    5.0
    ]
   },
   "gateBakeoff": [
    {
     "gate": "dd15",
-    "cagr": 21.79,
-    "maxdd": -46.86,
-    "calmar": 0.464,
+    "cagr": 21.74,
+    "maxdd": -46.92,
+    "calmar": 0.463,
     "blockedPct": 12.3
    },
    {
     "gate": "xo20_50",
-    "cagr": 21.63,
-    "maxdd": -45.53,
-    "calmar": 0.471,
+    "cagr": 21.64,
+    "maxdd": -44.85,
+    "calmar": 0.472,
     "blockedPct": 34.1
    },
    {
     "gate": "ema150",
-    "cagr": 21.06,
-    "maxdd": -43.88,
+    "cagr": 21.09,
+    "maxdd": -43.97,
     "calmar": 0.483,
     "blockedPct": 26.5
    },
    {
     "gate": "none",
     "cagr": 20.81,
-    "maxdd": -47.51,
-    "calmar": 0.439,
+    "maxdd": -47.57,
+    "calmar": 0.436,
     "blockedPct": 0.0
    },
    {
+    "gate": "ema100",
+    "cagr": 20.46,
+    "maxdd": -43.68,
+    "calmar": 0.46,
+    "blockedPct": 29.9
+   },
+   {
     "gate": "sma150",
-    "cagr": 20.51,
-    "maxdd": -44.84,
+    "cagr": 20.36,
+    "maxdd": -44.83,
     "calmar": 0.464,
     "blockedPct": 30.0
    },
    {
-    "gate": "ema100",
-    "cagr": 20.5,
-    "maxdd": -43.69,
-    "calmar": 0.464,
-    "blockedPct": 29.9
-   },
-   {
     "gate": "sma200",
-    "cagr": 20.35,
-    "maxdd": -46.2,
-    "calmar": 0.438,
+    "cagr": 20.25,
+    "maxdd": -46.06,
+    "calmar": 0.437,
     "blockedPct": 26.0
    },
    {
-    "gate": "ema200",
-    "cagr": 19.99,
-    "maxdd": -43.19,
-    "calmar": 0.46,
-    "blockedPct": 23.7
-   },
-   {
     "gate": "xo50_100",
-    "cagr": 19.86,
-    "maxdd": -44.66,
-    "calmar": 0.448,
+    "cagr": 20.18,
+    "maxdd": -45.47,
+    "calmar": 0.449,
     "blockedPct": 34.2
    },
    {
-    "gate": "xo50_200",
-    "cagr": 19.35,
-    "maxdd": -48.86,
-    "calmar": 0.391,
-    "blockedPct": 28.0
+    "gate": "ema200",
+    "cagr": 20.08,
+    "maxdd": -43.24,
+    "calmar": 0.466,
+    "blockedPct": 23.7
    },
    {
     "gate": "ema50",
-    "cagr": 19.3,
-    "maxdd": -44.97,
+    "cagr": 19.51,
+    "maxdd": -44.98,
     "calmar": 0.435,
     "blockedPct": 33.2
    },
    {
+    "gate": "xo50_200",
+    "cagr": 19.29,
+    "maxdd": -49.27,
+    "calmar": 0.394,
+    "blockedPct": 28.0
+   },
+   {
     "gate": "dd12",
-    "cagr": 19.17,
-    "maxdd": -47.75,
-    "calmar": 0.402,
+    "cagr": 19.21,
+    "maxdd": -47.67,
+    "calmar": 0.404,
     "blockedPct": 17.2
    },
    {
     "gate": "mom126",
-    "cagr": 19.07,
-    "maxdd": -45.76,
-    "calmar": 0.413,
+    "cagr": 19.09,
+    "maxdd": -45.92,
+    "calmar": 0.417,
     "blockedPct": 28.4
    },
    {
     "gate": "dd10",
-    "cagr": 19.04,
-    "maxdd": -45.76,
-    "calmar": 0.417,
+    "cagr": 18.84,
+    "maxdd": -45.77,
+    "calmar": 0.416,
     "blockedPct": 22.4
    },
    {
     "gate": "sma50",
-    "cagr": 18.43,
+    "cagr": 18.64,
     "maxdd": -45.09,
-    "calmar": 0.409,
+    "calmar": 0.404,
     "blockedPct": 34.9
    },
    {
     "gate": "xo20_100",
-    "cagr": 18.27,
-    "maxdd": -46.32,
-    "calmar": 0.392,
+    "cagr": 18.42,
+    "maxdd": -45.25,
+    "calmar": 0.402,
     "blockedPct": 33.2
    },
    {
     "gate": "sma100",
-    "cagr": 17.37,
-    "maxdd": -44.89,
-    "calmar": 0.385,
+    "cagr": 17.42,
+    "maxdd": -44.97,
+    "calmar": 0.387,
     "blockedPct": 32.8
    },
    {
     "gate": "mom252",
-    "cagr": 17.35,
-    "maxdd": -52.61,
-    "calmar": 0.33,
+    "cagr": 17.4,
+    "maxdd": -52.37,
+    "calmar": 0.335,
     "blockedPct": 18.0
    },
    {
     "gate": "dd8",
-    "cagr": 17.01,
+    "cagr": 17.22,
     "maxdd": -43.34,
     "calmar": 0.393,
     "blockedPct": 30.5
    },
    {
     "gate": "mom63",
-    "cagr": 16.85,
-    "maxdd": -43.88,
+    "cagr": 16.95,
+    "maxdd": -44.03,
     "calmar": 0.384,
     "blockedPct": 34.2
    }
@@ -1422,72 +1599,72 @@
   "vixGates": [
    {
     "gate": "vixpct90",
-    "cagr": 20.95,
-    "maxdd": -42.25,
-    "calmar": 0.484,
+    "cagr": 21.01,
+    "maxdd": -42.2,
+    "calmar": 0.494,
     "blockedPct": 10.7
    },
    {
     "gate": "vixpct70",
-    "cagr": 19.07,
-    "maxdd": -36.39,
-    "calmar": 0.522,
+    "cagr": 18.83,
+    "maxdd": -35.39,
+    "calmar": 0.509,
     "blockedPct": 28.0
    },
    {
-    "gate": "vixsma20",
-    "cagr": 18.54,
-    "maxdd": -40.33,
-    "calmar": 0.464,
-    "blockedPct": 44.0
-   },
-   {
     "gate": "none",
-    "cagr": 18.31,
-    "maxdd": -47.87,
-    "calmar": 0.385,
+    "cagr": 18.79,
+    "maxdd": -47.95,
+    "calmar": 0.399,
     "blockedPct": 0.0
    },
    {
+    "gate": "vixsma20",
+    "cagr": 18.77,
+    "maxdd": -39.56,
+    "calmar": 0.471,
+    "blockedPct": 44.0
+   },
+   {
     "gate": "vixpct80",
-    "cagr": 17.78,
-    "maxdd": -41.94,
-    "calmar": 0.428,
+    "cagr": 17.83,
+    "maxdd": -41.67,
+    "calmar": 0.427,
     "blockedPct": 19.0
    },
    {
     "gate": "vixsma50",
-    "cagr": 17.64,
-    "maxdd": -39.85,
-    "calmar": 0.451,
+    "cagr": 17.69,
+    "maxdd": -39.73,
+    "calmar": 0.445,
     "blockedPct": 42.0
    },
    {
     "gate": "vix25",
-    "cagr": 14.89,
-    "maxdd": -48.24,
-    "calmar": 0.309,
+    "cagr": 14.76,
+    "maxdd": -48.12,
+    "calmar": 0.306,
     "blockedPct": 5.0
    },
    {
     "gate": "vix20",
-    "cagr": 13.66,
-    "maxdd": -48.23,
-    "calmar": 0.29,
+    "cagr": 14.01,
+    "maxdd": -47.94,
+    "calmar": 0.293,
     "blockedPct": 17.1
    },
    {
     "gate": "vix18",
-    "cagr": 12.3,
-    "maxdd": -46.05,
-    "calmar": 0.268,
+    "cagr": 12.01,
+    "maxdd": -45.79,
+    "calmar": 0.261,
     "blockedPct": 26.7
    },
    {
     "gate": "vix15",
-    "cagr": 9.96,
-    "maxdd": -36.86,
-    "calmar": 0.272,
+    "cagr": 9.74,
+    "maxdd": -36.84,
+    "calmar": 0.262,
     "blockedPct": 50.6
    }
   ],
@@ -1510,9 +1687,9 @@
   }
  },
  "notes": {
-  "aftertax_incomplete": "Every table in this section is after tax and no pre-tax figure appears anywhere on this page. Note the window split inside the gate bake-off: the PRICE gates ran on the full 2006-2026 window, while every VIX construction could only run on 2016-2026, because INDIA VIX begins in 2015. They are therefore shown as TWO tables and must never be read across. IDLE CASH IN THIS SECTION: 5.0% a year, from research/159_oa_honest_reoptimization/results/after_tax_tables.csv. THIS SECTION IS THEREFORE ON A DIFFERENT CASH RATE FROM THE TABLES ABOVE, which credit 5.2%. These are 30-seed medians of the same engine at 5.0%; the cash rate is worth about 0.04 pp a year to a book this heavily invested, so the ORDERING of the rows \u2014 which is all this section is for \u2014 is unaffected. The 5.2% re-run is research/163 scripts/aftertax_all_052.py and can be finished at any time.",
+  "aftertax_incomplete": "Every table in this section is after tax and no pre-tax figure appears anywhere on this page. Note the window split inside the gate bake-off: the PRICE gates ran on the full 2006-2026 window, while every VIX construction could only run on 2016-2026, because INDIA VIX begins in 2015. They are therefore shown as TWO tables and must never be read across. IDLE CASH IN THIS SECTION: 5.2% a year, from research/163_mpf_cash_yield_harmonisation/results/cash052/after_tax_tables_cash052.csv.",
   "invested_gap": "MEASURED 12-Sep-2026 in research/163: research/161\u2019s engine re-run with the daily invested fraction (market value of open positions / NAV) recorded, 30 seeds. Median 72.91%, band 72.74\u201373.03% at the 5.2% cash rate (72.89%, 72.73\u201373.05% at 5.0% \u2014 the rate barely touches it) \u2014 a very tight band, because the fraction is set by how often the 16 slots are full, not by which names win them. The daily series for the drawn seed is research/163_mpf_cash_yield_harmonisation/results/cash052/baseage_invested_daily_052.csv. NOTE: the handover doc asserted ~67% from memory with no source file; that figure is superseded by this measurement.",
-  "cash_yield": "EVERY book on this page credits idle cash at 5.2% a year, POST-TAX, accrued daily \u2014 the cash yield is credited to the cash balance each bar and is never passed through the capital-gains settlement, which touches realised equity gains only. WHERE 5.2% COMES FROM. The rule is that idle cash sits in the best post-tax cash instrument, not in a savings account. That instrument is an ARBITRAGE FUND: it is taxed as equity \u2014 20% short-term on units churned inside a year, 12.5% long-term beyond a year, and about 0.25% exit load if redeemed inside a month \u2014 and at 2025-26 cash-futures spreads it yields roughly 6.5% pre-tax, which lands at about 5.2% post-tax. The alternative is a liquid ETF, taxed at slab: LIQUIDCASE, LIQUIDADD and LIQUIDBETF in market_data.db realised 5.4\u20135.5% pre-tax in 2025 and about 5.0% annualised in 2026, which at a 30% slab is only about 3.5% post-tax. The operating rule that follows is BULK IN THE ARBITRAGE FUND, A LIQUID-ETF BUFFER for money needed at the next open, because arbitrage redemptions settle T+1. 5.2% is a FLAT ASSUMPTION, not a measured realised yield, and it is REVIEWED ON 15-DEC-2026. HOW THE PAGE GOT HERE. On 12-Sep-2026 research/163 re-ran all five books twice. First True North (research/144 had assumed 6.5%) and Open Alpha \u00b7 Base Age (research/161 had assumed 5.5%) came onto a common 5.0%: True North lost 0.97 points of CAGR because it holds cash 57% of the time, Base Age 0.34. Then every book moved 5.0% \u2192 5.2%: True North 18.56% \u2192 18.69%, Base Age 19.93% \u2192 19.99%, IPO Base 15.10% \u2192 15.26% on the 20.4-year window. Each re-run first REPRODUCED its own published curve at the old yield before the yield was touched. WHY THE MOVES ARE THE SIZE THEY ARE. Twenty extra basis points are earned only on the share of a book that is in cash, so the gain is about (1 \u2212 invested) \u00d7 0.2 points a year: 0.11 for True North at 43% invested, 0.14 for IPO Base at 32%, 0.05 for Base Age at 73%, 0.02 for Quality Summit at 91%. Every book\u2019s measured move agreed with that arithmetic within its own path noise. AND CASH YIELD IS NOT A SMALL TERM for these books overall: roughly 2.9 of True North\u2019s points and 3.5 of IPO Base\u2019s are the sweep rather than the strategy, while NIFTYBEES is fully invested and gets none of it.",
+  "cash_yield": "EVERY book on this page credits idle cash at 5.2% a year, POST-TAX, accrued daily \u2014 the cash yield is credited to the cash balance each bar and is never passed through the capital-gains settlement, which touches realised equity gains only. WHERE 5.2% COMES FROM. The rule is that idle cash sits in the best post-tax cash instrument, not in a savings account. That instrument is an ARBITRAGE FUND: it is taxed as equity \u2014 20% short-term on units churned inside a year, 12.5% long-term beyond a year, and about 0.25% exit load if redeemed inside a month \u2014 and at 2025-26 cash-futures spreads it yields roughly 6.5% pre-tax, which lands at about 5.2% post-tax. The alternative is a liquid ETF, taxed at slab: LIQUIDCASE, LIQUIDADD and LIQUIDBETF in market_data.db realised 5.4\u20135.5% pre-tax in 2025 and about 5.0% annualised in 2026, which at a 30% slab is only about 3.5% post-tax. The operating rule that follows is BULK IN THE ARBITRAGE FUND, A LIQUID-ETF BUFFER for money needed at the next open, because arbitrage redemptions settle T+1. 5.2% is a FLAT ASSUMPTION, not a measured realised yield, and it is REVIEWED ON 15-DEC-2026. HOW THE PAGE GOT HERE. On 12-Sep-2026 research/163 re-ran all five books twice. First True North (research/144 had assumed 6.5%) and Open Alpha \u00b7 Base Age (research/161 had assumed 5.5%) came onto a common 5.0%: True North lost 0.97 points of CAGR because it holds cash 57% of the time, Base Age 0.34. Then every book moved 5.0% \u2192 5.2%: True North 18.56% \u2192 18.69%, Base Age 19.93% \u2192 19.99%, the research/153 IPO Base 15.10% \u2192 15.26% on the 20.4-year window. Each re-run first REPRODUCED its own published curve at the old yield before the yield was touched. WHY THE MOVES ARE THE SIZE THEY ARE. Twenty extra basis points are earned only on the share of a book that is in cash, so the gain is about (1 \u2212 invested) \u00d7 0.2 points a year: 0.11 for True North at 43% invested, 0.14 for the research/153 IPO Base at 32%, 0.05 for Base Age at 73%, 0.02 for Quality Summit at 91%. Every book\u2019s measured move agreed with that arithmetic within its own path noise. AND CASH YIELD IS NOT A SMALL TERM for these books overall: roughly 2.9 of True North\u2019s points and 3.8 of the re-fitted IPO Base\u2019s (research/167) are the sweep rather than the strategy, while NIFTYBEES is fully invested and gets none of it.",
   "path_redraw": "ONE HONEST CAVEAT ON THE 5.0% \u2192 5.2% MOVE. Three of these books draw ONE path out of an ensemble (30 seeds for Base Age and for ATH + VIX, 12 rebalance offsets for Quality Summit). Changing the cash rate changes the cash balance, which changes INTEGER SHARE COUNTS, which changes whether a particular buy is affordable, which re-draws every later selection in that path. That re-draw is worth up to \u00b12 points of CAGR on a single path \u2014 an order of magnitude more than the 0.02\u20130.16 points the cash rate itself is worth. So the drawn path can move further, or the other way, without anything being wrong. Two things were done about it. The drawn seed is HELD at the one the 5.0% page drew, so the curve files differ only by the cash rate wherever that is possible; and the consistency test is run PAIRED, path index by path index, across the whole ensemble, against the (1 \u2212 invested) \u00d7 0.2 arithmetic. All five books passed. The one row where the re-draw is plainly visible is Open Alpha \u00b7 ATH + VIX: its drawn path moved +1.20 points while the cash rate is worth +0.04 to it and its 30-seed paired median moved \u22120.15 \u00b1 0.21. Read that row\u2019s band, not its point.",
   "invested_timeseries": "The \"when is each book in cash\" chart is a bar of MEASURED averages rather than a strip over time. Open Alpha \u00b7 Base Age now has a daily invested series \u2014 measured in research/163 and saved as cash052/baseage_invested_daily_052.csv \u2014 but True North, IPO Base and Quality Summit still only report a window average, so a time-series version is still owed and needs those three engines to emit the column.",
   "two_curve_files": "The 20.4-year section and the 2018 section are built from DIFFERENT curve files for the same systems \u2014 full_period_after_tax_cash052.csv and all_systems_after_tax_cash052.csv, both derived from research/159\u2019s two originals. They are separate runs. The 2018 section uses the roster file deliberately, so it reproduces the published roster page\u2019s construction."
@@ -1521,11 +1698,12 @@
   "20.4-year curves": "research/163_mpf_cash_yield_harmonisation/results/cash052/full_period_after_tax_cash052.csv",
   "True North at 5.2% idle cash": "research/163_mpf_cash_yield_harmonisation/results/cash052/tn_nav_INC_cash_n8_d15_tax1_cash052.csv (research/144\u2019s engine, its own study used 6.5%)",
   "Open Alpha \u00b7 Base Age at 5.2% idle cash": "research/163_mpf_cash_yield_harmonisation/results/cash052/ba_nav_winner_cash052.csv (research/161\u2019s engine, its own study used 5.5%; 30 seeds, drawn seed held at the one the 5.0% page drew)",
-  "IPO Base at 5.2% idle cash": "research/163_mpf_cash_yield_harmonisation/results/cash052/ipo_honest_curve_cash052.csv (research/153\u2019s engine via research/159\u2019s honest-entry transform; 30 seeds, median-CAGR seed)",
+  "IPO Base at 5.2% idle cash": "research/168_three_sleeve_blend/results/ipo_specA_drawn_curve_cash052.csv \u2014 research/167 Spec A, median-CAGR seed of 30 on this page\u2019s window, from research/168\u2019s harmonised ensemble (ipo_navs_cash052.npz, arm A_25bps_y52)",
+  "the blend weights": "research/168_three_sleeve_blend/results/RESULTS.md \u2014 TN 37.5 / Base Age 37.5 / IPO Base 25, monthly; the rows on this page are this generator\u2019s arithmetic at those weights",
   "average invested": "research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py; Base Age measured in research/163 (cash052/baseage_invested_daily_052.csv)",
   "2018-window curves (TN, Base Age, IPO, index)": "research/163_mpf_cash_yield_harmonisation/results/cash052/all_systems_after_tax_cash052.csv",
   "Quality Summit, 12 offsets at 5.2% idle cash": "research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv (research/160\u2019s F_Bb7 cell on its own frozen panel)",
-  "after-tax entry surface / null / price gates": "research/159_oa_honest_reoptimization/results/after_tax_tables.csv (idle cash 5.0%)",
+  "after-tax entry surface / null / price gates": "research/163_mpf_cash_yield_harmonisation/results/cash052/after_tax_tables_cash052.csv (idle cash 5.2%)",
   "ATH + VIX summary row": "research/163_mpf_cash_yield_harmonisation/results/cash052/athvix_summary_cash052.json",
   "the cash-rate re-runs": "research/163_mpf_cash_yield_harmonisation/MPF_CASH_YIELD_5P2_DAILY_RUN_STATUS.md + scripts/{tn,ba,ipo,oa_vix,qs}_cash052.py, each gated on reproducing its own 5.0% curve first",
   "the entry audit": "research/158_oa_arming_width/OA_ARMING_WIDTH_AND_POKE_FILL_DAILY_SWEEP_STATUS.md + scripts/verify_published_trades.py"

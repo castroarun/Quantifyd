@@ -163,14 +163,14 @@ function SummaryTable({
   block,
   blockLabel,
   smallRows,
-  blendKey,
+  blendKeys,
   blendNote,
   investedNote,
 }: {
   block: Block;
   blockLabel: string;
   smallRows: string[];
-  blendKey: string;
+  blendKeys: string[];
   blendNote: string;
   investedNote: string;
 }) {
@@ -199,7 +199,7 @@ function SummaryTable({
             const cls = [
               smallRows.includes(k) ? styles.rowSmall : '',
               isBench ? styles.rowBench : '',
-              k === blendKey ? styles.rowBlend : '',
+              blendKeys.includes(k) ? styles.rowBlend : '',
             ]
               .filter(Boolean)
               .join(' ');
@@ -207,7 +207,7 @@ function SummaryTable({
               <tr key={k} className={cls}>
                 <td className={styles.thLeft}>
                   <span className={styles.sysName}>{k}</span>
-                  {k === blendKey ? <span className={styles.tagComputed}>computed here</span> : null}
+                  {blendKeys.includes(k) ? <span className={styles.tagComputed}>computed here</span> : null}
                   {isBench ? <span className={styles.tagBench}>benchmark</span> : null}
                 </td>
                 <td className={styles.mut}>{r.seriesSpan}</td>
@@ -665,6 +665,7 @@ export default function MpfReport() {
   const QS = d.names.QS;
   const BM = d.names.BM;
   const BLEND = d.names.BLEND;
+  const BLEND2 = d.names.BLEND2;
 
   const bestCagr = H.contenders.reduce((a, b) => (r(a).cagr >= r(b).cagr ? a : b));
   const leastDd = H.contenders.reduce((a, b) => (r(a).maxdd >= r(b).maxdd ? a : b));
@@ -772,8 +773,8 @@ export default function MpfReport() {
             <div className={styles.q}>Q3. Do they diversify each other?</div>
             <div className={styles.a}>
               Partly. {TN} and {BA} run at {H.corr[TN]?.[BA]?.toFixed(2)} weekly correlation — related, but far
-              from the same book, which is why a 50-50 of them earns {r(BLEND).cagr.toFixed(1)}% at
-              only {r(BLEND).maxdd.toFixed(1)}%. {IPO} is the genuine diversifier: its highest
+              from the same book, which is why a 50-50 of them earns {r(BLEND2).cagr.toFixed(1)}% at
+              only {r(BLEND2).maxdd.toFixed(1)}%. {IPO} is the loosest-coupled book: its highest
               correlation to anything here is {ipoMaxCorr.toFixed(2)}. {QS}, by contrast, runs at{' '}
               {W.corr[QS]?.[BA]?.toFixed(2)} to {BA} on the 2018 window — it is a weaker sampling of
               a family the book already trades.
@@ -783,20 +784,26 @@ export default function MpfReport() {
             <div className={styles.q}>Q4. Does any of them reach 25%?</div>
             <div className={styles.a}>
               <strong>No.</strong> Over the full {H.years} years the best single book is{' '}
-              {r(bestCagr).cagr.toFixed(1)}% and the 50-50 blend is {r(BLEND).cagr.toFixed(1)}%, both
-              after tax. Only on the shorter 2018 window — which throws away 2008 and 2020 — does
-              anything reach it, and that is a window effect rather than a result. The honest answer
-              is that the 25% target needs a blend and allocation study that has not been started.
+              {r(bestCagr).cagr.toFixed(1)}%, and the three-sleeve blend at research/168’s
+              weights — True North 37.5, Base Age 37.5, IPO Base 25 — is{' '}
+              {r(BLEND).cagr.toFixed(1)}% at a {r(BLEND).maxdd.toFixed(1)}% worst fall, both after
+              tax. The blend study is done and what it buys is the drawdown, not the 25%: against
+              the old 50-50 pair ({r(BLEND2).cagr.toFixed(1)}% at {r(BLEND2).maxdd.toFixed(1)}%) it
+              is better on return AND on the worst fall on 30 of 30 paired paths. Only the shorter
+              2018 window, which throws away 2008 and 2020, shows anything above 25%, and that is a
+              window effect rather than a result.
             </div>
           </div>
           <div className={styles.qaItem}>
             <div className={styles.q}>Q5. What is still owed?</div>
             <div className={styles.a}>
-              Nine items, listed in full in the last section. The three that matter most: IPO Base
-              has NOT been re-optimised on the honest entry; the inverted entry condition in{' '}
+              Nine items, listed in the last section, and two of them closed on 12-Sep-2026:
+              IPO Base was re-optimised on the honest entry (research/167) and the blend study was
+              run (research/168). What matters most now: the inverted entry condition in{' '}
               <span className={styles.mono}>services/oa_entry.py</span> is not fixed and its buying
-              stays paused; and the blend work — the only structure that plausibly clears 25% — has
-              not been started.
+              stays paused; the rename defect still freezes the young, thin names IPO Base trades;
+              and moving the Capital Desk targets from 40 / 40 / 20 to 37.5 / 37.5 / 25 is a
+              decision nobody has taken yet.
             </div>
           </div>
         </div>
@@ -820,9 +827,9 @@ export default function MpfReport() {
 
         <SummaryTable
           block={H}
-          blockLabel={`WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base, the 50-50 blend, and NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]} (${H.years} years). WHICH BASIS: after tax, placeable entries only.`}
+          blockLabel={`WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base (re-fitted), the research/168 three-sleeve blend, the old 50-50 pair, and NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]} (${H.years} years). WHICH BASIS: after tax, placeable entries only.`}
           smallRows={[IPO]}
-          blendKey={BLEND}
+          blendKeys={[BLEND, BLEND2]}
           blendNote={d.blendNote}
           investedNote={d.notes.cash_yield}
         />
@@ -863,7 +870,7 @@ export default function MpfReport() {
 
         <YoyTable
           block={H}
-          label={`YEAR BY YEAR — WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base, the 50-50 blend, NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]}. WHICH BASIS: after tax.`}
+          label={`YEAR BY YEAR — WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base (re-fitted), the three-sleeve blend, the 50-50 pair, NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]}. WHICH BASIS: after tax.`}
         />
 
         <Figure
@@ -878,13 +885,13 @@ export default function MpfReport() {
 
         <CorrTable
           block={H}
-          label={`WEEKLY-RETURN CORRELATION — WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base, the blend, NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]}. WHICH BASIS: after tax.`}
+          label={`WEEKLY-RETURN CORRELATION — WHICH SYSTEMS: True North, Open Alpha · Base Age, IPO Base (re-fitted), both blends, NIFTYBEES. WHICH WINDOW: ${H.window[0]} to ${H.window[1]}. WHICH BASIS: after tax.`}
         />
 
         <Figure
           src={d.charts.corr20y}
           narrow
-          caption={`The same correlations as a heatmap, weekly returns over ${H.window[0]} to ${H.window[1]} (${H.weeks} weeks). Scale fixed 0 to 1 on both heatmaps; red means a pair moves together. IPO Base is the pale column — the only book here that is genuinely doing something else.`}
+          caption={`The same correlations as a heatmap, weekly returns over ${H.window[0]} to ${H.window[1]} (${H.weeks} weeks). Scale fixed 0 to 1 on both heatmaps; red means a pair moves together. IPO Base is the palest column — the loosest-coupled book here, even after its re-fit made it a little more correlated.`}
         />
 
         <Figure
@@ -911,7 +918,7 @@ export default function MpfReport() {
           block={W}
           blockLabel={`WHICH SYSTEMS: all five plus NIFTYBEES, re-measured. WHICH WINDOW: ${W.window[0]} to ${W.window[1]}. WHICH BASIS: after tax; Quality Summit is the median-CAGR rebalance offset of ${W.qsOffsets?.n ?? 12}.`}
           smallRows={[IPO]}
-          blendKey={BLEND}
+          blendKeys={[BLEND, BLEND2]}
           blendNote={d.blendNote}
           investedNote={d.notes.cash_yield}
         />

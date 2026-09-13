@@ -66,12 +66,13 @@ export interface SystemReport {
   rejected?: { title: string; caption: string; rows: RejectedRow[] };
 }
 
-export const REPORT_DATE = '11 Sep 2026';
+export const REPORT_DATE = '13 Sep 2026';
 
 export const HIGHLIGHTS: string[] = [
-  'No single book reaches 25% after tax over the full twenty years, and the year table shows why a blend might: True North is the only green bar in 2008 and 2011, IPO Base is the tall one in 2020, and Base Age owns 2017, 2021 and 2023.',
+  'No single book reaches 25% after tax over the full twenty years, and neither does the blend. research/168 settled the allocation on 12-Sep-2026 — True North 37.5 / Base Age 37.5 / IPO Base 25, monthly — and what the third sleeve buys is a shallower fall: 21.18% after tax at −24.01% against the old pair’s 20.28% at −26.91%, better on both counts on 30 of 30 paired paths (study medians).',
   'True North holds cash 57% of the time and still produces one of the two best returns. That is the gate doing the work, and it is a stronger result than the CAGR alone says.',
-  'IPO Base is the only genuine diversifier in the book — loosely coupled to everything, including the index — which is why it survives the halving of its published number and still earns a place.',
+  'IPO Base changed on 12-Sep-2026, and for a reason worse than a weak number. Measured on the entry the book actually places, its old rules LOST to picking names at random. One dial fixed it — a 50-day trail instead of a 20-day one — and the re-fitted book is both the better standalone system and the better blend sleeve, even though it is slightly more correlated to the other two.',
+
 ];
 
 export const SYSTEMS: SystemReport[] = [
@@ -292,61 +293,64 @@ export const SYSTEMS: SystemReport[] = [
   {
     key: 'IPO Base',
     name: 'IPO Base',
-    kind: 'paper',
-    statusLabel: 'LIVE PAPER · arms on the first deposit',
+    kind: 'live',
+    statusLabel: 'LIVE · real money since 8-Sep-2026 · re-fitted spec from 12-Sep-2026',
     accent: 'purple',
-    size: '₹10,00,000 notional — arms for real money on the first Capital Desk deposit',
-    windowNote: 'Measured on the full 20.4-year window and again on the 2018 window.',
+    size: '₹2,28,711 real money, funded through the Capital Desk. HARD CAPACITY CAP about ₹20–25L: at ₹1cr a typical position would be most of a day’s volume in these names',
+    windowNote: 'Measured on the full 20.4-year window and again on the 2018 window — both on the RE-FITTED spec.',
     heatKey: 'IPO Base',
     alert:
-      'ITS PARAMETERS HAVE NOT BEEN RE-OPTIMISED. IPO Base’s 680-cell sweep was scored against the same look-ahead entry that broke Open Alpha’s, and for Open Alpha the parameter surface INVERTED once the entry was made placeable. So this book’s 20-SMA trail and +25% target are suspect on exactly the same grounds. The re-optimisation is the top owed item and it is NOT STARTED.',
+      'THE SPEC CHANGED ON 12-SEP-2026, AND THE BOOK WAS DEAD FOR FOUR SESSIONS BEFORE THAT. research/167 measured the old rules on the entry the book actually places and they lost to a random-entry control; the live book now runs the re-fit (trail SMA-50, stop 10%, NIFTYBEES<SMA-150 entry gate). Separately, a 3-Sep commit had dropped two constants that only the live branch reads, so from the first real deposit on 8-Sep every nightly run crashed and no exit was checked on 9, 10 or 11 Sep. Restored on 12-Sep. The one open position would have been held on all three days under either rule set.',
     rule:
-      'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% → buy-stop AT the pivot the next day; −8% close stop, +25% target, exit below the 20-SMA; 8 slots at 18.75%, no market gate.',
+      'A recently listed stock closes above the highest close of its last 25 bars, from a base no deeper than 30% → buy-stop AT the pivot the next day, filled only if the day’s high reaches it; −10% close stop, +25% target, exit below the 50-SMA; 8 slots at 18.75%; no new entries while NIFTYBEES closes below its 150-day average.',
     rules: [
-      { k: 'Universe', v: 'NSE equities with a VETTED listing date (research/153 table, 1,353 accepted), ETFs excluded, all pre-listing rows masked' },
-      { k: 'Age band', v: 'Listed within 6 months AND at least 60 bars — 60, not the spec’s 25: the study’s own harness only admitted stocks with 60+ bars, so 60 is what was validated' },
+      { k: 'Universe', v: 'NSE equities with a VETTED listing date (research/153 table, 1,353 accepted), funds excluded by instrument long name, all pre-listing rows masked' },
+      { k: 'Age band', v: 'Listed within 6 months AND at least 60 bars — 60 because that is what the study harness actually admitted' },
       { k: 'Liquidity', v: '20-day median traded value ≥ ₹5 cr at t−1' },
       { k: 'Signal', v: 'Pivot = the highest close of the last 25 bars; base depth ≤ 30%; not already extended; close > pivot' },
-      { k: 'Exits', v: 'Stop at close ≤ 0.92× buy → target at close ≥ 1.25× buy → close below the 20-SMA (the entry bar is exempt)' },
-      { k: 'Book', v: '8 slots at 18.75% of equity, 25 bps a side, NO market gate — it lost 30 of 30 seeds' },
+      { k: 'Market gate', v: 'NEW 12-Sep-2026: no new entries while NIFTYBEES closes below its 150-day average. Holdings keep their own exits' },
+      { k: 'Exits', v: 'CHANGED 12-Sep-2026: stop at close ≤ 0.90× buy → target at close ≥ 1.25× buy → close below the 50-SMA (entry bar exempt). Was 0.92× and the 20-SMA' },
+      { k: 'Book', v: '8 slots at 18.75% of equity, 25 bps a side — re-confirmed on the honest entry against 5, 10 and 16 slots' },
       { k: 'Tie-break', v: 'Highest 20-day traded value first — PRE-REGISTERED, not backtested: the study drew lots across 30 seeds' },
       { k: 'Data guard', v: 'A single-day close move ≤ −40% is treated as a split or bonus: the position is HELD and alerted, never stopped out' },
     ],
     mechanics: [
       { k: 'Trigger', v: 'Close above the 25-bar pivot' },
-      { k: 'Fill', v: 'The NEXT day, a buy-stop resting AT the pivot, filled at max(pivot, open). THE LIVE ENGINE IS CORRECT and always was — it is the STUDY that filled on the signal day' },
-      { k: 'Exit', v: 'Close below the 20-day SMA' },
-      { k: 'Stop', v: '−8% on the close; target +25% on the close' },
+      { k: 'Fill', v: 'The NEXT day, a buy-stop resting AT the pivot, filled at max(pivot, open) — and only if the day’s high reached the pivot. That last clause was missing from the live engine until 12-Sep-2026' },
+      { k: 'Exit', v: 'Close below the 50-day SMA' },
+      { k: 'Stop', v: '−10% on the close; target +25% on the close' },
       { k: 'Slots', v: '8 at 18.75%' },
-      { k: 'Cadence', v: 'Event-driven, with long idle stretches by design — the sleeve is 33% invested on average and took no trades at all in 2013-14' },
+      { k: 'Cadence', v: 'Event-driven, 18.9 trades a year held a median 37 days, with long idle stretches by design — about 36% invested on average' },
       { k: 'Liquidity', v: '₹5 cr 20-day median traded value' },
-      { k: 'Gate', v: 'NONE' },
+      { k: 'Gate', v: 'NIFTYBEES below its 150-day average blocks new entries' },
     ],
     evidence: [
-      { k: 'Own study window', v: '15.00% after-tax CAGR at −37.55%, Calmar 0.40, 2006 → Sep-2026, 30 seeds — the entry the LIVE engine actually places (that study credited idle cash at 5.0%; the rows on this page credit 5.2%, worth +0.16 a year to a book only 32% invested — the largest cash-rate effect of any book here). Source: research/158_oa_arming_width/OA_ARMING_WIDTH_AND_POKE_FILL_DAILY_SWEEP_STATUS.md §3' },
-      { k: 'The correction', v: 'The study headline reproduced at 31.48% and was published at 31.03%. Its close-fill control gives 17.49%. The live engine’s honest next-day entry gives 15.00% — the published number HALVES' },
-      { k: 'Why it survives', v: '98.5% of same-day signals survive as reachable next-day fills, so the loss is the ENTRY PRICE, not missed trades. The book survives at about half strength rather than dying' },
-      { k: 'Against the index', v: 'NIFTYBEES over the same window 11.5% at −59.7%. IPO Base still beats it on return AND on drawdown' },
-      { k: 'Diversification', v: 'The only genuine diversifier in the set — loosely coupled to every other book and to the index alike. See the correlation heatmaps above' },
-      { k: 'Cells disclosed', v: '680 (research/153 adopted spec) — ALL OF THEM SCORED ON THE LOOK-AHEAD ENTRY, and therefore suspect' },
-      { k: 'The years that earn', v: 'It is the tall bar in 2020 and it earns again in 2023, in years when Open Alpha was flat or negative' },
+      { k: 'Re-fitted, own study', v: '21.80% after tax at −26.6% median drawdown (−32.9% worst seed), Calmar 0.819, 30 seeds, 2006 → Sep-2026, idle cash 5.0%. Seed band 20.83–23.19. Source: research/167 results/stage9_adoption.csv' },
+      { k: 'Re-fitted, this page’s basis', v: 'At 5.2% idle cash on this page’s 20.4-year window the 30-seed median is 22.08%, band 21.09–23.49; the drawn path is the median-CAGR seed. Source: research/168 ipo_navs_cash052.npz, arm A_25bps_y52' },
+      { k: 'The old spec, honestly measured', v: '14.90% after tax at −38.6%, and it LOST to a date-matched random-entry control: 14.90 vs 15.11, real rules winning 14 of 30 paired seeds, 8 of 30 with a gate. The published 31.03% was a same-bar look-ahead fill. Source: research/167 §3' },
+      { k: 'Why the trail', v: 'Edge over random, in points of CAGR at trail 10 / 15 / 20 / 30 / 40 / 50 / 60 / 75 / 100: +0.04 / −0.71 / −0.10 / +1.26 / +3.08 / +4.78 / +2.05 / +0.43 / +0.31. Zero or negative across the old spec’s whole region, unanimous 30 of 30 from 30 to 75' },
+      { k: 'In the portfolio', v: 'research/168: the re-fit is worth more to the blend than the old spec at EVERY weight from 5% to 50%, 30 of 30 paired paths; the old spec earns no place at any weight. Against arbitrage-fund cash at equal risk it adds 2.52 points of CAGR at a 25% weight, 30 of 30' },
+      { k: 'Recommended weight', v: '25% of the book — True North 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885 (30-path medians). The Capital Desk still targets 20%; changing it is an open decision' },
+      { k: 'Diversification', v: 'Still the loosest-coupled book, but the re-fit is a little MORE correlated than the old spec (monthly 0.348 to True North and 0.329 to Base Age, against 0.259 and 0.319) — and still the better blend sleeve. Pairwise correlation was the wrong screen' },
+      { k: 'Cells disclosed', v: '~350 in research/167 (read the 21.80% as 19–22%), plus the research/168 weight grid' },
     ],
-    distinctiveTitle: 'Next-day entry halves the published number — to 15.0%, and it still clears',
+    distinctiveTitle: 'The old rules picked no better than chance. One dial — the trail — made it a real edge',
     distinctive:
-      'Alone among the three books, IPO Base was never traded wrongly: services/ipo_paper.py always waited and bought the next morning. It was the STUDY that bought on the signal day. So nothing had to be paused and nothing had to be repaired — the only thing that changed on 11-Sep-2026 was the number the book is allowed to claim, from 31.0% to 15.0%. It still beats the index on both return and drawdown, it is the only real diversifier in the portfolio, and the honest read on it is its Calmar rather than its CAGR, because it sits about two thirds in cash by design.',
+      'research/153 published 31.0%. Its fill was unplaceable, and measured on the entry this book actually uses the same rules returned 14.90% — and lost to drawing names at random from the same universe. A 25-bar base breakout in a young stock is an edge only if the winner is given room to run: at a 20-day trail the rules add nothing over chance, at a 50-day trail they add almost five points a year and win every paired run. The re-fit is live, and research/168 then showed it is also the better blend sleeve, so the question left is the weight, not the rules.',
     caveats: [
-      'THE RE-OPTIMISATION IS NOT STARTED. Its 680-cell sweep was scored on the look-ahead entry exactly as Open Alpha’s was, and for Open Alpha the trail surface INVERTED when the entry was corrected. The trail and the +25% target are suspect until a staged re-run is done: exit economics (trail 10-50 × target {+25%, +50%, none} × stop {6, 8, 10, none}), then base geometry, then a null control and a gate bake-off, after tax throughout.',
-      'RENAMED SYMBOLS GO STALE SILENTLY, AND THIS BOOK IS THE MOST EXPOSED. LOTUSDEV is absent from the instrument dump — the tradeable symbol is LOTUSDEV-BE — so the nightly refresh asks for the dead name, gets nothing, and treats it as "no new bars". Its data is frozen 126 days. Ten of eleven stale young names are missing from the dump and six freeze on the same day, a batch series migration. IPO Base trades exactly the young, thin names NSE moves to trade-for-trade. NOT FIXED.',
-      'IPO BASE SITS ABOUT TWO THIRDS IN CASH by design, so comparing its CAGR with a fully invested index is not like for like. Its Calmar is the fairer read and its multi-year dead zones are structural, not decay.',
-      'The published spec records a 25-bar floor but the study’s panel loader admitted only symbols with 60+ bars, so the published 31.03% was earned on stocks aged roughly 3-6 months. The live book was set to 60 to match what was validated; whether 25 is tradeable is an open review dated 15-Dec-2026.',
-      'The ENTIRE edge is getting filled AT the pivot — taking the signal-day close instead costs 14.08pp of CAGR and loses on 30 of 30 paired seeds. The soak review on 15-Oct-2026 exists to measure exactly that.',
-      'The live book breaks ties by highest 20-day traded value while the backtest drew lots across a 28.82-33.44% spread. A pre-registered deviation, not a validated choice.',
-      'Its own-window drawdown is −37.55% in the r/158 audit and −35.86% on the roster curve file: two honest runs over slightly different spans. The audit figure is quoted here; both are in the provenance table.',
+      '2008 IS THE HONEST BLACK MARK. The re-fit loses 10.3% in 2008 where the old spec made +0.4%, because the fast 20-day trail that costs seven points a year in normal times is exactly what sidestepped that crash. At a 25% blend weight the gap shrinks to about 2.5 points (research/168), and plain cash at the same weight would give the same cushion. This book is not a crash hedge.',
+      'THE TRAIL AND THE GATE WERE BOTH CHOSEN AFTER SEEING THE DATA. ~350 cells were scored, so read the 21.80% as 19–22%. The only out-of-sample evidence is the 2006–2015 / 2016–2026 split, which it passes strongly. There is no held-out period.',
+      'CAPACITY IS THE BINDING CONSTRAINT. At ₹10L the 90th-percentile position is 1.56% of the name’s own 20-day traded value; at ₹1cr it is about 90% of a day’s volume. A 25% weight is fundable today but binds once the whole book passes about ₹85L.',
+      'RENAMED SYMBOLS GO STALE SILENTLY, AND THIS BOOK IS THE MOST EXPOSED. LOTUSDEV is absent from the instrument dump — the tradeable symbol is LOTUSDEV-BE — so the nightly refresh asks for the dead name and treats nothing as "no new bars". Ten of eleven stale young names are missing from the dump. NOT FIXED.',
+      'A CRASHING CRON WRITES A TRACEBACK TO A FILE NOBODY READS. That is how four sessions of a live book passed unnoticed. The same shape exists on every paper and real book; a health check is registered for 19-Sep-2026 and the alerting fix is still owed.',
+      'IPO BASE SITS ABOUT TWO THIRDS IN CASH by design, so its Calmar is the fairer read against a fully invested index, and multi-year dead zones are structural rather than decay.',
+      'The live book breaks ties by highest 20-day traded value while the backtest drew lots across 30 seeds. A pre-registered deviation, not a validated choice.',
     ],
     links: [
-      { label: 'Full study — IPO Base breakout (research/153)', href: '/app/backtest/ipo-base-breakout-research153', kind: 'study' },
-      { label: 'The entry audit that halved it (research/158) — on the roster page', href: '/app/backtest/mpf-honest-entries-roster-2026-09', kind: 'status' },
-      { label: 'Live paper dashboard — the IPO Base book', href: '/portfolio?tab=ipo', kind: 'dashboard' },
+      { label: 'Full study — IPO Base re-measured and re-fitted (research/167)', href: '/app/backtest/ipo-base-honest-reopt-research167', kind: 'study' },
+      { label: 'The three-sleeve blend that set the weight (research/168)', href: 'https://github.com/castroarun/Quantifyd/blob/main/research/168_three_sleeve_blend/results/RESULTS.md', kind: 'study' },
+      { label: 'The original study, superseded (research/153)', href: '/app/backtest/ipo-base-breakout-research153', kind: 'status' },
+      { label: 'Live dashboard — the IPO Base book', href: '/portfolio?tab=ipo', kind: 'dashboard' },
       { label: 'Register entry — Strategies index', href: '/strategies', kind: 'register' },
     ],
   },
@@ -409,9 +413,9 @@ export const REVIEWS: { title: string; due: string; status: string; what: string
 export const OWED: { title: string; state: string; what: string }[] = [
   {
     title: '1 · IPO Base re-optimisation on the honest entry',
-    state: 'NOT STARTED — top priority',
+    state: 'DONE 12-Sep-2026 — deployed to the live book',
     what:
-      'Its 680-cell sweep was scored on the look-ahead entry, exactly like Open Alpha’s. Given the trail surface INVERTED for Open Alpha, IPO Base’s 20-SMA trail and +25% target are suspect. Staged plan: (a) exit economics — trail 10-50 × target {+25%, +50%, none} × stop {6, 8, 10, none}; (b) base geometry — L, depth, age band; then a null control and a gate bake-off, after tax throughout.',
+      'research/167. The old spec, measured on the entry the book places, lost to a random-entry control (14 of 30). Re-fitted on ~350 cells: trail SMA-20 → SMA-50, stop 8% → 10%, plus a NIFTYBEES<SMA-150 entry gate — 21.80% after tax, −26.6% median drawdown, beating the control 30 of 30. Base geometry and 8-slot sizing were re-confirmed unchanged. Live since 12-Sep-2026, with the open position’s stop re-based. Published: /app/backtest/ipo-base-honest-reopt-research167.',
   },
   {
     title: '2 · services/oa_entry.py still has the inverted condition AND the old ETF filter',
@@ -445,9 +449,9 @@ export const OWED: { title: string; state: string; what: string }[] = [
   },
   {
     title: '7 · Blend and allocation work across True North + Base Age + IPO Base',
-    state: 'NOT STARTED — and it is the only structure that plausibly clears 25%',
+    state: 'DONE 12-Sep-2026 — the weight change itself is NOT yet decided',
     what:
-      'No single book reaches 25% after tax. The 50-50 blend row on this page is this report generator’s own arithmetic, not a study: it is a first look, not an allocation. A real study would sweep weights, rebalance frequency and the cash rule, on paired paths, after tax — and it has not been started.',
+      'research/168. Recommended TN 37.5 / Base Age 37.5 / IPO Base 25, monthly: 21.18% after tax, −24.01%, Calmar 0.885, against the 50-50 pair’s 20.28%, −26.91%, 0.749 — better on both on 30 of 30 paired paths. It does not reach 25%. The Calmar surface peaks at a 45–60% IPO weight, reported but not recommended because of capacity and the lack of a held-out period. Open: the Capital Desk still targets 40 / 40 / 20, and research/168 also found the two-sleeve pair itself prefers a True North tilt (85:15, Calmar 0.826) — a review dated 26-Sep-2026.',
   },
   {
     title: '8 · The after-tax re-run of the entry-mechanic tables is incomplete',

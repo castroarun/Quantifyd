@@ -146,14 +146,19 @@ BA = 'Open Alpha · Base Age'
 IPO = 'IPO Base'
 QS = 'Quality Summit'
 BM = 'NIFTYBEES'
-BLEND = 'TN + Base Age (50-50, monthly)'
+# research/168 (12-Sep-2026) settled the allocation: TN 37.5 / Base Age 37.5 / IPO 25,
+# rebalanced monthly. It is the HEADLINE blend. The old 50-50 pair stays as BLEND2 so the
+# reader can see what the third sleeve adds; it is secondary everywhere it is drawn.
+BLEND = 'TN · Base Age · IPO (37.5 / 37.5 / 25, monthly)'
+BLEND2 = 'TN + Base Age (50-50, monthly)'
+BLEND_W = {TN: 0.375, BA: 0.375, IPO: 0.25}
 
 FULL_RENAME = {'True North': TN, 'Open Alpha - Base Age': BA,
                'IPO Base - First Base': IPO, 'NIFTYBEES (index)': BM}
 ROSTER_RENAME = {'TN incumbent': TN, 'OA v2': BA, 'IPO (honest)': IPO, 'NIFTYBEES': BM}
 
 COLOR = {TN: '#e3b341', BA: '#3fb950', QS: '#ff7b72', IPO: '#bc8cff',
-         BLEND: '#6e8b9e', BM: '#8b949e'}
+         BLEND: '#c9d1d9', BLEND2: '#6e8b9e', BM: '#8b949e'}
 SLUG = {TN: 'truenorth', BA: 'baseage', IPO: 'ipobase', QS: 'qualitysummit'}
 
 # ---- LINE WEIGHT IS THE ARGUMENT, not decoration (redrawn 12-Sep-2026).
@@ -169,9 +174,10 @@ SLUG = {TN: 'truenorth', BA: 'baseage', IPO: 'ipobase', QS: 'qualitysummit'}
 LEAD = {TN, BA, QS}
 LW = {k: (1.9 if k in LEAD else 1.25) for k in COLOR}
 LW[IPO] = 1.35
-LW[BLEND] = 1.2
+LW[BLEND] = 1.5
+LW[BLEND2] = 1.05
 LW[BM] = 1.0
-DASH = {BLEND: (4, 2.2)}
+DASH = {BLEND: (6, 2.0), BLEND2: (2, 2.0)}
 
 
 def line_kw(k, scale=1.0):
@@ -191,10 +197,13 @@ plt.rcParams.update({'figure.facecolor': BG, 'axes.facecolor': PANEL, 'savefig.f
 # Measured average-invested, from each engine's own reporting. Anything not measured stays
 # None and prints as "not measured" — the handover asserts ~67% for Base Age but NO FILE
 # carries it, and this page does not print numbers it cannot point at.
-INVESTED = {TN: 43.0, IPO: 32.7, BM: 100.0, BA: 72.9, QS: 91.2}
+INVESTED = {TN: 43.0, IPO: 36.3, BM: 100.0, BA: 72.9, QS: 91.2}
 INVESTED_SRC = {
     TN: 'research/144 phase A avg_inv 0.43 (via research/159 scripts/full_period.py)',
-    IPO: 'research/153 G3 "invested 32.7% of NAV" (via the same script)',
+    IPO: ('research/167 stage 9, Spec A: mean invested fraction 36.3% of NAV across 30 '
+          'seeds (measured at 5.0% idle cash; the cash rate barely moves an invested '
+          'fraction). The research/153 spec it replaced was 32.7% — the longer trail '
+          'holds winners for 37 days rather than 18.'),
     BM: 'fully invested by definition',
     BA: 'MEASURED 12-Sep-2026 in research/163: research/161’s engine re-run with the daily '
         'invested fraction (market value of open positions / NAV) recorded, 30 seeds. '
@@ -260,15 +269,22 @@ def best_of(yoy, contenders):
     return out, [str(y) for y in years]
 
 
-def add_blend(frame, a, b, label):
-    """50-50 of two books, rebalanced MONTHLY, built from their daily curves. Generator
-    arithmetic, not a study output — the page says so on the row."""
-    rets = frame[[a, b]].pct_change().fillna(0.0)
+def add_blend(frame, legs, weights, label):
+    """Fixed weights across books, rebalanced MONTHLY, built from their daily curves.
+
+    Rebalancing sets each leg back to its target share of the blend's value on the first
+    trading day of a new month, BEFORE that day's return is applied — research/168 found that
+    measuring each period from the rebalance day itself discards that day's return and
+    manufactures a fake frequency premium. A 100% single-leg blend reproduces that leg exactly,
+    which is the check."""
+    rets = frame[legs].pct_change().fillna(0.0)
+    w = np.array(weights, dtype=float)
+    w = w / w.sum()
     mid = rets.index.to_period('M')
-    vals, nav, prev = np.array([0.5, 0.5]), [], mid[0]
+    vals, nav, prev = w.copy(), [], mid[0]
     for i, r in enumerate(rets.values):
         if mid[i] != prev:
-            vals, prev = np.array([0.5, 0.5]) * vals.sum(), mid[i]
+            vals, prev = w * vals.sum(), mid[i]
         vals = vals * (1.0 + r)
         nav.append(vals.sum())
     s = pd.Series(nav, index=rets.index)
@@ -294,14 +310,24 @@ def block(frame, contenders, benchmarks, window_why, source, basis):
 
 # --------------------------------------------------------------- HEADLINE: 20.4 years
 
+# IPO Base is research/167's Spec A, NOT the research/153 column in FULL_CSV. The curve is
+# the median-CAGR seed of 30 on this page's 2006-04-03 -> 2026-09-03 window, taken from
+# research/168's 5.2%-idle-cash ensemble (A_25bps_y52), which reproduced research/167
+# stage 9 exactly before the cash rate was touched.
+R168 = ROOT / 'research/168_three_sleeve_blend/results'
+IPO_A_CSV = R168 / 'ipo_specA_drawn_curve_cash052.csv'
+IPO_A = pd.read_csv(IPO_A_CSV, index_col=0, parse_dates=True).iloc[:, 0]
 full = pd.read_csv(FULL_CSV, index_col=0, parse_dates=True)
-full = full.rename(columns=FULL_RENAME)[[TN, BA, IPO, BM]].ffill().dropna()
+full = full.rename(columns=FULL_RENAME)[[TN, BA, BM]]
+full[IPO] = IPO_A.reindex(full.index, method='ffill')
+full = full[[TN, BA, IPO, BM]].ffill().dropna()
 full = full / full.iloc[0]
-full = add_blend(full, TN, BA, BLEND)
-full = full[[TN, BA, IPO, BLEND, BM]]
+full = add_blend(full, [TN, BA, IPO], [BLEND_W[TN], BLEND_W[BA], BLEND_W[IPO]], BLEND)
+full = add_blend(full, [TN, BA], [0.5, 0.5], BLEND2)
+full = full[[TN, BA, IPO, BLEND, BLEND2, BM]]
 
 headline = block(
-    full, contenders=[TN, BA, IPO, BLEND], benchmarks=[BM],
+    full, contenders=[TN, BA, IPO, BLEND, BLEND2], benchmarks=[BM],
     window_why=('The full common period of every book actually being chosen between. It is '
                 'set by the shortest series, True North’s, and it is the window that '
                 'matters because it contains BOTH 2008 and 2020 — the two falls a window '
@@ -317,10 +343,27 @@ headline = block(
            'at the seed the 5.0% page drew; IPO Base is its study’s drawn curve. Placeable '
            'entries only: decided on the close, filled at the next open.'))
 
+# The basis and source strings above were written for the research/153 IPO curve.
+_old_ipo_phrase = 'IPO Base is its study’s drawn curve.'
+assert _old_ipo_phrase in headline['basis'], 'headline basis wording changed'
+headline['basis'] = headline['basis'].replace(
+    _old_ipo_phrase,
+    'IPO Base is research/167’s RE-FITTED Spec A (trail SMA-50, stop 10%, target +25%, '
+    'no new entries while NIFTYBEES is below its 150-day average) — the median-CAGR seed '
+    'of 30 on this window. The blends are this generator’s arithmetic on these drawn '
+    'curves at research/168’s weights, rebalanced monthly.')
+headline['source'] += (' IPO Base is NOT taken from that file: it is '
+                       'research/168_three_sleeve_blend/results/'
+                       'ipo_specA_drawn_curve_cash052.csv, because the file’s IPO column '
+                       'is the research/153 spec the live book stopped running on '
+                       '12-Sep-2026.')
+
 # -------------------------------------------- SECOND WINDOW: where Quality Summit exists
 
 roster = pd.read_csv(ROSTER_CSV, index_col=0, parse_dates=True)
-roster = roster.rename(columns=ROSTER_RENAME)[[TN, BA, IPO, BM]]
+roster = roster.rename(columns=ROSTER_RENAME)[[TN, BA, BM]]
+roster[IPO] = IPO_A.reindex(roster.index, method='ffill')   # Spec A here too
+roster = roster[[TN, BA, IPO, BM]]
 qs_all = pd.read_csv(C52 / 'F_Bb7_equity_cash052.csv', index_col=0, parse_dates=True)
 
 START18 = pd.Timestamp('2018-08-01')
@@ -334,11 +377,12 @@ QS_OFFSETS = {'drawn': drawn, 'n': int(qs_all.shape[1]), 'median': round(cg.medi
 
 w18 = pd.concat([roster, qs_all[drawn].rename(QS)], axis=1).ffill().dropna()
 w18 = w18 / w18.iloc[0]
-w18 = add_blend(w18, TN, BA, BLEND)
-w18 = w18[[TN, BA, QS, IPO, BLEND, BM]]
+w18 = add_blend(w18, [TN, BA, IPO], [BLEND_W[TN], BLEND_W[BA], BLEND_W[IPO]], BLEND)
+w18 = add_blend(w18, [TN, BA], [0.5, 0.5], BLEND2)
+w18 = w18[[TN, BA, QS, IPO, BLEND, BLEND2, BM]]
 
 window2018 = block(
-    w18, contenders=[TN, BA, QS, IPO, BLEND], benchmarks=[BM],
+    w18, contenders=[TN, BA, QS, IPO, BLEND, BLEND2], benchmarks=[BM],
     window_why=('Quality Summit cannot be drawn before Aug-2018: point-in-time fundamentals '
                 'need four filed fiscal years and Screener history begins FY2015. So every '
                 'system is RE-MEASURED here on the only window all five can share. These '
@@ -364,6 +408,10 @@ window2018['qsOffsets'] = QS_OFFSETS
 # research/159's aftertax_all.py with CASH_Y moved and its output redirected). If that re-run
 # is not complete, the page falls back to research/159's 5.0% tables AND SAYS SO in the
 # caption — a mixed basis is acceptable only when it is stated.
+window2018['source'] += (' IPO Base in this window is research/167’s Spec A drawn curve, '
+                         'sliced from the same file the 20.4-year table uses — not the '
+                         'roster file’s research/153 column.')
+
 _AT52 = C52 / 'after_tax_tables_cash052.csv'
 _at52 = pd.read_csv(_AT52) if _AT52.exists() else None
 _at50 = pd.read_csv(R159 / 'after_tax_tables.csv')
@@ -442,16 +490,16 @@ NOTES['cash_yield'] = (
     'True North (research/144 had assumed 6.5%) and Open Alpha · Base Age (research/161 had '
     'assumed 5.5%) came onto a common 5.0%: True North lost 0.97 points of CAGR because it '
     'holds cash 57% of the time, Base Age 0.34. Then every book moved 5.0% → 5.2%: True '
-    'North 18.56% → 18.69%, Base Age 19.93% → 19.99%, IPO Base 15.10% → 15.26% on the '
+    'North 18.56% → 18.69%, Base Age 19.93% → 19.99%, the research/153 IPO Base 15.10% → 15.26% on the '
     '20.4-year window. Each re-run first REPRODUCED its own published curve at the old yield '
     'before the yield was touched. '
     'WHY THE MOVES ARE THE SIZE THEY ARE. Twenty extra basis points are earned only on the '
     'share of a book that is in cash, so the gain is about (1 − invested) × 0.2 points a '
-    'year: 0.11 for True North at 43% invested, 0.14 for IPO Base at 32%, 0.05 for Base Age '
+    'year: 0.11 for True North at 43% invested, 0.14 for the research/153 IPO Base at 32%, 0.05 for Base Age '
     'at 73%, 0.02 for Quality Summit at 91%. Every book’s measured move agreed with that '
     'arithmetic within its own path noise. '
     'AND CASH YIELD IS NOT A SMALL TERM for these books overall: roughly 2.9 of True North’s '
-    'points and 3.5 of IPO Base’s are the sweep rather than the strategy, while NIFTYBEES is '
+    'points and 3.8 of the re-fitted IPO Base’s (research/167) are the sweep rather than the strategy, while NIFTYBEES is '
     'fully invested and gets none of it.')
 NOTES['path_redraw'] = (
     'ONE HONEST CAVEAT ON THE 5.0% → 5.2% MOVE. Three of these books draw ONE path out of an '
@@ -558,12 +606,21 @@ res = {
         'status': 'flat assumption, not a measured realised yield',
         'reviewDue': '2026-12-15',
     },
-    'names': {'TN': TN, 'BA': BA, 'IPO': IPO, 'QS': QS, 'BM': BM, 'BLEND': BLEND},
-    'blendNote': ('Computed by this generator from the True North and Open Alpha · Base '
-                  'Age daily curves, 50-50, rebalanced monthly. It is NOT a study result. The '
-                  'proper blend and allocation study across True North + Base Age + IPO Base '
-                  'has NOT been started, and it is the only structure that plausibly clears '
-                  'the 25% target.'),
+    'names': {'TN': TN, 'BA': BA, 'IPO': IPO, 'QS': QS, 'BM': BM, 'BLEND': BLEND,
+              'BLEND2': BLEND2},
+    'blendNote': ('TWO BLEND ROWS, BOTH COMPUTED BY THIS GENERATOR from the drawn daily '
+                  'curves above, rebalanced monthly. The first uses research/168’s '
+                  'RECOMMENDED weights, True North 37.5 / Base Age 37.5 / IPO Base 25; the '
+                  'second is the old 50-50 pair, kept so the value of the third sleeve is '
+                  'visible. The weights are a study result; these rows are not — research/'
+                  '168 quotes 30-path medians of 21.18% after tax, −24.01% drawdown, Calmar '
+                  '0.885 for the three-sleeve book against 20.28%, −26.91%, 0.749 for the '
+                  'pair, better on both counts on 30 of 30 paired paths, and a single drawn '
+                  'path will sit near but not on those. It found the re-fitted IPO Base '
+                  'worth more to the portfolio than the old spec at every weight from 5% to '
+                  '50% (30 of 30), and the old spec worth no place at any weight. Moving '
+                  'the Capital Desk targets from 40 / 40 / 20 to these weights is a '
+                  'decision still to be taken.'),
     'investedSources': INVESTED_SRC,
     'headline': headline,
     'window2018': window2018,
@@ -573,7 +630,8 @@ res = {
         '20.4-year curves': str(FULL_CSV).replace('/home/arun/quantifyd/', ''),
         'True North at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/tn_nav_INC_cash_n8_d15_tax1_cash052.csv (research/144’s engine, its own study used 6.5%)',
         'Open Alpha · Base Age at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/ba_nav_winner_cash052.csv (research/161’s engine, its own study used 5.5%; 30 seeds, drawn seed held at the one the 5.0% page drew)',
-        'IPO Base at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/ipo_honest_curve_cash052.csv (research/153’s engine via research/159’s honest-entry transform; 30 seeds, median-CAGR seed)',
+        'IPO Base at 5.2% idle cash': 'research/168_three_sleeve_blend/results/ipo_specA_drawn_curve_cash052.csv — research/167 Spec A, median-CAGR seed of 30 on this page’s window, from research/168’s harmonised ensemble (ipo_navs_cash052.npz, arm A_25bps_y52)',
+        'the blend weights': 'research/168_three_sleeve_blend/results/RESULTS.md — TN 37.5 / Base Age 37.5 / IPO Base 25, monthly; the rows on this page are this generator’s arithmetic at those weights',
         'average invested': 'research/159_oa_honest_reoptimization/results/full_period_summary.json + scripts/full_period.py; Base Age measured in research/163 (cash052/baseage_invested_daily_052.csv)',
         '2018-window curves (TN, Base Age, IPO, index)': str(ROSTER_CSV).replace('/home/arun/quantifyd/', ''),
         'Quality Summit, 12 offsets at 5.2% idle cash': 'research/163_mpf_cash_yield_harmonisation/results/cash052/F_Bb7_equity_cash052.csv (research/160’s F_Bb7 cell on its own frozen panel)',
@@ -646,27 +704,40 @@ def growth_chart(frame, rows, path, title, foot1, foot2, ticks):
     print('wrote', path)
 
 
+def _curves_foot():
+    """Blend against the pair and against the best single book, READ FROM THE ROWS. The typed
+    version said no single book gets there; on the drawn path the re-fitted IPO Base does."""
+    rows = headline['rows']
+    b, p = rows[BLEND], rows[BLEND2]
+    best = max((TN, BA, IPO), key=lambda k: rows[k]['calmar'])
+    s = ('WHAT TO SEE: the lower panel. The three-sleeve blend at research/168’s weights earns '
+         '%.1f%% a year at a worst fall of %.0f%%, against %.1f%% at %.0f%% for the old True '
+         'North + Base Age pair — Calmar %.2f against %.2f. '
+         % (b['cagr'], abs(b['maxdd']), p['cagr'], abs(p['maxdd']), b['calmar'], p['calmar']))
+    if rows[best]['calmar'] >= b['calmar']:
+        s += ('On this drawn path %s alone scores Calmar %.2f, level with or above the blend. '
+              'research/168 found the same — the portfolio Calmar peaks at a 45–60%% IPO '
+              'weight — and still recommends 25%%: the sleeve cannot hold more than about '
+              '₹20–25L, and the re-fit has no held-out period.' % (best, rows[best]['calmar']))
+    else:
+        s += ('No single book matches it; the best is %s at Calmar %.2f.'
+              % (best, rows[best]['calmar']))
+    return s
+
+
 growth_chart(
     full, headline['rows'], PUB / 'mpf-report-curves-20y.png',
     'THE MOMENTUM PORTFOLIO — every book being chosen between, after tax, %s to %s (20.4 years)'
     % (full.index[0].date(), full.index[-1].date()),
     # computed, not typed, so the sentence cannot go stale when a curve file changes
-    ('WHAT TO SEE: the lower panel. The 50-50 blend keeps almost all of Open Alpha · Base Age’s '
-     'return — %.1f%% a year against %.1f%% — while inheriting True North’s shallower falls: '
-     'Base Age gives up %.0f%% of the book at its worst, the blend %.0f%%. That is the best '
-     'return-per-unit-of-fall on the chart, Calmar %.2f against %.2f for True North and %.2f '
-     'for Base Age.'
-     % (headline['rows'][BLEND]['cagr'], headline['rows'][BA]['cagr'],
-        abs(headline['rows'][BA]['maxdd']), abs(headline['rows'][BLEND]['maxdd']),
-        headline['rows'][BLEND]['calmar'], headline['rows'][TN]['calmar'],
-        headline['rows'][BA]['calmar'])),
+    _curves_foot(),
     'Log scale, because over twenty years a 30x book plotted linearly flattens every other '
     'line and hides 2008 entirely. The growth panel is DRAWN WEEKLY and MEASURED DAILY — '
     'Friday closes only, to keep five twenty-year lines legible; every figure in the legend '
     'and the whole drawdown panel come from the daily series. After tax, 25 bps a side, 5.2% '
     'a year post-tax on idle cash for every book — the arbitrage-fund rate; NIFTYBEES holds '
-    'no cash and gets none of it. The blend is a thin dashed line because it is this '
-    'generator’s own arithmetic, not a study result.',
+    'no cash and gets none of it. Both blends are dashed because they are this '
+    'generator’s arithmetic on the drawn curves; only their weights come from a study.',
     [100, 400, 1600, 6400])
 
 growth_chart(
@@ -683,17 +754,42 @@ growth_chart(
     'weekly, measured daily; drawdown panel daily.',
     [100, 200, 400, 800])
 
+def _bars_foot():
+    """Which book carried which hard year, READ FROM THE DATA. The typed version claimed IPO
+    Base was the only book above water in 2008 and 2011, which stopped being true the day the
+    re-fitted spec replaced research/153's."""
+    yo = headline['yoy']
+    books = [TN, BA, IPO]
+
+    def up(y):
+        return [k for k in books if y in yo[k] and yo[k][y][0] > 0]
+
+    def best(y):
+        have = [k for k in books if y in yo[k]]
+        return max(have, key=lambda k: yo[k][y][0]) if have else None
+
+    parts = []
+    for y in ('2008', '2011', '2018', '2022'):
+        u = up(y)
+        parts.append('%s: %s' % (y, ('above water only ' + ' and '.join(u)) if u
+                                 else 'every book down'))
+    return ('WHAT TO SEE: the years nobody else carried. %s. Tallest bar in 2020: %s; in 2017, '
+            '2021 and 2023: %s, %s and %s. That pattern is the entire argument for holding more '
+            'than one of them.' % ('; '.join(parts), best('2020'), best('2017'), best('2021'),
+                                   best('2023')))
+
+
 # ---- yearly grouped bars
 yrs = headline['yearList']
-bars = [TN, BA, IPO, BLEND, BM]
+bars = [TN, BA, IPO, BLEND, BLEND2, BM]
 fig, ax = plt.subplots(figsize=(13, 5.4))
 x = np.arange(len(yrs))
-w = 0.16
+w = 0.135
 for i, k in enumerate(bars):
     v = [headline['yoy'][k].get(y, [np.nan])[0] for y in yrs]
     # same hierarchy as the line charts: the books being compared are solid, the blend and
     # the index are outlined so they read as context rather than as contenders.
-    if k == BLEND:                       # secondary: outlined, so it reads as derived
+    if k in (BLEND, BLEND2):             # secondary: outlined, so it reads as derived
         ax.bar(x + (i - (len(bars) - 1) / 2) * w, v, w, label=k, color='none',
                edgecolor=COLOR[k], linewidth=1.1)
     elif k == BM:                        # context: filled but faded right back
@@ -707,16 +803,12 @@ ax.set_xticklabels(yrs, rotation=45, ha='right')
 ax.axhline(0, color=GRID, lw=0.9)
 ax.set_ylabel('return for the year, %  (after tax)')
 ax.grid(True, axis='y', color=GRID, lw=0.5, alpha=0.6)
-ax.legend(frameon=False, fontsize=8.5, ncol=5, loc='upper left')
+ax.legend(frameon=False, fontsize=8.0, ncol=3, loc='upper left')
 ax.set_title('YEAR BY YEAR, after tax, %s to %s — who carried which year'
              % (full.index[0].date(), full.index[-1].date()),
              color=INK, fontsize=12, loc='left', pad=12)
 fig.text(0.012, 0.012,
-         wrap('WHAT TO SEE: the years nobody else carried. IPO Base is the only book that finishes '
-         '2008 and 2011 above water at all, and it is the tall bar in 2020; True North is the '
-         'one that barely moves in 2018 and 2022, when the other two are deep red; Base Age '
-         'owns 2017, 2021 and 2023. That pattern is the entire argument for holding more than '
-         'one of them.'),
+         wrap(_bars_foot()),
          color=MUT, fontsize=7.5, va='bottom', linespacing=1.45)
 fig.tight_layout(rect=(0, 0.105, 1, 1))
 fig.savefig(PUB / 'mpf-report-yearly-bars.png', dpi=125)
@@ -726,7 +818,7 @@ print('wrote yearly bars')
 # ---- rolling 3-year CAGR
 fig, ax = plt.subplots(figsize=(12, 5.0))
 win = 756
-for k in [TN, BA, IPO, BLEND, BM]:
+for k in [TN, BA, IPO, BLEND, BLEND2, BM]:
     s = full[k]
     roll = (s / s.shift(win)) ** (1 / 3.0) - 1
     ax.plot(roll.index, roll * 100, label=k, **line_kw(k))
@@ -738,7 +830,7 @@ _bt = matplotlib.transforms.blended_transform_factory(ax.transAxes, ax.transData
 ax.text(0.012, 25.9, "Arun's 25% bar", color='#d29922', fontsize=8, transform=_bt)
 ax.set_ylabel('trailing 3-year CAGR, %  (after tax)')
 ax.grid(True, color=GRID, lw=0.5, alpha=0.6)
-ax.legend(frameon=False, fontsize=8.5, ncol=5, loc='upper right')
+ax.legend(frameon=False, fontsize=8.0, ncol=3, loc='upper right')
 ax.set_title('ROLLING 3-YEAR RETURN, after tax — how long each book can disappoint',
              color=INK, fontsize=12, loc='left', pad=12)
 fig.text(0.012, 0.015,
@@ -763,7 +855,7 @@ def corr_chart(frame, path, title, foot):
     that are the actual content, and a FIXED 0-to-1 scale on both heatmaps so the two can be
     compared. Red means "moves with the others" — bad for diversification.
     """
-    wk = frame.drop(columns=[BLEND]).resample('W-FRI').last().pct_change().dropna()
+    wk = frame.drop(columns=[BLEND, BLEND2], errors='ignore').resample('W-FRI').last().pct_change().dropna()
     c = wk.corr()
     n = len(c)
     side = 0.72 * n + 2.15                      # 4x4 -> 5.0in, 5x5 -> 5.8in, 6x6 -> 6.5in
@@ -800,9 +892,11 @@ def corr_chart(frame, path, title, foot):
 # page caption instead.
 corr_chart(full, PUB / 'mpf-report-corr-20y.png',
            'WEEKLY-RETURN CORRELATION — 20.4 years',
-           'Scale fixed 0 to 1; red = moves with the others. IPO Base is the only genuine '
-           'diversifier. True North and Base Age are moderately related, which is why a '
-           '50-50 of them still smooths the ride.')
+           'Scale fixed 0 to 1; red = moves with the others. IPO Base is the loosest-coupled '
+           'book, highest weekly correlation to anything here %.2f — the re-fitted spec is '
+           'a little more correlated than the old one and still the better blend sleeve '
+           '(research/168).' % max(v for k2, v in headline['corr'][IPO].items() if k2 != IPO
+                                   and k2 not in (BLEND, BLEND2)))
 
 corr_chart(w18, PUB / 'mpf-report-corr-2018.png',
            'WEEKLY-RETURN CORRELATION — the 2018 window',
@@ -838,7 +932,7 @@ ax.set_title('HOW MUCH OF EACH BOOK IS ACTUALLY IN THE MARKET (measured averages
 fig.text(0.012, 0.015,
          wrap('WHAT TO SEE: True North holds cash 57% of the time and still produces one of the two '
          'best returns — that is the gate, and it is a stronger result than the CAGR alone '
-         'says. IPO Base is two thirds cash by design, so reading its CAGR beside a fully '
+         'says. IPO Base is about 64% cash by design, so reading its CAGR beside a fully '
          'invested index is not like for like. Open Alpha · Base Age was measured on '
          '12-Sep-2026 (research/163, 30 seeds, median 72.9%, band 72.7-73.1%) and is no '
          'longer a gap; the handover doc’s unsourced 67% is superseded.'),
