@@ -1,0 +1,32 @@
+{
+ "52W_OPT": {
+  "best_weight": 10,
+  "d_calmar": 0.033,
+  "d_cagr": -0.67,
+  "d_dd": 1.61,
+  "wins_of_30": 22,
+  "cash_null_d_calmar": 0.028,
+  "beats_cash_null": true,
+  "clears_bar": false
+ },
+ "52W_Spec_A": {
+  "best_weight": 5,
+  "d_calmar": 0.02,
+  "d_cagr": -0.31,
+  "d_dd": 0.92,
+  "wins_of_30": 22,
+  "cash_null_d_calmar": 0.013,
+  "beats_cash_null": true,
+  "clears_bar": false
+ },
+ "52W_OPT_(PIT-100)": {
+  "best_weight": 5,
+  "d_calmar": -0.019,
+  "d_cagr": -0.56,
+  "d_dd": 0.14,
+  "wins_of_30": 0,
+  "cash_null_d_calmar": 0.013,
+  "beats_cash_null": false,
+  "clears_bar": false
+ }
+}

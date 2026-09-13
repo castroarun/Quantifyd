@@ -2,6 +2,40 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — research/172: the 52-week-high / 52-week-low channel on Nifty 100 — NO EDGE as written, SIGNAL when optimised, nothing adopted
+
+52W. Arun: *"buy a stock when a day closes above its 52-week high and exit when a day closes
+its 52-week low. apply this to simple nifty 50 and nifty next 50 stocks... Test it, optimize
+it comprehensively and report back."* ₹1 crore, 20 slots @ 5%, next-open fills on both legs,
+15 bps a side, after tax, idle cash 5.2%, 2006→2026. ~600 cells.
+
+- **The literal rule: 14.25% CAGR / −46.7% / Calmar 0.305.** Beats NIFTYBEES (11.37% / −59.7%)
+  and is beaten by everything that matters: its own random-entry null (median **16.47%**,
+  Calmar 0.352 over 30 draws), equal-weight buy-and-hold of the same hundred names (19.22%),
+  and, on the exit specifically, doing nothing at all — hold-forever returns 13.94%, so the
+  52-week-low exit buys +0.31pp of CAGR for ₹2.05 crore of tax.
+- **The exit is the whole optimisation.** SuperTrend(14,4) tops the 21-exit axis (median
+  Calmar 0.521) — the THIRD independent confirmation after r/159 and r/161. The literal
+  52-week-low exit ranks 18th of 21. Swapping it: **14.95% / −26.0% / Calmar 0.575.**
+- **The entry lookback barely matters** — a flat plateau from 126 to 504 days. The NIFTYBEES
+  200-SMA gate does not help this family. RS-rank slot contention is noise.
+- **The kill: a momentum-matched null.** Random names from the top half of the same universe
+  by 252-day relative strength return 16.79% (Calmar 0.584); trend-matched too, 17.48%. The
+  system is **below the entire 30-draw range of both on CAGR**. The 52-week high is a
+  low-resolution momentum proxy and True North's ranking dominates it.
+- **Survivorship premium on the current official Nifty-100 CSVs: ~4.2pp of CAGR.** On a
+  point-in-time liquidity top-100 the same rules return 10.77% — below the index.
+- **Blend:** correlation 0.689 daily to OA·Base Age (bar 0.40); best cell +0.033 Calmar at
+  −0.67pp CAGR on 22/30 paths (bar +0.10), while plain 5.2% cash wins 30/30 at every weight.
+
+**Nothing adopted. No live book, engine or register row changed.** Three things banked for
+reuse: the third ST(14,4) confirmation; a number to subtract (~4.2pp) whenever a study screens
+the current NIFTY50/NIFTYNEXT50 CSVs; and a **momentum-matched null** that is much sharper
+than a plain random draw and should join the standard control set for long-equity studies.
+
+`research/172_52wk_channel_n100/results/RESULTS.md` ·
+http://94.136.185.54:5000/app/backtest/52wk-channel-n100-research172
+
 ## ✅ 2026-09-13 — research/173: IPO Base exits at the NEXT OPEN cost nothing versus the study's close exit — IMMATERIAL (it is ~1pp better)
 
 IPO. The live book now sells at the next open for an exit decided on the close (MARKET AMO,

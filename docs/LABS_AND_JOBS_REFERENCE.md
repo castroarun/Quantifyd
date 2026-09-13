@@ -255,3 +255,15 @@ Every Open Alpha, IPO Base, equity-executor and cash-park cron line runs through
 `config/nse_holidays_<year>.json`, cached per day in `/tmp/nse_trading_day_<date>`, fails open).
 True North's decision jobs run inside the web app and check the calendar in code. The 2027 holiday
 file is due by 15-Dec-2026. Status doc: `docs/HOLIDAY_GUARD_ALL_BOOK_JOBS_DEPLOY_STATUS.md`.
+
+### research/172 — 52-week channel on Nifty 100 (CONCLUDED 13-Sep-2026)
+
+No job, no cron, no dashboard. A one-off study, published at
+`/app/backtest/52wk-channel-n100-research172`. Verdict **NO EDGE as written / SIGNAL when
+optimised**; nothing adopted and no live book touched. Two reusable outputs are registered as
+a dated review in the Ops & Review Centre (due 2027-03-13): the **momentum-matched null**
+(`research/172_52wk_channel_n100/scripts/run172c.py`, pools N3/N4) and the measured
+**~4.2pp survivorship premium** on the current official index-constituent CSVs.
+
+Reproduce on the VPS (~12 min):
+`run172.py all` → `run172b.py all` → `run172c.py all` → `blend172.py` → `report172.py`.

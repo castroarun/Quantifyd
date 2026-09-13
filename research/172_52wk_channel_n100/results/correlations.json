@@ -1,0 +1,90 @@
+{
+ "daily": {
+  "52W_OPT": {
+   "TN": 0.5542,
+   "OA BaseAge": 0.6886,
+   "IPO-A": 0.3052,
+   "NIFTYBEES": 0.5066
+  },
+  "52W_Spec_A": {
+   "TN": 0.3847,
+   "OA BaseAge": 0.5535,
+   "IPO-A": 0.2515,
+   "NIFTYBEES": 0.7243
+  },
+  "52W_OPT_(PIT-100)": {
+   "TN": 0.5706,
+   "OA BaseAge": 0.7129,
+   "IPO-A": 0.3022,
+   "NIFTYBEES": 0.5244
+  },
+  "EW_B&H_Nifty100": {
+   "TN": 0.3851,
+   "OA BaseAge": 0.5513,
+   "IPO-A": 0.2148,
+   "NIFTYBEES": 0.9148
+  },
+  "NIFTYBEES": {
+   "TN": 0.3122,
+   "OA BaseAge": 0.4537,
+   "IPO-A": 0.1742,
+   "NIFTYBEES": 1.0
+  },
+  "Cash_5.2p": {
+   "TN": 0.0407,
+   "OA BaseAge": 0.0054,
+   "IPO-A": -0.0037,
+   "NIFTYBEES": 0.0042
+  },
+  "Random-entry_null_(median_path)": {
+   "TN": 0.5315,
+   "OA BaseAge": 0.6536,
+   "IPO-A": 0.2828,
+   "NIFTYBEES": 0.5148
+  }
+ },
+ "monthly": {
+  "52W_OPT": {
+   "TN": 0.5902,
+   "OA BaseAge": 0.6618,
+   "IPO-A": 0.3903,
+   "NIFTYBEES": 0.6033
+  },
+  "52W_Spec_A": {
+   "TN": 0.3883,
+   "OA BaseAge": 0.514,
+   "IPO-A": 0.2834,
+   "NIFTYBEES": 0.7597
+  },
+  "52W_OPT_(PIT-100)": {
+   "TN": 0.5786,
+   "OA BaseAge": 0.7053,
+   "IPO-A": 0.3235,
+   "NIFTYBEES": 0.6188
+  },
+  "EW_B&H_Nifty100": {
+   "TN": 0.4445,
+   "OA BaseAge": 0.5513,
+   "IPO-A": 0.2123,
+   "NIFTYBEES": 0.9442
+  },
+  "NIFTYBEES": {
+   "TN": 0.4151,
+   "OA BaseAge": 0.492,
+   "IPO-A": 0.1725,
+   "NIFTYBEES": 1.0
+  },
+  "Cash_5.2p": {
+   "TN": 0.0863,
+   "OA BaseAge": 0.0423,
+   "IPO-A": 0.0948,
+   "NIFTYBEES": -0.0067
+  },
+  "Random-entry_null_(median_path)": {
+   "TN": 0.5794,
+   "OA BaseAge": 0.6241,
+   "IPO-A": 0.35,
+   "NIFTYBEES": 0.6472
+  }
+ }
+}

@@ -1,0 +1,86 @@
+[
+ {
+  "label": "AX_slots100_L252_close_ST_14_4",
+  "uni": "n100",
+  "L": 252,
+  "ref": "close",
+  "buffer": 0.0,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 100,
+  "gate": "none"
+ },
+ {
+  "label": "AX_slots100_L378_close_ST_14_4",
+  "uni": "n100",
+  "L": 378,
+  "ref": "close",
+  "buffer": 0.0,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 100,
+  "gate": "none"
+ },
+ {
+  "label": "AX_slots100_L126_high_ST_14_4",
+  "uni": "n100",
+  "L": 126,
+  "ref": "high",
+  "buffer": 0.0,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 100,
+  "gate": "none"
+ },
+ {
+  "label": "AX_slots15_L252_close_ST_14_4",
+  "uni": "n100",
+  "L": 252,
+  "ref": "close",
+  "buffer": 0.0,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 15,
+  "gate": "none"
+ },
+ {
+  "label": "AX_buf1_L252_close_ST_14_4",
+  "uni": "n100",
+  "L": 252,
+  "ref": "close",
+  "buffer": 0.01,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 20,
+  "gate": "none"
+ },
+ {
+  "label": "AX_buf1_L378_close_ST_14_4",
+  "uni": "n100",
+  "L": 378,
+  "ref": "close",
+  "buffer": 0.01,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "ST_14_4",
+  "slots": 20,
+  "gate": "none"
+ },
+ {
+  "label": "SPEC_A",
+  "uni": "n100",
+  "L": 252,
+  "ref": "close",
+  "buffer": 0.0,
+  "ath_within": null,
+  "new_ath": false,
+  "exit": "CC252",
+  "slots": 20,
+  "gate": "none"
+ }
+]

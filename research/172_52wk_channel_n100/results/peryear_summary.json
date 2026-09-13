@@ -1,0 +1,44 @@
+{
+ "52W OPT": {
+  "cagr": 14.95,
+  "maxdd": -26.01,
+  "calmar": 0.575,
+  "final": 178102447
+ },
+ "52W Spec A": {
+  "cagr": 14.25,
+  "maxdd": -46.73,
+  "calmar": 0.305,
+  "final": 157087547
+ },
+ "52W OPT (PIT-100)": {
+  "cagr": 10.77,
+  "maxdd": -32.35,
+  "calmar": 0.333,
+  "final": 82780022
+ },
+ "EW B&H Nifty100": {
+  "cagr": 19.22,
+  "maxdd": -58.13,
+  "calmar": 0.331,
+  "final": 379799721
+ },
+ "NIFTYBEES": {
+  "cagr": 11.37,
+  "maxdd": -59.71,
+  "calmar": 0.19,
+  "final": 267
+ },
+ "Cash 5.2%": {
+  "cagr": 5.11,
+  "maxdd": 0.0,
+  "calmar": null,
+  "final": 28065809
+ },
+ "Random-entry null (median path)": {
+  "cagr": 13.35,
+  "maxdd": -34.56,
+  "calmar": 0.386,
+  "final": 133727560
+ }
+}
