@@ -2,6 +2,37 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — OA · Base Age: "swap the last 2 instead of 1?" and "top up the winners we already hold?" — both NO EDGE, nothing changed
+
+Arun: *"what if we swap the last 2 ranks instead of 1? can we find out an optimized number? or
+maybe swap the lowest ranked one(s) and instead of new entrants, top up the highest running ones
+existing within the portfolio?"* — research/171, published at
+`/app/backtest/baseage-multiswap-topup-research171`.
+
+**Swap two instead of one? No, and there is no optimum to find.** Once OA-ROT-1 is running, two
+holdings are more than 10% under water on the same refused-signal evening **0.5 times a year** —
+eleven occasions in 21.7 years, because the rule keeps removing the loser so a second never
+accumulates. `k = 3, 4, 6` and "all eligible" are **bit-identical on all 30 seeds**. `k = 2` costs
+−0.21pp of CAGR and −0.003 of Calmar and turns into a real loss at 40 bps.
+
+**Top up existing winners instead of buying the new breakout? No — the clearest negative in the
+study.** All 18 constructions lose Calmar to doing nothing and **not one beats the staged rule on
+a single seed out of thirty**. A top-up spends the slot instead of refilling it, and a single
+position reaches 52–81% of NAV while the ten best trades come to supply 55% of book profit.
+
+**One cell the study invented clears the bar and is refused anyway.** Restrict it to the evenings
+Arun described and it returns OA-ROT-1 to the digit with zero top-ups — all of its edge is an
+unconditional −10% stop, 94% of it sits in the 2016-2026 half, and it takes one name to 40.8% of NAV.
+
+**Nothing deployed. The live Base Age book keeps OA-ROT-1 exactly as research/165 staged it.**
+
+Registered: the 26-Sep-2026 live-conversion review now also checks how often TWO holdings are
+simultaneously eligible (expect ~0.5 a year); and a new 13-Mar-2027 review asks whether the
+unconditional −10% hard stop — now surfaced three times at Calmar 0.683–0.692 with no machinery —
+deserves its own study with its own drawdown bar.
+
+---
+
 ## ✅ 2026-09-13 — IPO Base: the live book now runs the spec it is funded on (MIN_BARS 60 → 25), and the Capital Desk is on 37.5 / 37.5 / 25
 
 Arun: *"Capital Desk target from 40/40/20 to 37.5/37.5/25 is your call - lets do this. but b4

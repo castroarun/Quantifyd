@@ -142,6 +142,23 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("OA . Base Age - the unconditional -10% hard stop has now surfaced THREE times as "
+     "the cheapest drawdown lever. Does it deserve its own study with its own bar?",
+     "2027-03-13", "PENDING",
+     "RAISED 13-Sep-2026 by research/171. A plain -10% stop, with NO rotation machinery "
+     "at all, returns 20.79% after tax at -30.46% drawdown and Calmar 0.683, against the "
+     "incumbent Base Age book 20.91% / -35.16% / 0.606 (30 seeds 7001-7030, 25 bps, 5.2% "
+     "idle cash, 2005-2026). It beats the incumbent on Calmar on 30 of 30 paired seeds "
+     "and is excluded ONLY by the pre-registered CAGR-eligibility clause, which it misses "
+     "by 0.12pp. research/166 found it first (caveat 4, Calmar 0.677), research/171 found "
+     "it twice more independently (0.683 as a hard stop, 0.692 routed through the "
+     "rotation path), and it supplies two thirds of the risk-adjusted gain of the best "
+     "cell research/171 could build. WHAT TO DECIDE on the due date, alongside the "
+     "OA-ROT-1 live review: whether Arun wants a lower-drawdown Base Age at all. If yes, "
+     "it needs its own STATUS doc and its own bar (a drawdown bar, not a Calmar bar - it "
+     "is insurance with a premium, not an edge) rather than being rediscovered a fourth "
+     "time as a by-product. Evidence: "
+     "research/171_baseage_multiswap_topup/results/RESULTS.md, the decomposition table."),
     ('research/169 follow-up - IPO Base at the validated 25-bar floor: are the entries 25-60 sessions after listing filling at the pivot, inside capacity?', '2026-10-15', 'PENDING', "DECIDED 13-Sep-2026: MIN_BARS 60 -> 25 and Capital Desk targets 40/40/20 -> 37.5/37.5/25, in one change (research/167_ipo_base_honest_reopt/IPO_BASE_MIN_BARS_25_DAILY_DEPLOY_STATUS.md). The 60 rested on reading research/153's row-count-today filter as a bars-at-signal rule; research/167's own engine returns 21.80% at 25 bars and 11.57% at 60, and inside the 37.5/37.5/25 book the 60-bar version costs 2.46pp on 30 of 30 paths. WHAT TO CHECK on the due date: (1) every IPO entry since 13-Sep - its age in sessions at the signal, its fill against the pivot, and its size as a share of the name's 20-day median traded value; research/167's 90th percentile is 9.05% at Rs 10L (the 1.56% first quoted was the median); (2) whether any entry fell in the 25-40 session band, where the edge is strongest, or 40-60, where research/169 found it loses to random (27 of 30 at a 40-bar floor); (3) that the market gate blocked entries while NIFTYBEES sat below its 150-day average. Aligns with the existing 15-Oct-2026 soak review. Evidence: research/169_ipo_rules_universe_transplant/results/RESULTS.md Q5-Q6."),
     ("OA \u00b7 Base Age - rotation rule OA-ROT-1 ADOPTED: re-test it on the LIVE entry queue "
      "after six months of real-money operation",
@@ -350,6 +367,17 @@ REVIEWS = [
      "and the count of entries refused for cash against the research/164 base rate (1,955 of 3,619 events). "
      "Also: is the 09:20 equity_executor OA top-up off the OA book. "
      "ADDED 13-Sep-2026, the OA-ROT-1 swap rule: (a) HOW MANY SWAPS in two weeks - research/170 expects ~4 a year, research/165's walk of the live code produced ~12; (b) HOW MANY REFUSALS WERE CONVERTED - refused-for-cash / no-free-slot lines followed by a swap, against those that were not; (c) did any swapped-IN name get swapped OUT again within ten sessions (a churn chain); (d) P&L attribution of both legs of every swap; (e) is the entry-sizing NAV-basis question still open - plan() sizes the slot off cost-plus-cash NAV while the study and rot1_pick() use the marked NAV, which is the difference between PAYTM x20 and x21. "
+     "ADDED 13-Sep-2026, research/171 (swap-more-than-one / top-up instead of a new "
+     "entrant): BOTH ideas are NO EDGE and nothing changed. What this review should "
+     "now ALSO check, because research/171 measured it: on how many evenings did TWO "
+     "holdings sit more than 10% under water at the same time while a signal was "
+     "refused? Over 21.7 years that happens 0.5 times a YEAR once OA-ROT-1 is running "
+     "(11 occasions in the whole history) because the rule keeps removing the loser. If "
+     "the live queue shows it materially more often than that, research/171 axis A "
+     "should be re-opened on the live event log. Do NOT read a second eligible loser as "
+     "a missed opportunity: on the full history, taking it was worth -0.21pp of CAGR and "
+     "-0.003 of Calmar, and a real loss at 40 bps. Evidence: "
+     "research/171_baseage_multiswap_topup/results/RESULTS.md. "
      "Runbooks: "
      "research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md section 9 and OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md section 9."),
     ("Open Alpha - Base Age day-one check after the flip",
