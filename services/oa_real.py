@@ -55,7 +55,7 @@ from pathlib import Path
 # both read it from here, so the entry and the exit can never disagree about which book is
 # running. Staged 12-Sep-2026; see
 # research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md.
-OA_RULESET = 'legacy'          # 'legacy' | 'baseage'
+OA_RULESET = 'baseage'          # 'legacy' | 'baseage'
 
 # ─────────────────── OA-ROT-1: the best-entrant swap (research/170 Part B) ───────────────
 # On an evening when a qualifying Base Age signal fires and the book cannot take it, sell the

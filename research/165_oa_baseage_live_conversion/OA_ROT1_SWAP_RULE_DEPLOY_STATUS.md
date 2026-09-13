@@ -645,3 +645,5 @@ Kite; the partial-fill cases are in §6.
       own engine fires 5.7-7.9 swaps a year on a 2025-26-shaped window and loses there too, so
       an early losing stretch at ~10 swaps a year is inside what the rule does — not evidence
       that it is broken. The entry-sizing NAV question is closed (§8.5).
+
+**Flip record:** 2026-09-13 13:33 IST — **FLIPPED by Arun's go.** OA_RULESET=baseage (reads back `baseage`), crontab installed from /tmp/ct.new (backup /tmp/ct.bak.20260913-133230, 135 lines before and after, diff = exactly lines 107 and 112): 18:50 entry job live, 09:20 equity_executor restricted to `--book ipo-base`, 09:25 re-arm still commented. Broker order book empty at flip time. No restart. OA_ROT1=True (swap live under baseage). First evening: Mon 14-Sep 18:50.

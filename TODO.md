@@ -141,7 +141,9 @@ attribution of both legs, then re-runs the five Part-B cells against the **same 
 unchanged**. See the conversion entry below and
 `research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md`.
 
-## 🔴 2026-09-12 - Open Alpha - Base Age live conversion - STAGED, SWITCH OFF, awaiting Arun flip
+## 🟢 2026-09-13 — Open Alpha · Base Age live conversion — FLIPPED 13:33 IST Sunday (Arun: "ok, go"); first evening Mon 14-Sep 18:50
+
+**Flip record (13-Sep-2026 13:33 IST):** switch `OA_RULESET=baseage` (reads back), crontab installed from /tmp/ct.new (backup `/tmp/ct.bak.20260913-133230`, 135 lines, diff = lines 107 + 112 only): 18:50 entry job live, 09:20 top-up restricted to `--book ipo-base` (decision taken on the recommended path; Arun said go without objecting), 09:25 re-arm stays commented. Broker order book empty at flip. No restart. OA_ROT1=True. WATCH: Mon 18:50 `/tmp/oa_entry.log` (exit confirm block, PAYTM ARM, which AMO type Kite accepted); Tue 09:35 reconcile + `/tmp/equity_executor.log` must say ipo-base only. Rollback: STATUS §9. Reviews: 15-Sep day-one, 26-Sep first two weeks.
 
 Arun: "we must convert the existing OA trades into this OA base age system, manage the exits and continue to be live with further trades." Code is on the VPS behind `OA_RULESET` in `services/oa_real.py` (default `legacy`, so nothing has changed; commits 2a0f9074, b1eed5a1). Replication gate 100.00% vs the research/164 3,619-event list; all 11 live positions HOLD under SuperTrend(14,4) (13-26% above the line); Monday only candidate is PAYTM (21 sh, about Rs 38,157). **BLOCKER before the flip:** `services/equity_executor.py` (crontab line 107, 09:20) still tops up OA holdings with real OA-TOPUP orders - settle it (crontab-only `--book ipo-base`, or a guarded engine change with its own STATUS) or do not flip. Unverified until the first evening: which AMO order type Kite accepts (MARKET, else LIMIT at close +/-2%). Runbook + rollback: `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` section 9. Register row updated (Open Alpha - Base Age (converting)); reviews 2026-09-15 and 2026-09-26 in the Ops Centre.
 

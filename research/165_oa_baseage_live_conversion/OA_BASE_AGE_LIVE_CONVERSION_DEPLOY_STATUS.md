@@ -596,3 +596,4 @@ Build-gated as always: `export PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH;
 > 09:20 with real orders — settle it (crontab `--book ipo-base`, or a guarded engine change
 > with its own STATUS) or do not flip. Runbook:
 > `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` §9.
+| 2026-09-13 13:33 IST | **FLIPPED by Arun's go.** OA_RULESET=baseage (reads back `baseage`), crontab installed from /tmp/ct.new (backup /tmp/ct.bak.20260913-133230, 135 lines before and after, diff = exactly lines 107 and 112): 18:50 entry job live, 09:20 equity_executor restricted to `--book ipo-base`, 09:25 re-arm still commented. Broker order book empty at flip time. No restart. OA_ROT1=True (swap live under baseage). First evening: Mon 14-Sep 18:50. |
