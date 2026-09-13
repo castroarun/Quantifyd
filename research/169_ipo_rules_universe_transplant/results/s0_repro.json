@@ -1,0 +1,60 @@
+{
+ "real_y0.05": {
+  "w2_cagr": 21.8,
+  "w2_cagr_lo": 20.83,
+  "w2_dd": -26.63,
+  "w2_dd_worst": -32.88,
+  "w2_calmar": 0.819,
+  "w2_inv": 36.3,
+  "w2_tpy": 18.9,
+  "w2_win": 49.0
+ },
+ "gate_vs_r167_stage9": {
+  "published": [
+   21.8,
+   -26.63
+  ],
+  "rerun": [
+   21.8,
+   -26.63
+  ],
+  "delta_pp": [
+   0.0,
+   0.0
+  ]
+ },
+ "real_y0.052": {
+  "w2_cagr": 21.96,
+  "w2_cagr_lo": 20.98,
+  "w2_dd": -26.56,
+  "w2_dd_worst": -32.76,
+  "w2_calmar": 0.827,
+  "w2_inv": 36.3,
+  "w2_tpy": 18.9,
+  "w2_win": 49.0
+ },
+ "per_seed_vs_r168_A_25bps_y52": {
+  "shape": [
+   30,
+   5128
+  ],
+  "ref_shape": [
+   30,
+   5128
+  ],
+  "max_abs_diff": 0.0
+ },
+ "null_gate": {
+  "published": {
+   "null": 16.98,
+   "edge": 4.78,
+   "wins": 30
+  },
+  "rerun": {
+   "null": 16.98,
+   "edge": 4.78,
+   "wins": 30
+  }
+ },
+ "PASSED": true
+}

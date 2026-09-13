@@ -1,0 +1,43 @@
+[
+ {
+  "label": "all__vet_any",
+  "universe": "all",
+  "age": "vet_any",
+  "L": 25,
+  "trail": 50,
+  "passed": false
+ },
+ {
+  "label": "mid101_250__none",
+  "universe": "mid101_250",
+  "age": "none",
+  "L": 25,
+  "trail": 50,
+  "passed": false
+ },
+ {
+  "label": "rank501plus__gt6",
+  "universe": "rank501plus",
+  "age": "gt6",
+  "L": 25,
+  "trail": 50,
+  "passed": false
+ },
+ {
+  "label": "all__le6",
+  "universe": "all",
+  "age": "le6",
+  "L": 25,
+  "trail": 50,
+  "passed": null
+ },
+ {
+  "label": "all__le6__mb60_livebook",
+  "universe": "all",
+  "age": "le6",
+  "L": 25,
+  "trail": 50,
+  "passed": null,
+  "min_bars": 60
+ }
+]

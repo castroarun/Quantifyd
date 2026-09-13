@@ -219,3 +219,6 @@ checks too. Registered in `ops_center.py` REVIEWS. Runbook:
 
 ## Reviews 2026-09-15 and 2026-09-26 - Open Alpha - Base Age LIVE conversion (added 12-Sep-2026)
 Live Open Alpha converts to Base Age (research/165, code staged behind `OA_RULESET` in `services/oa_real.py`, default legacy). 15-Sep: day-one check after the flip (18:50 job both legs, AMO type accepted, fills, 09:20 top-up off OA). 26-Sep (repurposed from the paper-book call): first two weeks - fills vs next-open, ST(14,4) exits vs dry-run, cash refusals vs the research/164 base rate. Registered in `ops_center.py` REVIEWS.
+
+## Review 2026-09-19 - IPO Base MIN_BARS 60 vs the validated 25 (research/169, added 13-Sep-2026)
+The live IPO book (`services/ipo_paper.py`) runs `MIN_BARS = 60`; research/167 validated Spec A at 25. research/167’s own engine: 21.80% after tax at 25, 11.57% at 60; inside TN/OA/IPO 37.5/37.5/25 the 60-bar book lowers blend CAGR by −2.46pp on 30 of 30 paths. Owed by Arun before the 26-Sep funding call: a recorded MIN_BARS decision (a change is its own STATUS doc, capacity check and after-15:40 deploy). Registered in `ops_center.py` REVIEWS. Evidence: `research/169_ipo_rules_universe_transplant/results/RESULTS.md` Q5-Q6.

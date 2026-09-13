@@ -141,6 +141,1694 @@ const GH = 'https://github.com/castroarun/Quantifyd/tree/main/research/41_midsma
 
 export const BACKTEST_STUDIES: BacktestStudy[] = [
   {
+    "slug": "ipo-rules-universe-transplant-research169",
+    "title": "Why is IPO Base IPO-specific? Its rules transplanted to Nifty 50, 100, 200, Midcap, 500, Smallcap and all stocks",
+    "verdict": "NO EDGE OUTSIDE YOUNG LISTINGS — AND THE LIVE IPO BOOK IS NOT RUNNING THE VALIDATED SPEC. IPO Base’s Spec A rules, with the age band removed or on seasoned names only, fail a date-matched random-entry control on all 16 size universes (2–9% a year after tax at −34% to −54% drawdown), and every one makes the TN / OA·Base Age / IPO book worse on 30 of 30 paths. The return lives in a stock’s first months after listing: widen the band from 6 to 12 to 24 months and the book falls 22.4% → 16.3% → 14.7%. Two corrections to IPO Base itself: research/167’s +4.8pp edge over random is +2.3pp on a NaN-robust panel and zero since 2016; and the live book’s MIN_BARS = 60 (the spec was validated at 25) backtests at 12.4% and lowers the blend’s CAGR by 2.5pp on every path. Nothing live was changed.",
+    "status": "COMPLETE",
+    "date": "2026-09-13",
+    "cardBlurb": "Arun asked why the IPO system only trades IPOs. Because that is where the money is: the same rules on Nifty 50 through all stocks do not beat random picks on any universe. And the live IPO book turns out to be running a 12% version of a 22% spec.",
+    "cardStats": [
+      {
+        "label": "transplants beating their random control",
+        "value": "0 / 16"
+      },
+      {
+        "label": "IPO spec as validated / as coded live",
+        "value": "22.4% / 12.4%"
+      },
+      {
+        "label": "live-book cost to the 3-sleeve blend",
+        "value": "−2.46pp, 30/30"
+      }
+    ],
+    "systemRules": {
+      "intro": "Everything is research/167 Spec A, the rules the live IPO book was re-fitted to on 12-Sep-2026. Only the universe and the age band move. Size universes are a causal traded-value proxy, because no point-in-time index membership history exists in the project.",
+      "sharedCoreTitle": "Held identical across every universe",
+      "sharedCore": [
+        {
+          "k": "Base",
+          "v": "last 25 bars; pivot = highest close, shifted one bar; depth pivot → base low ≤ 30%; prior close below the pivot"
+        },
+        {
+          "k": "Trigger and fill",
+          "v": "close above the pivot; next day a buy-stop AT the pivot, filled max(pivot, open), only if the day’s high reached it"
+        },
+        {
+          "k": "Exits",
+          "v": "stop close ≤ 0.90×fill → target close ≥ 1.25×fill → close below SMA-50"
+        },
+        {
+          "k": "Gate",
+          "v": "no new entries while NIFTYBEES closes below its 150-day average"
+        },
+        {
+          "k": "Liquidity",
+          "v": "20-day median traded value ≥ ₹5 cr at the prior close; funds excluded by instrument long name"
+        },
+        {
+          "k": "Book",
+          "v": "8 slots at 18.75%, ₹10 L, 25 bps a side, after tax with FY loss netting, idle cash 5.2% post-tax"
+        },
+        {
+          "k": "Minimum bars",
+          "v": "25 — what research/167 validated. The live book’s 60 is carried as its own labelled arm"
+        }
+      ],
+      "riskLayer": {
+        "title": "What changes: the universe and the age band",
+        "caption": "Ranks are recomputed on the first trading day of each month from the trailing 126-bar median traded value known at the prior close (the research/41 method). Checked against point-in-time market cap from Aug-2018 (Q7 table).",
+        "columns": [
+          "Universe label",
+          "Definition"
+        ],
+        "rows": [
+          [
+            "Nifty-50 / 100 / 200 / 500-like",
+            "traded-value rank 1-50 / 1-100 / 1-200 / 1-500"
+          ],
+          [
+            "Midcap-like",
+            "rank 101-250"
+          ],
+          [
+            "Smallcap-like",
+            "rank 251-500"
+          ],
+          [
+            "Beyond 500",
+            "rank 501+ (still ≥ ₹5 cr)"
+          ],
+          [
+            "All stocks",
+            "every name clearing the ₹5 cr floor"
+          ],
+          [
+            "age: no age limit",
+            "the IPO condition removed"
+          ],
+          [
+            "age: seasoned > 6m / > 24m",
+            "provably listed longer ago (vetted listing date, or data back beyond Jun-2005, or first database bar further back than the band)"
+          ],
+          [
+            "age: listed ≤ 6 / 12 / 24 months",
+            "vetted listing date within the band (≤ 6 months = Spec A)"
+          ]
+        ]
+      }
+    },
+    "system": {
+      "intro": "For a stock listed under six months, “the highest close of the last 25 bars” is close to its all-time high since listing and the base is its first base. For a seasoned stock the same words are a 25-day Donchian close breakout — a different signal. So the transplant answers two questions at once, and the study separates them: is the edge in the young-stock condition or in the breakout-plus-trail mechanics, and is a transplanted version just an existing breakout book in disguise?",
+      "rows": [
+        {
+          "k": "Reproduction gate",
+          "v": "research/167’s engine reproduces Spec A exactly (21.80% / −26.63%, all 30 seed paths identical to research/168’s curves, null edge +4.78pp 30/30). The new full-universe panel, set to research/167’s conventions, reproduces 21.80% with the same 1,545 signals"
+        },
+        {
+          "k": "The decisive control",
+          "v": "date-matched random entry on every universe: the same days and count, names drawn from THAT universe’s eligible set whose high reached their own pivot, the same fill, exits and gate, 30 paired seeds, in all three windows"
+        },
+        {
+          "k": "Pre-registered edge test",
+          "v": "W2 paired edge ≥ +1.0pp with ≥ 25/30 wins, AND ≥ 25/30 in both WA 2006-2015 and WB 2016-2026"
+        },
+        {
+          "k": "Pre-registered sleeve bar",
+          "v": "research/168’s: +0.10 Calmar or +2pp CAGR at no worse drawdown on ≥ 20/30 paths, beating risk-matched cash on ≥ 25/30, correlation to OA·Base Age below 0.60"
+        },
+        {
+          "k": "Data defenses",
+          "v": "per-symbol NaN-robust windows, phantom holiday rows of 24-Apr and 15-Oct-2014 dropped, split back-adjustment (273 events, 38 on ≥ ₹5 cr names); each switched on one at a time and its effect disclosed"
+        },
+        {
+          "k": "Scale",
+          "v": "about 100 backtest cells, 30 seeds each, most in three windows; the survivor re-fit was pre-registered and skipped because nothing survived"
+        }
+      ]
+    },
+    "conditions": {
+      "intro": "After tax (20% STCG / 12.5% LTCG, Indian FY loss netting), net of 25 bps a side, idle cash 5.2% post-tax, medians of 30 paired seeds.",
+      "rows": [
+        {
+          "k": "Period",
+          "v": "W2 2006-01-01 → 2026-09-04; WA 2006-2015; WB 2016-2026; market-cap re-run 2018-09 → 2026-09"
+        },
+        {
+          "k": "Book",
+          "v": "₹10,00,000, 8 slots at 18.75%"
+        },
+        {
+          "k": "Blend",
+          "v": "research/168’s 30 paired paths, TN 37.5 / OA·Base Age 37.5 / IPO 25, monthly, 2006-04-03 → 2026-09-03"
+        },
+        {
+          "k": "Cost ladder",
+          "v": "25 / 40 / 60 bps a side"
+        }
+      ]
+    },
+    "comparisons": [
+      {
+        "title": "THE TABLE THAT DECIDES IT — Spec A’s rules on every universe, each against its own random-entry control",
+        "caption": "After tax, 30 paired seeds. The first two rows are IPO Base itself: as validated, and as the live book is coded. No transplant passes; the best, Midcap-like with no age limit, wins 20 of 30 and only 15 of 30 after 2016.",
+        "columns": [
+          "Universe (Spec A rules otherwise identical)",
+          "CAGR",
+          "worst seed",
+          "MaxDD (worst seed)",
+          "Calmar",
+          "null CAGR",
+          "W2 edge [range]",
+          "wins W2 / WA / WB",
+          "WA real / null",
+          "WB real / null",
+          "edge test"
+        ],
+        "rows": [
+          [
+            "IPO Spec A — all stocks, listed ≤ 6 months",
+            "22.39%",
+            "21.09",
+            "−24.79% (−35.08%)",
+            "0.903",
+            "20.18%",
+            "+2.25pp [−0.40..+5.00]",
+            "29 / 30 / 14",
+            "17.01 / 12.39",
+            "28.37 / 28.27",
+            "FAIL"
+          ],
+          [
+            "IPO live book as coded — ≤ 6 months, ≥ 60 bars",
+            "12.39%",
+            "11.30",
+            "−36.35% (−41.72%)",
+            "0.341",
+            "11.83%",
+            "+0.79pp [−0.83..+2.17]",
+            "23 / 30 / 19",
+            "9.18 / 8.98",
+            "15.32 / 14.30",
+            "FAIL"
+          ],
+          [
+            "Nifty-50-like, no age limit",
+            "3.04%",
+            "−0.00",
+            "−43.62% (−61.89%)",
+            "0.070",
+            "5.36%",
+            "−2.23pp [−6.33..+0.82]",
+            "3 / 1 / 11",
+            "3.33 / 8.01",
+            "2.73 / 3.18",
+            "FAIL"
+          ],
+          [
+            "Nifty-50-like, seasoned > 6m",
+            "2.27%",
+            "−0.25",
+            "−45.42% (−65.39%)",
+            "0.050",
+            "1.98%",
+            "+0.25pp [−3.58..+4.34]",
+            "17 / 11 / 24",
+            "2.60 / 3.94",
+            "2.14 / 0.23",
+            "FAIL"
+          ],
+          [
+            "Nifty-100-like, no age limit",
+            "4.39%",
+            "−2.57",
+            "−43.54% (−70.93%)",
+            "0.101",
+            "3.65%",
+            "+0.01pp [−3.46..+6.26]",
+            "15 / 18 / 18",
+            "6.09 / 4.79",
+            "2.81 / 2.21",
+            "FAIL"
+          ],
+          [
+            "Nifty-100-like, seasoned > 6m",
+            "4.00%",
+            "−1.70",
+            "−45.41% (−64.62%)",
+            "0.088",
+            "4.67%",
+            "−0.47pp [−4.50..+5.05]",
+            "13 / 8 / 13",
+            "5.64 / 7.89",
+            "2.66 / 3.11",
+            "FAIL"
+          ],
+          [
+            "Nifty-200-like, no age limit",
+            "5.51%",
+            "1.58",
+            "−48.17% (−65.77%)",
+            "0.114",
+            "8.86%",
+            "−3.24pp [−8.87..+4.21]",
+            "5 / 11 / 6",
+            "7.25 / 11.22",
+            "3.26 / 6.95",
+            "FAIL"
+          ],
+          [
+            "Nifty-200-like, seasoned > 6m",
+            "5.79%",
+            "1.60",
+            "−48.85% (−60.88%)",
+            "0.119",
+            "6.58%",
+            "−0.73pp [−6.20..+4.26]",
+            "12 / 12 / 17",
+            "7.71 / 9.50",
+            "3.39 / 2.69",
+            "FAIL"
+          ],
+          [
+            "Nifty-500-like, no age limit",
+            "5.53%",
+            "1.46",
+            "−49.71% (−62.75%)",
+            "0.111",
+            "5.76%",
+            "−0.59pp [−6.96..+4.78]",
+            "13 / 12 / 13",
+            "7.02 / 8.81",
+            "3.24 / 5.17",
+            "FAIL"
+          ],
+          [
+            "Nifty-500-like, seasoned > 6m",
+            "5.24%",
+            "−1.28",
+            "−48.74% (−74.00%)",
+            "0.108",
+            "5.06%",
+            "−0.71pp [−10.19..+5.90]",
+            "12 / 12 / 13",
+            "6.62 / 8.72",
+            "2.77 / 3.13",
+            "FAIL"
+          ],
+          [
+            "Midcap-like (rank 101-250), no age limit",
+            "8.94%",
+            "5.08",
+            "−50.36% (−61.00%)",
+            "0.177",
+            "7.81%",
+            "+1.52pp [−4.03..+5.49]",
+            "20 / 23 / 15",
+            "13.45 / 9.90",
+            "4.40 / 4.70",
+            "FAIL"
+          ],
+          [
+            "Midcap-like, seasoned > 6m",
+            "8.92%",
+            "4.45",
+            "−49.48% (−62.20%)",
+            "0.180",
+            "11.00%",
+            "−1.70pp [−9.36..+3.28]",
+            "8 / 6 / 12",
+            "13.53 / 16.61",
+            "4.45 / 6.13",
+            "FAIL"
+          ],
+          [
+            "Smallcap-like (rank 251-500), no age limit",
+            "2.52%",
+            "−2.43",
+            "−49.33% (−60.65%)",
+            "0.051",
+            "3.03%",
+            "−0.84pp [−4.00..+3.12]",
+            "13 / 0 / 25",
+            "−1.08 / 2.47",
+            "5.45 / 2.73",
+            "FAIL"
+          ],
+          [
+            "Smallcap-like, seasoned > 6m",
+            "2.46%",
+            "−1.80",
+            "−53.57% (−69.12%)",
+            "0.046",
+            "3.17%",
+            "−1.42pp [−6.05..+3.04]",
+            "12 / 0 / 15",
+            "−1.08 / 2.47",
+            "4.80 / 3.42",
+            "FAIL"
+          ],
+          [
+            "Beyond 500 (rank 501+), no age limit",
+            "6.76%",
+            "4.03",
+            "−33.96% (−55.49%)",
+            "0.199",
+            "8.21%",
+            "−1.39pp [−5.10..+1.80]",
+            "8 / 0 / 9",
+            "4.86 / 5.78",
+            "7.95 / 10.62",
+            "FAIL"
+          ],
+          [
+            "Beyond 500, seasoned > 6m",
+            "7.41%",
+            "4.02",
+            "−36.04% (−49.27%)",
+            "0.206",
+            "6.80%",
+            "+0.69pp [−4.66..+4.42]",
+            "20 / 0 / 19",
+            "5.11 / 5.11",
+            "9.39 / 8.26",
+            "FAIL"
+          ],
+          [
+            "All stocks, no age limit",
+            "6.97%",
+            "2.24",
+            "−46.57% (−68.27%)",
+            "0.150",
+            "7.18%",
+            "−0.04pp [−9.21..+5.27]",
+            "15 / 4 / 17",
+            "8.98 / 13.33",
+            "5.06 / 2.42",
+            "FAIL"
+          ],
+          [
+            "All stocks, seasoned > 6m",
+            "5.86%",
+            "0.83",
+            "−44.87% (−70.21%)",
+            "0.131",
+            "6.87%",
+            "−1.50pp [−4.93..+6.53]",
+            "11 / 10 / 10",
+            "6.29 / 8.96",
+            "3.63 / 4.25",
+            "FAIL"
+          ]
+        ],
+        "highlightRows": [
+          0
+        ]
+      },
+      {
+        "title": "Widen the age band and the book decays — and past six months the random control BEATS the breakout",
+        "caption": "All-stock universe. Spec A itself clears 2006-2015 on every seed and ties chance after 2016 on this clean panel.",
+        "columns": [
+          "Age band (all-stock universe)",
+          "signals",
+          "CAGR",
+          "MaxDD",
+          "Calmar",
+          "null CAGR",
+          "W2 edge (wins)",
+          "WA edge (wins)",
+          "WB edge (wins)",
+          "trades on stocks listed ≤ 6m"
+        ],
+        "rows": [
+          [
+            "IPO Spec A — all stocks, listed ≤ 6 months",
+            "1,707",
+            "22.39%",
+            "−24.79%",
+            "0.903",
+            "20.18%",
+            "+2.25pp (29)",
+            "+4.63pp (30)",
+            "−0.18pp (14)",
+            "99.1%"
+          ],
+          [
+            "All stocks, listed ≤ 12 months",
+            "3,635",
+            "16.28%",
+            "−31.52%",
+            "0.516",
+            "18.04%",
+            "−1.93pp (9)",
+            "−0.33pp (9)",
+            "−3.34pp (5)",
+            "49.6%"
+          ],
+          [
+            "All stocks, listed ≤ 24 months",
+            "6,502",
+            "14.68%",
+            "−38.73%",
+            "0.379",
+            "16.29%",
+            "−1.29pp (10)",
+            "−3.23pp (0)",
+            "−0.37pp (14)",
+            "30.2%"
+          ],
+          [
+            "All vetted listings, any age",
+            "32,974",
+            "7.55%",
+            "−44.20%",
+            "0.171",
+            "6.87%",
+            "+1.53pp (22)",
+            "+4.80pp (29)",
+            "+0.36pp (16)",
+            "8.8%"
+          ],
+          [
+            "All stocks, no age limit",
+            "89,619",
+            "6.97%",
+            "−46.57%",
+            "0.150",
+            "7.18%",
+            "−0.04pp (15)",
+            "−4.33pp (4)",
+            "+0.96pp (17)",
+            "2.0%"
+          ],
+          [
+            "All stocks, seasoned > 6m",
+            "87,610",
+            "5.86%",
+            "−44.87%",
+            "0.131",
+            "6.87%",
+            "−1.50pp (11)",
+            "−2.16pp (10)",
+            "−1.67pp (10)",
+            "0.0%"
+          ],
+          [
+            "All stocks, seasoned > 24 months",
+            "81,812",
+            "4.63%",
+            "−49.69%",
+            "0.093",
+            "3.95%",
+            "+0.73pp (17)",
+            "−1.27pp (11)",
+            "+0.00pp (15)",
+            "0.0%"
+          ]
+        ],
+        "highlightRows": [
+          0
+        ]
+      },
+      {
+        "title": "Second check on TRUE point-in-time market cap (2018-09 → 2026-09)",
+        "caption": "fundamentals.db mcap_pit, previous month’s row. Market-cap universes are no better than the traded-value proxies, and Spec A ties its control in this window.",
+        "columns": [
+          "Universe, no age limit (2018-09 → 2026-09)",
+          "signals",
+          "CAGR",
+          "MaxDD",
+          "Calmar",
+          "null CAGR",
+          "edge (seeds real wins / 30)"
+        ],
+        "rows": [
+          [
+            "IPO Spec A (same window)",
+            "1,325",
+            "24.14%",
+            "−25.57%",
+            "0.944",
+            "24.19%",
+            "−0.09pp (15)"
+          ],
+          [
+            "Nifty-50-like — by PIT market cap",
+            "5,789",
+            "1.19%",
+            "−37.47%",
+            "0.032",
+            "2.26%",
+            "−1.50pp (11)"
+          ],
+          [
+            "Nifty-50-like — by traded value",
+            "5,623",
+            "0.72%",
+            "−41.26%",
+            "0.017",
+            "0.77%",
+            "+0.02pp (15)"
+          ],
+          [
+            "Nifty-100-like — by PIT market cap",
+            "11,153",
+            "−0.57%",
+            "−40.33%",
+            "−0.014",
+            "1.58%",
+            "−1.66pp (10)"
+          ],
+          [
+            "Nifty-100-like — by traded value",
+            "11,144",
+            "0.95%",
+            "−40.40%",
+            "0.023",
+            "0.03%",
+            "+1.50pp (19)"
+          ],
+          [
+            "Nifty-200-like — by PIT market cap",
+            "21,180",
+            "1.64%",
+            "−39.26%",
+            "0.042",
+            "1.34%",
+            "+0.19pp (15)"
+          ],
+          [
+            "Nifty-200-like — by traded value",
+            "21,902",
+            "2.13%",
+            "−45.73%",
+            "0.046",
+            "4.71%",
+            "−2.89pp (12)"
+          ],
+          [
+            "Nifty-500-like — by PIT market cap",
+            "42,470",
+            "0.73%",
+            "−39.09%",
+            "0.019",
+            "1.04%",
+            "−1.10pp (14)"
+          ],
+          [
+            "Nifty-500-like — by traded value",
+            "44,660",
+            "3.23%",
+            "−44.31%",
+            "0.073",
+            "3.48%",
+            "−0.71pp (14)"
+          ],
+          [
+            "Midcap-like — by PIT market cap",
+            "14,316",
+            "3.50%",
+            "−38.89%",
+            "0.090",
+            "5.97%",
+            "−2.72pp (11)"
+          ],
+          [
+            "Midcap-like — by traded value",
+            "15,518",
+            "3.75%",
+            "−41.02%",
+            "0.091",
+            "1.72%",
+            "+1.85pp (18)"
+          ],
+          [
+            "Smallcap-like — by PIT market cap",
+            "17,001",
+            "−0.72%",
+            "−45.71%",
+            "−0.016",
+            "6.47%",
+            "−5.43pp (4)"
+          ],
+          [
+            "Smallcap-like — by traded value",
+            "17,998",
+            "3.69%",
+            "−42.69%",
+            "0.086",
+            "2.37%",
+            "+0.16pp (15)"
+          ]
+        ]
+      },
+      {
+        "title": "Why research/167’s +4.8pp edge over random is really +2.3pp — and zero since 2016",
+        "caption": "Spec A real vs control, idle cash 5.0% so the first row matches research/167 exactly. One missing row on a union date index made a name’s pivot and trail NaN for weeks; per-symbol windows fix it, the real book barely moves, the control rises.",
+        "columns": [
+          "Panel",
+          "signals",
+          "W2 real / null",
+          "W2 edge (wins)",
+          "WA real / null",
+          "WA edge (wins)",
+          "WB real / null",
+          "WB edge (wins)"
+        ],
+        "rows": [
+          [
+            "research/167’s panel (union-date windows)",
+            "1,545",
+            "21.80 / 16.87",
+            "+5.14pp (30)",
+            "16.12 / 11.53",
+            "+4.59pp (30)",
+            "27.20 / 21.93",
+            "+5.64pp (30)"
+          ],
+          [
+            "+ per-symbol NaN-robust windows",
+            "1,707",
+            "22.24 / 20.03",
+            "+2.25pp (30)",
+            "16.83 / 12.21",
+            "+4.62pp (30)",
+            "28.26 / 28.16",
+            "−0.18pp (13)"
+          ],
+          [
+            "+ phantom holiday rows dropped",
+            "1,707",
+            "22.23 / 20.03",
+            "+2.25pp (30)",
+            "16.83 / 12.21",
+            "+4.62pp (30)",
+            "28.26 / 28.16",
+            "−0.18pp (13)"
+          ],
+          [
+            "+ split back-adjustment (this study’s panel)",
+            "1,707",
+            "22.23 / 20.03",
+            "+2.25pp (30)",
+            "16.83 / 12.21",
+            "+4.62pp (30)",
+            "28.26 / 28.16",
+            "−0.18pp (13)"
+          ]
+        ],
+        "highlightRows": [
+          1
+        ]
+      },
+      {
+        "title": "The live book’s MIN_BARS = 60 is worth about 10 points of CAGR less than the validated 25",
+        "caption": "research/167’s own engine and panel, unchanged, idle cash 5.0%. The 6-Sep decision read the harness’s “n >= 60” as bars at the signal date; it counts rows over the whole database today.",
+        "columns": [
+          "Minimum bars since listing",
+          "signals",
+          "CAGR",
+          "worst seed",
+          "MaxDD",
+          "Calmar",
+          "WA / WB",
+          "null CAGR",
+          "edge (wins / 30)"
+        ],
+        "rows": [
+          [
+            "25 — the validated Spec A",
+            "1,548",
+            "21.80%",
+            "20.83",
+            "−26.63%",
+            "0.819",
+            "16.12 / 27.20",
+            "16.98%",
+            "+4.78pp (30)"
+          ],
+          [
+            "40",
+            "1,308",
+            "17.87%",
+            "15.57",
+            "−32.40%",
+            "0.552",
+            "14.09 / 22.27",
+            "18.94%",
+            "−1.38pp (3)"
+          ],
+          [
+            "60 — what services/ipo_paper.py runs",
+            "988",
+            "11.57%",
+            "10.11",
+            "−38.97%",
+            "0.297",
+            "9.25 / 13.39",
+            "9.54%",
+            "+2.07pp (30)"
+          ]
+        ],
+        "highlightRows": [
+          2
+        ]
+      }
+    ],
+    "results": {
+      "metrics": [
+        {
+          "label": "transplant cells passing the control",
+          "value": "0 / 16",
+          "tone": "neg"
+        },
+        {
+          "label": "IPO Spec A, validated",
+          "value": "22.39%",
+          "hint": "clean panel, 5.2% cash"
+        },
+        {
+          "label": "IPO live book as coded",
+          "value": "12.39%",
+          "tone": "neg",
+          "hint": "MIN_BARS 60"
+        },
+        {
+          "label": "best transplant",
+          "value": "8.94%",
+          "tone": "neg",
+          "hint": "Midcap-like, −50% DD"
+        },
+        {
+          "label": "live book vs validated, inside the blend",
+          "value": "−2.46pp",
+          "tone": "neg",
+          "hint": "30 of 30 paths"
+        }
+      ],
+      "tables": [
+        {
+          "title": "Portfolio fit — every transplant makes the TN / OA·Base Age / IPO book worse",
+          "caption": "Paired on research/168’s 30 paths against TN 37.5 / OA·Base Age 37.5 / IPO-A 25 (21.18% / −24.01% / 0.885). “vs cash” = the same book with cash in place of the candidate, the cash weight solved to the same median drawdown.",
+          "columns": [
+            "Candidate",
+            "monthly corr TN / OA·BaseAge / IPO-A",
+            "replacing IPO-A at 25%: CAGR / MaxDD / Calmar",
+            "ΔCAGR (paths better)",
+            "ΔCalmar (paths better)",
+            "vs risk-matched cash (paths better)",
+            "4th sleeve at 10%: ΔCAGR / ΔCalmar / vs cash",
+            "4th sleeve at 25%: ΔCAGR / ΔCalmar / vs cash"
+          ],
+          "rows": [
+            [
+              "All vetted listings, any age",
+              "0.45 / 0.53 / 0.37",
+              "17.41% / −29.63% / 0.591",
+              "−3.74pp (0/30)",
+              "−0.274 (0/30)",
+              "−2.74pp (0/30)",
+              "−1.19pp / −0.072 / −1.19pp (0/30)",
+              "−3.02pp / −0.189 / −3.02pp (0/30)"
+            ],
+            [
+              "Midcap-like (rank 101-250), no age limit",
+              "0.49 / 0.56 / 0.27",
+              "17.37% / −28.51% / 0.617",
+              "−3.54pp (0/30)",
+              "−0.256 (0/30)",
+              "−2.75pp (0/30)",
+              "−1.16pp / −0.061 / −1.16pp (0/30)",
+              "−2.96pp / −0.188 / −2.96pp (0/30)"
+            ],
+            [
+              "Beyond 500, seasoned > 6m",
+              "0.23 / 0.32 / 0.25",
+              "17.06% / −25.42% / 0.683",
+              "−3.84pp (0/30)",
+              "−0.201 (0/30)",
+              "−2.22pp (0/30)",
+              "−1.27pp / −0.036 / −0.81pp (0/30)",
+              "−3.21pp / −0.100 / −2.60pp (0/30)"
+            ],
+            [
+              "IPO Spec A — all stocks, listed ≤ 6 months",
+              "0.37 / 0.34 / 0.93",
+              "21.13% / −23.53% / 0.914",
+              "+0.05pp (19/30)",
+              "+0.029 (30/30)",
+              "+2.86pp (30/30)",
+              "+0.25pp / +0.056 / +1.04pp (30/30)",
+              "+0.58pp / +0.146 / +2.47pp (30/30)"
+            ],
+            [
+              "IPO live book as coded — ≤ 6 months, ≥ 60 bars",
+              "0.25 / 0.34 / 0.78",
+              "18.80% / −22.84% / 0.827",
+              "−2.46pp (0/30)",
+              "−0.061 (0/30)",
+              "+0.61pp (30/30)",
+              "−0.71pp / +0.021 / +0.19pp (30/30)",
+              "−1.83pp / +0.038 / −0.03pp (14/30)"
+            ]
+          ]
+        },
+        {
+          "title": "The Capital Desk decision — what 25% to IPO buys today",
+          "caption": "The validated spec earns its 25%. The version the live book runs lowers the blend’s CAGR on every path and adds barely more than cash at equal risk.",
+          "columns": [
+            "Third sleeve at 25% (TN 37.5 / OA·BaseAge 37.5)",
+            "blend CAGR",
+            "MaxDD",
+            "Calmar",
+            "vs IPO-A at 25%",
+            "vs cash at equal drawdown",
+            "40 bps / 60 bps CAGR"
+          ],
+          "rows": [
+            [
+              "IPO-A as validated (min_bars 25) — research/168",
+              "21.18%",
+              "−24.01%",
+              "0.885",
+              "—",
+              "+2.52pp, 30/30 (research/168)",
+              "19.47% / 17.92%"
+            ],
+            [
+              "IPO live book as coded (min_bars 60)",
+              "18.80%",
+              "−22.84%",
+              "0.827",
+              "−2.46pp CAGR (0/30 better); −0.061 Calmar (0/30)",
+              "+0.61pp (30/30)",
+              "17.11% / 15.60%"
+            ],
+            [
+              "Spec A on this study’s clean panel (min_bars 25), check",
+              "21.13%",
+              "−23.53%",
+              "0.914",
+              "+0.05pp (19/30); +0.029 Calmar (30/30)",
+              "+2.86pp (30/30)",
+              "—"
+            ],
+            [
+              "two-sleeve TN + OA·BaseAge 50:50 (no IPO)",
+              "20.28%",
+              "−26.91%",
+              "0.749",
+              "—",
+              "—",
+              "—"
+            ]
+          ],
+          "highlightRows": [
+            1
+          ]
+        },
+        {
+          "title": "Tradeability and capacity",
+          "caption": "Bigger universes do lift capacity — on books that earn 2-9% with no edge. Note Spec A’s p90 position is ~10% of a name’s 20-day traded value at ₹10 L: research/167 quoted its median (1.56%) as the p90.",
+          "columns": [
+            "Universe",
+            "trades / yr",
+            "median hold (days)",
+            "invested",
+            "win rate",
+            "avg win / avg loss",
+            "longest losing streak",
+            "net expectancy / trade (after 50 bps)",
+            "ten best trades’ share",
+            "median position, % of 20d traded value @ ₹10 L",
+            "p90 position @ ₹10 L",
+            "book size where p90 = 5%"
+          ],
+          "rows": [
+            [
+              "IPO Spec A — all stocks, listed ≤ 6 months",
+              "20.3",
+              "29",
+              "37.1%",
+              "48.3%",
+              "+21.4% / −7.4%",
+              "11",
+              "+6.00%",
+              "14.5%",
+              "1.48%",
+              "9.86%",
+              "₹5 L"
+            ],
+            [
+              "IPO live book as coded — ≤ 6 months, ≥ 60 bars",
+              "17.4",
+              "28",
+              "31.7%",
+              "40.6%",
+              "+20.7% / −7.3%",
+              "23",
+              "+3.61%",
+              "25.0%",
+              "0.59%",
+              "2.65%",
+              "₹19 L"
+            ],
+            [
+              "Nifty-50-like, no age limit",
+              "33.3",
+              "31",
+              "67.7%",
+              "34.6%",
+              "+14.1% / −5.8%",
+              "26",
+              "+0.58%",
+              "44.8%",
+              "0.02%",
+              "0.07%",
+              "₹742 L"
+            ],
+            [
+              "Nifty-50-like, seasoned > 6m",
+              "33.2",
+              "31",
+              "67.6%",
+              "34.4%",
+              "+14.1% / −5.8%",
+              "25",
+              "+0.44%",
+              "50.5%",
+              "0.02%",
+              "0.06%",
+              "₹791 L"
+            ],
+            [
+              "Nifty-100-like, no age limit",
+              "34.5",
+              "32",
+              "68.9%",
+              "35.5%",
+              "+14.6% / −5.9%",
+              "22",
+              "+0.83%",
+              "35.5%",
+              "0.04%",
+              "0.16%",
+              "₹305 L"
+            ],
+            [
+              "Nifty-100-like, seasoned > 6m",
+              "34.7",
+              "31",
+              "68.8%",
+              "35.5%",
+              "+14.6% / −6.0%",
+              "22",
+              "+0.74%",
+              "38.8%",
+              "0.04%",
+              "0.16%",
+              "₹308 L"
+            ],
+            [
+              "Nifty-200-like, no age limit",
+              "35.8",
+              "31",
+              "69.5%",
+              "35.6%",
+              "+15.6% / −6.1%",
+              "21",
+              "+1.06%",
+              "30.9%",
+              "0.07%",
+              "0.38%",
+              "₹133 L"
+            ],
+            [
+              "Nifty-200-like, seasoned > 6m",
+              "35.6",
+              "32",
+              "69.7%",
+              "36.0%",
+              "+15.5% / −6.1%",
+              "22",
+              "+1.10%",
+              "30.2%",
+              "0.08%",
+              "0.38%",
+              "₹132 L"
+            ],
+            [
+              "Nifty-500-like, no age limit",
+              "36.8",
+              "30",
+              "69.5%",
+              "35.6%",
+              "+15.9% / −6.5%",
+              "19",
+              "+1.04%",
+              "31.1%",
+              "0.12%",
+              "0.55%",
+              "₹92 L"
+            ],
+            [
+              "Nifty-500-like, seasoned > 6m",
+              "36.8",
+              "30",
+              "69.5%",
+              "34.9%",
+              "+16.1% / −6.4%",
+              "19",
+              "+0.99%",
+              "31.9%",
+              "0.12%",
+              "0.51%",
+              "₹97 L"
+            ],
+            [
+              "Midcap-like (rank 101-250), no age limit",
+              "36.0",
+              "30",
+              "67.2%",
+              "37.5%",
+              "+16.9% / −6.8%",
+              "18",
+              "+1.60%",
+              "23.6%",
+              "0.32%",
+              "0.86%",
+              "₹58 L"
+            ],
+            [
+              "Midcap-like, seasoned > 6m",
+              "35.9",
+              "30",
+              "67.3%",
+              "37.6%",
+              "+16.7% / −6.7%",
+              "17",
+              "+1.57%",
+              "22.9%",
+              "0.32%",
+              "0.83%",
+              "₹60 L"
+            ],
+            [
+              "Smallcap-like (rank 251-500), no age limit",
+              "24.3",
+              "28",
+              "43.6%",
+              "31.8%",
+              "+18.3% / −7.5%",
+              "18",
+              "+0.30%",
+              "91.2%",
+              "0.20%",
+              "0.36%",
+              "₹139 L"
+            ],
+            [
+              "Smallcap-like, seasoned > 6m",
+              "24.4",
+              "28",
+              "43.6%",
+              "31.7%",
+              "+18.0% / −7.5%",
+              "19",
+              "+0.26%",
+              "96.7%",
+              "0.19%",
+              "0.35%",
+              "₹142 L"
+            ],
+            [
+              "Beyond 500 (rank 501+), no age limit",
+              "16.2",
+              "28",
+              "27.6%",
+              "36.9%",
+              "+19.4% / −8.0%",
+              "13",
+              "+1.59%",
+              "55.1%",
+              "0.62%",
+              "1.26%",
+              "₹40 L"
+            ],
+            [
+              "Beyond 500, seasoned > 6m",
+              "16.2",
+              "28",
+              "27.6%",
+              "37.6%",
+              "+19.4% / −7.9%",
+              "13",
+              "+1.82%",
+              "48.9%",
+              "0.64%",
+              "1.32%",
+              "₹38 L"
+            ],
+            [
+              "All stocks, no age limit",
+              "37.2",
+              "30",
+              "69.5%",
+              "35.8%",
+              "+16.4% / −6.5%",
+              "19",
+              "+1.26%",
+              "27.1%",
+              "0.16%",
+              "0.72%",
+              "₹70 L"
+            ],
+            [
+              "All stocks, seasoned > 6m",
+              "36.9",
+              "30",
+              "69.5%",
+              "36.2%",
+              "+16.0% / −6.5%",
+              "18",
+              "+1.06%",
+              "29.3%",
+              "0.14%",
+              "0.62%",
+              "₹81 L"
+            ]
+          ]
+        },
+        {
+          "title": "Cost ladder",
+          "caption": "After tax. Transplants trade ~36 times a year and lose 4-6 points from 25 to 60 bps.",
+          "columns": [
+            "Spec",
+            "25 bps a side",
+            "40 bps",
+            "60 bps",
+            "CAGR lost 25 → 60"
+          ],
+          "rows": [
+            [
+              "All vetted listings, any age",
+              "7.55% / −44.20%",
+              "6.32% / −47.97%",
+              "3.69% / −54.49%",
+              "−3.86pp"
+            ],
+            [
+              "Midcap-like (rank 101-250), no age limit",
+              "8.94% / −50.36%",
+              "7.19% / −54.47%",
+              "4.30% / −61.19%",
+              "−4.64pp"
+            ],
+            [
+              "Beyond 500, seasoned > 6m",
+              "7.41% / −36.04%",
+              "6.45% / −38.62%",
+              "5.51% / −40.84%",
+              "−1.90pp"
+            ],
+            [
+              "IPO Spec A — all stocks, listed ≤ 6 months",
+              "22.39% / −24.79%",
+              "20.83% / −26.49%",
+              "19.40% / −28.47%",
+              "−2.99pp"
+            ],
+            [
+              "IPO live book as coded — ≤ 6 months, ≥ 60 bars",
+              "12.39% / −36.35%",
+              "11.45% / −38.77%",
+              "10.15% / −42.05%",
+              "−2.24pp"
+            ]
+          ]
+        },
+        {
+          "title": "How good is the size proxy?",
+          "caption": "Spearman rank correlation, traded value vs PIT market cap, within the top 500 by market cap: 0.70 (median of 98 months).",
+          "columns": [
+            "Proxy band (traded-value rank)",
+            "overlap with the PIT market-cap band (median month, Aug-2018+)",
+            "overlap with today’s official index",
+            "official index"
+          ],
+          "rows": [
+            [
+              "top 50",
+              "62%",
+              "58%",
+              "Nifty 50"
+            ],
+            [
+              "top 100",
+              "69%",
+              "66%",
+              "Nifty 50 + Next 50"
+            ],
+            [
+              "top 200",
+              "76%",
+              "80%",
+              "Nifty 200"
+            ],
+            [
+              "top 500",
+              "80%",
+              "79%",
+              "Nifty 500 (proxy list)"
+            ],
+            [
+              "ranks 101-250",
+              "44%",
+              "46%",
+              "Nifty Midcap 150"
+            ],
+            [
+              "ranks 251-500",
+              "44%",
+              "42%",
+              "Nifty Smallcap 250"
+            ]
+          ]
+        },
+        {
+          "title": "Per-year house table — return (intra-year drawdown from the full curve’s running peak)",
+          "caption": "Median-CAGR path of each ensemble; summary row = 30-path medians. Best-of columns exclude NIFTYBEES. 2006-04-03 → 2026-09-03.",
+          "columns": [
+            "Year",
+            "TN",
+            "OA · Base Age",
+            "IPO-A (validated)",
+            "IPO live (60 bars)",
+            "Midcap-like transplant",
+            "TN / OA / IPO-A 37.5/37.5/25",
+            "TN / OA / IPO live 37.5/37.5/25",
+            "TN / OA / Midcap transplant 37.5/37.5/25",
+            "NIFTYBEES",
+            "BEST CAGR",
+            "LEAST DD",
+            "BEST OVERALL"
+          ],
+          "rows": [
+            [
+              "2006",
+              "+8.4 (−11.9)",
+              "+8.3 (−20.6)",
+              "+69.1 (−10.1)",
+              "+37.1 (−2.6)",
+              "+10.4 (−15.7)",
+              "+22.2 (−12.0)",
+              "+13.6 (−10.5)",
+              "+9.6 (−11.2)",
+              "+16.1 (−29.9)",
+              "IPO-A (validated)",
+              "IPO live (60 bars)",
+              "IPO-A (validated)"
+            ],
+            [
+              "2007",
+              "+81.6 (−15.6)",
+              "+84.7 (−10.8)",
+              "+51.6 (−15.9)",
+              "+27.3 (−12.5)",
+              "+36.3 (−21.2)",
+              "+65.4 (−12.4)",
+              "+60.7 (−10.7)",
+              "+62.8 (−11.6)",
+              "+53.0 (−14.9)",
+              "OA · Base Age",
+              "TN / OA / IPO live 37.5/37.5/25",
+              "OA · Base Age"
+            ],
+            [
+              "2008",
+              "−15.6 (−21.5)",
+              "−29.9 (−32.6)",
+              "−10.1 (−15.8)",
+              "−7.0 (−12.8)",
+              "−17.8 (−21.6)",
+              "−18.4 (−21.4)",
+              "−18.4 (−21.1)",
+              "−21.3 (−24.0)",
+              "−52.1 (−59.7)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)"
+            ],
+            [
+              "2009",
+              "+52.3 (−22.4)",
+              "+62.8 (−31.7)",
+              "+4.0 (−12.5)",
+              "+4.2 (−9.4)",
+              "+72.7 (−18.5)",
+              "+54.6 (−20.8)",
+              "+47.7 (−20.8)",
+              "+71.3 (−23.1)",
+              "+75.6 (−59.1)",
+              "Midcap-like transplant",
+              "IPO live (60 bars)",
+              "Midcap-like transplant"
+            ],
+            [
+              "2010",
+              "+5.5 (−20.4)",
+              "+15.5 (−15.7)",
+              "+21.1 (−9.8)",
+              "+17.8 (−10.2)",
+              "+7.9 (−17.8)",
+              "+15.3 (−10.3)",
+              "+15.5 (−10.8)",
+              "+10.0 (−14.1)",
+              "+18.6 (−25.0)",
+              "IPO-A (validated)",
+              "IPO-A (validated)",
+              "IPO-A (validated)"
+            ],
+            [
+              "2011",
+              "−12.4 (−18.6)",
+              "−10.5 (−18.6)",
+              "−2.4 (−10.2)",
+              "−2.4 (−8.2)",
+              "−23.1 (−35.9)",
+              "−8.6 (−14.7)",
+              "−10.3 (−15.0)",
+              "−9.4 (−21.1)",
+              "−24.1 (−27.3)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)"
+            ],
+            [
+              "2012",
+              "+22.2 (−16.3)",
+              "+28.2 (−19.5)",
+              "+11.9 (−9.8)",
+              "+11.9 (−7.8)",
+              "+13.9 (−35.5)",
+              "+25.0 (−14.1)",
+              "+22.2 (−14.4)",
+              "+22.8 (−20.9)",
+              "+26.5 (−26.0)",
+              "OA · Base Age",
+              "IPO live (60 bars)",
+              "TN / OA / IPO-A 37.5/37.5/25"
+            ],
+            [
+              "2013",
+              "+0.6 (−12.1)",
+              "+4.5 (−9.3)",
+              "+4.8 (−0.4)",
+              "+6.1 (−4.2)",
+              "−13.0 (−44.0)",
+              "+1.4 (−7.5)",
+              "+5.3 (−5.0)",
+              "+5.3 (−10.2)",
+              "+7.2 (−16.0)",
+              "IPO live (60 bars)",
+              "IPO-A (validated)",
+              "IPO-A (validated)"
+            ],
+            [
+              "2014",
+              "+38.0 (−12.0)",
+              "+49.7 (−7.3)",
+              "+5.2 (0.0)",
+              "+0.4 (−4.5)",
+              "+48.9 (−42.4)",
+              "+39.8 (−7.2)",
+              "+35.4 (−6.5)",
+              "+51.0 (−9.8)",
+              "+31.6 (−6.2)",
+              "TN / OA / Midcap transplant 37.5/37.5/25",
+              "IPO-A (validated)",
+              "OA · Base Age"
+            ],
+            [
+              "2015",
+              "−3.3 (−10.9)",
+              "−3.6 (−23.5)",
+              "+27.7 (−9.6)",
+              "+2.4 (−3.9)",
+              "−5.3 (−23.8)",
+              "+4.5 (−9.9)",
+              "−2.4 (−10.2)",
+              "−5.8 (−12.7)",
+              "−4.3 (−15.0)",
+              "IPO-A (validated)",
+              "IPO live (60 bars)",
+              "IPO-A (validated)"
+            ],
+            [
+              "2016",
+              "+31.1 (−11.8)",
+              "+7.3 (−29.5)",
+              "+75.8 (−10.6)",
+              "+20.2 (−10.7)",
+              "−10.4 (−30.6)",
+              "+27.8 (−10.3)",
+              "+21.1 (−12.1)",
+              "+10.2 (−13.8)",
+              "+4.0 (−21.6)",
+              "IPO-A (validated)",
+              "TN / OA / IPO-A 37.5/37.5/25",
+              "IPO-A (validated)"
+            ],
+            [
+              "2017",
+              "+31.7 (−10.1)",
+              "+65.2 (−13.2)",
+              "+72.3 (−10.2)",
+              "+65.0 (−13.2)",
+              "+56.9 (−29.4)",
+              "+46.8 (−6.7)",
+              "+50.0 (−6.8)",
+              "+49.9 (−8.1)",
+              "+29.9 (−8.5)",
+              "IPO-A (validated)",
+              "TN / OA / IPO-A 37.5/37.5/25",
+              "IPO-A (validated)"
+            ],
+            [
+              "2018",
+              "−8.3 (−23.1)",
+              "−30.5 (−35.6)",
+              "−9.1 (−19.2)",
+              "−1.4 (−13.5)",
+              "−23.5 (−30.8)",
+              "−12.9 (−21.7)",
+              "−14.2 (−23.3)",
+              "−18.0 (−26.8)",
+              "+4.8 (−14.1)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)",
+              "IPO live (60 bars)"
+            ],
+            [
+              "2019",
+              "−2.7 (−26.0)",
+              "+30.1 (−35.9)",
+              "+5.4 (−15.6)",
+              "+1.2 (−8.9)",
+              "−13.1 (−38.2)",
+              "+14.0 (−22.2)",
+              "+12.4 (−23.6)",
+              "+6.0 (−30.2)",
+              "+13.6 (−10.5)",
+              "OA · Base Age",
+              "IPO live (60 bars)",
+              "OA · Base Age"
+            ],
+            [
+              "2020",
+              "+66.6 (−25.9)",
+              "+48.8 (−23.2)",
+              "+74.8 (−13.2)",
+              "+50.5 (−8.3)",
+              "+0.1 (−44.0)",
+              "+62.0 (−10.6)",
+              "+51.8 (−13.4)",
+              "+37.7 (−25.8)",
+              "+15.4 (−36.3)",
+              "IPO-A (validated)",
+              "IPO live (60 bars)",
+              "IPO-A (validated)"
+            ],
+            [
+              "2021",
+              "+61.8 (−11.2)",
+              "+84.3 (−10.9)",
+              "+52.5 (−14.5)",
+              "+41.5 (−21.1)",
+              "+55.3 (−35.8)",
+              "+66.2 (−8.2)",
+              "+69.7 (−8.1)",
+              "+61.3 (−7.8)",
+              "+26.0 (−9.5)",
+              "OA · Base Age",
+              "TN / OA / Midcap transplant 37.5/37.5/25",
+              "OA · Base Age"
+            ],
+            [
+              "2022",
+              "+16.1 (−14.1)",
+              "−0.8 (−24.3)",
+              "+0.9 (−21.2)",
+              "+1.7 (−29.1)",
+              "−18.5 (−26.9)",
+              "−0.3 (−18.5)",
+              "+5.6 (−18.4)",
+              "+0.3 (−15.5)",
+              "+5.5 (−16.1)",
+              "TN",
+              "TN",
+              "TN"
+            ],
+            [
+              "2023",
+              "+52.3 (−11.0)",
+              "+59.8 (−15.4)",
+              "+46.5 (−11.0)",
+              "+11.7 (−22.2)",
+              "+47.1 (−31.8)",
+              "+50.6 (−10.0)",
+              "+35.4 (−9.3)",
+              "+38.1 (−10.2)",
+              "+21.0 (−9.7)",
+              "OA · Base Age",
+              "TN / OA / IPO live 37.5/37.5/25",
+              "OA · Base Age"
+            ],
+            [
+              "2024",
+              "+24.2 (−18.2)",
+              "−1.3 (−26.1)",
+              "+13.6 (−22.6)",
+              "+3.0 (−20.7)",
+              "+16.3 (−19.8)",
+              "+14.9 (−16.3)",
+              "+18.9 (−15.6)",
+              "+11.2 (−14.6)",
+              "+10.4 (−10.5)",
+              "TN",
+              "TN / OA / Midcap transplant 37.5/37.5/25",
+              "TN"
+            ],
+            [
+              "2025",
+              "+4.7 (−17.3)",
+              "+2.0 (−21.9)",
+              "+1.9 (−17.9)",
+              "−13.5 (−26.7)",
+              "+10.6 (−21.9)",
+              "+4.3 (−9.8)",
+              "−2.3 (−13.6)",
+              "+7.6 (−11.8)",
+              "+11.7 (−15.2)",
+              "Midcap-like transplant",
+              "TN / OA / IPO-A 37.5/37.5/25",
+              "TN / OA / Midcap transplant 37.5/37.5/25"
+            ],
+            [
+              "2026",
+              "+7.7 (−8.7)",
+              "+27.6 (−23.6)",
+              "−0.2 (−24.0)",
+              "+7.3 (−36.5)",
+              "−4.1 (−12.4)",
+              "+13.1 (−12.1)",
+              "+16.3 (−19.5)",
+              "+13.5 (−10.6)",
+              "−7.7 (−14.8)",
+              "OA · Base Age",
+              "TN",
+              "OA · Base Age"
+            ],
+            [
+              "full: CAGR (MaxDD / Calmar)",
+              "19.63 (−26.0 / 0.76)",
+              "19.92 (−34.0 / 0.58)",
+              "22.08 (−26.6 / 0.83)",
+              "12.38 (−36.3 / 0.34)",
+              "8.51 (−50.4 / 0.17)",
+              "21.18 (−24.0 / 0.89)",
+              "18.80 (−22.8 / 0.83)",
+              "17.37 (−28.5 / 0.62)",
+              "10.58 (−59.7 / 0.18)",
+              "",
+              "",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "winners": [
+      {
+        "config": "No new sleeve. IPO Base stays the third sleeve — at the VALIDATED min_bars 25",
+        "summary": "Nothing transplants. The decision this study changes is not which sleeve but which version of it: the live book should run MIN_BARS = 25 before it is funded at 25%. That is a strategy change with its own STATUS doc, a capacity check on the thinner early entries, and an after-15:40 deploy — not done here.",
+        "metrics": [
+          {
+            "k": "Validated Spec A (clean panel)",
+            "v": "22.39% / −24.79% / Calmar 0.903"
+          },
+          {
+            "k": "Live book as coded (60 bars)",
+            "v": "12.39% / −36.35% / Calmar 0.341"
+          },
+          {
+            "k": "Blend with validated IPO at 25%",
+            "v": "21.18% / −24.01% / 0.885"
+          },
+          {
+            "k": "Blend with live-coded IPO at 25%",
+            "v": "18.80% / −22.84% / 0.827"
+          }
+        ],
+        "rejected": [
+          "Every size-universe transplant, with or without the age band (0 of 16 beat their control)",
+          "Wider age bands of 12 and 24 months (the random control beats the breakout)",
+          "The live book’s MIN_BARS = 60 as a 25% sleeve (−2.46pp blend CAGR on 30/30 paths)"
+        ]
+      }
+    ],
+    "caveats": [
+      "Size universes are a causal traded-value proxy; the Midcap- and Smallcap-like bands overlap the real market-cap bands only ~45%. The 2018+ market-cap re-run agrees, but it is eight years, not twenty.",
+      "Survivorship: names never onboarded to Kite cannot be measured; delisted names that are in the database are traded.",
+      "The ₹5 cr floor is nominal, so every universe admits fewer names in 2006 than in 2026.",
+      "Split back-adjustment treats demerger drops as price adjustments (total-return convention).",
+      "The survivor re-fit (trail × base length) was pre-registered and not run because nothing survived; OA · Base Age and research/71 already cover seasoned-stock breakouts with other exits.",
+      "The Capital Desk table mixes research/168’s curves (research/167 panel) with this study’s clean-panel live-book curve; the clean-panel Spec A ties IPO-A inside the blend (+0.05pp, correlation 0.925), so they are commensurable for this purpose.",
+      "No equity-curve chart pack: the family died at the control gate, before a tearsheet is owed."
+    ],
+    "reports": [
+      {
+        "label": "research/167 — the spec transplanted here",
+        "href": "/app/backtest/ipo-base-honest-reopt-research167"
+      },
+      {
+        "label": "research/168 — the three-sleeve blend this is tested against",
+        "href": "https://github.com/castroarun/Quantifyd/blob/main/research/168_three_sleeve_blend/results/RESULTS.md"
+      }
+    ],
+    "githubLinks": [
+      {
+        "label": "research/169 folder",
+        "href": "https://github.com/castroarun/Quantifyd/tree/main/research/169_ipo_rules_universe_transplant"
+      }
+    ],
+    "projectPaths": [
+      "research/169_ipo_rules_universe_transplant/results/RESULTS.md",
+      "research/169_ipo_rules_universe_transplant/IPO_RULES_UNIVERSE_TRANSPLANT_DAILY_SWEEP_STATUS.md",
+      "research/169_ipo_rules_universe_transplant/scripts/xpanel.py",
+      "research/169_ipo_rules_universe_transplant/scripts/run169.py"
+    ]
+  },
+  {
     slug: 'qs-leeway-and-baseage-best-entrant-research170',
     title: 'Two questions, two books: does a slipping holding deserve rank leeway (Quality Summit), and which refused breakout should take a freed slot (Base Age)? (research/170)',
     verdict:
@@ -763,6 +2451,7 @@ export const BACKTEST_STUDIES: BacktestStudy[] = [
     ],
 
     caveats: [
+      "CORRECTED 13-Sep-2026 by research/169 (/app/backtest/ipo-rules-universe-transplant-research169). (1) The +4.78pp / 30-of-30 edge over the random control was measured on a panel whose rolling windows ran on a union date index, so one missing row made a name’s pivot and trail NaN for weeks. On per-symbol windows the real book is unchanged (22.24%) but the control rises to 20.03%: edge +2.25pp, +4.62pp in 2006-2015 and −0.18pp (13 of 30) in 2016-2026, a window this study never ran the control on. (2) “The p90 position is 1.56% of 20-day traded value at ₹10 L” is the MEDIAN; the p90 is 9.05%. (3) This spec was validated at min_bars 25; at 60, which the live book runs, the same engine returns 11.57%.",
       'MULTIPLE TESTING. ~350 cells were scored and the 30-seed band is 1.2–2.4pp wide, so the 22.40% peak should be discounted toward its neighbourhood: the trail 30–75 × stop 8–15% region averages about 19%. Read Spec A as 19–22%, not as a point estimate.',
       'THE TRAIL AND THE GATE WERE BOTH CHOSEN AFTER SEEING THIS DATA. The only out-of-sample evidence is the two-window split, which both finalists pass strongly. There is no held-out period.',
       'CAPACITY IS THE BINDING CONSTRAINT AND IT IS TIGHT. At ₹10L the 90th-percentile position is 1.56% of the name’s 20-day median traded value. Scaled to ₹1cr that is about 90% of a day’s volume, and ₹10cr is absurd. This book cannot exceed roughly ₹20–25L. It is a small, permanently small sleeve.',

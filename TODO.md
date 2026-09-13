@@ -2,6 +2,34 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## 🔴 2026-09-13 — research/169: why IPO Base is IPO-specific — the rules do NOT transplant, and **the live IPO book runs MIN_BARS 60, not the validated 25**
+
+Arun asked why the IPO system only trades IPOs, and what happens on Nifty 50 / 100 / 200 / Midcap / 500 /
+Smallcap / all stocks, before moving the Capital Desk to TN 37.5 / OA 37.5 / IPO 25.
+Published at `/app/backtest/ipo-rules-universe-transplant-research169`. **Nothing live was changed.**
+
+**IPO — transplants: NO EDGE.** 0 of 16 size-universe transplants (age band removed, or seasoned names
+only) beat their own date-matched random-entry control: 2.3-9.0% after tax at −34% to −54% drawdown.
+A point-in-time market-cap re-run 2018+ agrees. Every transplant lowers the three-sleeve blend on 30 of 30
+paths. **Why it is IPO-specific:** the return lives in a stock's first months after listing — age ≤ 6m
+22.39%, ≤ 12m 16.28%, ≤ 24m 14.68%, no limit 6.97% — and past six months random young names beat the
+breakout.
+
+**IPO — what is OWED (by Arun, before the 26-Sep funding call; review registered 19-Sep-2026):**
+- **Decide MIN_BARS.** `services/ipo_paper.py` runs 60; Spec A was validated at 25. The 6-Sep comment
+  misread the harness (`n >= 60` counts rows over the whole DB today, not bars at the signal date).
+  research/167's own engine: **21.80% at 25, 11.57% at 60**. Inside TN/OA/IPO 37.5/37.5/25 the 60-bar
+  book costs **−2.46pp CAGR on 30/30 paths** and beats risk-matched cash by only
+  +0.61pp. Changing it = its own STATUS doc + capacity check on entries
+  25-60 sessions after listing + after-15:40 deploy.
+- **Read research/167's null claim as +2.25pp, not +4.78pp** — +4.62pp in 2006-15, −0.18pp (13/30)
+  in 2016-26 on a NaN-robust panel. The sleeve is a young-listing cohort harvest with a good exit.
+- **Capacity**: research/167's "p90 1.56% of traded value at ₹10 L" is the MEDIAN; the p90 is 9.05%.
+  The ₹20-25 L hard cap in the Strategies register is optimistic on the tail.
+
+- Full write-up: `research/169_ipo_rules_universe_transplant/results/RESULTS.md`
+- Status doc: `research/169_ipo_rules_universe_transplant/IPO_RULES_UNIVERSE_TRANSPLANT_DAILY_SWEEP_STATUS.md`
+
 ## ✅ 2026-09-13 — research/170: QS rank leeway is a dead axis — and Base Age's "best entrant" pick **replicated on fresh seeds** and still sits ON the bar
 
 Two unrelated questions Arun asked on the morning of 13-Sep-2026, on two different books.
