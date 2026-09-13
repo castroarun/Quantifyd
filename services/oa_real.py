@@ -343,13 +343,19 @@ def withdraw(amount, dry_run=True):
         return dict(ok=False, error=f'amount must be between 0 and {MAX_FLOW:,.0f}')
     st = load_state()
     cash = float(st['cash'])
-    feasible = amt <= cash + 1
+    # FREE cash: money parked in CASHIETF has to be sold before it can be paid out
+    from services import cash_park
+    free = cash_park.free_cash(st)
+    feasible = amt <= free + 1
     plan = []
     if feasible:
-        plan.append(f'pay out Rs {amt:,.0f} from idle cash (Rs {cash:,.0f} available)')
+        plan.append(f'pay out Rs {amt:,.0f} from idle cash (Rs {free:,.0f} free)')
     else:
-        short = amt - cash
-        plan.append(f'only Rs {cash:,.0f} is free cash — Rs {short:,.0f} short')
+        short = amt - free
+        plan.append(f'only Rs {free:,.0f} is free cash — Rs {short:,.0f} short')
+        if cash_park.units(st) > 0:
+            plan.append(f'Rs {cash_park.parked_cost(st):,.0f} is parked in CASHIETF: release it '
+                        f'first (services/cash_park.py release --book open-alpha)')
         plan.append('positions are never force-sold: withdraw less, or sell manually first')
         weak = sorted(st.get('positions', []), key=lambda p: p.get('buy', 0) * p.get('qty', 0))
         for p in weak[:3]:
@@ -465,7 +471,9 @@ def mark():
     cash = float(st.get('cash', 0.0))
     capital = float(st.get('capital', 0.0))
     cost = _cost(st)
-    nav = tot_val + cash
+    # cash includes money parked in CASHIETF at cost; the gain on it is the only new term
+    from services import cash_park
+    nav = tot_val + cash + cash_park.gain(st, cash_park.db_close())
     for r in rows:
         r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
     # append the daily nav point on the post-close mark (>= 16:00 IST)
@@ -496,7 +504,8 @@ def mark():
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),
-              failed_orders=st.get('failed_orders', []))
+              failed_orders=st.get('failed_orders', []),
+              park=cash_park.ui_block(st, cash_park.db_close()))
     tmp = UI.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
     os.replace(tmp, UI)
@@ -547,7 +556,9 @@ def ui_only():
     cash = float(st.get('cash', 0.0))
     capital = float(st.get('capital', 0.0))
     cost = _cost(st)
-    nav = tot_val + cash
+    # cash includes money parked in CASHIETF at cost; the gain on it is the only new term
+    from services import cash_park
+    nav = tot_val + cash + cash_park.gain(st, cash_park.db_close())
     for r in rows:
         r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
     realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
@@ -564,7 +575,8 @@ def ui_only():
               inception='04-Sep-2026', navcurve=st.get('navcurve', []),
               flows=st.get('fund_flows', [])[-20:],
               note=st['note'], trades=st.get('trades', []),
-              failed_orders=st.get('failed_orders', []))
+              failed_orders=st.get('failed_orders', []),
+              park=cash_park.ui_block(st, cash_park.db_close()))
     tmp = UI.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)
     os.replace(tmp, UI)

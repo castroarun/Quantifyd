@@ -234,3 +234,16 @@ The live IPO book (`services/ipo_paper.py`) runs `MIN_BARS = 60`; research/167 v
 | Logs | `logs/deferred_rebalance_20260914.log`, `logs/rebalance_mpf_20260914.json` |
 | Approved | Arun, 13-Sep-2026 |
 | Review | Ops & Review Centre, due 2026-09-14 |
+
+## Idle-cash park — IPO Base and Open Alpha idle cash into CASHIETF (built 13-Sep-2026, switched OFF)
+
+| Item | Value |
+|---|---|
+| Module | `services/cash_park.py` (`status`, `plan`, `park`, `release`, `reconcile`) |
+| Jobs | 15:10 `park --book ipo-base --arm`, 15:11 `park --book open-alpha --arm` (weekdays; log `/tmp/cash_park.log`) |
+| Release | inside `services/equity_executor.py` at 09:20, before IPO buy-stops are placed |
+| Switches | `backtest_data/cash_park.json` — per book `enabled`, `max_order` cap; both OFF |
+| Kill | `backtest_data/executor_kill.flag` (shared with the executor) |
+| Once a day | `backtest_data/cash_park_orders.json` |
+| Status doc | `docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md` |
+| Review | Ops & Review Centre, live test due 2026-09-15 |

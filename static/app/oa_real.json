@@ -1,5 +1,6 @@
 {
  "updated": "2026-09-11 18:52:01.601570",
+ "stale": true,
  "positions": [
   {
    "symbol": "INDSWFTLAB",
@@ -9,7 +10,7 @@
    "stop": 333.34,
    "src": "real",
    "ltp": 385.35,
-   "days": 7,
+   "days": 9,
    "day_move_pct": 2.08,
    "value": 38150,
    "pnl": 2279,
@@ -27,7 +28,7 @@
    "stop": 370.47,
    "src": "real",
    "ltp": 468.15,
-   "days": 7,
+   "days": 9,
    "day_move_pct": 4.99,
    "value": 46347,
    "pnl": 6481,
@@ -45,7 +46,7 @@
    "stop": 2388.65,
    "src": "real",
    "ltp": 2676.6,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -3.61,
    "value": 37472,
    "pnl": 1123,
@@ -63,7 +64,7 @@
    "stop": 885.37,
    "src": "real",
    "ltp": 961.15,
-   "days": 7,
+   "days": 9,
    "day_move_pct": 2.26,
    "value": 38446,
    "pnl": -48,
@@ -81,7 +82,7 @@
    "stop": 1026.24,
    "src": "real",
    "ltp": 1087,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -2.25,
    "value": 36958,
    "pnl": -968,
@@ -99,7 +100,7 @@
    "stop": 57.4,
    "src": "real",
    "ltp": 61.47,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -1.32,
    "value": 38972,
    "pnl": -583,
@@ -117,7 +118,7 @@
    "stop": 2057.58,
    "src": "real",
    "ltp": 2246.6,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -2.14,
    "value": 38192,
    "pnl": 172,
@@ -135,7 +136,7 @@
    "stop": 736.17,
    "src": "real",
    "ltp": 866.1,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -1.18,
    "value": 40707,
    "pnl": 3098,
@@ -153,7 +154,7 @@
    "stop": 329.64,
    "src": "real",
    "ltp": 370.65,
-   "days": 7,
+   "days": 9,
    "day_move_pct": -0.79,
    "value": 39289,
    "pnl": 1309,
@@ -171,7 +172,7 @@
    "stop": 1696.22,
    "src": "real",
    "ltp": 1815.4,
-   "days": 7,
+   "days": 9,
    "day_move_pct": 1.25,
    "value": 38123,
    "pnl": -595,
@@ -189,7 +190,7 @@
    "stop": 585.72,
    "src": "real",
    "ltp": 651.05,
-   "days": 7,
+   "days": 9,
    "day_move_pct": 0.24,
    "value": 39714,
    "pnl": 878,
@@ -212,6 +213,7 @@
  "return_pct": 0.56,
  "slots": 16,
  "slots_used": 11,
+ "ruleset": "baseage",
  "inception": "04-Sep-2026",
  "navcurve": [
   {
@@ -334,5 +336,14 @@
    "pnl_pct": -4.58
   }
  ],
- "failed_orders": []
+ "failed_orders": [],
+ "park": {
+  "symbol": "CASHIETF",
+  "units": 0,
+  "cost": 0,
+  "value": 0,
+  "gain": 0,
+  "free_cash": 188698,
+  "last_px": 1079.43
+ }
 }

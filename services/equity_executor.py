@@ -376,6 +376,29 @@ def deploy_ipo(arm, led):
     k = kite()
     load_ticks(k)
     placed = 0
+
+    # IDLE-CASH PARK (13-Sep-2026). `cash` includes money parked in CASHIETF, which the
+    # broker will not let us spend until it is sold. Sizing keeps using `equity`, so a
+    # position is never smaller for parking; what changes is that the units are sold
+    # FIRST when this morning's buy-stops need more than the free cash. A sale's proceeds
+    # can be spent the same session. Worst case per order is one full slot.
+    try:
+        from services import cash_park
+        todo = [c for c in pend if not already_done(led, 'ipo-base', c['symbol'], 'entry')]
+        need = len(todo) * min(IPO_SIZE_PCT, 0.30) * equity
+        free = cash_park.free_cash(st)
+        if need > free and cash_park.units(st) > 0:
+            short = need - free
+            print(f'  parked CASHIETF: free cash Rs {free:,.0f} short of Rs {need:,.0f} '
+                  f'for {len(todo)} buy-stop(s) - releasing Rs {short:,.0f}')
+            cash_park.release('ipo-base', short, arm=arm, k=k)
+            if arm:
+                st = json.load(open(IPO_STATE))
+        # armed: what the broker will really allow after the sale. dry: assume the sale
+        # succeeds, so the preview shows the orders an armed run would place.
+        cash = cash_park.free_cash(st) if arm else float(st.get('cash', 0.0))
+    except Exception as e:
+        print('  park release check failed (%s) - using book cash' % e)
     for c in pend:
         s, pivot = c['symbol'], float(c['pivot'])
         if already_done(led, 'ipo-base', s, 'entry'):
@@ -429,6 +452,7 @@ def deploy_ipo(arm, led):
                         slip_pct=round(slip, 2), breached=breached,
                         limit=limit, ts=str(datetime.now())))
             placed += 1
+            cash -= qty * fill_ref          # the next buy-stop cannot reuse these rupees
             # Fill quality is the soak's pass criterion, so it is recorded per order
             # rather than reconstructed later.
             alert(f'IPO entry placed: {s}',

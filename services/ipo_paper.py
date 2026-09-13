@@ -139,6 +139,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # so `import services.x` fails and every alert delivery died silently in a
 # try/except (found 09-Sep-2026 in the KTKBANK exit log).
 sys.path.insert(0, str(ROOT))
+from services import cash_park  # idle cash parked in CASHIETF (13-Sep-2026)
 DB = ROOT / 'backtest_data' / 'market_data.db'
 STATE = ROOT / 'backtest_data' / 'ipo_paper_state.json'
 LOCK = ROOT / 'backtest_data' / 'ipo_paper_state.lock'
@@ -596,7 +597,8 @@ def write_ui(st, wide, asof, log, dry=False):
                          to_trail_pct=round((lp / tr - 1) * 100, 1) if tr else None,
                          days=(pd.Timestamp(asof) - pd.Timestamp(p['entry_date'])).days))
     cash = float(st['cash'])
-    nav = tot_val + cash
+    # cash includes money parked in CASHIETF at cost; the gain on it is the only new term
+    nav = tot_val + cash + cash_park.gain(st)
     for r in rows:
         r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
     realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
@@ -619,7 +621,8 @@ def write_ui(st, wide, asof, log, dry=False):
               # against are visible beside the numbers rather than only in this file
               spec=spec_block(), gate=st.get('gate'),
               candidates=st.get('candidates', []), watchlist=st.get('watchlist', []),
-              missed=st.get('missed', [])[-40:])
+              missed=st.get('missed', [])[-40:],
+              park=cash_park.ui_block(st))
     if dry:
         print(json.dumps({k: ui[k] for k in ('asof', 'mode', 'nav', 'cash', 'slots_used')}, indent=1))
         return ui
@@ -787,7 +790,8 @@ def main():
         # later deposit never reached the cash that sizes buys.
         if mode == 'live' and abs(cap - float(st['capital'])) >= 1.0:
             delta = cap - float(st['capital'])
-            if float(st['cash']) + delta < -1.0:
+            # FREE cash: money parked in CASHIETF cannot be paid out until it is sold
+            if cash_park.free_cash(st) + delta < -1.0:
                 _alert('IPO funding NOT applied',
                        'The Capital Desk shows Rs %s funded against the book capital Rs %s. '
                        'Applying Rs %s would take cash to Rs %s, below zero, so nothing was '
@@ -1022,7 +1026,7 @@ def main():
         # ---- 4. nav point ----
         tot = sum(p['qty'] * float(close[p['symbol']].loc[:asof].dropna().iloc[-1])
                   for p in st['positions'] if p['symbol'] in close.columns)
-        nav = tot + st['cash']
+        nav = tot + st['cash'] + cash_park.gain(st, cash_park.db_close(asof))
         nc = st.setdefault('nav', [])
         d = str(asof)[:10]
         nc[:] = [x for x in nc if x['d'] != d]
@@ -1137,7 +1141,8 @@ def mark():
                          to_trail_pct=round((lp / tr - 1) * 100, 1) if tr else None,
                          days=(today - date.fromisoformat(p['entry_date'])).days))
     cash = float(st['cash'])
-    nav = tot_val + cash
+    # cash includes money parked in CASHIETF at cost; the gain on it is the only new term
+    nav = tot_val + cash + cash_park.gain(st)
     for r in rows:
         r['weight'] = round(100 * r['value'] / nav, 1) if nav else 0
     realized = sum(t.get('net_pnl', 0) for t in st.get('trades', []))
@@ -1155,6 +1160,7 @@ def mark():
               spec=spec_block(), gate=st.get('gate'),
               candidates=st.get('candidates', []), watchlist=st.get('watchlist', []),
               missed=st.get('missed', [])[-40:],
+              park=cash_park.ui_block(st),
               log=['intraday mark - prices live, exits still decided by the 18:45 run'])
     tmp = UI_JSON.with_suffix('.json.tmp')
     json.dump(ui, open(tmp, 'w'), indent=1, default=str)

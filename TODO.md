@@ -2,6 +2,36 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ⏳ 2026-09-15 — Idle-cash park: IPO Base and Open Alpha idle cash into CASHIETF — built, SWITCHED OFF, live test due
+
+Arun (13-Sep): *"can we do arb fund for ipo cash?"* → then chose the **automated liquid-ETF sweep**.
+
+**Why not the arbitrage fund.** Kite Connect cannot place mutual-fund orders — official docs:
+*"Order placement can't be done, as order placement needs payment from the user's bank account."*
+Only exchange-traded instruments can be automated. Arbitrage scores kept for the 15-Dec cash-yield
+review at `backtest_data/arb_fund_scores_20260913.json` (Tata 7.47%, Kotak 7.46% three-year, no
+losing month). Memory: `kite-mf-orders-not-via-api`.
+
+**The rule: never park money a buy could need before the next release.**
+
+| | IPO Base | Open Alpha · Base Age |
+|---|---|---|
+| Buys placed | 09:20 by the executor | 18:50 AMOs, executed at the open |
+| Kept as cash | ₹10,000 buffer — the executor sells ETF first when buy-stops need it | (free slots + 1 swap) × 6.25% × NAV × 1.10 |
+| Parks today | up to ₹1.76L (₹10,000 during the test) | nothing — 5 free slots need more than it holds |
+
+A book's `cash` still includes parked money at cost, so sizing is unchanged; NAV adds the gain; anything
+that sends an order uses free cash. The park run also holds back cash tied up in the book's own resting
+buy orders. 21 tests pass, including the executor's release path on a fake broker. States untouched.
+
+**Next — 15-Sep, after the rebalance lands:** switch IPO on with the ₹10,000 cap, watch one park at 15:10
+and one explicit release, reconcile against the broker, then lift the cap. Steps in the Ops & Review
+Centre entry. **Owed at switch-on:** changelog entries on both rows of the Strategies register.
+
+- Status doc: `docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md`
+
+---
+
 ## ⏳ 2026-09-14 — Capital Desk: ONE-OFF REBALANCE to TN 37.5 / OA 37.5 / IPO 25 runs Monday 09:45
 
 Arun (13-Sep): *"now that entire TN is in cash fund, can v now make the distribution in the correct
