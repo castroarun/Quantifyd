@@ -1,0 +1,79 @@
+{
+ "empty/random": {
+  "n": 30,
+  "swaps_med": 12.0,
+  "swaps_per_yr": 7.56,
+  "nav_norot": 1019557,
+  "nav_rot1": 956157,
+  "dnav_med": -75356,
+  "wins": 6,
+  "cash_refused_norot": 189.5,
+  "cash_refused_rot1": 233.0,
+  "turned_away": 290.0,
+  "entries_norot": 85.0,
+  "entries_rot1": 93.0
+ },
+ "empty/tv": {
+  "n": 1,
+  "swaps_med": 9.0,
+  "swaps_per_yr": 5.67,
+  "nav_norot": 1072185,
+  "nav_rot1": 955515,
+  "dnav_med": -116670,
+  "wins": 0,
+  "cash_refused_norot": 184.0,
+  "cash_refused_rot1": 223.0,
+  "turned_away": 299.0,
+  "entries_norot": 80.0,
+  "entries_rot1": 93.0
+ },
+ "live-11/random": {
+  "n": 30,
+  "swaps_med": 12.5,
+  "swaps_per_yr": 7.88,
+  "nav_norot": 642722,
+  "nav_rot1": 601502,
+  "dnav_med": -44996,
+  "wins": 3,
+  "cash_refused_norot": 143.0,
+  "cash_refused_rot1": 184.5,
+  "turned_away": 335.5,
+  "entries_norot": 84.0,
+  "entries_rot1": 93.0
+ },
+ "live-11/tv": {
+  "n": 1,
+  "swaps_med": 12.0,
+  "swaps_per_yr": 7.56,
+  "nav_norot": 641010,
+  "nav_rot1": 622623,
+  "dnav_med": -18387,
+  "wins": 0,
+  "cash_refused_norot": 150.0,
+  "cash_refused_rot1": 156.0,
+  "turned_away": 333.0,
+  "entries_norot": 80.0,
+  "entries_rot1": 92.0
+ },
+ "_window": {
+  "lo": "2025-01-31",
+  "hi": "2026-09-11",
+  "sessions": 400,
+  "years": 1.59,
+  "events": 563,
+  "seeded": [
+   "INDSWFTLAB",
+   "SETL",
+   "WELCORP",
+   "SHILPAMED",
+   "SBCL",
+   "IRISDOREME",
+   "INOXINDIA",
+   "MANINDS",
+   "SSWL",
+   "ENTERO",
+   "NITINSPIN"
+  ],
+  "not_seedable": []
+ }
+}

@@ -373,6 +373,15 @@ gives back 12% without being sold. It is supposed to.
 |---|---|---|---|---|---|---|---|---|
 | **PAYTM** | ₹1,817.00 | ₹1,798.75 | 2021-11-25 | **1,191 bars** | **82.4%** | ₹479.61 cr | 21 sh ≈ **₹38,157** | **ARM buy for the open** |
 
+> **Correction and fix, 13-Sep-2026.** This ×21 was computed off the **marked** NAV
+> (₹6,21,871), but `plan()` — the code that places the order — fell back to the book's
+> **cost-plus-cash** NAV (₹6,07,923) and would have armed **×20**. The study, research/170's
+> engine and the new OA-ROT-1 swap all size at 6.25% of the *marked* NAV, so the fallback was
+> not conservative, it was a different book — and it sized the two legs of one evening on two
+> bases. `plan()` now marks to the last official close by default; the dry run and this table
+> agree again at **×21, ₹38,157**. Found and fixed in
+> `OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md` §8.5; **§9 STEP 2b there is now settled, not open**.
+
 One signal, 5 free slots, cash ₹1,88,698 → cash left after it **₹1,50,541**. No tie-break was
 needed and nothing was refused. PAYTM is a textbook instance of the adopted pattern: a first
 close above a high set nearly five years earlier, after an 82% collapse in between — the

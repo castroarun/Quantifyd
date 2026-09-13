@@ -71,7 +71,7 @@ def main():
                                 ('%+.1f%%' % rs) if rs is not None else 'n/a'))
     finally:
         con.close()
-    orders, refusals, ctx = live.plan(st, cand, kite=None)
+    orders, refusals, ctx = live.plan(st, cand, kite=None, marks=marks)
     for o in orders:
         print('   TAKEN    %-14s BUY %d at the next open, Rs %s (cash left Rs %s)'
               % (o['symbol'], o['qty'], format(o['est_cost'], ','),

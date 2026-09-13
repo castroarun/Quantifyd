@@ -79,7 +79,26 @@ PATCHES = [
                                 ent_key, rot_score) if PROBE is not None else None)
             for e in ents:
 """),
-    # 3. record what it actually did, at the moment it does it
+    # 3. START THE BOOK SOMEWHERE ELSE. Not a rule change: it moves the opening cash and lets
+    #    the book open with positions already in it, so research/170's own engine can be run
+    #    over a sub-window from the LIVE book's state. Absent both keys this is the original
+    #    line. `entry_i = -1` means "bought before the window", so a seeded position is
+    #    eligible to be swapped out on day one exactly as a real holding would be.
+    ("""    cash = START_CAPITAL
+""",
+     """    cash = float(cfg.get('start_capital', START_CAPITAL))
+"""),
+    ("""    open_pos = []
+    trades = []
+""",
+     """    open_pos = [dict(symbol=p['symbol'], shares=int(p['qty']), entry_i=-1,
+                     entry_px=float(p['buy']),
+                     cost_basis=float(p['qty']) * float(p['buy']),
+                     peak=float(p['buy']), reason='', tv20_cr=float('nan'))
+                for p in (cfg.get('seed_positions') or [])]
+    trades = []
+"""),
+    # 4. record what it actually did, at the moment it does it
     ("""                swaps += 1
                 swaps_today += 1
 """,

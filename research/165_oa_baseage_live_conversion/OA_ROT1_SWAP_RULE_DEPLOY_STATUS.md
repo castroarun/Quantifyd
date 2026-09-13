@@ -200,6 +200,10 @@ produces swaps at all on the live event stream, and (F) what would happen on Mon
 | 2026-09-13 09:25 | `npm run build` green; `Swap rule OA-ROT-1` and `OA-ROT1-SELL` present in `static/app/assets/index-MIvD2W0u.js` | frontend-only, no restart |
 | 2026-09-13 09:30 | **Committed on the VPS as `08496a7f`, NOT pushed** | 14 files: `services/oa_real.py`, `services/oa_baseage_entry.py`, `research/165/**`, `strategies.ts`, `ops_center.py`, LABS doc, `TODO.md` |
 | 2026-09-13 09:32 | Post-commit safety re-check | `OA_RULESET='legacy'`, `OA_ROT1=True` (inert), crontab 112 and 114 still commented, state file still 11 positions / cash ₹1,88,697.86 |
+| 2026-09-13 09:40 | **Follow-up 1: the rate gap settled** — research/170's own engine run over the same 400-session window, 30 seeds, empty book and the live 11 | **§8.0 — the engine also fires 5.7–7.9 swaps/yr there and also loses (6/30, 3/30). It is the period.** |
+| 2026-09-13 09:45 | **Follow-up 2: `plan()` now sizes off the MARKED NAV** | §8.5 — one default changed; `marks`/`asof` added; stale names named in `ctx['unmarked']` |
+| 2026-09-13 09:50 | Re-verified after the fix | dry-run **PAYTM ×21 @ ₹38,157** (matches the parent §8.4); **gate R1 still 8,488/8,488 = 100.00%**; R2 re-walked (§8.3), swaps 20→16 and 18→15 |
+| 2026-09-13 09:55 | Committed on the VPS, not pushed | second commit; switch still `'legacy'` |
 
 ---
 
@@ -291,7 +295,52 @@ repo's existing ignore rule; re-generate them with the two commands in §5.
 
 ## 8. Findings
 
-### 8.0 The probe engine is a no-op — proved before it was used
+### 8.0 THE RATE GAP: **it is the period, not the live code.** The study's own engine loses on this window too
+
+**The question.** The pick logic matches research/170's engine 8,488 / 8,488 (§8.1), yet the
+live-code walk fired ~12 swaps a year over 2025-01-31 → 2026-09-11 and lost on every arm,
+against the study's 4.5/yr and +0.105 paired Calmar on 30/30. Either the window is a bad
+stretch for the rule, or the live code differs somewhere in the *"the book cannot take it"*
+condition — cash refusals under real integer sizing, the NAV basis, the tie-break.
+
+**The test.** research/170's **own engine, rule untouched**, run over **exactly that window**:
+400 sessions, 563 events, once from an empty book at the live book's capital and once
+**opening with the live book's eleven positions and its ₹1.88L of cash**. 30 seeds under the
+study's random contested-slot draw, plus the live `select='tv'` tie-break.
+(`scripts/rot1_window.py`. The engine is `sim170_probe.py`, whose only additions are the
+decision probe and two lines that set the opening cash and opening positions from `cfg` — no
+rule, filter or ordering touched, and `--verify` re-proves the no-op at 5 patches.)
+
+| research/170's engine, this window | swaps/yr | NAV no-rot | NAV OA-ROT-1 | ΔNAV | **OA-ROT-1 wins** |
+|---|---:|---:|---:|---:|---:|
+| empty book, random, 30 seeds | **7.56** | ₹10,19,557 | ₹9,56,157 | **−₹75,356** | **6 / 30** |
+| empty book, `tv` tie-break | 5.67 | ₹10,72,185 | ₹9,55,515 | −₹1,16,670 | 0 / 1 |
+| **live 11 positions + ₹1.88L, random, 30 seeds** | **7.88** | ₹6,42,722 | ₹6,01,502 | **−₹44,996** | **3 / 30** |
+| live 11 positions, `tv` tie-break | 7.56 | ₹6,41,010 | ₹6,22,623 | −₹18,387 | 0 / 1 |
+
+**The answer: the gap is the period.** On its own engine, on this window, the rule fires at
+**5.7 – 7.9 swaps a year — not 4.5 — and it LOSES**, winning **6 of 30** and **3 of 30** paired
+paths. Both the elevated rate and the negative sign reproduce without any live code involved.
+A 1.6-year stretch in which a rule that wins 30/30 over 21.7 years loses is exactly what a
+real-but-small long-run edge looks like from close up; it is not a defect.
+
+**The residual, stated rather than rounded away.** After the §8.5 sizing fix the live walk
+fires **16 swaps (10.1/yr) from the live book and 15 (9.4/yr) from an empty one**, against the
+engine's 12 and 9 on the matched `tv` arm — still **1.3 – 1.7× the engine's rate on the same
+window**. That residual is the **walk harness**, not the executor, and the cash-refusal counts
+say so: the live walk books 360 cash refusals where the engine books ~184. The walk (a) credits
+**no idle-cash yield**, (b) pays **no tax**, and (c) sizes off the **trigger close** while the
+engine sizes at the **fill open** (deviation R2) — so it runs persistently tighter on cash,
+refuses more signals, and therefore offers the rule more chances to fire. None of those three
+is in `rot1_pick()`, which is the code that decides a swap and which is exact at 8,488 / 8,488.
+
+**What this means for the flip.** Nothing here blocks it. What it changes is the expectation:
+**do not expect ~4 swaps a year in the first months, and do not read an early losing stretch as
+the rule being broken.** Both are inside what the study's own engine does on a window like this
+one. The 2027-03-13 review's rate criterion is registered against ~4/yr and now has this table
+to read it against.
+
+### 8.0b The probe engine is a no-op — proved before it was used
 
 `patch_probe170.py` regenerates research/170's `sim170.py` with **3 exact-string patches**,
 each of which must match **exactly once** or the build aborts. With `PROBE = None` the
@@ -371,48 +420,51 @@ The staged evening job replayed day by day over the **last 400 sessions, 2025-01
 `plan()` and the live `rot1_pick()` for every decision. Two starting books, each run with and
 without the swap.
 
+**Re-run 13-Sep after the §8.5 marked-NAV fix; these are the current numbers.**
+
 | starting book | swaps | buys | exits | refused cash | refused slot | end | **NAV** |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| the live 11 positions + ₹1.88L | **20** | 105 | 100 | 90 | 381 | 16 pos | **₹4,83,624** |
-| the same, OA-ROT-1 off | 0 | 88 | 83 | 130 | 337 | 16 pos | **₹5,06,706** |
-| empty book, ₹6,17,638 | **18** | 104 | 88 | 76 | 394 | 16 pos | **₹7,47,243** |
-| the same, OA-ROT-1 off | 0 | 94 | 78 | 111 | 351 | 16 pos | **₹8,08,304** |
+| the live 11 positions + ₹1.88L | **16** | 95 | 92 | 360 | 116 | 14 pos | **₹4,83,793** |
+| the same, OA-ROT-1 off | 0 | 84 | 79 | 115 | 357 | 16 pos | **₹5,35,718** |
+| empty book, ₹6,17,638 | **15** | 97 | 83 | 407 | 68 | 14 pos | **₹7,25,291** |
+| the same, OA-ROT-1 off | 0 | 82 | 67 | 409 | 66 | 15 pos | **₹8,62,125** |
 
 60 sessions at the live book's capital, the comparison the parent's §8.2 made for the
 un-rotated spec:
 
 | | swaps | buys | exits | refused cash | refused slot | end | NAV |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| with OA-ROT-1 | **11** | 31 | 15 | 25 | 81 | 16 pos, cash ₹250 | ₹6,52,853 |
-| un-rotated | 0 | 21 | 6 | 37 | 68 | 15 pos, cash ₹29,337 | ₹6,66,690 |
+| with OA-ROT-1 | **11** | 30 | 14 | 7 | 100 | 16 pos, cash ₹5,342 | ₹6,62,083 |
+| un-rotated | 0 | 21 | 6 | 37 | 68 | 15 pos, cash ₹18,837 | ₹6,66,387 |
 
 **Three things have to be said plainly.**
 
-**1. The machinery works and converts refusals into entries.** Refusals for cash fall on every
-arm the swap is switched on (130 → 90, 111 → 76, 37 → 25), which is the mechanism the rule
-exists for: a refused signal gets funded by selling the book's worst holding. The swap log
+**1. The machinery works and converts refusals into entries.** Every arm with the swap on takes
+MORE entries than the same arm without it (84 → 95, 82 → 97, 21 → 30) and fills the book
+earlier, which is the mechanism the rule exists for: a refused signal gets funded by selling
+the book's worst holding. (Refusal counts move the other way here because a book that keeps
+buying stays closer to empty on cash and so refuses more of what comes after — which is also
+most of the residual rate gap in §8.0.) The swap log
 reads exactly as the rule specifies — *"swap: sold HINDCOPPER (−13.3%) for RACLGEAR (rs252
 rank 1 of 2)"* — and the live-book arm's first swap, *"sold SETL (−63.3%)"*, is the
 anachronism working as intended: the live book's Sep-2026 buy prices against Apr-2025 closes
 make every position look ruined, the rule fires, and the book normalises. That is the edge
 case exercised, not an economic claim.
 
-**2. On this window the rule LOST, on all three arms.** −₹23,082 over 400 sessions from the
-live book, −₹61,061 from an empty one, −₹13,837 over 60 days. **One path, no seeds, 1.6
-years, against a 21.7-year 60-path result — it is not evidence against research/170, and it
-is not evidence for it either.** But it is the only walk of the live code that exists, and
-burying it would be exactly the kind of selective reporting the playbook forbids. Arun should
-go into the flip expecting the first months to be able to look like this.
+**2. On this window the rule LOST, on all three arms** — −₹51,925 over 400 sessions from the
+live book, −₹1,36,834 from an empty one, −₹4,304 over 60 days. **And so does research/170's
+own engine on the same window, winning only 6 of 30 and 3 of 30 paired paths (§8.0).** That is
+the pairing that matters: the loss is a property of 2025-26, not of this implementation. Arun
+should go into the flip expecting the first months to be able to look like this.
 
-**3. The swap RATE is 3× the study's, and that matters for the review.** research/170 measures
-**4.5 swaps a year**; the live walk produces **20 in 1.6 years (≈ 12/yr)** and **11 in 60
-sessions (≈ 46/yr)**. The window explains most of it — 2025-26 is signal-dense and
-drawdown-heavy for this universe, so more holdings sit under water and more signals are
-refused — and the log shows genuine churn chains (NGLFINE bought 22-May, swapped out 04-Jun;
-V2RETAIL in 04-Jun, out 12-Jun), which the engine permits identically. **The 2027-03-13
-review's pass criterion is written against ~4 occurrences a year. If the live book runs at
-12, that criterion needs re-reading, not quietly re-scaling**, and the day-one and 26-Sep
-checks below now count swaps for exactly that reason.
+**3. The swap RATE is roughly double the study's long-run 4.5/yr — and so is the engine's, on
+this window.** The live walk now produces **16 in 1.6 years (≈ 10.1/yr)** and 15 from an empty
+book (≈ 9.4/yr); research/170's engine on the same window produces **5.7 – 7.9/yr** (§8.0). The
+window carries most of it and the walk harness's cash simplifications carry the rest. The log
+shows genuine churn chains (NGLFINE bought 22-May, swapped out 04-Jun; V2RETAIL in 04-Jun, out
+12-Jun) — which the engine permits identically. **The 2027-03-13 review's pass criterion is
+written against ~4 occurrences a year; §8.0's table is what it should be read against**, and
+the day-one and 26-Sep checks below count swaps for exactly that reason.
 
 ### 8.4 Dry run on the REAL book, 11-Sep-2026 close — **no swap is possible on Monday**
 
@@ -436,8 +488,8 @@ checks below now count swaps for exactly that reason.
 | SETL | 99 | 402.69 | 468.15 | +16.26% | 11 |
 
 **(a) The book as it is.** One qualifying signal on the 11-Sep close — **PAYTM**, base 1,191
-bars, depth 82.4%, TV ₹479.61 cr, **rs252 +44.8%** — and the book **takes** it: 5 free slots
-and ₹1,88,698 of cash fund it outright. **OA-ROT-1 cannot fire at Monday's open.** It only
+bars, depth 82.4%, TV ₹479.61 cr, **rs252 +44.8%** — and the book **takes** it at **21 shares,
+₹38,157**, leaving ₹1,50,541: 5 free slots and ₹1,88,698 of cash fund it outright. **OA-ROT-1 cannot fire at Monday's open.** It only
 ever looks at a signal the book had to turn away, and nothing was turned away.
 
 **(b) The book if it were full — the first hypothetical.** Suppose all 16 slots were taken
@@ -446,23 +498,30 @@ and the cash gone, so Monday's signal were refused. The holding with the largest
 would have to fall a further **7.7%, to ₹1,003.93**, before it qualified. Nobody is being
 asked to approve a sale.
 
-### 8.5 An inconsistency in the PARENT's entry sizing, found by this work and NOT fixed here
+### 8.5 An inconsistency in the PARENT's entry sizing — found by this work and **now FIXED**
 
-`services/oa_baseage_entry.plan()` is called by `run()` with `nav=None`, so it sizes the slot
-off the book's **cost-plus-cash NAV** — ₹4,19,225 of cost + ₹1,88,698 = **₹6,07,923**, slot
-₹37,995 — while the study, the engine and `rot1_pick()` all size off the **marked** NAV,
-₹6,21,871, slot ₹38,867.
+`services/oa_baseage_entry.plan()` is called by `run()` with `nav=None`, and its fallback was
+the book's **cost-plus-cash NAV** — ₹4,19,225 of cost + ₹1,88,698 = **₹6,07,923**, slot
+₹37,995 — while the study, research/170's engine and `rot1_pick()` all size off the **marked**
+NAV, ₹6,21,871, slot ₹38,867. On Monday's book that was **PAYTM ×20 from the code against
+the ×21 the parent STATUS §8.4 prints** — and worse, it meant the two legs of a single
+evening were sized on two different bases: an entry at cost NAV and a swap at marked NAV.
 
-**Consequence on Monday: the live scanner would arm PAYTM × 20, not the × 21 the parent
-STATUS §8.4 prints.** The parent's dry-run script marked the book to market; the code that
-places the order does not.
+**Fixed 13-Sep-2026 at Arun's instruction.** `plan()` now marks the book to the **last official
+close** by default (`marks` / `asof` let a caller pass closes it has already read; an explicit
+`nav` still overrides). A position whose latest bar is stale falls back to its buy price and is
+named in `ctx['unmarked']` and printed by `run()`, so a silent mis-mark is not possible.
+Re-verified:
 
-**Not fixed in this commit, deliberately.** It is the parent conversion's entry sizing, it was
-proved and documented at ×21, and changing it is a separate decision about a separate rule —
-not something that should ride in on a swap-rule commit. It is one line (`plan(st, cand,
-kite, nav=<marked NAV>)`). **Raised for Arun; listed in the runbook as a pre-flip question.**
-Until it is settled, the live book will size entries about 2% smaller than the study and
-swaps at the study's size.
+- **The dry run now arms PAYTM ×21 at ₹38,157**, cash left ₹1,50,541 — the code and the
+  parent STATUS §8.4 now agree.
+- **Gate R1 re-run: still 8,488 / 8,488 = 100.00%.** R1 exercises `rot1_pick()` directly and
+  never touches `plan()`, so this is a confirmation rather than a re-measurement.
+- **Gate R2 re-walked**; §8.3 carries the post-fix numbers. Swaps fell from 20 to 16 on the
+  live book and 18 to 15 on an empty one — the fix moved the live rate about 20% closer to
+  the engine's on the same window.
+
+Both legs of an OA-ROT-1 evening are now sized on one basis, and it is the study's.
 
 ### 8.6 The no-op proof — a `git pull` still changes nothing that runs
 
@@ -506,10 +565,10 @@ is no second switch to throw, no extra cron line, no new job. The 18:50 entry cr
 
 Fold these into `OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` §9:
 
-**STEP 2b — a question to settle before the flip, alongside the 09:20 top-up blocker.**
-Decide whether the live entry scanner should size off the **marked** NAV rather than the
-cost-plus-cash NAV (§8.5). Monday's PAYTM is ×20 under the code and ×21 in the parent's
-dry-run. Either answer is defensible; leaving the two documents disagreeing is not.
+**STEP 2b — SETTLED 13-Sep-2026, no action required.** The live entry scanner now sizes off
+the **marked** NAV, like the study and like the swap leg (§8.5). Monday's PAYTM is ×21 at
+₹38,157 in both the code and the parent's dry-run. The only remaining pre-flip blocker is
+the 09:20 top-up (parent §8.0).
 
 **STEP 3 — the switch, with the swap's own rollback beside it.**
 
@@ -582,4 +641,7 @@ Kite; the partial-fill cases are in §6.
 - [ ] **P&L attribution of the swaps**, both legs: what the sold name did after it was sold,
       and what the entrant did. Over the only window that could be walked, the rule **lost**
       (§8.3). Two weeks will not settle that, but the ledger has to start.
-- [ ] Is the entry-sizing NAV basis question (§8.5) still open?
+- [ ] **Read the swap rate against §8.0's table, not against the bare 4.5/yr.** research/170's
+      own engine fires 5.7-7.9 swaps a year on a 2025-26-shaped window and loses there too, so
+      an early losing stretch at ~10 swaps a year is inside what the rule does — not evidence
+      that it is broken. The entry-sizing NAV question is closed (§8.5).

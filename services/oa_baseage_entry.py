@@ -118,19 +118,35 @@ def _pending_entries(kite):
         return set()
 
 
-def plan(st, cand, kite=None, nav=None):
-    """Turn the ranked candidates into an order plan. Pure - places nothing.
+def plan(st, cand, kite=None, nav=None, marks=None, asof=None):
+    """Turn the ranked candidates into an order plan. Places nothing.
 
-    Returns (orders, refusals, ctx). `nav` lets the caller pass a marked NAV; without one
-    the book's own cost-plus-cash figure is used, which is the conservative reading on a
-    day the page has not been marked.
+    Returns (orders, refusals, ctx). `nav` lets the caller pass a NAV outright; `marks` lets
+    it pass the closes it has already read. Given neither, the book is MARKED TO THE LAST
+    OFFICIAL CLOSE.
+
+    WHY THE DEFAULT CHANGED (13-Sep-2026). This used to fall back to the book's
+    cost-plus-cash figure, described as the conservative reading. It is not conservative, it
+    is a different book: the study, research/170's engine and `rot1_pick` below all size a
+    slot at 6.25% of the MARKED net asset value, so a cost-based default made the live
+    entries drift away from the tested size as the book gained or lost - and drift by a
+    different amount than the swap leg of the same evening, which is worse than either basis
+    on its own. On the 11-Sep-2026 book it was the difference between PAYTM x20 (cost NAV
+    Rs 6,07,923) and PAYTM x21 (marked NAV Rs 6,21,871). A position whose latest bar is stale
+    falls back to its buy price and is named in `ctx['unmarked']`.
     """
     held = {p['symbol'] for p in st.get('positions', [])}
     leaving = _leaving(kite, held) if kite is not None else set()
     armed = _pending_entries(kite) if kite is not None else set()
     cash = float(st.get('cash', 0.0))
+    unmarked = []
     if nav is None:
-        nav = cash + sum(p['qty'] * p['buy'] for p in st.get('positions', []))
+        if marks is None:
+            asof = asof or (cand[0]['trigger_date'] if cand else spec.last_session())
+            marks, stale = official_closes(sorted(held), asof)
+            unmarked = [s for s, _ in stale]
+        nav = cash + sum(p['qty'] * marks.get(p['symbol'], p['buy'])
+                         for p in st.get('positions', []))
     slot_rs = spec.SLOT_PCT * nav
     free = max(0, spec.SLOTS - (len(held) - len(leaving)) - len(armed - held))
 
@@ -173,7 +189,8 @@ def plan(st, cand, kite=None, nav=None):
                # signal the book could not take for want of a slot or of cash - never one
                # it already holds or has already armed, which the engine skips too.
                turned_away=turned_away, cash_after_entries=remaining,
-               armed_cost=float(sum(o['est_cost'] for o in orders)))
+               armed_cost=float(sum(o['est_cost'] for o in orders)),
+               unmarked=unmarked)
     return orders, refusals, ctx
 
 
@@ -555,6 +572,8 @@ def run(arm=False, asof=None, progress=None):
              (', leaving: ' + ', '.join(ctx['leaving'])) if ctx['leaving'] else '',
              ctx['free'], format(ctx['nav'], ','), format(ctx['cash'], ','),
              format(ctx['slot_rs'], ',')))
+    for s in ctx.get('unmarked') or ():
+        print('   NOT MARKED %-14s no bar for %s; NAV counts it at its buy price' % (s, asof))
     for s, why in refusals:
         print('   skip %-14s %s' % (s, why))
     placed, failed = [], []

@@ -381,7 +381,7 @@ def walk(events, cal, px, stdir, raw, start_positions, start_cash, label, rot=Tr
 
         # ---- 3. the ordinary Base Age entries
         cand = sorted(by_day.get(day, []), key=lambda r: -r['tv20_cr'])
-        orders, refusals, ctx = _replan(cand, held, leaving, cash)
+        orders, refusals, ctx = _replan(cand, held, leaving, cash, marks)
         for o in orders:
             pend_buy.append(dict(symbol=o['symbol'], qty=o['qty'], action='BUY',
                                  why='ATH close %s, base %d bars, depth %.0f%%, TV %.2f cr'
@@ -429,7 +429,7 @@ def walk(events, cal, px, stdir, raw, start_positions, start_cash, label, rot=Tr
                      exits=n_exit, refused_cash=n_ref_cash, refused_slot=n_ref_slot)
 
 
-def _replan(cand, held, leaving, cash):
+def _replan(cand, held, leaving, cash, marks):
     """plan() with the broker facts filled in, using the SAME arithmetic as the live code.
 
     `services.oa_baseage_entry.plan` reads `leaving` and `armed` off the order book through
@@ -447,7 +447,7 @@ def _replan(cand, held, leaving, cash):
             return [dict(tradingsymbol=s, transaction_type='SELL', status='OPEN', tag=None)
                     for s in self._l]
 
-    return live.plan(st, cand, kite=_FakeKite(set(leaving)))
+    return live.plan(st, cand, kite=_FakeKite(set(leaving)), marks=marks)
 
 
 def r2():

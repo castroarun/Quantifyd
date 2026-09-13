@@ -180,10 +180,14 @@ def simulate(events, panel, aux, cfg, seed):
         if panel.cal[i][:7] != panel.cal[i + 1][:7]:
             month_end[i] = True
 
-    cash = START_CAPITAL
+    cash = float(cfg.get('start_capital', START_CAPITAL))
     nav = np.full(n, np.nan)
     inv = np.full(n, np.nan)
-    open_pos = []
+    open_pos = [dict(symbol=p['symbol'], shares=int(p['qty']), entry_i=-1,
+                     entry_px=float(p['buy']),
+                     cost_basis=float(p['qty']) * float(p['buy']),
+                     peak=float(p['buy']), reason='', tv20_cr=float('nan'))
+                for p in (cfg.get('seed_positions') or [])]
     trades = []
     pending_exit = []
     pending_trim = []        # [(pos, shares_to_sell)] decided at a close, sold at the next open
