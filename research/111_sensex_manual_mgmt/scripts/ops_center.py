@@ -142,6 +142,36 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
+    ("OA \u00b7 Base Age - re-test rotation rule OA-ROT-1 on the LIVE entry queue after six "
+     "months of real-money operation",
+     "2027-03-13", "PENDING",
+     "research/170 (13-Sep-2026) CONFIRMED research/166's post-hoc pick on 30 seeds it had "
+     "never been run on: when the Base Age book is full and a qualifying signal arrives, "
+     "selling the holding more than 10% under water and giving its slot to the refused "
+     "entrant with the HIGHEST 252-day relative strength returns 22.58% after tax at a "
+     "-31.78% drawdown (Calmar 0.710) against the incumbent's 20.95% / -34.05% / 0.611. "
+     "Paired: +0.105 Calmar on 30/30 fresh seeds, +0.094 on research/166's own seeds, "
+     "+0.096 on all 60 paths pooled - against a pre-registered bar of +0.100. It beats a "
+     "rate-matched random swap on 30/30, wins both pre-registered windows on 30/30, and "
+     "holds its advantage at 40 and 60 bps. NOTHING WAS ADOPTED: the bar was written down "
+     "before the run and the pooled figure misses it by 0.004, the book has never traded "
+     "live, and the rule needs an evening scorer plus a two-leg next-open order that does "
+     "not exist. The exact proposed rule text is OA-ROT-1 in "
+     "research/170_qs_leeway_and_baseage_best_entrant/results/RESULTS.md. "
+     "WHAT TO VERIFY ON THE DUE DATE, in order: (1) does the LIVE entry queue show the "
+     "shape the rule needs - qualifying signals refused while a holding sits more than 10% "
+     "under water, at roughly 4 occurrences a year? If it does NOT, the rule is "
+     "inapplicable regardless of the backtest and should be dropped, and this review "
+     "closes. (2) If it does, re-run research/170's five Part-B cells on the LIVE event log "
+     "plus the extended history and apply the SAME +0.10 paired Calmar bar, UNCHANGED - do "
+     "not move the bar because three evaluations have landed just under it. (3) Report the "
+     "tax and tradeability cost alongside: the rule raises tax 25%, drops the win rate from "
+     "48.9% to 47.3%, lengthens the worst losing streak from 14 to 15, and raises the share "
+     "of profit coming from the ten best realisations from 37.5% to 43.7%. "
+     "PASS = either a clean drop with the reason recorded, or a re-run that clears +0.10 on "
+     "live-informed evidence and is then raised as its own strategy change with its own "
+     "STATUS doc and an after-15:40 deploy. Study: /app/backtest/"
+     "qs-leeway-and-baseage-best-entrant-research170"),
     ('IPO Base post-outage health check - did the book actually run every session for a week after the 12-Sep spec change?', '2026-09-19', 'PENDING', "On 12-Sep-2026 the IPO Base book was found DEAD for four trading sessions. Commit 3829ad71 (3-Sep, 'IPO Base marks intraday') rewrote the constants block in services/ipo_paper.py and silently dropped two lines, IPO_TAG and SEEN_ORDERS. Both are read ONLY inside the `mode == live` branch, so nothing failed while the sleeve was on paper - and then it was funded with real money on 8-Sep and every nightly cycle and every reconcile crashed on a NameError from that moment. Four sessions with no exit evaluation and no buy-stops armed on a real-money book. Nothing alerted: the cron redirected the traceback into /tmp/ipo_paper.log and no monitor reads it. Re-checked afterwards, KISSHT would have been HELD on all three missed sessions under both the old and the new exit rules, so no exit was actually missed - that was luck, not design. WHAT TO VERIFY on the due date: (1) backtest_data/ipo_paper_state.json last_run advanced on every trading day since 12-Sep; (2) the nav curve has one point per trading day with no gaps; (3) /tmp/ipo_paper.log and /tmp/ipo_reconcile.log contain no traceback; (4) spec_version reads r167-A and every open position's stop equals 0.90x its fill. THE BROADER FIX IS STILL OPEN and matters more than this one book: a crashing cron on a live book should raise an alert rather than write a traceback to a file nobody reads. Every *_paper.py and *_real.py cron shares that shape."),
     ("Momentum Portfolio - idle cash instrument: pick the arbitrage fund, add the "
      "liquid-ETF buffer, measure the realised post-tax yield",

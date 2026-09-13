@@ -2,6 +2,51 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — research/170: QS rank leeway is a dead axis — and Base Age's "best entrant" pick **replicated on fresh seeds** and still sits ON the bar
+
+Two unrelated questions Arun asked on the morning of 13-Sep-2026, on two different books.
+Published at `/app/backtest/qs-leeway-and-baseage-best-entrant-research170`. **Nothing is deployed.**
+
+**Part A — Quality Summit rank leeway: CONCLUDED, NO ADOPTION.** Arun asked for "a leeway,
+say within top 25" for a holding that slips in the rank. **The book already keeps a holding to
+rank 23** (`ceil(buffer 1.5 × N 15)`), so a name at rank 16 is not sold today. More to the
+point, instrumenting the sale reason for the first time shows **only 14.5% of sales are rank
+sales** — 85.5% are the name leaving the near-all-time-high band, the liquidity floor or the
+screen, and no leeway of any width can touch those. Paired on the same 12 rebalance-day offsets,
+**every** width loses: rank 15/20/26/30/38/45 give −2.02 / −0.15 / −0.09 / −0.39 / −0.57 /
+−0.84 pp of CAGR, winning 3/4/5/4/3/2 of 12. Arun's own proposal (rank 26) is a dead wash.
+Widening **does** cut churn (74→54 trades/yr, hold 66→93 days) and **cannot** cut tax: trades
+held beyond 365 days rise only 0.3%→1.6%, so the 12.5% long-term rate never arrives. The
+*other* leeway — keep a name after it leaves the band — is the **worst cell in the study**
+(−1.42pp CAGR, −0.146 Calmar, 5.5 extra points of drawdown). k = 0.90 stands: it is the Calmar
+peak at every leeway, and k = 0.85 clears the fit window and reverses in the holdout — the
+**second independent replication** of research/162's reversal.
+
+**Part B — Base Age best-qualifying entrant: SIGNAL, confirmed, NOT adopted.** research/166
+found, *after* seeing results, that giving a freed slot to the highest-RS refused entrant lifts
+the rotation rule to Calmar 0.715. research/170 named the rule and the three candidates
+**before** running anything and re-ran them on **seeds 1001–1030, which no cell in r/164 or
+r/166 had ever touched**. It came back: **22.58% after tax, −31.78% drawdown, Calmar 0.710**
+against the incumbent's 20.95% / −34.05% / 0.611 — paired **+0.105 Calmar on 30/30**, beating
+a rate-matched random swap **+0.115 on 30/30**, winning **both** windows on 30/30, and holding at
+40 and 60 bps. Pooled over all 60 paths: **+0.096 against a pre-registered bar of +0.100**. Three
+independent evaluations have now landed at +0.094, +0.096 and +0.105. **The effect is real and
+small, and the threshold sits on top of it.**
+
+**The new mechanical fact worth carrying forward: who leaves the book sets the return; who enters
+it sets the drawdown.** All three entrant priorities earn the same +1.65 to +1.77pp of CAGR; the
+entire 5.5-point drawdown spread is in which refused breakout you buy (rs252 −31.78%, tv20
+−33.52%, oldest base −37.23% — and the oldest-base variant actually **loses** to the incumbent
+on Calmar).
+
+**Standing decision, unchanged:** the live Base Age book converting under research/165 goes live
+**exactly as research/161 adopted it** — 16 slots at 6.25%, SuperTrend(14,4) close trail, no
+stop, no rotation, no trimming. The proposed rule is written out as **OA-ROT-1** in
+`research/170_.../results/RESULTS.md` and is a **proposal, not a change**; no executor file was
+touched. **Dated review 2027-03-13** registered in the Ops & Review Centre, with the pass
+criterion on the **live entry queue** (it must actually refuse signals while a holding sits more
+than 10% under water, ~4 times a year) and the **same +0.10 bar, unchanged**.
+
 ## 🔴 2026-09-12 - Open Alpha - Base Age live conversion - STAGED, SWITCH OFF, awaiting Arun flip
 
 Arun: "we must convert the existing OA trades into this OA base age system, manage the exits and continue to be live with further trades." Code is on the VPS behind `OA_RULESET` in `services/oa_real.py` (default `legacy`, so nothing has changed; commits 2a0f9074, b1eed5a1). Replication gate 100.00% vs the research/164 3,619-event list; all 11 live positions HOLD under SuperTrend(14,4) (13-26% above the line); Monday only candidate is PAYTM (21 sh, about Rs 38,157). **BLOCKER before the flip:** `services/equity_executor.py` (crontab line 107, 09:20) still tops up OA holdings with real OA-TOPUP orders - settle it (crontab-only `--book ipo-base`, or a guarded engine change with its own STATUS) or do not flip. Unverified until the first evening: which AMO order type Kite accepts (MARKET, else LIMIT at close +/-2%). Runbook + rollback: `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` section 9. Register row updated (Open Alpha - Base Age (converting)); reviews 2026-09-15 and 2026-09-26 in the Ops Centre.
