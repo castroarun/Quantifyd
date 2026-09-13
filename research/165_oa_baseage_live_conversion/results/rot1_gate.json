@@ -1,0 +1,106 @@
+{
+ "R1": {
+  "points": 8488,
+  "engine_swaps": 575,
+  "fire_pct": 100.0,
+  "out_pct": 100.0,
+  "pair_pct": 100.0,
+  "window_points": 2299,
+  "window_pct": 100.0,
+  "window_start": "2023-12-14",
+  "buckets": {},
+  "runs": [
+   "random/1001",
+   "random/1002",
+   "random/1003",
+   "random/1004",
+   "random/1005",
+   "tv/1001"
+  ],
+  "rs252": {
+   "contested": 4472,
+   "same_top": 4472,
+   "pct": 100.0
+  }
+ },
+ "R2": [
+  {
+   "book": "live-book",
+   "start": "2025-01-31",
+   "end": "2026-09-11",
+   "positions": 16,
+   "cash": 7891,
+   "nav": 483624,
+   "swaps": 20,
+   "buys": 105,
+   "exits": 100,
+   "refused_cash": 90,
+   "refused_slot": 381
+  },
+  {
+   "book": "live-book-norot",
+   "start": "2025-01-31",
+   "end": "2026-09-11",
+   "positions": 16,
+   "cash": 20986,
+   "nav": 506706,
+   "swaps": 0,
+   "buys": 88,
+   "exits": 83,
+   "refused_cash": 130,
+   "refused_slot": 337
+  },
+  {
+   "book": "empty-book",
+   "start": "2025-01-31",
+   "end": "2026-09-11",
+   "positions": 16,
+   "cash": 8184,
+   "nav": 747243,
+   "swaps": 18,
+   "buys": 104,
+   "exits": 88,
+   "refused_cash": 76,
+   "refused_slot": 394
+  },
+  {
+   "book": "empty-book-norot",
+   "start": "2025-01-31",
+   "end": "2026-09-11",
+   "positions": 16,
+   "cash": 34043,
+   "nav": 808304,
+   "swaps": 0,
+   "buys": 94,
+   "exits": 78,
+   "refused_cash": 111,
+   "refused_slot": 351
+  },
+  {
+   "book": "60d-rot",
+   "start": "2026-06-19",
+   "end": "2026-09-11",
+   "positions": 16,
+   "cash": 250,
+   "nav": 652853,
+   "swaps": 11,
+   "buys": 31,
+   "exits": 15,
+   "refused_cash": 25,
+   "refused_slot": 81
+  },
+  {
+   "book": "60d-norot",
+   "start": "2026-06-19",
+   "end": "2026-09-11",
+   "positions": 15,
+   "cash": 29337,
+   "nav": 666690,
+   "swaps": 0,
+   "buys": 21,
+   "exits": 6,
+   "refused_cash": 37,
+   "refused_slot": 68
+  }
+ ]
+}

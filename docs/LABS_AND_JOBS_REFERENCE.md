@@ -204,5 +204,18 @@ venv/bin/python3 research/162_quality_summit_optimisation/scripts/finalize_a.py 
 venv/bin/python3 research/162_quality_summit_optimisation/scripts/partc_blend.py
 ```
 
+## Review 2027-03-13 - OA-ROT-1, the Base Age best-entrant swap (added 13-Sep-2026)
+Arun ADOPTED research/170 Part B on 13-Sep-2026: when a qualifying Base Age signal is refused
+for a slot or for cash, sell the holding more than 10% under its buy price and buy the refused
+signal with the highest 12-month relative strength, both at the next open, at most one a night.
+Built into the staged conversion by research/165 behind its own OFF switch `OA_ROT1` in
+`services/oa_real.py`; `OA_RULESET` is still `legacy`, so nothing runs yet. Replication gate:
+8,488 of 8,488 rotation decisions identical to research/170's engine. The 2027-03-13 review
+checks the live SWAP RATE first (~4/yr expected, ~12/yr in research/165's walk of the live
+code), then the P&L attribution of both legs, then re-runs research/170's five Part-B cells
+against the unchanged +0.10 Calmar bar. The 15-Sep and 26-Sep reviews above carry the swap
+checks too. Registered in `ops_center.py` REVIEWS. Runbook:
+`research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md` section 9.
+
 ## Reviews 2026-09-15 and 2026-09-26 - Open Alpha - Base Age LIVE conversion (added 12-Sep-2026)
 Live Open Alpha converts to Base Age (research/165, code staged behind `OA_RULESET` in `services/oa_real.py`, default legacy). 15-Sep: day-one check after the flip (18:50 job both legs, AMO type accepted, fills, 09:20 top-up off OA). 26-Sep (repurposed from the paper-book call): first two weeks - fills vs next-open, ST(14,4) exits vs dry-run, cash refusals vs the research/164 base rate. Registered in `ops_center.py` REVIEWS.

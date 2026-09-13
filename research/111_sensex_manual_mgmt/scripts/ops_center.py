@@ -142,9 +142,12 @@ GROUPS = [
 
 # Periodic reviews / re-assessments — THE calendar. status: PENDING | SCHEDULED | PARKED
 REVIEWS = [
-    ("OA \u00b7 Base Age - re-test rotation rule OA-ROT-1 on the LIVE entry queue after six "
-     "months of real-money operation",
+    ("OA \u00b7 Base Age - rotation rule OA-ROT-1 ADOPTED: re-test it on the LIVE entry queue "
+     "after six months of real-money operation",
      "2027-03-13", "PENDING",
+     "ADOPTED into the staged conversion 13-Sep-2026; review the first live swaps. "
+     "Arun read research/170 Part B and adopted the rule the same morning, overriding that study's own non-adoption verdict; research/165 built it into the staged live conversion behind its own OFF switch OA_ROT1 in services/oa_real.py. OA_RULESET is still 'legacy', so nothing is running yet. Replication gate PASS: 8,488 of 8,488 rotation decisions across six engine paths identical to research/170's own engine on fire/no-fire, on the name sold and on the name bought; the gate also caught a real defect first - rs252 must be read on the study's NIFTYBEES master calendar, not on 252 of a symbol's own bars. Rule text, gate and runbook: research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md. "
+     "THE ORIGINAL FINDING, unchanged: "
      "research/170 (13-Sep-2026) CONFIRMED research/166's post-hoc pick on 30 seeds it had "
      "never been run on: when the Base Age book is full and a qualifying signal arrives, "
      "selling the holding more than 10% under water and giving its slot to the refused "
@@ -153,15 +156,26 @@ REVIEWS = [
      "Paired: +0.105 Calmar on 30/30 fresh seeds, +0.094 on research/166's own seeds, "
      "+0.096 on all 60 paths pooled - against a pre-registered bar of +0.100. It beats a "
      "rate-matched random swap on 30/30, wins both pre-registered windows on 30/30, and "
-     "holds its advantage at 40 and 60 bps. NOTHING WAS ADOPTED: the bar was written down "
-     "before the run and the pooled figure misses it by 0.004, the book has never traded "
-     "live, and the rule needs an evening scorer plus a two-leg next-open order that does "
-     "not exist. The exact proposed rule text is OA-ROT-1 in "
+     "holds its advantage at 40 and 60 bps. research/170 DID NOT ADOPT IT: the bar was written "
+     "down before the run and the pooled figure misses it by 0.004, the book had never "
+     "traded live, and the rule needed an evening scorer plus a two-leg next-open order "
+     "that did not exist. Arun overrode the first reason on 13-Sep-2026 and research/165 built "
+     "the third; the second is still true and is what this review exists for. Rule text: OA-ROT-1 in "
      "research/170_qs_leeway_and_baseage_best_entrant/results/RESULTS.md. "
-     "WHAT TO VERIFY ON THE DUE DATE, in order: (1) does the LIVE entry queue show the "
+     "WHAT TO VERIFY ON THE DUE DATE, in order: (0) THE SWAP RATE, which is now the first "
+     "question rather than an assumption: research/170 measures ~4 swaps a year and this "
+     "criterion was written against that, but research/165's 400-session walk of the LIVE "
+     "code produced ~12 a year and its 60-day walk ~46. Record the real rate, and look for "
+     "churn chains - a name swapped in and swapped out again within ten sessions. If the "
+     "live rate is far above 4, RE-READ this criterion rather than quietly re-scaling it. "
+     "(0b) P&L ATTRIBUTION of both legs of every swap: what the sold name did after it "
+     "was sold and what the entrant did. Over the only window research/165 could walk, the "
+     "rule LOST on all three arms (-Rs 23,082 from the live book over 400 sessions). "
+     "(1) does the LIVE entry queue show the "
      "shape the rule needs - qualifying signals refused while a holding sits more than 10% "
-     "under water, at roughly 4 occurrences a year? If it does NOT, the rule is "
-     "inapplicable regardless of the backtest and should be dropped, and this review "
+     "under water? If it does NOT, the rule is "
+     "inapplicable regardless of the backtest and should be switched off with OA_ROT1=False "
+     "and the reason recorded, and this review "
      "closes. (2) If it does, re-run research/170's five Part-B cells on the LIVE event log "
      "plus the extended history and apply the SAME +0.10 paired Calmar bar, UNCHANGED - do "
      "not move the bar because three evaluations have landed just under it. (3) Report the "
@@ -333,14 +347,17 @@ REVIEWS = [
      "Base Age (research/165 staged the code behind OA_RULESET, default legacy). At this review compare "
      "actual AMO fills against the next-open assumption, SuperTrend(14,4) exits against the dry-run lines, "
      "and the count of entries refused for cash against the research/164 base rate (1,955 of 3,619 events). "
-     "Also: is the 09:20 equity_executor OA top-up off the OA book. Runbook: "
-     "research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md section 9."),
+     "Also: is the 09:20 equity_executor OA top-up off the OA book. "
+     "ADDED 13-Sep-2026, the OA-ROT-1 swap rule: (a) HOW MANY SWAPS in two weeks - research/170 expects ~4 a year, research/165's walk of the live code produced ~12; (b) HOW MANY REFUSALS WERE CONVERTED - refused-for-cash / no-free-slot lines followed by a swap, against those that were not; (c) did any swapped-IN name get swapped OUT again within ten sessions (a churn chain); (d) P&L attribution of both legs of every swap; (e) is the entry-sizing NAV-basis question still open - plan() sizes the slot off cost-plus-cash NAV while the study and rot1_pick() use the marked NAV, which is the difference between PAYTM x20 and x21. "
+     "Runbooks: "
+     "research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md section 9 and OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md section 9."),
     ("Open Alpha - Base Age day-one check after the flip",
      "2026-09-15", "PENDING",
      "Did the 18:50 job run both legs (exit confirmation then entries), which AMO order type did Kite "
      "accept (MARKET or the LIMIT fallback, per /tmp/oa_entry.log), did any exit or entry fill at the open, "
      "and did the 09:20 equity_executor stay off the OA book. If the switch was not flipped, mark N/A and "
-     "carry to the next session."),
+     "carry to the next session. "
+     "ADDED 13-Sep-2026: the log must also show an OA-ROT-1 block, even if it only says there was nothing to swap - if that block is missing, the swap code did not run and the flip is only half applied. If a swap fired, check BOTH legs are in kite.orders() tagged OA-ROT1-SELL and OA-ROT1-BUY with the SELL first, that reconcile labelled the sale rot1_swap_out rather than rule_exit, that the name sold was the deepest loss in the book AND worse than -10%, and that the name bought was the highest-rs252 refused signal. Anything off: set OA_ROT1 = False, which stops the swap and leaves Base Age running."),
     ("research/159 rounding-base shelf breakout - re-check the post-2016-only verdict",
      "2027-03-12", "PENDING",
      "r/159 was killed as SIGNAL-not-STRATEGY on two legs: it misses the 20% CAGR floor "

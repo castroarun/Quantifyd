@@ -39,17 +39,52 @@ entire 5.5-point drawdown spread is in which refused breakout you buy (rs252 −
 −33.52%, oldest base −37.23% — and the oldest-base variant actually **loses** to the incumbent
 on Calmar).
 
-**Standing decision, unchanged:** the live Base Age book converting under research/165 goes live
-**exactly as research/161 adopted it** — 16 slots at 6.25%, SuperTrend(14,4) close trail, no
-stop, no rotation, no trimming. The proposed rule is written out as **OA-ROT-1** in
-`research/170_.../results/RESULTS.md` and is a **proposal, not a change**; no executor file was
-touched. **Dated review 2027-03-13** registered in the Ops & Review Centre, with the pass
-criterion on the **live entry queue** (it must actually refuse signals while a holding sits more
-than 10% under water, ~4 times a year) and the **same +0.10 bar, unchanged**.
+**SUPERSEDED THE SAME DAY — OA-ROT-1 ADOPTED by Arun, 13-Sep-2026.** This study's standing
+decision was that the live Base Age book converts *without* rotation. Arun read Part B and
+overrode it: *"Swap, entrant by relative strength 22.58% / −31.8% — I love this. Let's make
+changes to the live system later today, not now."* research/165 has built the rule into the
+staged conversion behind its own OFF switch `OA_ROT1`; `OA_RULESET` is still `'legacy'` and
+nothing is running. The **dated review 2027-03-13** stays, amended: it now asks about the live
+SWAP RATE first (~4/yr expected, ~12/yr in research/165's walk of the live code) and the P&L
+attribution of both legs, then re-runs the five Part-B cells against the **same +0.10 bar,
+unchanged**. See the conversion entry below and
+`research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md`.
 
 ## 🔴 2026-09-12 - Open Alpha - Base Age live conversion - STAGED, SWITCH OFF, awaiting Arun flip
 
 Arun: "we must convert the existing OA trades into this OA base age system, manage the exits and continue to be live with further trades." Code is on the VPS behind `OA_RULESET` in `services/oa_real.py` (default `legacy`, so nothing has changed; commits 2a0f9074, b1eed5a1). Replication gate 100.00% vs the research/164 3,619-event list; all 11 live positions HOLD under SuperTrend(14,4) (13-26% above the line); Monday only candidate is PAYTM (21 sh, about Rs 38,157). **BLOCKER before the flip:** `services/equity_executor.py` (crontab line 107, 09:20) still tops up OA holdings with real OA-TOPUP orders - settle it (crontab-only `--book ipo-base`, or a guarded engine change with its own STATUS) or do not flip. Unverified until the first evening: which AMO order type Kite accepts (MARKET, else LIMIT at close +/-2%). Runbook + rollback: `research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md` section 9. Register row updated (Open Alpha - Base Age (converting)); reviews 2026-09-15 and 2026-09-26 in the Ops Centre.
+
+**EXTENDED 13-Sep-2026 — the conversion now also carries OA-ROT-1, still switched off.** Arun
+adopted research/170 Part B (*"Swap, entrant by relative strength 22.58% / −31.8% — I love this.
+Let's make changes to the live system later today, not now."*). On an evening when a qualifying
+signal is refused for a slot or for cash, the 18:50 job sells the holding whose loss against its
+buy price is worse than **−10%** on the trigger close and buys the refused signal with the
+**highest 12-month relative strength**, both as AMOs for the next open (SELL first), tagged
+`OA-ROT1-SELL` / `OA-ROT1-BUY`, **one swap a night**. Study: 22.58% after tax / −31.78% DD /
+Calmar 0.710 against the un-rotated 20.95 / −34.05 / 0.611; **+0.105 paired Calmar on 30/30 fresh
+seeds, +1.65pp CAGR on 60/60 pooled paths**. research/170 itself did **not** adopt it (it missed
+its own pre-registered +0.10 bar by 0.004), so the rule has its **own OFF switch `OA_ROT1`** —
+set it to `False` to stop the swap and keep Base Age, no crontab change, no restart.
+
+**Replication gate PASS, 100.00%:** 8,488 of 8,488 rotation decisions across six engine paths
+agree with research/170's own engine on fire/no-fire, the name sold and the name bought. The gate
+also caught a real defect before it could reach live: `rs252` must be read on the study's
+**NIFTYBEES master calendar**, not on 252 of a symbol's own bars (73.7% vs 99.7% reproduction of
+the frozen figures; 16 of 810 contested days would have bought a different name).
+
+**Two cautions to carry into the flip.** (1) Walked over the **last 400 sessions on the live
+code**, the rule **LOST** on all three arms (−₹23,082 from the live book) and fired **~12 swaps a
+year against the study's 4.5** — one 1.6-year path with no seeds, but it is the only walk of the
+live code that exists. (2) `plan()` sizes the entry slot off **cost-plus-cash NAV** while the
+study and `rot1_pick()` use the **marked** NAV — the difference between Monday's PAYTM at ×20 and
+the ×21 printed above. **Not changed**; a question for Arun before the flip.
+
+**Dry run on the 11-Sep close:** no swap can fire Monday (5 free slots and ₹1.88L of cash take
+PAYTM outright, so nothing is refused), and **none would fire even on a full book** — the deepest
+loss is **SBCL at −2.46%**, which would have to fall a further 7.7% to qualify.
+
+**Runbook delta + the swap's own rollback:**
+`research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md` §9.
 
 ## ✅ 2026-09-13 — research/168: the three-sleeve blend settles the IPO question — **adopt the RE-FIT, fund it at 25%; the INCUMBENT sleeve does not earn a place at any weight**
 

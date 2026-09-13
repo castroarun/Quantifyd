@@ -57,6 +57,27 @@ from pathlib import Path
 # research/165_oa_baseage_live_conversion/OA_BASE_AGE_LIVE_CONVERSION_DEPLOY_STATUS.md.
 OA_RULESET = 'legacy'          # 'legacy' | 'baseage'
 
+# ─────────────────── OA-ROT-1: the best-entrant swap (research/170 Part B) ───────────────
+# On an evening when a qualifying Base Age signal fires and the book cannot take it, sell the
+# holding that is more than 10% under water and buy the refused signal with the highest
+# 12-month relative strength, both at the next open. At most one swap per evening.
+#
+# WHY IT IS A SECOND SWITCH AND NOT PART OF 'baseage'. research/170 measured this rule at
+# 22.58% / -31.78% / Calmar 0.710 against the un-rotated book's 20.95 / -34.05 / 0.611 —
+# +0.105 paired Calmar on 30/30 fresh seeds and +1.65pp of CAGR on 60/60 pooled paths — and
+# still declined to adopt it, because it missed its own pre-registered +0.10 Calmar bar by
+# four thousandths and because the base book had never traded live. Arun adopted it anyway
+# on 13-Sep-2026 on the strength of the 60/60 consistency. A judgement call that overrides a
+# study's own verdict gets its own OFF switch: `OA_ROT1 = False` disables the swap alone and
+# leaves Base Age running, with no crontab edit and no restart.
+#
+# Inert while OA_RULESET is 'legacy' — the code that reads it is only reached from the
+# Base Age evening job. See
+# research/165_oa_baseage_live_conversion/OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md.
+OA_ROT1 = True                 # True: the swap is live under 'baseage' | False: exits+entries only
+ROT1_MARGIN_PCT = 10.0         # the holding must be MORE than this % below its buy price
+ROT1_MAX_PER_DAY = 1           # research/170 `rot_max_per_day = 1`
+
 ROOT = Path(__file__).resolve().parents[1]
 # Run as a script, Python puts services/ on the path, not the repo root -
 # so `import services.x` fails and every alert delivery died silently in a
@@ -77,6 +98,23 @@ OA_TAG = 'OA-TOPUP'          # top-ups into existing holdings
 # Every tag this book answers to. An order without one of these is somebody else's, in an
 # account that holds 54 names across personal holdings and other books.
 BOOK_TAGS = ('OA-TOPUP', 'OA-ENTRY', 'OA-EXIT')
+# The two legs of an OA-ROT-1 swap carry their OWN tags, so that `reconcile` and the
+# dashboard can tell a swap from an ordinary exit and an ordinary entry after the fact —
+# a SELL tagged OA-EXIT means "SuperTrend flipped", a SELL tagged OA-ROT1-SELL means "this
+# name was the weakest and a better signal took its slot", and those are different stories
+# about the same rupees.
+ROT1_SELL_TAG, ROT1_BUY_TAG = 'OA-ROT1-SELL', 'OA-ROT1-BUY'
+ROT1_TAGS = (ROT1_SELL_TAG, ROT1_BUY_TAG)
+
+
+def _book_tags():
+    """The tags `reconcile` will apply. Identical to BOOK_TAGS under 'legacy'.
+
+    The swap tags are added only on the Base Age branch, so that the legacy reconcile is
+    byte-for-byte the behaviour it had on 11-Sep: the same orders are read, kept and
+    applied, and no new tag can widen what the legacy book claims as its own.
+    """
+    return BOOK_TAGS + ROT1_TAGS if OA_RULESET == 'baseage' else BOOK_TAGS
 SEEN_ORDERS = ROOT / 'backtest_data' / 'oa_applied_orders.json'
 TRAIL_N = 15
 MAX_FLOW = 10_000_000
@@ -554,13 +592,16 @@ def reconcile(dry=True):
     kite = _kite()
     seen = json.load(open(SEEN_ORDERS)) if SEEN_ORDERS.exists() else {}
     adds, sells = {}, {}
+    tags = {}                                   # symbol -> the tags that filled for it today
+    book_tags = _book_tags()
     for o in kite.orders():
         oid = str(o.get('order_id'))
         if (o.get('status') != 'COMPLETE' or o.get('product') != 'CNC'
                 or not o.get('filled_quantity')):
             continue
-        if (o.get('tag') or '') not in BOOK_TAGS:   # not this book's order
+        if (o.get('tag') or '') not in book_tags:   # not this book's order
             continue
+        tags.setdefault(o['tradingsymbol'], set()).add(o.get('tag') or '')
         if oid in seen:                             # already applied on an earlier run
             continue
         s = o['tradingsymbol']
@@ -623,7 +664,11 @@ def reconcile(dry=True):
             st.setdefault('trades', []).append(dict(
                 symbol=s, qty=q, buy=pos['buy'], sell=round(px, 2),
                 entry_date=pos.get('entry_date'), exit_date=str(date.today()),
-                reason='rule_exit', net_pnl=round(gross - COST_PCT * q * (px + pos['buy'])),
+                # An OA-ROT-1 sale is not a rule exit: the trail never fired, the name was
+                # simply the weakest holding when a better signal turned up. Recorded as
+                # what it was, so the trade table and any later review can separate the two.
+                reason=('rot1_swap_out' if ROT1_SELL_TAG in tags.get(s, ()) else 'rule_exit'),
+                net_pnl=round(gross - COST_PCT * q * (px + pos['buy'])),
                 pnl_pct=round((px / pos['buy'] - 1) * 100, 2)))
             if q >= pos['qty']:
                 st['positions'] = [x for x in st['positions'] if x['symbol'] != s]
@@ -644,7 +689,9 @@ def reconcile(dry=True):
             else:
                 st['positions'].append(dict(symbol=s, qty=q, buy=round(avg, 2),
                                             entry_date=str(date.today()),
-                                            stop=round(avg * (1 - STOP_PCT), 2), src='executor'))
+                                            stop=round(avg * (1 - STOP_PCT), 2),
+                                            src=('rot1' if ROT1_BUY_TAG in tags.get(s, ())
+                                                 else 'executor')))
         st['cash'] = round(max(0.0, float(st['cash']) - spend * (1 + COST_PCT)), 2)
         save_state(st)
         json.dump(seen, open(SEEN_ORDERS, 'w'), indent=1, default=str)
@@ -693,8 +740,12 @@ def place_exit(kite, symbol, qty, ltp, tick=0.05):
         return None, str(e)
 
 
-def place_exit_amo(kite, symbol, qty, ref_close, tick=0.05):
+def place_exit_amo(kite, symbol, qty, ref_close, tick=0.05, tag=None):
     """One AMO sell for TOMORROW's open. Returns (order_id, order_type_used, error).
+
+    `tag` defaults to EXIT_TAG, which is every caller on the legacy and the Base Age exit
+    paths. The ONLY caller that passes anything else is the OA-ROT-1 swap, which sends
+    ROT1_SELL_TAG so that the fill is reconciled as a swap-out and not as a trail exit.
 
     MARKET FIRST, LIMIT AS THE FALLBACK, and the choice is logged. The study exits at the
     next open with no floor, which only a market order reproduces; Zerodha's RMS has
@@ -708,13 +759,14 @@ def place_exit_amo(kite, symbol, qty, ref_close, tick=0.05):
     and both are safe. A LIMIT floored 2% under the close fills at the open in any ordinary
     session and refuses only to dump into a collapse.
     """
+    tag = tag or EXIT_TAG
     if _resting(kite, symbol, 'SELL'):
         return None, None, 'a SELL is already live'
     err = None
     try:
         oid = kite.place_order(variety='amo', exchange='NSE', tradingsymbol=symbol,
                                transaction_type='SELL', quantity=int(qty), product='CNC',
-                               order_type='MARKET', validity='DAY', tag=EXIT_TAG)
+                               order_type='MARKET', validity='DAY', tag=tag)
         return oid, 'MARKET', None
     except Exception as e:
         err = str(e)
@@ -724,7 +776,7 @@ def place_exit_amo(kite, symbol, qty, ref_close, tick=0.05):
     try:
         oid = kite.place_order(variety='amo', exchange='NSE', tradingsymbol=symbol,
                                transaction_type='SELL', quantity=int(qty), product='CNC',
-                               order_type='LIMIT', price=floor, validity='DAY', tag=EXIT_TAG)
+                               order_type='LIMIT', price=floor, validity='DAY', tag=tag)
         return oid, 'LIMIT %.2f' % floor, err
     except Exception as e2:
         return None, None, '%s | LIMIT also refused: %s' % (err, e2)
