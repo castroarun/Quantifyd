@@ -282,6 +282,15 @@ def main():
                  % (now.strftime('%Y-%m-%d %H:%M'), RUN_DATE, *WINDOW))
         if DONE.exists():
             stop('already ran', 'marker %s exists (%s)' % (DONE, DONE.read_text()))
+        try:
+            from services.trading_calendar import get_default_calendar
+            if not get_default_calendar().is_trading_day(now.date()):
+                stop('exchange holiday', '%s is not an NSE trading day per '
+                     'config/nse_holidays_%d.json' % (now.strftime('%Y-%m-%d'), now.year))
+        except SystemExit:
+            raise
+        except Exception as e:
+            stop('trading calendar unreadable', str(e))
     preconditions()
     v = values(allow_stale=dry and '--allow-stale' in sys.argv)
     tn_out, oa_in, ipo_in, total = plan_amounts(v)
