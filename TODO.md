@@ -2,6 +2,19 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-13 — True North: the weekly gate now runs on the last TRADING day of the week
+
+Arun: *"pls fix this"*. The weekly gate check skipped weekends but not NSE holidays, and the 15:05
+end-of-day job had no holiday guard. In a holiday-Friday week (2-Oct, 25-Dec-2026) the Thursday got
+no gate check and the check fired on the holiday itself, where orders are refused — the gate action
+slipped a week. Now the helper asks the trading calendar (like the month-end check already did) and
+the end-of-day job skips holidays. Tested on the real 2026 calendar with every step stubbed. Loads
+at the next 09:00 restart. Check registered for 2-Oct. No rule changed.
+
+- Status doc: `docs/TN_WEEKLY_GATE_HOLIDAY_FIX_DEPLOY_STATUS.md`
+
+---
+
 ## ⏳ 2026-09-16 — Idle-cash park: IPO Base and Open Alpha idle cash into CASHIETF — built, SWITCHED OFF, live test due
 
 Arun (13-Sep): *"can we do arb fund for ipo cash?"* → then chose the **automated liquid-ETF sweep**.

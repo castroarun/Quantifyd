@@ -2103,6 +2103,16 @@ def eod_job():
     swept. Selling first and parking afterwards puts the money to work the same day."""
     if not _get("seeded"):
         return
+    # NSE HOLIDAY GUARD (13-Sep-2026). The scheduler fires mon-fri regardless of holidays, and on
+    # a closed day no Donchian stop, gate action or sweep can fill. A calendar failure runs the
+    # job as before rather than silently skipping a trading day.
+    try:
+        from services.trading_calendar import get_default_calendar
+        if not get_default_calendar().is_trading_day(date.today()):
+            logger.info("[MP] EOD skipped: %s is not an NSE trading day", date.today())
+            return
+    except Exception as _e:
+        logger.error("[MP] trading-calendar lookup failed, running EOD anyway: %s", _e)
     refresh_universe(full=False)
     panel = _panel()
     daily_job(panel, sweep=False)                      # interest + mark + Donchian (every day)
@@ -2115,12 +2125,33 @@ def eod_job():
             logger.error(f"[MP-SWEEP] eod sweep failed: {_e}")
 
 
-def _is_last_trading_day_of_week():
-    today = date.today()
+def _is_last_trading_day_of_week(today=None):
+    """Last TRADING day of the week - holidays included, not just weekends.
+
+    Fixed 13-Sep-2026. The old version skipped only Sat/Sun, so in a week whose Friday is an
+    NSE holiday (2-Oct and 25-Dec-2026) it judged Thursday "not last" and ran the weekly gate
+    on the holiday Friday instead, where every sell or re-entry order is refused. The gate
+    action slipped a full week. Same pattern as _is_last_trading_day() for month-end.
+
+    True when today is a trading day and the NEXT trading day falls in a different ISO
+    (year, week). `today` is injectable for tests."""
+    today = today or date.today()
+    try:
+        from services.trading_calendar import get_default_calendar
+        cal = get_default_calendar()
+        if not cal.is_trading_day(today):
+            return False
+        nxt = today + timedelta(days=1)
+        for _ in range(21):
+            if cal.is_trading_day(nxt):
+                return nxt.isocalendar()[:2] != today.isocalendar()[:2]
+            nxt += timedelta(days=1)
+    except Exception as e:
+        logger.error("[MP] trading-calendar lookup failed, using weekend-only rule: %s", e)
     nxt = today + timedelta(days=1)
     while nxt.weekday() >= 5:                           # skip Sat/Sun
         nxt += timedelta(days=1)
-    return nxt.isocalendar()[1] != today.isocalendar()[1]
+    return nxt.isocalendar()[:2] != today.isocalendar()[:2]
 
 
 def _is_last_trading_day():
