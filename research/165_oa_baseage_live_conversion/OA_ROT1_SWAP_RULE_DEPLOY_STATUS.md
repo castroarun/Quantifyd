@@ -189,12 +189,17 @@ produces swaps at all on the live event stream, and (F) what would happen on Mon
 | 2026-09-13 08:41 | Live state read on the VPS, read-only | `legacy`, 11 positions, cash ₹1,88,697.86, HEAD `0e71e146`, crons 112/114 still commented |
 | 2026-09-13 08:55 | **§1–4 written before any code** | this file |
 | 2026-09-13 09:20 | A + B built on the laptop, shipped to the VPS | switch still `'legacy'`; `OA_ROT1 = True` but unreachable |
-| 2026-09-13 09:35 | C built; probe reproduces the engine's own swap count | §8.0 |
-| 2026-09-13 09:50 | **Gate R1 PASS — 100.00%** | §8.1 |
-| 2026-09-13 10:05 | **Gate R2 walked, both starting books** | §8.2 |
-| 2026-09-13 10:15 | **Monday dry-run produced: no swap possible, and none due even if the book were full** | §8.3 |
-| 2026-09-13 10:30 | Runbook delta §9; register + ops + TODO applied | switch still `'legacy'` |
-| 2026-09-13 10:40 | Committed on the VPS, not pushed | `services/oa_*.py`, `research/165/**`, `research/170/**`, register/ops/TODO |
+| 2026-09-13 08:52 | C built; `--verify` proves `PROBE=None` is a no-op; 95 swaps = 4.4/yr | §8.0 |
+| 2026-09-13 08:56 | Gate R1 pair-agreement 100.00% — but the **entrant RANKING only 91.8%** | investigated rather than accepted |
+| 2026-09-13 08:58 | **`rs252` defect found and fixed**: read on the study's NIFTYBEES master calendar, not the symbol's own bars | §8.2 |
+| 2026-09-13 09:02 | **Gate R1 re-run: PASS, 100.00% on 8,488 decisions; R3 ranking 100.00%** | §8.1 |
+| 2026-09-13 09:02 | **Gate R2 walked, both starting books + the 60-day walk** | §8.3 — and the rule **loses** on this window |
+| 2026-09-13 09:05 | **Dry-run: no swap possible Monday, and none even on a full book** | §8.4 |
+| 2026-09-13 09:12 | Register: `strategies.ts` + LABS doc written; **`ops_center.py` and `TODO.md` SKIPPED — a concurrent session had landed `register170.py` on the VPS between this script being written and run** | the marker guard doing its job |
+| 2026-09-13 09:18 | VPS copies pulled back to the laptop; register re-written to **amend** research/170's entries rather than duplicate them; applied | ops parses, 1 review dated 2027-03-13 |
+| 2026-09-13 09:25 | `npm run build` green; `Swap rule OA-ROT-1` and `OA-ROT1-SELL` present in `static/app/assets/index-MIvD2W0u.js` | frontend-only, no restart |
+| 2026-09-13 09:30 | **Committed on the VPS as `08496a7f`, NOT pushed** | 14 files: `services/oa_real.py`, `services/oa_baseage_entry.py`, `research/165/**`, `strategies.ts`, `ops_center.py`, LABS doc, `TODO.md` |
+| 2026-09-13 09:32 | Post-commit safety re-check | `OA_RULESET='legacy'`, `OA_ROT1=True` (inert), crontab 112 and 114 still commented, state file still 11 positions / cash ₹1,88,697.86 |
 
 ---
 
@@ -268,9 +273,18 @@ ssh arun@94.136.185.54 "cd /home/arun/quantifyd && venv/bin/python3 \
 | `research/165_.../scripts/sim170_probe.py` | generated; research/170's engine + a decision probe | yes (small) |
 | `research/165_.../scripts/rot1_gate.py` | gates R1 and R2 | yes |
 | `research/165_.../scripts/rot1_dryrun.py` | the Monday dry-run on the live 11 | yes |
-| `research/165_.../results/rot1_decisions.csv` | every engine decision point + the live verdict | yes if small |
+| `research/165_.../scripts/rot1_rs_diag.py` | the rs252 calendar diagnostic that found the §8.2 defect | yes |
+| `research/165_.../scripts/register_rot1.py` | the marker-guarded register pass (index, ops, labs, TODO) | yes |
 | `research/165_.../results/rot1_gate.json` | the gate summary | yes |
-| `research/165_.../results/rot1_walk.csv` | the 400-session live-code walk, both starting books | yes |
+| `research/165_.../results/rot1_decisions.csv` | one row per disagreement — **empty, there are none** | gitignored (`*.csv`) |
+| `research/165_.../results/rot1_walk.csv` | the 400-session live-code walk, both starting books, 87 KB | gitignored (`*.csv`) |
+| `research/165_.../results/rot1_rs_diag.csv` | rs252 per frozen event: study / own-bars / DB-calendar / live, 304 KB | gitignored (`*.csv`) |
+| `frontend/src/data/strategies.ts` | the Open Alpha register row | yes (modified) |
+| `research/111_.../scripts/ops_center.py` | the 2027-03-13, 2026-09-26 and 2026-09-15 reviews | yes (modified) |
+| `docs/LABS_AND_JOBS_REFERENCE.md` · `TODO.md` | the mirrors | yes (modified) |
+
+Commit **`08496a7f`** on the VPS, **not pushed**. The `*.csv` results are excluded by the
+repo's existing ignore rule; re-generate them with the two commands in §5.
 | `research/165_.../OA_ROT1_SWAP_RULE_DEPLOY_STATUS.md` | this file | yes |
 
 ---
