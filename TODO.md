@@ -29,8 +29,7 @@ alert on refusal), and the sale is booked only on the broker's fill at the broke
 positions free their slot for arming (as the backtest does); the 09:20 order job reconciles first so a
 morning sale's cash is counted. Paper mode unchanged. Tested with a fake broker.
 
-**Open:** the backtest sells AT the signal close; live sells at the next open. A research run is
-measuring the cost against a pre-registered bar. First live exit check registered.
+**Settled 13-Sep-2026 by research/173: IMMATERIAL.** Selling at the next open does not cost Spec A anything against selling at the signal close. On 30 paired seeds it was +1.18pp CAGR and +0.048 Calmar over 2006-2026, and the close exit won 0 of 30 seeds in every window. Names that close through a stop or the 50-day trail tend to open slightly higher, and names that close through +25% tend to keep going. The only give-back is a 1.3pp deeper worst-seed drawdown. A same-day 15:05 close-proxy exit would move the book back toward the losing arm and should not be built. First live exit check registered.
 
 - Status doc: `docs/IPO_BASE_AUTOMATED_EXITS_DAILY_DEPLOY_STATUS.md`
 

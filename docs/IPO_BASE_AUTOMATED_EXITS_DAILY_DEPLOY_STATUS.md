@@ -24,7 +24,11 @@ no stop watching it, and the next morning's order job treated that cash as free.
 | Retry | next evening run | a refused, rejected or lapsed SELL is placed again; a refusal raises a CRITICAL alert |
 | Slots | 18:45 arming | an exiting position counts as a free slot, as in the backtest |
 
-## Known deviation, being measured
+## Timing deviation — measured, immaterial
+
+**Settled 13-Sep-2026 by research/173: IMMATERIAL.** Selling at the next open does not cost Spec A anything against selling at the signal close. On 30 paired seeds it was +1.18pp CAGR and +0.048 Calmar over 2006-2026, and the close exit won 0 of 30 seeds in every window. Names that close through a stop or the 50-day trail tend to open slightly higher, and names that close through +25% tend to keep going. The only give-back is a 1.3pp deeper worst-seed drawdown. A same-day 15:05 close-proxy exit would move the book back toward the losing arm and should not be built.
+
+### Original note
 
 The backtest sells AT the signal close. A decision taken on the official close at 18:45 can only
 sell at the next open — which is also what the manual process did. A research run measures what the
