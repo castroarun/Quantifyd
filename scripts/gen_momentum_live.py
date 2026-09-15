@@ -71,7 +71,19 @@ def main():
     pos = mp._positions()
     syms = sorted(pos)
     if not syms:
-        print('no positions')
+        # A FLAT BOOK IS NEWS, NOT SILENCE. Returning here froze momentum_live.json at
+        # 2026-09-11 15:07 - the snapshot minutes before the gate sold all five holdings -
+        # so every reader saw five positions and a Rs 9.17L book for days afterwards, and
+        # the daily check called the feed stale. Write the flat feed instead.
+        cash = float(mp._cash()) + float(mp._sweep_value())
+        ui = dict(updated=str(datetime.now()), n=0, positions=[], value=0, cash=round(cash),
+                  nav=round(cash), capital=round(float(mp._get('capital', 0.0) or 0.0)),
+                  slots=mp.CFG['n_hold'], gate=mp._get('gate'), flat=True,
+                  note='the book is in cash: the gate is off, or every name has been stopped out')
+        tmp = OUT.with_suffix('.json.tmp')
+        json.dump(ui, open(tmp, 'w'), indent=1, default=str)
+        os.replace(tmp, OUT)
+        print(f'{datetime.now():%H:%M:%S} baked a FLAT feed (no positions), cash Rs {cash:,.0f}')
         return
 
     kite = mp._kite()

@@ -1,30 +1,30 @@
 {
- "generated": "2026-09-11 19:15:09.200550",
- "overall": "FAIL",
+ "generated": "2026-09-15 11:46:33.891842",
+ "overall": "WARN",
  "books": [
   {
    "id": "tn",
    "label": "True North",
-   "held": 5,
+   "held": 0,
    "slots": 8,
-   "nav": 916924,
+   "nav": 657658,
    "gain": null,
-   "updated": "2026-09-11 15:07:09.501331",
-   "age_min": 248,
+   "updated": "2026-09-15 11:46:28.651870",
+   "age_min": 0,
    "due": [],
    "unplaced": [],
    "failed": 0,
-   "unreconciled": -552
+   "unreconciled": -393
   },
   {
    "id": "oa",
    "label": "Open Alpha",
-   "held": 11,
+   "held": 12,
    "slots": 16,
-   "nav": 621068,
-   "gain": 3430,
-   "updated": "2026-09-11 18:52:01.601570",
-   "age_min": 23,
+   "nav": 653691,
+   "gain": -14409,
+   "updated": "2026-09-15 11:46:10.965947",
+   "age_min": 0,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -35,10 +35,10 @@
    "label": "IPO Base",
    "held": 1,
    "slots": 8,
-   "nav": 229244,
-   "gain": 533,
-   "updated": "2026-09-11 15:59:04.781428",
-   "age_min": 196,
+   "nav": 230624,
+   "gain": 1913,
+   "updated": "2026-09-15 11:46:09.467797",
+   "age_min": 0,
    "due": [],
    "unplaced": [],
    "failed": 0,
@@ -50,13 +50,13 @@
    "area": "True North",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 248 min ago"
+   "detail": "marked 0 min ago"
   },
   {
    "area": "True North",
    "name": "slots",
    "status": "OK",
-   "detail": "5/8 held, 3 free - refills at the rebalance in 19d"
+   "detail": "0/8 held, 8 free - refills at the rebalance in 15d"
   },
   {
    "area": "True North",
@@ -74,19 +74,19 @@
    "area": "True North",
    "name": "ledger square",
    "status": "WARN",
-   "detail": "unreconciled Rs -552"
+   "detail": "unreconciled Rs -393"
   },
   {
    "area": "Open Alpha",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 23 min ago"
+   "detail": "marked 0 min ago"
   },
   {
    "area": "Open Alpha",
    "name": "slots",
-   "status": "FAIL",
-   "detail": "11/16 held, 5 free and NOTHING armed after the evening scan"
+   "status": "OK",
+   "detail": "12/16 held, 4 free - tonight's scan arms them"
   },
   {
    "area": "Open Alpha",
@@ -110,7 +110,7 @@
    "area": "IPO Base",
    "name": "feed fresh",
    "status": "OK",
-   "detail": "marked 196 min ago"
+   "detail": "marked 0 min ago"
   },
   {
    "area": "IPO Base",
@@ -140,25 +140,25 @@
    "area": "Jobs",
    "name": "True North marks",
    "status": "OK",
-   "detail": "ran 18:47"
+   "detail": "ran 11:46"
   },
   {
    "area": "Jobs",
    "name": "True North state",
    "status": "OK",
-   "detail": "ran 18:49"
+   "detail": "ran 11:45"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha marks",
    "status": "OK",
-   "detail": "ran 18:46"
+   "detail": "ran 11:46"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha recon",
    "status": "OK",
-   "detail": "ran 18:52"
+   "detail": "ran 11:35"
   },
   {
    "area": "Jobs",
@@ -170,37 +170,37 @@
    "area": "Jobs",
    "name": "IPO marks",
    "status": "OK",
-   "detail": "ran 15:59"
+   "detail": "ran 11:46"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha exits",
    "status": "OK",
-   "detail": "ran 15:18"
+   "detail": "due at 15:18 (last ran 14-Sep 15:18)"
   },
   {
    "area": "Jobs",
    "name": "Universe refresh",
    "status": "OK",
-   "detail": "ran 18:02"
+   "detail": "due at 18:05 (last ran 14-Sep 17:45)"
   },
   {
    "area": "Jobs",
    "name": "IPO engine",
-   "status": "FAIL",
-   "detail": "ERRORED: NameError: name 'SEEN_ORDERS' is not defined"
+   "status": "OK",
+   "detail": "due at 18:45 (last ran 14-Sep 18:45)"
   },
   {
    "area": "Jobs",
    "name": "Open Alpha entries",
-   "status": "FAIL",
-   "detail": "ERRORED: ValueError: could not convert string to float: '303.70.'"
+   "status": "OK",
+   "detail": "due at 18:50 (last ran 14-Sep 18:50)"
   },
   {
    "area": "Universe",
    "name": "tradeable",
    "status": "OK",
-   "detail": "154 of 2906 scanner-eligible symbols no longer trade under that name (110 merely renamed); the scanner refuses them and the history stays for the backtests"
+   "detail": "148 of 2906 scanner-eligible symbols no longer trade under that name (103 merely renamed); the scanner refuses them and the history stays for the backtests"
   },
   {
    "area": "Alerts",

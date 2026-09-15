@@ -93,6 +93,16 @@ BOOKS = [
 ]
 
 
+def _trading_day_today():
+    """Is the exchange open today? Fails OPEN (True) if the calendar cannot be read, so a
+    broken holiday file can never hide a real failure."""
+    try:
+        from services.trading_calendar import get_default_calendar
+        return get_default_calendar().is_trading_day(date.today())
+    except Exception:
+        return True
+
+
 def check_books(rep, kite_orders):
     """-> the per-book summary the app renders."""
     summary = []
@@ -108,6 +118,11 @@ def check_books(rep, kite_orders):
         limit = 10 if _market_open_now() else 24 * 60
         if age is None:
             rep.add(b['label'], 'feed fresh', WARN, 'no usable timestamp')
+        elif not _trading_day_today():
+            # The marks stand down on an exchange holiday by design (scripts/on_trading_day.sh),
+            # so a stale feed is the system working. Reported, never failed.
+            rep.add(b['label'], 'feed fresh', OK,
+                    'market closed today - last marked %.0f min ago' % age)
         elif age > limit:
             rep.add(b['label'], 'feed fresh', FAIL,
                     'last marked %.0f min ago (limit %d)' % (age, limit))
@@ -223,6 +238,7 @@ ERR = re.compile(r'Traceback \(most recent call last\)|^\w*Error:|Exception', re
 def check_jobs(rep):
     today = date.today()
     now_min = datetime.now().hour * 60 + datetime.now().minute
+    trading = _trading_day_today()
     for label, path, due in JOBS:
         p = Path(path)
         if not p.exists():
@@ -237,11 +253,21 @@ def check_jobs(rep):
             rep.add('Jobs', label, OK, 'due at %s (last ran %s)'
                     % (due, mtime.strftime('%d-%b %H:%M')))
             continue
+        if not trading:
+            rep.add('Jobs', label, OK, 'market closed today (last ran %s)'
+                    % mtime.strftime('%d-%b %H:%M'))
+            continue
         tail = ''
         try:
             tail = p.read_text(encoding='utf-8', errors='replace')[-4000:]
         except Exception:
             pass
+        # JUDGE TODAY, NOT THE WHOLE TAIL. Saturday's NameError was fixed the same morning and
+        # still failed this row every day after, because the traceback was simply sitting in
+        # the log. If today's date appears, read only from there.
+        stamp = today.isoformat()
+        if stamp in tail:
+            tail = tail[tail.rindex(stamp):]
         if ERR.search(tail):
             first = next((l for l in tail.splitlines()[::-1]
                           if 'Error' in l or 'Exception' in l), 'see the log')
