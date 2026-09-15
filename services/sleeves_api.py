@@ -329,10 +329,49 @@ def _book_values():
     return out
 
 
+def _book_cash():
+    """Per book: uninvested cash, how much of it is parked, and in what.
+
+    Each book is asked its own ledger. A book that cannot be read reports nothing rather than
+    a zero, because a zero here would read as "no cash" on the page."""
+    out = {}
+    try:
+        mp = _tn_book()
+        units = float(mp._sweep_units() or 0.0)
+        parked = float(mp._sweep_value() or 0.0)
+        out['truenorth'] = dict(cash=round(float(mp._cash() or 0.0) + parked, 2),
+                                parked=round(parked, 2), units=round(units, 2),
+                                symbol=mp.CFG['sweep_symbol'] if units else None)
+    except Exception as e:
+        out['truenorth'] = dict(error=str(e)[:80])
+    for book, mod, state_fn in (('openalpha', 'services.oa_real', 'load_state'),
+                                ('ipo', 'services.ipo_paper', 'load_state')):
+        try:
+            import importlib
+            m = importlib.import_module(mod)
+            from services import cash_park
+            st = getattr(m, state_fn)()
+            parked = cash_park.gain(st, cash_park.db_close()) + cash_park.parked_cost(st)
+            units = cash_park.units(st)
+            row = dict(cash=round(float(st.get('cash', 0.0) or 0.0), 2),
+                       parked=round(parked, 2) if units else 0.0,
+                       units=units, symbol=cash_park.SYMBOL if units else None)
+            if book == 'ipo':
+                funded = float(_alloc().get('ipo_funded', 0.0) or 0.0)
+                if abs(funded - float(st.get('capital', 0.0) or 0.0)) > 1:
+                    row['note'] = ('the Capital Desk shows Rs %s funded; the engine takes it in '
+                                   'at its 18:45 run' % format(round(funded), ','))
+            out[book] = row
+        except Exception as e:
+            out[book] = dict(error=str(e)[:80])
+    return out
+
+
 def _drift():
     a = _alloc()
     tg = a['targets']
     vals = _book_values()
+    cash = _book_cash()
     total = sum(vals.values())
     rows = []
     for k, w in tg.items():
@@ -340,7 +379,8 @@ def _drift():
         want = total * w
         rows.append(dict(book=k, value=round(cur), target_pct=round(w * 100, 1),
                          current_pct=round(100 * cur / total, 1) if total else 0.0,
-                         target_value=round(want), gap=round(want - cur)))
+                         target_value=round(want), gap=round(want - cur),
+                         **{('cash_' + ck): cv for ck, cv in (cash.get(k) or {}).items()}))
     return dict(total=round(total), base=a.get('base', 'truenorth'),
                 ipo_status=a.get('ipo_status', 'paper'), rows=rows,
                 changelog=a.get('changelog', []))

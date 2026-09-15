@@ -102,7 +102,9 @@ type BookStatus = { name: string; kind?: string; capital?: number | null; cash?:
   liquid?: number | null; nav?: number | null; positions?: number;
   flows?: Flow[]; error?: string; note?: string };
 type AllocRow = { book: string; value: number; target_pct: number; current_pct: number;
-  target_value: number; gap: number };
+  target_value: number; gap: number;
+  cash_cash?: number; cash_parked?: number; cash_units?: number;
+  cash_symbol?: string | null; cash_note?: string; cash_error?: string };
 type Allocation = { total: number; base: string; ipo_status: string; rows: AllocRow[];
   changelog: { date: string; text: string }[] };
 type FlowsStatus = { books: Record<string, BookStatus>; allocation: Allocation; note: string };
@@ -128,7 +130,8 @@ function AllocationPanel({ a }: { a: Allocation }) {
       </div>
       <table className={styles.table}>
         <thead>
-          <tr><th className={styles.sym}>Book</th><th>Value</th><th>Now</th>
+          <tr><th className={styles.sym}>Book</th><th>Value</th><th>Cash</th>
+            <th>Parked in</th><th>Now</th>
             <th>Target</th><th>Target ₹</th><th>Gap</th></tr>
         </thead>
         <tbody>
@@ -136,6 +139,13 @@ function AllocationPanel({ a }: { a: Allocation }) {
             <tr key={r.book}>
               <td className={styles.sym}>{BOOK_LABEL[r.book] ?? r.book}</td>
               <td>{rup(r.value)}</td>
+              <td>{r.cash_cash == null ? '—' : rup(r.cash_cash)}</td>
+              <td className={styles.muted}>
+                {r.cash_error ? 'unreadable'
+                  : r.cash_symbol
+                    ? `${r.cash_symbol} · ${r.cash_units} units · ${rup(r.cash_parked ?? 0)}`
+                    : 'uninvested cash'}
+              </td>
               <td>{r.current_pct}%</td>
               <td className={styles.muted}>{r.target_pct}%</td>
               <td className={styles.muted}>{rup(r.target_value)}</td>
@@ -147,12 +157,18 @@ function AllocationPanel({ a }: { a: Allocation }) {
           <tr>
             <td className={styles.sym}><b>Total</b></td>
             <td><b>{rup(a.total)}</b></td>
-            <td colSpan={4} className={styles.muted}>
-              a positive gap is money the book still needs
+            <td colSpan={6} className={styles.muted}>
+              a positive gap is money the book still needs. CASH is every rupee not in a
+              position, parked or not; PARKED IN is the part sitting in the liquid ETF.
             </td>
           </tr>
         </tbody>
       </table>
+      {a.rows.filter((r) => r.cash_note).map((r) => (
+        <div key={r.book} className={styles.sub} style={{ marginTop: 8 }}>
+          {BOOK_LABEL[r.book] ?? r.book}: {r.cash_note}
+        </div>
+      ))}
     </div>
   );
 }
