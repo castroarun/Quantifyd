@@ -124,8 +124,8 @@ Daily, long/flat, 146 names:
 **G1c passes for the fast EMA crossovers.** The rule is genuinely timing, not merely being out of
 the market — it beats its own matched shuffle on 70% of names. But what it buys is **drawdown**
 (median −51.8% against buy-and-hold's −75.7%), not return. On 60-min the same table holds
-(EMA(9,21) beats its null on 68.4%) while the return collapses to **+4.77% against buy-and-hold's
-+11.73%** — the timing skill is still there and turnover has eaten all of it.
+(EMA(9,21) beats its null on 69.2% for CAGR and 68.5% for Calmar, all 146 names) while the return
+collapses to **+4.77% against buy-and-hold's +11.43%** — the timing skill is still there and turnover has eaten all of it.
 
 And the risk edge is not stable. Calmar-beat-vs-buy-and-hold by window, daily, long/flat:
 
