@@ -32,6 +32,14 @@ DM_PATH = "/home/arun/quantifyd/services/data_manager.py"
 SWITCH = date(2024, 7, 8)
 ATM_BAND = 0.25          # keep strikes within +/-25% of spot
 MAX_DTE = 75             # keep expiries within 75 days of trade date
+# WARNING (research/174, 2026-09-15): this cap plus the resume-by-DATE logic below
+# silently truncated the NIFTY/BANKNIFTY option history for EIGHT YEARS. Every session
+# this script touched was recorded as "done", so the uncapped production downloader
+# (download_nse_bhav.py) skipped it for ever and no expiry beyond 75 DTE was ever stored
+# for 2016-01 -> 2024-02, 2026-04/05/06 and 2026-09. Repaired by
+# research/174_long_dated_short_premium/scripts/backfill_longdated_bhav.py (+2,836,719 rows).
+# If this script is ever re-run, EXCLUDE the index symbols or drop the cap for them --
+# a per-symbol resume key is not enough, because the cap is what loses the rows.
 RATE_LIMIT = 2.0
 REQUEST_TIMEOUT = 30
 INDEX_SYMS = {"NIFTY", "BANKNIFTY"}

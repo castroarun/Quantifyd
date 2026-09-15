@@ -1,0 +1,6 @@
+# heavy artifacts - regenerable from scripts/
+bhav_longdated_stage.db
+p1_trades.csv
+p3_paired.csv
+liquidity_v2.csv
+*.log
