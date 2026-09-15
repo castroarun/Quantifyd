@@ -331,3 +331,23 @@ demand is therefore a reported column, not a footnote.
 | 2026-09-04 ~19:3x | Fire-count cross-check | 200% never fires on the VIX>25 book; the 3 campaigns that reach it have VIX ranks 21/23/0 — all below the filter |
 | 2026-09-04 ~19:4x | **DONE** — paired test decides it | ADD_ATM t 1.15 (n=11), ADD_MIRROR negative, STOP t −2.06/−2.29 harmful |
 
+---
+
+## PHASE J - move- and VIX-triggered ADD / RECENTRE mid-campaign (2026-09-15)
+
+**STATUS: DONE** (2026-09-15) - NINTH KILL. RECENTRE negative everywhere; VIX-ADD@15% passes the paired test (t 3.04/4.01) and the plateau but FAILS the sizing null (vs HOLD-2x -59.8, t -1.13) and its re-centring component is negative (-78.2, t -2.38). Gain is size, not management. Open: conditional 2x after a VIX spike as a SIZING rule. RESULTS.md 5e.
+
+**Ask (Arun):** price moves x% -> redeploy or short a NEW straddle; VIX rises further -> deploy/redeploy.
+
+**Already on record, not re-run:** move-triggered EXIT/RECENTRE (Phase E, refuted); premium-triggered
+ADD (Phase G, refuted); VIX crossing after a failed entry day (Phase I, refuted); every stop family
+(Phase G + r/174 P3, eighth kill); exit DTE (r/174 Q3, unresolvable); strangle (r/174 P2, loses paired).
+
+**Genuinely untested, tested here:** J1 MOVE-triggered ADD keeping the original (|spot move| >= 1.5/2/3%);
+J2 VIX-triggered ADD and RECENTRE (India VIX level up 15/30/50% vs the entry day).
+
+**Prediction (r/174 mechanism):** the return is holding one strike through the drift; both triggers
+intervene mid-hold, so both lose. **Falsification:** an arm survives only if its PAIRED delta vs HOLD on
+the fired campaigns is > 0 at t > 2 on BOTH the VIX>25 book and the unfiltered 89.
+
+Script: `scripts/run_phase_j_triggers.py` (reuses Phase G engine). Output: `results/phase_j_triggers.csv`.

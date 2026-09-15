@@ -717,6 +717,74 @@ the liquidity gate at a re-picked strike. BASE net/campaign is 99.5 here against
 104.2 there, so the subset looks representative, but the absolute totals are not
 comparable to the headline study.
 
+## 5e. Move- and VIX-triggered ADD / RECENTRE mid-campaign (Phase J + J2)
+
+**Verdict: NINTH KILL for management. RECENTRE is negative on every trigger and level.
+VIX-triggered ADD survives a paired test against HOLD (t 3.04 / 4.01) but FAILS the
+sizing null: it does not beat running two lots from entry (-59.8, t -1.13), and its
+re-centring component is significantly NEGATIVE (-78.2, t -2.38). The gain is size
+after a vol spike, not management.**
+
+Arun (2026-09-15): "price moves x% -> redeploy or short a new straddle ... when vix
+increases further -> deploy or redeploy". Most of that was already on record (Phases
+E, G, I; r/174 P2/P3/Q3). The two untested slivers were run as a PRE-REGISTERED kill
+test, falsification declared first: an arm survives only if its paired delta vs HOLD
+on the fired campaigns is > 0 at t > 2 on BOTH the VIX>25 book and the unfiltered 89.
+
+### Phase J - the triggers
+
+| trigger | arm | level | VIX>25: n / pairedD / t | ALL: n / pairedD / t |
+|---|---|---|---|---|
+| MOVE | ADD | 1.5% | 59 / +41.6 / 1.64 | 85 / +33.1 / 1.53 |
+| MOVE | ADD | 2.0% | 54 / +59.2 / 2.22 | 76 / +43.4 / 1.93 |
+| MOVE | ADD | 3.0% | 40 / +39.2 / 0.99 | 55 / +12.7 / 0.40 |
+| MOVE | RECENTRE | 1.5-3% | all negative, t -0.9 to -1.2 | all negative |
+| **VIX** | **ADD** | **15%** | **21 / +94.9 / 3.04** | **34 / +89.2 / 4.01** |
+| VIX | ADD | 30% | 6 / +89.1 / 1.96 | 9 / +78.0 / 2.17 |
+| VIX | RECENTRE | 15% | 21 / -89.7 / -1.73 | 34 / -42.5 / -1.21 |
+| VIX | RECENTRE | 30% | 6 / -299.7 / -2.31 | 9 / -227.8 / -2.43 |
+
+RECENTRE lost everywhere, as the r/174 mechanism predicts. VIX/ADD@15% was the only
+cell to pass on both scopes - and unlike Phase G's ADD, it strengthened on the larger
+sample. It earned the gauntlet.
+
+### Phase J2 - the gauntlet
+
+**Plateau (passes):** 15% t 3.04/4.01, 20% t 3.61/4.34, 25% t 2.55/2.51; 10-12% weak.
+**Era (passes on sign):** <=2022 +50.7 t 1.98 (13/20); >=2023 +144.3 t 4.01 (12/14).
+
+**Size vs re-centring (FAILS) - on the 18 fired VIX>25 campaigns:**
+
+| arm | mean | vs HOLD | t |
+|---|---|---|---|
+| HOLD | +155.8 | | |
+| ADD at NEW ATM (the survivor) | +251.8 | +96.0 | 2.74 |
+| ADD at the ORIGINAL strike | **+330.1** | **+174.2** | **3.81** |
+| HOLD at 2x from entry | +311.6 | | |
+| **re-centring's own worth (ADD_ATM - ADD_SAME)** | | **-78.2** | **-2.38** |
+| **the sizing null (ADD_ATM - HOLD-2x)** | | **-59.8** | **-1.13** |
+
+Same on all 89 (n=30): ADD_ATM - HOLD-2x = -16.3 (t -0.45); re-centring -35.4 (t -1.43).
+Worst campaign under ADD: -477.7 vs -292.2 under HOLD. Risk doubles, as it must.
+
+**Reading.** The survivor beat HOLD only because it is bigger on a third of the
+campaigns. The management component - moving the strike to the new ATM - is
+significantly negative, which is r/174's mechanism restated: the original strike is
+what pays. This is r/130's verdict (skew overlay strictly dominated by sizing up) and
+r/134's null (any hedge must beat simply trading fewer/more lots) landing on the
+ninth management proposal in a row.
+
+**What is left standing - a SIZING question, not a management one.** ADD at the
+ORIGINAL strike beat HOLD by +174.2 (t 3.81) on the fired campaigns, i.e. adding a
+second lot of the same straddle after a mid-campaign VIX spike. Whether that
+CONDITIONAL 2x beats UNCONDITIONAL 2x at book level, capital-normalised with
+drawdown, is not tested here and is the only open item. It is the mirror of the
+book's standing rule ("to cut risk, cut lots"), and it would need the stress-margin
+result in mind: the add lands exactly when SPAN is dearest.
+
+No live change. Book-level ADD@15% shows +136.8/camp vs HOLD +104.2 on the VIX>25
+book, but that is the 1.33x average size showing through, not a rule to deploy.
+
 ## 6. Robustness
 
 **Convention** — irrelevant: roll back/close 78.1 · roll back/settle 75.5 · roll forward/close
