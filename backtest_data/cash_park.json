@@ -1,12 +1,15 @@
 {
- "_note": "Idle-cash park switches. Both books OFF until the live test after the 14-Sep-2026 rebalance passes. max_order caps any single order in rupees for that test; set it back to null afterwards. Status doc: docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md",
- "enabled": {"ipo-base": false, "open-alpha": false},
+ "_note": "Idle-cash park switches. IPO SWITCHED ON 15-Sep-2026 for its live test with max_order Rs 10,000 (the 14-Sep rebalance landed on 15-Sep, the holiday pushed it). Lift max_order to null once one park and one release have been checked. Open Alpha stays OFF: its reserve for free slots exceeds its cash, so it would park nothing anyway. Status doc: docs/CASH_PARK_LIQUID_ETF_IPO_OA_DAILY_DEPLOY_STATUS.md",
+ "enabled": {
+  "ipo-base": true,
+  "open-alpha": false
+ },
  "min_order": 25000,
  "max_order": 10000,
  "ipo_buffer": 10000,
  "oa_slot_pct": 0.0625,
  "oa_slots": 16,
- "oa_cushion": 1.10,
+ "oa_cushion": 1.1,
  "oa_swap_slot": true,
  "fill_timeout": 90
 }
