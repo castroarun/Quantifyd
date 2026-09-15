@@ -44,6 +44,12 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Cron runs this file as `python services/equity_executor.py`, which puts services/ on the
+# path and NOT the repo root, so `from services.x import y` below would raise "No module
+# named 'services'" - as it did on 15-Sep, silently skipping the IPO reconcile. Every other
+# cron-run engine does this at module scope; this one did it only inside the alert helper.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 LEDGER = ROOT / 'backtest_data' / 'executor_orders.json'
 KILL = ROOT / 'backtest_data' / 'executor_kill.flag'
 ALLOC = ROOT / 'backtest_data' / 'allocation_targets.json'
