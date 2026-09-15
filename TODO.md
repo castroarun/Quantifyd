@@ -2,6 +2,38 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## QUEUED 2026-09-15 -- NEXT STUDY after research/174 closes: single-stock always-on directional system (Arun)
+**Arun's words (near-verbatim):** "earlier i used to trade manually on maruti always on... using the mst system
+in our app... master super trend 7,5, child ST 7,2... with futures long/short on mst, options selling hedge on
+cst. the aim is to find some other system apart from nifty/indexes, im inclined towards directional... need not
+be by % move but even with options system to manage, so it need not be fully directionally trending... and it
+can be on a single stock / few stocks - like taking ALL signals instead of scanning for signals on stocks....
+say we might end up finding supertrend 7,3 all signals works on reliance over a good run, or ema crossover on
+hdfcbank works with either futures or options or both or so.... take this up after current task is fully done"
+
+**Restated:** a per-stock, always-in, every-signal system on one or a few liquid F&O names -- direction from a
+trend rule (SuperTrend / EMA crossover / MST master+child), expressed in futures, options, or both -- as a
+non-index, directional complement to the short-vol book. Dispatch `quant-researcher`; it must ask the intake
+questions (which names, which instruments, what "always-on" means when flat is not allowed) before sweeping.
+
+**Prior art the study MUST cite, not rediscover:**
+- **The exact trap:** research/48 REC SuperTrend positional -- 15-min looked great on ONE name, basket validation
+  killed it: a lucky single-name overfit. "Take all signals on RELIANCE" is that shape. The study is worthless
+  without (a) the same rule on a basket of names, (b) a random-entry null on the same name, (c) a window split.
+- `memory/maruthi_algo_bugs.md`: the live Maruthi MST algo was DISABLED 2026-03-25 with 9 critical bugs. If any
+  MST code is reused, read that first. Design in `memory/maruthi_strategy.md`. App page at /mst.
+- research/56 dual-SuperTrend 30-min options: NO NET EDGE standalone, only EV+ as a flat/hedge overlay.
+- research/81/82/83: every SHORT-side equity signal tested lost (1-15d, and Turtle on F&O equities). A
+  long/short system must show its short leg earns on its own or drop it.
+- research/135 Turtle: optimisation was SUBTRACTIVE; the plateau test caught the overfit. Same discipline here.
+- research/134: the short-vol book bleeds in UP-trends, so the value of a directional complement is in
+  up-runs -- the blend test against the live 45-DTE book is the deciding metric, not standalone CAGR.
+- Data: `market_data.db` is NOT split-adjusted retroactively (memory 2026-09-01) -- verify any single-name
+  daily series before trusting a multi-year run on it. 60-min bars exist for 93 names 2018-2025; 5-min only
+  for 10. Options on stocks: `nse_options_bhav` daily, volume/OI filter binding.
+
+**Do not start until research/174 has a RESULTS.md verdict.**
+
 ## ✅ 2026-09-15 — The daily check watched 10 of 19 jobs, and a log with no timestamp could never clear a fixed error
 
 Arun, told that the new-listing onboarding job had died on Monday's holiday: *"this shud hv been
