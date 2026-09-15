@@ -145,7 +145,13 @@ def stock_monthly_expiries(m, days, start, end):
         (*INDEX_SYMS, start, end)).fetchall()
     bym = {}
     for exp, first in rows:
-        ed = prev_session(days, dstr(dparse(exp) - timedelta(days=DTE_IN)))
+        # cap the 45-DTE target at the last known session: a target that lands
+        # on a weekend just beyond the data (e.g. Sat 12-Sep with bhav through
+        # Fri 11-Sep) must still resolve to that Friday, or the whole upcoming
+        # cycle is invisible to seed(). Wrong collapses (target far in the
+        # future) are rejected by the caller's dte <= DTE_IN+5 tolerance.
+        tgt = min(dstr(dparse(exp) - timedelta(days=DTE_IN)), days[-1]) if days else None
+        ed = prev_session(days, tgt) if tgt else None
         if ed and first <= ed:
             bym.setdefault(exp[:7], []).append(exp)
     return {ym: max(v) for ym, v in sorted(bym.items())}
@@ -271,11 +277,14 @@ def live_marks(rows):
     return _live_tick(q, rows, spec)
 
 
-def _live_setup(rows):
+def _live_setup(rows, need_client=False):
     """One-time Kite client + leg->tradingsymbol map. The NFO instrument dump is
     multi-MB, so this must NOT run per tick — the daemon calls it once and then
-    only quotes."""
-    if not rows:
+    only quotes. `need_client=True` builds the client even with a FLAT book —
+    an entry-cycle day starts flat by design (the prior cycle exits at 21 DTE
+    days earlier), and bailing on empty rows silently skipped the 15:26 live
+    entry scan every month (found 2026-09-15: the 11-Sep Oct-cycle entry)."""
+    if not rows and not need_client:
         return None
     try:
         from kiteconnect import KiteConnect
@@ -534,11 +543,11 @@ def seed():
     exps = stock_monthly_expiries(m, days, "2026-01-01", "2027-06-30")
     print("bhav sessions to %s | stock monthlies %s" % (days[-1], list(exps.values())))
     for ym, exp in exps.items():
-        ed = prev_session(days, dstr(dparse(exp) - timedelta(days=DTE_IN)))
+        ed = prev_session(days, min(dstr(dparse(exp) - timedelta(days=DTE_IN)), days[-1]))
         if not ed or ed < SEED_FROM:
             continue
         if (dparse(exp) - dparse(ed)).days > DTE_IN + 5:
-            continue
+            continue                      # tolerance guard makes the cap above safe
         sweep(con, m, days, ed)                   # free slots that exited before this cycle
         if con.execute("SELECT 1 FROM positions WHERE expiry=? AND src='LIVE'",
                        (exp,)).fetchone():
@@ -940,15 +949,19 @@ def livedaemon(tick=5):
     m = ro(MKT)
     days = sessions(m)
     openp = rows_of(con, "status='OPEN'")
-    setup = _live_setup(openp)
+    entry_probe = todays_cycle(m)
+    if not openp and not entry_probe:
+        print("  daemon: book FLAT and no entry cycle today — idle exit", flush=True)
+        return
+    setup = _live_setup(openp, need_client=True)
     if not setup:
-        print("  daemon: kite unavailable, exiting (cron will retry)")
+        print("  daemon: kite unavailable, exiting (cron will retry)", flush=True)
         return
     k, spec, want = setup
     upc = upcoming(m, days)               # heavy GROUP BY — cache across ticks
     mgc = live_margins(openp)             # throttled endpoint — cache across ticks
     lots_map = {s: l for s, l in lot_sizes().items() if s not in INDEX_SYMS}
-    entry_exp = todays_cycle(m)           # is TODAY a 45-DTE entry day?
+    entry_exp = entry_probe               # is TODAY a 45-DTE entry day?
     if entry_exp:
         print("  daemon: TODAY is the entry day for expiry %s — live scan at 15:26"
               % entry_exp, flush=True)
@@ -959,8 +972,11 @@ def livedaemon(tick=5):
     lv = None
     while in_hours(datetime.now()):
         try:
-            q = k.quote(list(want))
-            lv = _live_tick(q, openp, spec)
+            if want:
+                q = k.quote(list(want))
+                lv = _live_tick(q, openp, spec)
+            else:
+                lv = {}                   # flat book on an entry day: idle until 15:26
             publish(con, m, days, live=lv, verbose=False, upc=upc, mg=mgc)
             hms = datetime.now().strftime("%H:%M:%S")
             if entry_exp and not did_entry and hms >= "15:26:00":

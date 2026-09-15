@@ -296,3 +296,20 @@ stopped trades, stopping beat holding only 35% of the time (avg -1.34% stopped v
 mean-reverts ~2/3 of the time. **Ruleset stays NO-STOP.** Legit risk levers remain:
 wing width (7->5% cuts p05 ~40% for ~0.014%S0/trade), sizing, earnings-skip (pending
 data). Files: scripts/run_phase_b3.py, results/phase_b3_analysis.txt.
+
+### INCIDENT 2026-09-15 — missed 11-Sep LIVE entry cycle (fixed, backfilled)
+
+Book went flat 08-Sep (Sep-29 cycle 21-DTE exits, +Rs102,451 realised across 49
+trades) and the 11-Sep Oct-27 entry never fired. TWO causes: (1) livedaemon
+bailed on a FLAT book ("kite unavailable" — misleading message) so the 15:26
+live entry scan has never actually run — every cycle starts flat by design, so
+this would have repeated monthly; (2) the bhav-seed fallback could not see the
+Oct cycle because the 45-DTE target (Sat 12-Sep) was beyond the last bhav
+session (Fri 11-Sep) and prev_session() correctly refuses future targets.
+(14-Sep had no NSE data anywhere — apparent holiday — delaying self-heal.)
+FIXES: daemon now starts flat on entry days (need_client) and idles until the
+15:26 scan; seed caps the entry target at the last session (safe via the
+dte<=50 tolerance guard). Cycle BACKFILLED at 11-Sep bhav closes: 10/18
+candidates (HDFCBANK, INFY, LT, BHARTIARTL, HINDALCO, ...), src=SEED. First
+true LIVE-entry test is now the Oct cycle (~09-Oct entry for Nov-25 expiry... next
+cycle per upcoming schedule).
