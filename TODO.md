@@ -2,6 +2,68 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## DONE 2026-09-15 - Single-stock always-on directional trend (MARUTI MST, ST 7,3 on RELIANCE, EMA cross on HDFCBANK): NO EDGE on every timeframe, and plain cash is a better sleeve
+
+Arun: *"earlier i used to trade manually on maruti always on... master super trend 7,5, child ST 7,2...
+with futures long/short on mst, options selling hedge on cst... it can be on a single stock / few stocks -
+like taking ALL signals... say we might end up finding supertrend 7,3 all signals works on reliance."*
+research/176, published at `/app/backtest/single-stock-alwayson-trend-research176`.
+**NO EDGE - CONCLUDED. Nothing deployed, nothing live touched.**
+
+**This is research/48 again, on five times the data.** r/48 killed always-on SuperTrend on a 381-name
+basket but only had 2.3 years of 15-minute history. research/176 ran the same family - SuperTrend,
+EMA crossover and the MST master+child pair - over **146 liquid F&O names, 20.7 years of daily bars and
+11.5 years of intraday bars resampled from 5-minute**, 327,840 name-cells. **The result gets worse with
+the longer window.**
+
+**The gate was pre-registered before the first cell ran: beat BUY-AND-HOLD of the same stock on 55% of
+names, in both halves.** Best cell anywhere: **0.432** (daily EMA 9,21 long/flat), and **0.329** in
+2016-2026. 60-min 0.336, 30-min 0.295 - a **monotone decay with turnover**, which is research/56's
+cost-per-flip finding reproduced on stocks. At 40 bps: 0.363 / 0.267 / 0.212.
+
+**Long/short is a catastrophe and the short leg dies for the fourth time.** Daily long/short best cell:
+beat-rate 0.062, median CAGR **-3.4%** against buy-and-hold's +12.7%. Short-only has **negative median
+expectancy per trade on every family and every timeframe**. Arun's long/short MST on HDFCBANK: -9.70% a
+year at -91.2%. Reproduces r/81, r/82, r/83.
+
+**On the three names he asked about: 0 of 40 daily cells beat buy-and-hold on RELIANCE, 0 of 40 on
+HDFCBANK, 3 of 40 on MARUTI.** ST(7,3) on RELIANCE returns +8.06% against the stock's +14.07%, at a
+-63.7% drawdown.
+
+**One thing IS real, and it is not a return edge.** A new **block-permutation null** - preserves time in
+market, trade count and both run-length distributions, destroys only WHEN the long spells happen, 200
+draws per name per cell - shows the rule beats its own matched shuffle on **69.9%** of names for CAGR and
+**73.3%** for Calmar. Genuine timing skill. What it buys is **drawdown** (median -51.8% vs the stock's
+-75.7%), not return, and the risk edge decays: Calmar-beat 0.659 in 2006-15, **0.521 in 2016-26**. The
+beat also concentrates on the names that FELL (75% of the negative-CAGR names, 35% of the 10-20% names) -
+a loss-avoider you can only select after the fact.
+
+**Arun's literal MST machine with lot stacking** (master flip resets, each child flip adds a lot to five)
+is the **best drawdown tool in the study**: the three-name book goes -14.8% instead of -54.7%, and 2008
+-9.4% instead of -45.1%. It is also the lowest-returning positive arm - **6.86% a year, below NIFTY 50's
+8.79%** and barely above the 5.2% post-tax cash standard. A ramp, not a system.
+
+**The deciding test kills it.** Against the live short-vol book (C1 + 45-DTE, 75 months), **every**
+directional sleeve is beaten by a **plain cash sleeve** (+0.54 blend Calmar at 40% weight versus +0.14
+for the best trend book) and by **RELIANCE buy-and-hold** (+0.41) - and every blend cuts CAGR, so nothing
+clears the "at equal or better return" clause. That is research/134's conclusion - *the diversifier is
+plain long equity and trend timing on top of it hurts* - reproduced independently on single stocks.
+
+**The options leg was never opened**, by pre-registration: it was gated on the futures signal surviving.
+research/56 already ran the MST/CST credit book (-Rs 17k to -Rs 62k per six weeks against a ~10 bps
+per-flip break-even) and research/150 killed five option structures on high-win-rate signals - an overlay
+changes the payoff shape, it does not create expectancy.
+
+**Best construction found anywhere: 13.88% CAGR / -28.0% drawdown / Calmar 0.495**, against the deployed
+TN+OA pair at Calmar 1.68.
+
+- Status doc: `research/176_single_stock_always_on_trend/SINGLE_STOCK_ALWAYS_ON_TREND_MULTITF_SWEEP_STATUS.md`
+- Full write-up: `research/176_single_stock_always_on_trend/results/RESULTS.md`
+- Registered: 15-Mar-2027 review - any future single-name trend-following proposal must cite research/48
+  and research/176 and state what is different, before any compute is spent.
+
+---
+
 ## DONE 2026-09-15 - NIFTY long-dated short premium: 2 / 3 / 6 / 12-month tenors are all worse than the live 45-DTE book, and no stop beats no stop
 
 Arun: *"now that we are live with 45 DTE, can we test for more like 2 months away
@@ -69,37 +131,6 @@ is not a ninth.
 
 ---
 
-## QUEUED 2026-09-15 -- NEXT STUDY after research/174 closes: single-stock always-on directional system (Arun)
-**Arun's words (near-verbatim):** "earlier i used to trade manually on maruti always on... using the mst system
-in our app... master super trend 7,5, child ST 7,2... with futures long/short on mst, options selling hedge on
-cst. the aim is to find some other system apart from nifty/indexes, im inclined towards directional... need not
-be by % move but even with options system to manage, so it need not be fully directionally trending... and it
-can be on a single stock / few stocks - like taking ALL signals instead of scanning for signals on stocks....
-say we might end up finding supertrend 7,3 all signals works on reliance over a good run, or ema crossover on
-hdfcbank works with either futures or options or both or so.... take this up after current task is fully done"
-
-**Restated:** a per-stock, always-in, every-signal system on one or a few liquid F&O names -- direction from a
-trend rule (SuperTrend / EMA crossover / MST master+child), expressed in futures, options, or both -- as a
-non-index, directional complement to the short-vol book. Dispatch `quant-researcher`; it must ask the intake
-questions (which names, which instruments, what "always-on" means when flat is not allowed) before sweeping.
-
-**Prior art the study MUST cite, not rediscover:**
-- **The exact trap:** research/48 REC SuperTrend positional -- 15-min looked great on ONE name, basket validation
-  killed it: a lucky single-name overfit. "Take all signals on RELIANCE" is that shape. The study is worthless
-  without (a) the same rule on a basket of names, (b) a random-entry null on the same name, (c) a window split.
-- `memory/maruthi_algo_bugs.md`: the live Maruthi MST algo was DISABLED 2026-03-25 with 9 critical bugs. If any
-  MST code is reused, read that first. Design in `memory/maruthi_strategy.md`. App page at /mst.
-- research/56 dual-SuperTrend 30-min options: NO NET EDGE standalone, only EV+ as a flat/hedge overlay.
-- research/81/82/83: every SHORT-side equity signal tested lost (1-15d, and Turtle on F&O equities). A
-  long/short system must show its short leg earns on its own or drop it.
-- research/135 Turtle: optimisation was SUBTRACTIVE; the plateau test caught the overfit. Same discipline here.
-- research/134: the short-vol book bleeds in UP-trends, so the value of a directional complement is in
-  up-runs -- the blend test against the live 45-DTE book is the deciding metric, not standalone CAGR.
-- Data: `market_data.db` is NOT split-adjusted retroactively (memory 2026-09-01) -- verify any single-name
-  daily series before trusting a multi-year run on it. 60-min bars exist for 93 names 2018-2025; 5-min only
-  for 10. Options on stocks: `nse_options_bhav` daily, volume/OI filter binding.
-
-**Do not start until research/174 has a RESULTS.md verdict.**
 
 ## ✅ 2026-09-15 — The daily check watched 10 of 19 jobs, and a log with no timestamp could never clear a fixed error
 
