@@ -19,8 +19,10 @@ WHAT IT CHECKS, per book (True North, Open Alpha, IPO Base) and across the portf
 It writes static/app/mpf_health.json for the app, prints a text report, and on anything
 worse than OK sends the same summary by email and WhatsApp.
 
-Deliberately READ-ONLY. It reads state, feeds, logs and the order book, and changes
-nothing. A checker that repairs things is a checker you stop trusting to tell you the truth.
+Deliberately READ-ONLY over the books. It reads state, feeds, logs and the order book and
+changes none of them. A checker that repairs things is a checker you stop trusting to tell
+you the truth. The one file it writes is its own watermark of how far it has read each job
+log (backtest_data/mpf_health_job_marks.json); no engine reads it.
 
     python3 scripts/mpf_health.py            # check, write, print
     python3 scripts/mpf_health.py --send     # ... and notify if not all-OK
@@ -219,27 +221,78 @@ def check_books(rep, kite_orders):
 
 # ── the scheduled jobs that keep it all moving ───────────────────────────────
 # (label, log, the time it is DUE) - judged against that, never against "today" alone.
+# `days` is a set of Python weekdays, Monday 0; None means Mon-Fri.
+#
+# EVERY mpf cron job belongs here. Until 15-Sep only the ten that place or price orders were
+# listed, so the nine that FEED them could fail nightly without a word - including the
+# onboarding job that decides whether a newly listed stock can ever be traded at all.
+WEEKDAYS = frozenset({0, 1, 2, 3, 4})
 JOBS = [
-    ('True North marks',   '/tmp/momentum_live.log',    '09:16'),
-    ('True North state',   '/tmp/momentum_state.log',   '09:18'),
-    ('Open Alpha marks',   '/tmp/oa_real_mark.log',     '09:16'),
-    ('Open Alpha recon',   '/tmp/oa_reconcile.log',     '09:35'),
-    ('Cash executor',      '/tmp/equity_executor.log',  '09:20'),
-    ('IPO marks',          '/tmp/ipo_mark.log',         '09:16'),
-    ('Open Alpha exits',   '/tmp/oa_real.log',          '15:18'),
-    ('Universe refresh',   '/tmp/universe_refresh.log', '18:05'),   # 17:45 + ~18 min
-    ('IPO engine',         '/tmp/ipo_paper.log',        '18:45'),
-    ('Open Alpha entries', '/tmp/oa_entry.log',         '18:50'),
+    ('True North marks',   '/tmp/momentum_live.log',        '09:16', None),
+    ('True North state',   '/tmp/momentum_state.log',       '09:18', None),
+    ('Open Alpha marks',   '/tmp/oa_real_mark.log',         '09:16', None),
+    ('Open Alpha recon',   '/tmp/oa_reconcile.log',         '09:35', None),
+    ('IPO recon',          '/tmp/ipo_reconcile.log',        '09:35', None),
+    ('Cash executor',      '/tmp/equity_executor.log',      '09:20', None),
+    ('IPO marks',          '/tmp/ipo_mark.log',             '09:16', None),
+    ('Cash park sweep',    '/tmp/cash_park.log',            '15:11', None),
+    ('Open Alpha exits',   '/tmp/oa_real.log',              '15:18', None),
+    ('IPO charts',         '/tmp/ipo_ohlc.log',             '15:41', None),
+    ('True North charts',  '/tmp/momentum_ohlc.log',        '15:42', None),
+    ('Open Alpha charts',  '/tmp/oa_ohlc.log',              '15:44', None),
+    ('Book curves',        str(ROOT / 'logs' / 'book_daily.log'), '15:45', None),
+    ('New listings',       '/tmp/onboard_new_listings.log', '17:45', None),  # 17:30 + fetch
+    ('Universe refresh',   '/tmp/universe_refresh.log',     '18:05', None),  # 17:45 + ~18 min
+    ('IPO engine',         '/tmp/ipo_paper.log',            '18:45', None),
+    ('Open Alpha entries', '/tmp/oa_entry.log',             '18:50', None),
+    # Weekly, Sunday 10:15. Without `days` a daily check calls it overdue for six days.
+    ('Listing table',      '/tmp/ipo_listing_table.log',    '10:45', frozenset({6})),
+    # Runs at 19:15, the same minute as this check, so on most days it reads as not-yet-due
+    # and is judged on the following evening's run. Intended, not a gap.
+    ('Dividend declare',   '/tmp/dividend_declare.log',     '19:15', None),
 ]
+JOB_MARKS = ROOT / 'backtest_data' / 'mpf_health_job_marks.json'
+JOB_WINDOW_CAP = 2_000_000    # never pull more than 2 MB of log into memory for one row
 JOB_GRACE_MIN = 15        # a job due at 15:18 that takes a minute has not failed at 15:19
 ERR = re.compile(r'Traceback \(most recent call last\)|^\w*Error:|Exception', re.M)
 
 
+def _job_window(path, marks, today):
+    """The bytes this job has written since the last check, plus a note if it is new.
+
+    Returns (text, is_new). The window start is frozen for the calendar day so a second run
+    the same evening still sees the morning. A log shorter than its own watermark has been
+    truncated or rotated, so it is read whole.
+    """
+    p = Path(path)
+    size = p.stat().st_size
+    m = marks.get(path)
+    is_new = m is None
+    if is_new:
+        start = size                       # watch from now; a backlog we cannot date is noise
+    elif m.get('date') == today.isoformat():
+        start = int(m.get('start', 0))     # same day: keep the window open
+    else:
+        start = int(m.get('end', 0))       # a new day starts where the last check finished
+    if start > size or start < 0:
+        start = 0
+    marks[path] = dict(date=today.isoformat(), start=start, end=size)
+    if size - start > JOB_WINDOW_CAP:
+        start = size - JOB_WINDOW_CAP
+    try:
+        with open(p, 'rb') as f:
+            f.seek(start)
+            return f.read().decode('utf-8', errors='replace'), is_new
+    except Exception:
+        return '', is_new
+
+
 def check_jobs(rep):
     today = date.today()
+    marks = _load(JOB_MARKS, {}) or {}
     now_min = datetime.now().hour * 60 + datetime.now().minute
     trading = _trading_day_today()
-    for label, path, due in JOBS:
+    for label, path, due, days in JOBS:
         p = Path(path)
         if not p.exists():
             rep.add('Jobs', label, WARN, 'no log at %s - has it ever run?' % path)
@@ -247,36 +300,43 @@ def check_jobs(rep):
         mtime = datetime.fromtimestamp(p.stat().st_mtime)
         stale = mtime.date() < today
         due_min = int(due[:2]) * 60 + int(due[3:]) + JOB_GRACE_MIN
+        # A weekly job is not late on the days it was never scheduled to run.
+        if today.weekday() not in (days if days is not None else WEEKDAYS):
+            rep.add('Jobs', label, OK, 'not due today (last ran %s)'
+                    % mtime.strftime('%d-%b %H:%M'))
+            continue
         # Not yet due is not a failure. Before this, every afternoon job read as broken all
         # morning, which is how a report teaches you to ignore it.
         if stale and now_min < due_min:
             rep.add('Jobs', label, OK, 'due at %s (last ran %s)'
                     % (due, mtime.strftime('%d-%b %H:%M')))
             continue
-        if not trading:
+        tail, is_new = _job_window(path, marks, today)
+        if not trading and stale:
+            # It stood down with the exchange, which is the design (scripts/on_trading_day.sh).
             rep.add('Jobs', label, OK, 'market closed today (last ran %s)'
                     % mtime.strftime('%d-%b %H:%M'))
             continue
-        tail = ''
-        try:
-            tail = p.read_text(encoding='utf-8', errors='replace')[-4000:]
-        except Exception:
-            pass
-        # JUDGE TODAY, NOT THE WHOLE TAIL. Saturday's NameError was fixed the same morning and
-        # still failed this row every day after, because the traceback was simply sitting in
-        # the log. If today's date appears, read only from there.
-        stamp = today.isoformat()
-        if stamp in tail:
-            tail = tail[tail.rindex(stamp):]
         if ERR.search(tail):
             first = next((l for l in tail.splitlines()[::-1]
                           if 'Error' in l or 'Exception' in l), 'see the log')
-            rep.add('Jobs', label, FAIL, 'ERRORED: %s' % first.strip()[:120])
+            # A job that RAN and crashed is reported whatever the calendar says. Monday's two
+            # unguarded Kite jobs both died on a rejected token and the holiday branch called
+            # them OK - the exact silence this script exists to end.
+            rep.add('Jobs', label, FAIL, '%sERRORED: %s'
+                    % ('' if trading else 'ran on a CLOSED day and ', first.strip()[:120]))
         elif stale:
             rep.add('Jobs', label, FAIL, 'was due at %s, has NOT run (last %s)'
                     % (due, mtime.strftime('%d-%b %H:%M')))
+        elif is_new:
+            rep.add('Jobs', label, OK, 'ran %s (now being watched from here on)'
+                    % mtime.strftime('%H:%M'))
         else:
             rep.add('Jobs', label, OK, 'ran %s' % mtime.strftime('%H:%M'))
+    try:
+        JOB_MARKS.write_text(json.dumps(marks, indent=1), encoding='utf-8')
+    except Exception as e:
+        rep.add('Jobs', 'log watermark', WARN, 'could not be saved: %s' % str(e)[:80])
 
 
 def check_universe(rep, kite_orders):

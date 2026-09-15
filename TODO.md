@@ -2,6 +2,69 @@
 
 Cross-session source of truth for pending work. Each item: what / why / when.
 
+## ✅ 2026-09-15 — The daily check watched 10 of 19 jobs, and a log with no timestamp could never clear a fixed error
+
+Arun, told that the new-listing onboarding job had died on Monday's holiday: *"this shud hv been
+listed in our app section on failed items existing"*. Correct, and it was invisible for two
+separate reasons.
+
+**1. Nine jobs were never registered.** `JOBS` in `scripts/mpf_health.py` listed the ten that
+place or price orders. Everything that FEEDS them could fail nightly in silence: new-listing
+onboarding, the weekly listing table, the three chart bakers, the book curves, the IPO
+reconcile, the cash-park sweep, the dividend declaration. Onboarding is the one that decides
+whether a newly listed stock can ever be traded at all, so its silence was the expensive kind.
+All nineteen are registered now, each with the time it is due.
+
+**2. Weekly jobs had no way to say so.** The listing table runs Sunday 10:15; a daily check with
+no notion of "which days" would have called it overdue every weekday. `JOBS` rows now carry the
+weekdays they are due on.
+
+**3. The holiday branch hid real errors.** The 15-Sep holiday fix reported every job OK on a
+closed day, returning *before* reading the log. Right for a job that stood down; wrong for one
+that ran anyway and crashed — which is exactly what Monday's two unguarded Kite jobs did. A
+traceback is now reported whatever the calendar says, flagged "ran on a CLOSED day and ERRORED";
+only "it did not run" is excused on a holiday.
+
+**4. The real one — "judge today's lines" needs a date stamp, and 16 of 19 logs have none.**
+The 15-Sep fix scanned the log tail and, if today's ISO date appeared, judged only from there.
+With no stamp to find it fell back to the whole 4 KB tail, so a crash fixed a week ago failed
+the row every evening forever. Registering nine more jobs made this immediate: **five of the
+nineteen lit up red on fossils** — the `SEEN_ORDERS` NameError fixed 13-Sep (IPO engine + IPO
+recon), Monday's token rejection (universe refresh + new listings), and the 9-Sep
+`could not convert string to float: '303.70.'` bug (OA entries) that prompted this script.
+
+The checker now keeps its own **byte watermark per log** (`backtest_data/mpf_health_job_marks.json`)
+and reads only what has been appended since it last looked. Independent of log formatting; the
+window is frozen per calendar day so a second run in an evening still sees the morning; a log
+shorter than its watermark (rotated or truncated) is read whole; a log seen for the first time
+is watched from now and the row says so.
+
+**Verified** by appending a synthetic `ValueError` to `/tmp/oa_reconcile.log` — the row went
+`X Open Alpha recon ERRORED: ValueError: synthetic watcher test` — then truncating back to the
+recorded 2,980 bytes, after which the row returned to OK on the next run.
+
+All nineteen logs were read by hand before installing the watermark, to be sure nothing real was
+being buried: the only tracebacks present are the five fossils above.
+
+**Also:** `scripts/onboard_new_listings.py` was the last mpf job still outside
+`scripts/on_trading_day.sh`, which is why it called Kite on Monday and was rejected. Wrapped
+(crontab backed up to `/tmp/ct.bak.onboard.20260915-132646`, 137 lines before and after).
+
+Renders on the Capital Desk daily-check card; no restart needed (cron script + static JSON).
+`mpf_health.json` now carries 37 checks, 19 of them jobs.
+
+### ⏳ Open, from the same pass
+
+- **Five listed NSE equities are absent from `market_data.db`** — DCM, GAUDIUMIVF, MANUGRAPH,
+  PRANAV, TCIFINANCE. They appear nowhere in the onboarding log, so they listed (or relisted)
+  after Friday's last successful run; Monday's died on the holiday token. Confirm tonight's
+  17:30 run picks them up. Coverage is otherwise 2,454 of 2,459 (99.8%).
+- **The refresh cohorts can still lock a name out forever.** `refresh_daily_universe.py` runs
+  `n >= 260 AND last bar within 30 days` alongside `n < 260 AND last bar within 180 days`. A
+  young name that falls more than 180 days behind drops out of both and is never refreshed
+  again — the same trap as the old 30-day rule, one cohort further out. No holding is near it,
+  but it should be closed rather than relied upon not to happen.
+
 ## ✅ 2026-09-13 — research/172: the 52-week-high / 52-week-low channel on Nifty 100 — NO EDGE as written, SIGNAL when optimised, nothing adopted
 
 52W. Arun: *"buy a stock when a day closes above its 52-week high and exit when a day closes
