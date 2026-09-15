@@ -65,6 +65,39 @@ def ro(p):
     return sqlite3.connect("file:%s?mode=ro" % p, uri=True)
 
 
+def nfo_instruments(k):
+    """Per-day disk cache of the NFO instrument dump. The endpoint is heavily
+    rate-limited and shared with every other service on this box; re-downloading
+    the multi-MB dump on each daemon start caused persistent 429 storms (763
+    'Too many requests' in one log). Instruments only change daily."""
+    import pickle
+    cache = os.path.join(ROOT, "backtest_data",
+                         "nfo_dump_%s.pkl" % dstr(datetime.now()))
+    if os.path.exists(cache):
+        try:
+            with open(cache, "rb") as f:
+                return pickle.load(f)
+        except Exception:
+            pass
+    instr = k.instruments("NFO")
+    try:
+        with open(cache + ".tmp", "wb") as f:
+            pickle.dump(instr, f)
+        os.replace(cache + ".tmp", cache)
+        for old in glob_module.glob(os.path.join(ROOT, "backtest_data", "nfo_dump_*.pkl")):
+            if os.path.basename(old) != os.path.basename(cache):
+                try:
+                    os.remove(old)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+    return instr
+
+
+import glob as glob_module
+
+
 def dstr(d):
     return d.strftime("%Y-%m-%d")
 
@@ -214,7 +247,7 @@ def live_margins(rows):
         k = KiteConnect(api_key=api)
         k.set_access_token(json.load(open(tokf))["access_token"])
         idx = {}
-        for i in k.instruments("NFO"):
+        for i in nfo_instruments(k):
             if i["instrument_type"] in ("CE", "PE"):
                 idx[(i["name"], str(i["expiry"]), float(i["strike"]), i["instrument_type"])] =                     i["tradingsymbol"]
     except Exception as e:
@@ -295,7 +328,7 @@ def _live_setup(rows, need_client=False):
         k = KiteConnect(api_key=api)
         k.set_access_token(json.load(open(tokf))["access_token"])
         idx = {}
-        for i in k.instruments("NFO"):
+        for i in nfo_instruments(k):
             if i["instrument_type"] in ("CE", "PE"):
                 idx[(i["name"], str(i["expiry"]), float(i["strike"]),
                      i["instrument_type"])] = i["tradingsymbol"]
@@ -345,13 +378,23 @@ def _live_tick(q, rows, spec):
     return out
 
 
+_LEG_MEMO = {}
+
+
 def leg_detail(m, r, day):
     """Per-leg prices on a session — a READ-ONLY projection for the UI.
+
+    Memoized per (position, day): bhav rows for a past session are immutable,
+    and publish() re-queries every leg of every CLOSED trade on each 5s tick —
+    ~100 heavy chain scans per tick at 49 closed trades without the memo.
 
     The structure's four legs are already priced inside structure_value(); this
     just returns them individually instead of netted, so a row can be expanded
     to show what is actually held. Adds no state and changes no trading rule.
     """
+    key = (r["id"], day)
+    if key in _LEG_MEMO:
+        return _LEG_MEMO[key]
     ch = chain_day(m, r["symbol"], r["expiry"], day)
     spec = [("SHORT", "CE", r["kce"]), ("SHORT", "PE", r["kpe"]),
             ("LONG", "CE", r["wce"]), ("LONG", "PE", r["wpe"])]
@@ -360,7 +403,11 @@ def leg_detail(m, r, day):
         px, vol = ch.get((float(K), ot), (None, 0))
         out.append(dict(side=side, opt=ot, strike=K,
                         price=(px if px and px > 0 else None), volume=vol))
+    _LEG_MEMO[key] = out
     return out
+
+
+_STAT_MEMO = {}
 
 
 def statutory_charges(m, r):
@@ -369,7 +416,10 @@ def statutory_charges(m, r):
     of SELL premium (entry shorts + wings sold back at exit), NSE txn 0.03503%
     of premium both sides, SEBI Rs10/crore, stamp 0.003% buy side, GST 18% on
     brokerage+txn+SEBI. Separate from modeled slippage, which is an execution-
-    quality ASSUMPTION the paper soak exists to measure."""
+    quality ASSUMPTION the paper soak exists to measure.
+    Memoized per closed position id (a closed trade never changes)."""
+    if r["id"] in _STAT_MEMO:
+        return _STAT_MEMO[r["id"]]
     q = r["qty"]
     le = {(l["side"], l["opt"]): (l["price"] or 0.0) for l in (leg_detail(m, r, r["entry_date"]) or [])}
     lx = {(l["side"], l["opt"]): (l["price"] or 0.0) for l in (leg_detail(m, r, r["exit_date"]) or [])}
@@ -383,7 +433,9 @@ def statutory_charges(m, r):
     txn = 0.0003503 * total
     sebi = total / 1e7 * 10
     stamp = 0.00003 * buy_prem
-    return brokerage + stt + txn + sebi + stamp + 0.18 * (brokerage + txn + sebi)
+    total = brokerage + stt + txn + sebi + stamp + 0.18 * (brokerage + txn + sebi)
+    _STAT_MEMO[r["id"]] = total
+    return total
 
 
 def intrinsic_value(r, spot):
@@ -821,7 +873,7 @@ def entry_scan_live(con, m, k, exp, lots_map):
         print("  entry: book full", flush=True)
         return 0
     try:
-        instr = k.instruments("NFO")
+        instr = nfo_instruments(k)
     except Exception as e:
         print("  entry: instruments failed (%s)" % str(e)[:60], flush=True)
         return 0

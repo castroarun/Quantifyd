@@ -313,3 +313,14 @@ dte<=50 tolerance guard). Cycle BACKFILLED at 11-Sep bhav closes: 10/18
 candidates (HDFCBANK, INFY, LT, BHARTIARTL, HINDALCO, ...), src=SEED. First
 true LIVE-entry test is now the Oct cycle (~09-Oct entry for Nov-25 expiry... next
 cycle per upcoming schedule).
+
+Addendum 2026-09-15 ~12:00: after the backfill, the daemon still could not
+come up: (a) the new flat-book entry probe ran an UNINDEXED GROUP BY over the
+33M-row bhav table on every start (minutes of CPU before Kite), after which
+(b) the NFO instruments dump hit persistent 429s (763 lifetime) since every
+retry re-downloaded it. FIXED: idx_bhav_expdate(expiry_date, trade_date)
+built (probe 2.7s), per-day disk cache for the instruments dump shared by
+setup/margins/entry-scan, and leg_detail/statutory_charges memoized (closed
+trades are immutable — publish was re-scanning ~100 legs per 5s tick).
+VERIFIED 11:43 IST: daemon up, 10/10 live marks + margins, JSON ticking 5s,
+MTM −Rs36,606 on the Oct-27 cycle.
