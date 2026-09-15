@@ -349,14 +349,39 @@ def reconcile(con, k):
                 raise Halt("RECONCILE: book says SHORT %d %s, broker says %d. "
                            "Refusing to act. Investigate, then fix the book."
                            % (r["qty"], sym, have))
-    orphans = {sy: q for sy, q in legs.items() if sy not in known}
-    if orphans:
-        raise Halt("RECONCILE: the broker holds NRML NIFTY leg(s) this book does "
-                   "not know about - %s. An order may have filled without being "
-                   "recorded. Refusing to act; square off or record it by hand."
-                   % ", ".join("%s %+d" % (sy, q) for sy, q in sorted(orphans.items())))
+    # An orphan that MATTERS looks like this book's own untracked trade: a CE and
+    # a PE at the SAME strike and expiry, both SHORT, both exactly QTY. That is
+    # the only shape a failed DB write after our own fills can produce. Arun
+    # trades NIFTY manually - a SEP iron condor on 2026-09-15 froze the book
+    # under the old blanket rule - and his structures are not our failure mode.
+    unknown = {sy: q for sy, q in legs.items() if sy not in known}
+    suspect = {}
+    for sy, q in unknown.items():
+        if q != -QTY or not (sy.endswith("CE") or sy.endswith("PE")):
+            continue
+        twin = sy[:-2] + ("PE" if sy.endswith("CE") else "CE")
+        if unknown.get(twin) == -QTY:
+            suspect[sy] = q
+    if suspect:
+        raise Halt("RECONCILE: the broker holds a SHORT NIFTY %d-qty CE+PE pair at "
+                   "one strike that this book did not record - %s. That is exactly "
+                   "what a fill with a failed write looks like. Refusing to act; "
+                   "square it off or record it by hand."
+                   % (QTY, ", ".join("%s %+d" % (a, b) for a, b in sorted(suspect.items()))))
+    other = {sy: q for sy, q in unknown.items() if sy not in suspect}
+    if other:
+        log("  note: %d other NIFTY NRML leg(s) on the account, not this book's and "
+            "not our failure shape - %s"
+            % (len(other), ", ".join("%s %+d" % (a, b) for a, b in sorted(other.items()))))
     log("  reconciled BOTH ways: %d open position(s), %d broker NRML NIFTY leg(s)"
         % (len(open_rows), len(legs)))
+    try:
+        con.execute("CREATE TABLE IF NOT EXISTS health (k TEXT PRIMARY KEY, v TEXT)")
+        con.execute("INSERT OR REPLACE INTO health VALUES('last_ok',?)",
+                    (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))
+        con.commit()
+    except Exception:
+        pass
     return open_rows
 
 
@@ -510,6 +535,23 @@ def try_exit(con, k, sess, today):
 
 
 # ----------------------------------------------------------------- publish --
+def health(con):
+    """(last_ok, hours_stale). A live book that stops reconciling must SAY so -
+    every run on 2026-09-14 died on an auth error and nothing surfaced it."""
+    try:
+        con.execute("CREATE TABLE IF NOT EXISTS health (k TEXT PRIMARY KEY, v TEXT)")
+        r = con.execute("SELECT v FROM health WHERE k='last_ok'").fetchone()
+    except Exception:
+        return None, None
+    if not r:
+        return None, None
+    try:
+        dt = datetime.strptime(r[0], "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return r[0], None
+    return r[0], round((datetime.now() - dt).total_seconds() / 3600.0, 1)
+
+
 def publish(con, k=None):
     allr = rows(con)
     openp = [r for r in allr if r["status"] in ("OPEN", "DRYRUN")]
@@ -522,9 +564,12 @@ def publish(con, k=None):
                            if r["mark_prem"] else None)
         except Exception:
             r["mark_prem"] = r["mtm_rs"] = None
+    last_ok, stale_h = health(con)
     payload = dict(
         asof=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         mode="LIVE" if ARMED else "DRY-RUN (not armed)",
+        last_ok=last_ok, hours_since_ok=stale_h,
+        stale=(stale_h is not None and stale_h > 20),
         armed=ARMED, killed=os.path.exists(KILL),
         lots=LOTS, qty=QTY, vix_rank_min=VIX_RANK_MIN,
         target=TARGET, stop=STOP, dte_in=DTE_IN, dte_out=DTE_OUT,
@@ -571,6 +616,17 @@ def run():
         event(con, "HALT", str(e)[:400])
         publish(con)
         sys.exit(2)
+    except Exception as e:
+        # An unexpected failure (auth, network) must be RECORDED, not just
+        # printed into a log nobody reads. 2026-09-14 lost a whole session
+        # to "Invalid api_key or access_token" in silence.
+        log("  *** ERROR: %s" % str(e)[:200])
+        try:
+            event(con, "ERROR", str(e)[:400])
+            publish(con)
+        except Exception:
+            pass
+        sys.exit(3)
     finally:
         con.close()
         m.close()
